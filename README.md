@@ -1,6 +1,6 @@
 # premiere-pr
 
-Ce depot sert de bac a sable pour apprendre le workflow Git/GitHub : commits, branchs, et pull requests.
+Ce depot sert de bac a sable pour apprendre le workflow Git/GitHub : commits, branches, et pull requests.
 
 ## Objectif
 
