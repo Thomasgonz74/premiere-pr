@@ -1,0 +1,270 @@
+/* Torrent 2000 -- "Windows 10" skin, DARK variant (matches the real
+   Windows 10 "Dark" app theme).
+
+   Reference colors:
+     window background      #1F1F1F
+     accent blue             #0078D7
+     border gray             #4A4A4A
+     text                    #FFFFFF
+     disabled text           #7A7A7A
+
+   Fully flat design -- no gradients, no 3D bevels, sharp corners
+   everywhere, matching win10.qss. The title bar is NOT drawn by this
+   stylesheet -- see src/torrent2000/ui/widgets/app_title_bar.py.
+*/
+
+* {
+    font-family: "Segoe UI", "MS Shell Dlg 2", sans-serif;
+    font-size: 9pt;
+}
+
+QMainWindow, QWidget#centralWidget {
+    background-color: #1F1F1F;
+}
+
+QWidget {
+    background-color: #1F1F1F;
+    color: #FFFFFF;
+}
+
+QTabWidget::pane {
+    border: 1px solid #3A3A3A;
+    background-color: #1F1F1F;
+    top: -1px;
+}
+
+QTabBar::tab {
+    background-color: #2B2B2B;
+    border: 1px solid #3A3A3A;
+    border-bottom: none;
+    padding: 6px 16px;
+    margin-right: 1px;
+    color: #FFFFFF;
+}
+
+QTabBar::tab:selected {
+    background-color: #1F1F1F;
+    border-color: #3A3A3A;
+    border-bottom: 2px solid #0078D7;
+    margin-top: 0px;
+}
+
+QTabBar::tab:!selected {
+    margin-top: 2px;
+    color: #C8C8C8;
+}
+
+QGroupBox {
+    border: 1px solid #3A3A3A;
+    border-radius: 0px;
+    margin-top: 10px;
+    padding-top: 6px;
+    background-color: #1F1F1F;
+    font-weight: normal;
+    color: #FFFFFF;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 4px;
+    color: #FFFFFF;
+}
+
+QPushButton {
+    background-color: #2B2B2B;
+    border: 1px solid #4A4A4A;
+    border-radius: 0px;
+    padding: 4px 12px;
+    min-height: 18px;
+    color: #FFFFFF;
+}
+
+QPushButton:hover:!pressed {
+    background-color: #17324A;
+    border: 1px solid #0078D7;
+}
+
+QPushButton:pressed {
+    background-color: #0D4570;
+    border: 1px solid #005A9E;
+}
+
+QPushButton:default {
+    border-width: 2px;
+    border-color: #0078D7;
+}
+
+QPushButton:disabled {
+    background-color: #232323;
+    border: 1px solid #3A3A3A;
+    color: #7A7A7A;
+}
+
+QPushButton#dangerButton {
+    background-color: #4A2622;
+    border: 1px solid #8A4A42;
+    border-radius: 0px;
+    padding: 2px 10px;
+    min-height: 16px;
+    color: #FFFFFF;
+}
+
+QPushButton#dangerButton:hover:!pressed {
+    background-color: #5A302A;
+    border: 1px solid #0078D7;
+}
+
+QPushButton#dangerButton:pressed {
+    background-color: #3A1B18;
+    border: 1px solid #2A1310;
+}
+
+QLineEdit, QSpinBox, QAbstractSpinBox {
+    background-color: #2B2B2B;
+    border: 1px solid #5A5A5A;
+    border-radius: 0px;
+    padding: 2px 4px;
+    color: #FFFFFF;
+    selection-background-color: #0078D7;
+    selection-color: #FFFFFF;
+}
+
+QLineEdit:hover, QSpinBox:hover, QAbstractSpinBox:hover {
+    border: 1px solid #0078D7;
+}
+
+QComboBox {
+    background-color: #2B2B2B;
+    border: 1px solid #5A5A5A;
+    border-radius: 0px;
+    padding: 2px 4px;
+    color: #FFFFFF;
+}
+
+QComboBox:hover {
+    border: 1px solid #0078D7;
+}
+
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: right;
+    width: 20px;
+    background-color: #2B2B2B;
+    border-left: 1px solid #5A5A5A;
+}
+
+QComboBox::down-arrow {
+    width: 8px;
+    height: 8px;
+    image: none;
+    border-left: 3px solid transparent;
+    border-right: 3px solid transparent;
+    border-top: 4px solid #FFFFFF;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #2B2B2B;
+    color: #FFFFFF;
+    border: 1px solid #5A5A5A;
+    selection-background-color: #0078D7;
+    selection-color: #FFFFFF;
+}
+
+QCheckBox::indicator {
+    width: 13px;
+    height: 13px;
+    background-color: #2B2B2B;
+    border: 1px solid #5A5A5A;
+    border-radius: 0px;
+}
+
+QCheckBox::indicator:hover {
+    border: 1px solid #0078D7;
+}
+
+QCheckBox::indicator:checked {
+    background-color: #0078D7;
+    border: 1px solid #0078D7;
+    image: url(theme:checkmark.png);
+}
+
+QSlider::groove:horizontal {
+    height: 3px;
+    background-color: #4A4A4A;
+}
+
+QSlider::handle:horizontal {
+    width: 12px;
+    height: 12px;
+    margin: -5px 0;
+    background-color: #0078D7;
+    border: 1px solid #005A9E;
+    border-radius: 6px;
+}
+
+QTableWidget, QTreeWidget {
+    background-color: #2B2B2B;
+    alternate-background-color: #252525;
+    gridline-color: #3A3A3A;
+    border: 1px solid #3A3A3A;
+    color: #FFFFFF;
+    selection-background-color: #0078D7;
+    selection-color: #FFFFFF;
+}
+
+QHeaderView::section {
+    background-color: #2B2B2B;
+    border: 1px solid #3A3A3A;
+    padding: 3px;
+    font-weight: normal;
+    color: #FFFFFF;
+}
+
+QProgressBar {
+    border: 1px solid #3A3A3A;
+    background-color: #2B2B2B;
+    text-align: center;
+    color: #FFFFFF;
+}
+
+QProgressBar::chunk {
+    background-color: #0078D7;
+    margin: 0px;
+}
+
+QLabel {
+    background: transparent;
+    color: #FFFFFF;
+}
+
+QSplitter::handle {
+    background-color: #1F1F1F;
+}
+
+QScrollBar:vertical {
+    background: #1F1F1F;
+    width: 12px;
+    border: none;
+}
+
+QScrollBar::handle:vertical {
+    background-color: #4A4A4A;
+    border-radius: 0px;
+    min-height: 24px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background-color: #6A6A6A;
+}
+
+QTabWidget#mainTabs::pane {
+    border-top: none;
+    top: 0px;
+}
+
+QSizeGrip {
+    background-color: #1F1F1F;
+    width: 16px;
+    height: 16px;
+}

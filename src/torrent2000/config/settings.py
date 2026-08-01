@@ -53,6 +53,7 @@ class Settings:
     upload_rate_limit_kbps: int = 0
     danger_auto_exclude_threshold: int = 60  # 0-100, files scoring >= this get auto-excluded
     theme: str = "luna_xp"
+    appearance_mode: str = "light"  # "light" | "dark" | "dark_hc"
     network_interface: str = ""  # empty = default / all interfaces
     proxy: ProxySettings = field(default_factory=ProxySettings)
     max_active_downloads: int = 8

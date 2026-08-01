@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (
     QComboBox,
     QFileDialog,
     QFormLayout,
+    QFrame,
     QGroupBox,
     QHBoxLayout,
     QHeaderView,
@@ -18,6 +19,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QProgressBar,
     QPushButton,
+    QScrollArea,
     QSpinBox,
     QTableWidget,
     QTableWidgetItem,
@@ -34,7 +36,7 @@ from torrent2000.stats.history_service import HistoryService
 from torrent2000.stats.leveling import UPLOAD_LEVEL_WEIGHT, weighted_total_bytes
 from torrent2000.stats.models import StatsSnapshot
 from torrent2000.stats.service import StatsService
-from torrent2000.ui.theme.theme_manager import THEME_LABELS
+from torrent2000.ui.theme.theme_manager import APPEARANCE_MODE_LABELS, THEME_LABELS
 from torrent2000.utils.formatting import human_size
 
 _PROXY_TYPE_LABELS = [
@@ -71,7 +73,7 @@ def _list_local_ipv4_interfaces() -> list[tuple[str, str]]:
 
 
 class ProfileTab(QWidget):
-    theme_changed = Signal(str)
+    theme_changed = Signal(str, str)  # theme_id, appearance_mode
 
     def __init__(
         self,
@@ -90,9 +92,24 @@ class ProfileTab(QWidget):
         self._settings = settings
         self._disk_space_monitor = disk_space_monitor
 
-        layout = QVBoxLayout(self)
+        outer_layout = QVBoxLayout(self)
+        outer_layout.setContentsMargins(0, 0, 0, 0)
+        outer_layout.setSpacing(0)
 
-        general_box = QGroupBox("Paramètres généraux", self)
+        # This tab accumulates a lot of settings sections -- without a
+        # scroll area, the combined content's minimum height bubbles up
+        # through the tab widget to the frameless top-level window, forcing
+        # it to be at least that tall (and preventing shrinking below it,
+        # even past what a screen can show). A scroll area absorbs that
+        # instead, so the window stays freely resizable.
+        scroll_area = QScrollArea(self)
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setFrameShape(QFrame.NoFrame)
+
+        scroll_content = QWidget()
+        layout = QVBoxLayout(scroll_content)
+
+        general_box = QGroupBox("Paramètres généraux", scroll_content)
         general_form = QFormLayout(general_box)
 
         dest_row = QHBoxLayout()
@@ -127,6 +144,14 @@ class ProfileTab(QWidget):
         self.theme_combo.setCurrentIndex(max(0, idx))
         self.theme_combo.currentIndexChanged.connect(self._on_theme_changed)
         general_form.addRow("Thème (base Windows XP) :", self.theme_combo)
+
+        self.appearance_combo = QComboBox(general_box)
+        for label, mode_id in APPEARANCE_MODE_LABELS:
+            self.appearance_combo.addItem(label, mode_id)
+        idx = self.appearance_combo.findData(settings.appearance_mode)
+        self.appearance_combo.setCurrentIndex(max(0, idx))
+        self.appearance_combo.currentIndexChanged.connect(self._on_appearance_changed)
+        general_form.addRow("Mode d'affichage :", self.appearance_combo)
 
         self.notifications_checkbox = QCheckBox(
             "Notifier la fin d'un téléchargement ou d'un partage", general_box
@@ -413,12 +438,18 @@ class ProfileTab(QWidget):
 
         layout.addStretch(1)
 
+        scroll_area.setWidget(scroll_content)
+        outer_layout.addWidget(scroll_area, 1)
+
+        # Kept outside the scroll area, pinned at the bottom, so it's always
+        # reachable without having to scroll all the way down first.
         save_row = QHBoxLayout()
+        save_row.setContentsMargins(8, 6, 8, 8)
         save_row.addStretch(1)
         self.save_button = QPushButton("Enregistrer", self)
         self.save_button.clicked.connect(self._on_save_clicked)
         save_row.addWidget(self.save_button)
-        layout.addLayout(save_row)
+        outer_layout.addLayout(save_row)
 
         self._disk_space_monitor.low_space_warning.connect(self._on_low_space_warning)
 
@@ -446,7 +477,15 @@ class ProfileTab(QWidget):
         # an instant switch, and it's low-stakes enough to persist right away.
         self._settings.theme = theme_id
         self._settings.save()
-        self.theme_changed.emit(theme_id)
+        self.theme_changed.emit(theme_id, self._settings.appearance_mode)
+
+    def _on_appearance_changed(self, index: int) -> None:
+        mode_id = self.appearance_combo.itemData(index)
+        if not mode_id:
+            return
+        self._settings.appearance_mode = mode_id
+        self._settings.save()
+        self.theme_changed.emit(self._settings.theme, mode_id)
 
     def _on_export_settings(self) -> None:
         path, _ = QFileDialog.getSaveFileName(

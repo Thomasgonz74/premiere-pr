@@ -1,6 +1,20 @@
-from PySide6.QtCore import QRectF, Qt
-from PySide6.QtGui import QGuiApplication, QPainterPath, QRegion
+from PySide6.QtCore import QEvent, QRect, QRectF, Qt
+from PySide6.QtGui import QCursor, QGuiApplication, QPainterPath, QRegion
 from PySide6.QtWidgets import QHBoxLayout, QMainWindow, QSizeGrip, QTabWidget, QVBoxLayout, QWidget
+
+RESIZE_MARGIN = 5  # px band around the frameless window's edge that grabs for resize
+MIN_WINDOW_SIZE = (640, 420)
+
+_CURSOR_FOR_EDGE = {
+    "left": Qt.SizeHorCursor,
+    "right": Qt.SizeHorCursor,
+    "top": Qt.SizeVerCursor,
+    "bottom": Qt.SizeVerCursor,
+    "top_left": Qt.SizeFDiagCursor,
+    "bottom_right": Qt.SizeFDiagCursor,
+    "top_right": Qt.SizeBDiagCursor,
+    "bottom_left": Qt.SizeBDiagCursor,
+}
 
 from torrent2000 import APP_NAME
 from torrent2000.config.settings import Settings
@@ -50,16 +64,31 @@ class MainWindow(QMainWindow):
         # The native Windows title bar can't be restyled to match any of
         # these themes (QSS doesn't reach OS-owned window chrome), so the
         # window runs frameless and AppTitleBar below stands in for it.
+        # Frameless also means the OS's own edge-resize handling is gone --
+        # see the eventFilter-based resize implementation below.
         self.setWindowFlags(Qt.Window | Qt.FramelessWindowHint)
+        self.setMinimumSize(*MIN_WINDOW_SIZE)
         self.resize(980, 640)
+
+        self._resize_edge = None
+        self._resize_start_geometry = None
+        self._resize_start_pos = None
 
         central = QWidget(self)
         central.setObjectName("centralWidget")
+        central.setMouseTracking(True)
+        central.installEventFilter(self)
+        self._central = central
         outer_layout = QVBoxLayout(central)
-        outer_layout.setContentsMargins(0, 0, 0, 0)
+        # A thin margin, left deliberately free of any child widget, is what
+        # lets central (and this eventFilter) actually receive mouse events
+        # near the window's edges -- if the title bar/tabs filled the window
+        # right to its border, they would be the widgets under the cursor
+        # there instead, and this window would never see the event.
+        outer_layout.setContentsMargins(RESIZE_MARGIN, RESIZE_MARGIN, RESIZE_MARGIN, RESIZE_MARGIN)
         outer_layout.setSpacing(0)
 
-        self._title_bar = AppTitleBar(APP_NAME, title_bar_style_for(settings.theme), central)
+        self._title_bar = AppTitleBar(APP_NAME, title_bar_style_for(settings.theme, settings.appearance_mode), central)
         outer_layout.addWidget(self._title_bar)
 
         tabs = QTabWidget(central)
@@ -81,9 +110,10 @@ class MainWindow(QMainWindow):
         self._add_tab.torrent_started.connect(self._on_torrent_started)
         auto_shutdown_service.shutdown_countdown_started.connect(self._on_shutdown_countdown_started)
 
-        # Frameless windows lose the OS's edge-resize handles; a QSizeGrip
-        # in the corner is the low-risk way to get drag-to-resize back
-        # without hooking native WM_NCHITTEST edge detection.
+        # A visible QSizeGrip reinforces the bottom-right corner as a resize
+        # handle (the eventFilter below already lets you drag from any edge
+        # or corner of the window, but a corner grip is a more discoverable
+        # affordance for the same gesture).
         grip_row = QHBoxLayout()
         grip_row.setContentsMargins(0, 0, 2, 2)
         grip_row.addStretch(1)
@@ -94,7 +124,78 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(central)
 
         self._corner_radius = 0
-        self._apply_window_style(settings.theme)
+        self._apply_window_style(settings.theme, settings.appearance_mode)
+
+    # -------------------------------------------------------- edge resize
+
+    def _edge_at(self, pos) -> str | None:
+        w, h = self._central.width(), self._central.height()
+        m = RESIZE_MARGIN
+        left, right = pos.x() <= m, pos.x() >= w - m
+        top, bottom = pos.y() <= m, pos.y() >= h - m
+        if top and left:
+            return "top_left"
+        if top and right:
+            return "top_right"
+        if bottom and left:
+            return "bottom_left"
+        if bottom and right:
+            return "bottom_right"
+        if left:
+            return "left"
+        if right:
+            return "right"
+        if top:
+            return "top"
+        if bottom:
+            return "bottom"
+        return None
+
+    def _perform_resize(self, global_pos) -> None:
+        delta = global_pos - self._resize_start_pos
+        geo = QRect(self._resize_start_geometry)
+        edge = self._resize_edge
+        min_w, min_h = MIN_WINDOW_SIZE
+
+        if "left" in edge:
+            new_left = geo.left() + delta.x()
+            if geo.right() - new_left + 1 >= min_w:
+                geo.setLeft(new_left)
+        if "right" in edge:
+            geo.setWidth(max(min_w, geo.width() + delta.x()))
+        if "top" in edge:
+            new_top = geo.top() + delta.y()
+            if geo.bottom() - new_top + 1 >= min_h:
+                geo.setTop(new_top)
+        if "bottom" in edge:
+            geo.setHeight(max(min_h, geo.height() + delta.y()))
+
+        self.setGeometry(geo)
+
+    def eventFilter(self, obj, event) -> bool:
+        if obj is self._central and not self.isMaximized():
+            event_type = event.type()
+            if event_type == QEvent.Type.MouseMove:
+                if self._resize_edge is not None and (event.buttons() & Qt.LeftButton):
+                    self._perform_resize(event.globalPosition().toPoint())
+                    return True
+                if not event.buttons():
+                    edge = self._edge_at(event.position().toPoint())
+                    self._central.setCursor(QCursor(_CURSOR_FOR_EDGE[edge]) if edge else QCursor(Qt.ArrowCursor))
+            elif event_type == QEvent.Type.MouseButtonPress:
+                if event.button() == Qt.LeftButton:
+                    edge = self._edge_at(event.position().toPoint())
+                    if edge is not None:
+                        self._resize_edge = edge
+                        self._resize_start_geometry = QRect(self.geometry())
+                        self._resize_start_pos = event.globalPosition().toPoint()
+                        return True
+            elif event_type == QEvent.Type.MouseButtonRelease:
+                if self._resize_edge is not None:
+                    self._resize_edge = None
+                    self._central.unsetCursor()
+                    return True
+        return super().eventFilter(obj, event)
 
     def _on_torrent_started(self) -> None:
         # Switching to the Downloads tab right after starting a download is
@@ -114,14 +215,14 @@ class MainWindow(QMainWindow):
     def _on_shutdown_dialog_finished(self) -> None:
         self._shutdown_dialog = None
 
-    def set_theme(self, theme_id: str) -> None:
+    def set_theme(self, theme_id: str, appearance_mode: str) -> None:
         app = QGuiApplication.instance()
         if app is not None:
-            apply_theme(app, theme_id)
-        self._apply_window_style(theme_id)
+            apply_theme(app, theme_id, appearance_mode)
+        self._apply_window_style(theme_id, appearance_mode)
 
-    def _apply_window_style(self, theme_id: str) -> None:
-        style = title_bar_style_for(theme_id)
+    def _apply_window_style(self, theme_id: str, appearance_mode: str) -> None:
+        style = title_bar_style_for(theme_id, appearance_mode)
         self._title_bar.apply_style(style)
         self._corner_radius = style.window_corner_radius
         self._update_corner_mask()

@@ -28,9 +28,9 @@ from torrent2000.utils.resource_path import resource_path
 TITLE_BAR_HEIGHT = 30
 _BUTTON_SIZE = 21
 
-_MODERN_HOVER_MIN_MAX = "#E5E5E5"
+_MODERN_HOVER_MIN_MAX_LIGHT = "#E5E5E5"
+_MODERN_HOVER_MIN_MAX_DARK = "#3A3A3A"
 _MODERN_HOVER_CLOSE = "#E81123"
-_MODERN_GLYPH_COLOR = "#000000"
 
 
 class _CaptionButton(QPushButton):
@@ -46,6 +46,7 @@ class _CaptionButton(QPushButton):
         self._fill_color = QColor("#3D6FC9")
         self._hover_color = QColor("#5C8CE0")
         self._glyph_color = QColor("#FFFFFF")
+        self._hover_glyph_color: QColor | None = None
         self._hover_radius = 0
         self.setFixedSize(_BUTTON_SIZE, TITLE_BAR_HEIGHT - 11)
         self.setFlat(True)
@@ -61,14 +62,21 @@ class _CaptionButton(QPushButton):
         self._variant = style.button_variant
         self._hover_radius = style.button_hover_radius
         if style.button_variant == "xp":
-            if self._glyph in ("close",):
-                self._fill_color, self._hover_color = QColor("#D42A2A"), QColor("#F04A3C")
+            if self._glyph == "close":
+                self._fill_color, self._hover_color = QColor(style.close_fill_color), QColor(style.close_hover_color)
             else:
-                self._fill_color, self._hover_color = QColor("#3D6FC9"), QColor("#5C8CE0")
-            self._glyph_color = QColor("#FFFFFF")
+                self._fill_color, self._hover_color = QColor(style.minmax_fill_color), QColor(style.minmax_hover_color)
+            self._glyph_color = QColor(style.button_glyph_color)
+            self._hover_glyph_color = (
+                QColor(style.button_hover_glyph_color) if style.button_hover_glyph_color else None
+            )
         else:
-            self._glyph_color = QColor(_MODERN_GLYPH_COLOR)
-            self._hover_color = QColor(_MODERN_HOVER_CLOSE if self._glyph == "close" else _MODERN_HOVER_MIN_MAX)
+            # "modern" glyphs track the caption's own text color, so they
+            # stay legible whether the title bar is light or dark.
+            self._glyph_color = QColor(style.title_text_color)
+            is_dark_caption = QColor(style.title_text_color).lightness() > 128
+            hover_min_max = _MODERN_HOVER_MIN_MAX_DARK if is_dark_caption else _MODERN_HOVER_MIN_MAX_LIGHT
+            self._hover_color = QColor(_MODERN_HOVER_CLOSE if self._glyph == "close" else hover_min_max)
         self.update()
 
     def paintEvent(self, event: QPaintEvent) -> None:
@@ -81,7 +89,8 @@ class _CaptionButton(QPushButton):
             painter.fillRect(rect, fill)
             painter.setPen(QPen(QColor("#FFFFFF"), 1))
             painter.drawRect(rect)
-            glyph_color = self._glyph_color
+            glyph_color = self._hover_glyph_color if (hovering and self._hover_glyph_color is not None) else self._glyph_color
+            painter.setPen(QPen(glyph_color, 1))
         else:
             painter.setRenderHint(QPainter.Antialiasing, True)
             if hovering:
