@@ -61,3 +61,5 @@ class TorrentRecord:
     current_tracker: str = ""
     file_list: Optional[list] = None
     danger_report: Optional[ScanResult] = None
+    sequential_download: bool = False
+    queue_position: int = -1

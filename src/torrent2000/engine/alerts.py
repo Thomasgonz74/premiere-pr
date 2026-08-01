@@ -26,6 +26,8 @@ def status_to_record(status: "lt.torrent_status", record: TorrentRecord) -> None
     record.all_time_uploaded = status.all_time_upload
     record.error = status.error or ""
     record.current_tracker = status.current_tracker
+    record.sequential_download = status.sequential_download
+    record.queue_position = int(status.queue_position)
     has_metadata = status.has_metadata
     record.is_magnet_awaiting_metadata = not has_metadata
     record.state = TorrentState.from_libtorrent_state(

@@ -23,6 +23,28 @@ ALERT_MASK = (
 )
 
 
+# libtorrent enc_policy/enc_level values for this installed build (2.0.13.0):
+# enc_policy.forced=0, enabled=1, disabled=2; enc_level.plaintext=1, rc4=2,
+# both=3. "forced" refuses plaintext outright (int(lt.enc_level.rc4)) as an
+# anti-ISP-throttling measure; "enabled" (libtorrent's own default) and
+# "disabled" both allow the full negotiation range since they don't need to
+# forbid plaintext, they just prefer/skip encryption respectively.
+_ENCRYPTION_POLICY_MAP = {
+    "forced": (int(lt.enc_policy.forced), int(lt.enc_level.rc4)),
+    "enabled": (int(lt.enc_policy.enabled), int(lt.enc_level.both)),
+    "disabled": (int(lt.enc_policy.disabled), int(lt.enc_level.both)),
+}
+
+
+def _encryption_settings_fragment(mode: str) -> dict:
+    policy, level = _ENCRYPTION_POLICY_MAP.get(mode, _ENCRYPTION_POLICY_MAP["enabled"])
+    return {
+        "out_enc_policy": policy,
+        "in_enc_policy": policy,
+        "allowed_enc_level": level,
+    }
+
+
 def _build_session_settings(settings: Settings) -> dict:
     base = lt.default_settings()
     base.update(
@@ -60,6 +82,7 @@ def _build_session_settings(settings: Settings) -> dict:
     base.update(proxy.build_settings_fragment(settings.proxy))
     if settings.network_interface:
         base.update(proxy.build_interface_fragment(settings.network_interface))
+    base.update(_encryption_settings_fragment(settings.encryption_mode))
     return base
 
 
@@ -215,18 +238,53 @@ class SessionManager(QObject):
         if handle is None or record is None:
             return
         record.awaiting_analysis = False
-        handle.auto_managed(True)
+        handle.set_flags(lt.torrent_flags.auto_managed)
         handle.resume()
 
     def pause_torrent(self, info_hash: str) -> None:
         handle = self._handles.get(info_hash)
-        if handle is not None:
-            handle.pause()
+        if handle is None:
+            return
+        # A torrent left auto-managed gets silently un-paused again by
+        # libtorrent's own queue manager within a couple of ticks (it decides
+        # pause/resume for auto-managed torrents itself based on the active
+        # download/seed limits) -- clearing the flag first is required for a
+        # manual pause to actually stick.
+        handle.unset_flags(lt.torrent_flags.auto_managed)
+        handle.pause()
 
     def resume_torrent(self, info_hash: str) -> None:
         handle = self._handles.get(info_hash)
+        if handle is None:
+            return
+        handle.set_flags(lt.torrent_flags.auto_managed)
+        handle.resume()
+
+    def set_sequential_download(self, info_hash: str, enabled: bool) -> None:
+        handle = self._handles.get(info_hash)
         if handle is not None:
-            handle.resume()
+            handle.set_sequential_download(enabled)
+
+    def get_queue_position(self, info_hash: str) -> int:
+        handle = self._handles.get(info_hash)
+        if handle is None:
+            return -1
+        return int(handle.queue_position())
+
+    def move_queue_up(self, info_hash: str) -> None:
+        handle = self._handles.get(info_hash)
+        if handle is not None:
+            handle.queue_position_up()
+
+    def move_queue_down(self, info_hash: str) -> None:
+        handle = self._handles.get(info_hash)
+        if handle is not None:
+            handle.queue_position_down()
+
+    def move_queue_top(self, info_hash: str) -> None:
+        handle = self._handles.get(info_hash)
+        if handle is not None:
+            handle.queue_position_top()
 
     def remove_torrent(self, info_hash: str, delete_files: bool = False) -> None:
         handle = self._handles.get(info_hash)
@@ -264,6 +322,12 @@ class SessionManager(QObject):
 
     def set_proxy(self, settings: Settings) -> None:
         self._session.apply_settings(proxy.build_settings_fragment(settings.proxy))
+
+    def set_encryption_mode(self, mode: str) -> None:
+        """Live-apply the protocol-encryption policy (see
+        _build_session_settings/_encryption_settings_fragment) without
+        requiring a session restart."""
+        self._session.apply_settings(_encryption_settings_fragment(mode))
 
     def set_network_interface(self, interface_name: str) -> None:
         fragment = proxy.build_interface_fragment(interface_name)

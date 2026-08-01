@@ -10,7 +10,7 @@ a = Analysis(
     pathex=[os.path.join(REPO_ROOT, "src")],
     binaries=[],
     datas=[
-        (os.path.join(REPO_ROOT, "resources", "styles", "luna.qss"), os.path.join("resources", "styles")),
+        (os.path.join(REPO_ROOT, "resources", "styles", "*.qss"), os.path.join("resources", "styles")),
         (os.path.join(REPO_ROOT, "assets", "icon.ico"), "assets"),
         (os.path.join(REPO_ROOT, "assets", "checkmark.png"), "assets"),
     ],

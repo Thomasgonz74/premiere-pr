@@ -33,8 +33,16 @@ def get_stats_db_path() -> Path:
     return get_app_data_dir() / "stats.sqlite3"
 
 
+def get_history_db_path() -> Path:
+    return get_app_data_dir() / "history.sqlite3"
+
+
 def get_session_state_path() -> Path:
     return get_app_data_dir() / "session_state.bin"
+
+
+def get_rss_seen_db_path() -> Path:
+    return get_app_data_dir() / "rss_seen.sqlite3"
 
 
 def get_default_download_dir() -> Path:

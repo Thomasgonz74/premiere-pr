@@ -1,6 +1,7 @@
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QHBoxLayout,
+    QHeaderView,
     QLineEdit,
     QPushButton,
     QTableWidget,
@@ -10,6 +11,8 @@ from PySide6.QtWidgets import (
 )
 
 from torrent2000.engine.torrent_item import TrackerInfo
+
+COLUMNS = ["URL", "Tier", "Dernière erreur", "Action"]
 
 
 class TrackerEditorWidget(QWidget):
@@ -25,10 +28,10 @@ class TrackerEditorWidget(QWidget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
 
-        self.table = QTableWidget(0, 3, self)
-        self.table.setHorizontalHeaderLabels(["URL", "Tier", "Dernière erreur"])
+        self.table = QTableWidget(0, len(COLUMNS), self)
+        self.table.setHorizontalHeaderLabels(COLUMNS)
         self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.table.horizontalHeader().setStretchLastSection(True)
+        self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
         layout.addWidget(self.table)
 
         add_row = QHBoxLayout()
@@ -38,9 +41,6 @@ class TrackerEditorWidget(QWidget):
         self.add_button = QPushButton("Ajouter", self)
         self.add_button.clicked.connect(self._on_add_clicked)
         add_row.addWidget(self.add_button)
-        self.remove_button = QPushButton("Retirer la sélection", self)
-        self.remove_button.clicked.connect(self._on_remove_clicked)
-        add_row.addWidget(self.remove_button)
         layout.addLayout(add_row)
 
     def bind(self, session_manager, info_hash: str | None) -> None:
@@ -59,6 +59,11 @@ class TrackerEditorWidget(QWidget):
             self.table.setItem(row, 1, QTableWidgetItem(str(tracker.tier)))
             self.table.setItem(row, 2, QTableWidgetItem(tracker.last_error))
 
+            remove_button = QPushButton("Retirer", self.table)
+            remove_button.setObjectName("dangerButton")
+            remove_button.clicked.connect(lambda checked=False, url=tracker.url: self._on_remove_row_clicked(url))
+            self.table.setCellWidget(row, 3, remove_button)
+
     def _on_add_clicked(self) -> None:
         url = self.url_input.text().strip()
         if not url or self._session_manager is None or self._info_hash is None:
@@ -67,12 +72,8 @@ class TrackerEditorWidget(QWidget):
         self.url_input.clear()
         self.refresh()
 
-    def _on_remove_clicked(self) -> None:
+    def _on_remove_row_clicked(self, url: str) -> None:
         if self._session_manager is None or self._info_hash is None:
             return
-        selected_rows = {index.row() for index in self.table.selectedIndexes()}
-        for row in selected_rows:
-            item = self.table.item(row, 0)
-            if item is not None:
-                self._session_manager.remove_tracker(self._info_hash, item.text())
+        self._session_manager.remove_tracker(self._info_hash, url)
         self.refresh()

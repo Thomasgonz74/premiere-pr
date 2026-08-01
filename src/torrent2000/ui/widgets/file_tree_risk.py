@@ -65,3 +65,11 @@ class FileTreeRiskWidget(QTreeWidget):
             if item.checkState(0) == Qt.Unchecked:
                 excluded.add(item.data(0, Qt.UserRole))
         return excluded
+
+    def check_all(self) -> None:
+        for i in range(self.topLevelItemCount()):
+            self.topLevelItem(i).setCheckState(0, Qt.Checked)
+
+    def uncheck_all(self) -> None:
+        for i in range(self.topLevelItemCount()):
+            self.topLevelItem(i).setCheckState(0, Qt.Unchecked)

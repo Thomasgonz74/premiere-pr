@@ -1,12 +1,13 @@
 """Decorative per-torrent, Game Boy Tetris-styled download-progress board.
 
-This is a lightweight *real* Tetris physics simulation (2D occupancy grid,
-the seven standard tetrominoes, straight-down gravity, per-column skylines)
-rather than a scripted fill order. That is deliberate: a rigid left-to-right
-fill reads as "just dots appearing, always the same shape", while dropping
-actual tetromino shapes onto a real grid naturally produces the varied
-shapes, occasional holes, and uneven skyline of a genuinely played Tetris
-board, matching a real Game Boy Tetris screenshot far better.
+This is a lightweight *real* Tetris-piece simulation (2D occupancy grid, the
+seven standard tetrominoes) rather than a scripted fill order. Pieces are
+placed at a position chosen uniformly at random among every spot on the
+board where they currently fit (RNG over the still-empty cells) -- not
+dropped via gravity onto the top of a per-column stack -- so the fill order
+is genuinely scattered instead of building up column-by-column from the
+floor, while still reading as recognizable Tetris shapes with holes and an
+uneven, varied look.
 
 Progress bookkeeping still works exactly like before, though:
 
@@ -16,13 +17,14 @@ Progress bookkeeping still works exactly like before, though:
   `TetrisProgressWidget`'s QTimer, is the only thing that ever advances the
   simulation (spawns/falls/locks pieces).
 * `filled_count` (settled/locked cells) never exceeds `target_filled_count`.
-* Because real gravity can trap holes under overhangs that no falling piece
-  can ever reach from below, the model switches to a guaranteed "finishing"
-  pass for the last small tail of the board (or whenever no standard
-  tetromino can be placed anywhere any more): remaining empty cells --
-  including previously trapped holes -- are filled directly, with no shape
-  constraint, so reaching 100% always means a literally solid board with
-  zero holes, even though holes are expected and fine before that.
+* Random placement can still leave gaps no standard tetromino fits into
+  (e.g. an isolated single-cell hole), so the model switches to a guaranteed
+  "finishing" pass for the last small tail of the board (or whenever no
+  standard tetromino can be placed anywhere any more): remaining empty
+  cells -- chosen randomly, not in scan order -- are filled directly, with
+  no shape constraint, so reaching 100% always means a literally solid
+  board with zero holes, even though holes are expected and fine before
+  that.
 
 TetrisBoardModel has zero Qt dependency and is covered by
 tests/test_tetris_board_model.py. TetrisProgressWidget is the thin Qt
@@ -165,33 +167,30 @@ class TetrisBoardModel:
                 return False
         return True
 
-    def _drop_row(self, cells: Cells, col: int) -> Optional[int]:
-        """Simulate gravity: return the resting row for `cells` spawned at
-        `col`, or None if it cannot even be placed at the top (topped out)."""
-        if not self._fits(cells, 0, col):
-            return None
-        row = 0
-        while self._fits(cells, row + 1, col):
-            row += 1
-        return row
-
     def _find_placement(self) -> Optional[Tuple[str, Cells, int, int]]:
-        """Return (shape_name, cells, col, resting_row) for a valid random
-        placement, or None if no standard tetromino fits anywhere (topped
-        out)."""
+        """Return (shape_name, cells, col, row) for a placement chosen
+        uniformly at random among *every currently valid position on the
+        board* -- pieces are no longer dropped via gravity onto the top of
+        the existing stack, they can land anywhere there's room. That is
+        what makes the fill order genuinely random/scattered (RNG over the
+        still-empty cells) rather than always building up column-by-column
+        from the floor, which read as too regular. Returns None only if no
+        standard tetromino fits anywhere on the board (topped out)."""
         for _ in range(SPAWN_ATTEMPTS):
             shape_name = random.choice(TETROMINO_NAMES)
             cells = random.choice(TETROMINOES[shape_name])
             width = max(dc for _, dc in cells) + 1
-            if width > self.cols:
+            height = max(dr for dr, _ in cells) + 1
+            if width > self.cols or height > self.rows:
                 continue
+            row = random.randint(0, self.rows - height)
             col = random.randint(0, self.cols - width)
-            resting_row = self._drop_row(cells, col)
-            if resting_row is not None:
-                return shape_name, cells, col, resting_row
+            if self._fits(cells, row, col):
+                return shape_name, cells, col, row
 
         # Exhaustive fallback: guarantees we find a placement if one exists
-        # anywhere, so random bad luck never causes a spurious top-out.
+        # anywhere, so random bad luck (or a nearly-full board) never causes
+        # a spurious top-out.
         shapes = list(TETROMINO_NAMES)
         random.shuffle(shapes)
         for shape_name in shapes:
@@ -199,14 +198,17 @@ class TetrisBoardModel:
             random.shuffle(rotations)
             for cells in rotations:
                 width = max(dc for _, dc in cells) + 1
-                if width > self.cols:
+                height = max(dr for dr, _ in cells) + 1
+                if width > self.cols or height > self.rows:
                     continue
-                columns = list(range(self.cols - width + 1))
-                random.shuffle(columns)
-                for col in columns:
-                    resting_row = self._drop_row(cells, col)
-                    if resting_row is not None:
-                        return shape_name, cells, col, resting_row
+                rows_ = list(range(self.rows - height + 1))
+                cols_ = list(range(self.cols - width + 1))
+                random.shuffle(rows_)
+                random.shuffle(cols_)
+                for row in rows_:
+                    for col in cols_:
+                        if self._fits(cells, row, col):
+                            return shape_name, cells, col, row
         return None
 
     # -- locking helpers ----------------------------------------------------
@@ -230,14 +232,12 @@ class TetrisBoardModel:
         self._lock_cells(piece.cells_on_board())
 
     def _collect_empty_cells(self, limit: int) -> List[Tuple[int, int]]:
-        cells: List[Tuple[int, int]] = []
-        for r in range(self.rows):
-            for c in range(self.cols):
-                if not self.grid[r][c]:
-                    cells.append((r, c))
-                    if len(cells) >= limit:
-                        return cells
-        return cells
+        """A uniformly random sample of up to `limit` still-empty cells (not
+        a fixed top-to-bottom/left-to-right scan), so the finishing/fallback
+        fill stays random too, consistent with normal piece placement."""
+        empty = [(r, c) for r in range(self.rows) for c in range(self.cols) if not self.grid[r][c]]
+        random.shuffle(empty)
+        return empty[:limit]
 
     def _in_finishing_mode(self) -> bool:
         return (self.total_cells - self.filled_count) <= self._finish_tail
@@ -254,8 +254,8 @@ class TetrisBoardModel:
 
         if self._in_finishing_mode():
             # Guaranteed-completion cleanup pass: fill whatever empty cells
-            # remain directly, no shape/gravity constraint needed since this
-            # is just guaranteeing exact completion, not gameplay realism.
+            # remain directly, no shape constraint needed since this is just
+            # guaranteeing exact completion, not gameplay realism.
             cells = self._collect_empty_cells(CELLS_PER_PIECE)
             if not cells:
                 return False
@@ -264,27 +264,27 @@ class TetrisBoardModel:
 
         placement = self._find_placement()
         if placement is None:
-            # Topped out: overhangs/holes mean no standard tetromino fits
-            # anywhere without an immediate collision. Fall back to filling
-            # remaining empty cells directly so progress never gets stuck.
+            # Topped out: the remaining gaps are too fragmented for any
+            # standard tetromino to fit. Fall back to filling remaining empty
+            # cells directly so progress never gets stuck.
             cells = self._collect_empty_cells(CELLS_PER_PIECE)
             if not cells:
                 return False
             self._lock_cells(cells)
             return True
 
-        shape_name, cells, col, resting_row = placement
+        shape_name, cells, col, target_row = placement
         if instant:
-            board_cells = [(resting_row + dr, col + dc) for dr, dc in cells]
+            board_cells = [(target_row + dr, col + dc) for dr, dc in cells]
             self._lock_cells(board_cells)
         else:
-            start_row = max(0, resting_row - MAX_FALL_ROWS)
+            start_row = max(0, target_row - MAX_FALL_ROWS)
             self.current_piece = FallingPiece(
                 shape_name=shape_name,
                 cells=cells,
                 col=col,
                 row=start_row,
-                target_row=resting_row,
+                target_row=target_row,
             )
         return True
 

@@ -1,7 +1,13 @@
-"""Pure, Qt-free leveling math: level n is reached once the user's cumulative
-downloaded+uploaded bytes hit threshold(n) = 1 GiB * 1.4^(n-1). This is an
-absolute cumulative threshold (not a summed series of chunks), matching the
+"""Pure, Qt-free leveling math: level n is reached once the user's weighted
+cumulative bytes hit threshold(n) = 1 GiB * 1.4^(n-1). This is an absolute
+cumulative threshold (not a summed series of chunks), matching the
 requirement's own formula directly.
+
+Uploaded bytes count for *more* than downloaded bytes toward the level
+(UPLOAD_LEVEL_WEIGHT): 1 GiB uploaded is worth 1.5 GiB downloaded, to reward
+seeding. This weighting applies only to the level/threshold math -- the raw
+totals shown in the UI (StatsSnapshot.total_downloaded/total_uploaded) stay
+the real, unweighted byte counts.
 """
 
 import math
@@ -10,6 +16,7 @@ from torrent2000.stats.models import StatsSnapshot
 
 LEVEL_BASE_BYTES = 1024**3  # 1 GiB
 LEVEL_GROWTH = 1.4
+UPLOAD_LEVEL_WEIGHT = 1.5
 
 
 def threshold_for_level(level: int) -> int:
@@ -42,14 +49,18 @@ def progress_within_level(total_bytes: int) -> float:
     return max(0.0, min(1.0, (total_bytes - lower) / (upper - lower)))
 
 
+def weighted_total_bytes(total_downloaded: int, total_uploaded: int) -> int:
+    return total_downloaded + round(total_uploaded * UPLOAD_LEVEL_WEIGHT)
+
+
 def snapshot(total_downloaded: int, total_uploaded: int) -> StatsSnapshot:
-    total = total_downloaded + total_uploaded
-    level = level_for_total_bytes(total)
+    weighted_total = weighted_total_bytes(total_downloaded, total_uploaded)
+    level = level_for_total_bytes(weighted_total)
     return StatsSnapshot(
         total_downloaded=total_downloaded,
         total_uploaded=total_uploaded,
         level=level,
-        progress_to_next=progress_within_level(total),
+        progress_to_next=progress_within_level(weighted_total),
         current_threshold=threshold_for_level(level),
         next_threshold=threshold_for_level(level + 1),
     )

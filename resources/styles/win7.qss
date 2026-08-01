@@ -1,0 +1,302 @@
+/* Torrent 2000 -- "Windows 7 (Aero)" skin.
+
+   Reference colors:
+     window background     #F0F0F0
+     Aero accent blue       #3D95F2  (hover glow, selection, progress)
+     button face gradient   #FFFFFF -> #E1E1E1, glassy rounded look
+     text                   #000000
+     disabled text          #A0A0A0
+
+   The title bar (glassy blue-white gradient) is NOT drawn by this
+   stylesheet -- see src/torrent2000/ui/widgets/app_title_bar.py.
+*/
+
+* {
+    font-family: "Segoe UI", "MS Shell Dlg 2", sans-serif;
+    font-size: 9pt;
+}
+
+QMainWindow, QWidget#centralWidget {
+    background-color: #F0F0F0;
+}
+
+QWidget {
+    background-color: #F0F0F0;
+    color: #000000;
+}
+
+/* ---------------------------------------------------------------------
+   Tabs -- rounded top corners with a subtle glossy gradient, matching
+   Aero's soft-glass look.
+   --------------------------------------------------------------------- */
+
+QTabWidget::pane {
+    border: 1px solid #A0A0A0;
+    background-color: #F0F0F0;
+    top: -1px;
+}
+
+QTabBar::tab {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #FDFDFD, stop:1 #DCEBFB);
+    border: 1px solid #A0A0A0;
+    border-bottom: none;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    padding: 5px 16px;
+    margin-right: 2px;
+    color: #000000;
+}
+
+QTabBar::tab:selected {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #FFFFFF, stop:1 #F0F0F0);
+    border-color: #A0A0A0;
+    border-bottom: 1px solid #F0F0F0;
+    margin-top: 0px;
+}
+
+QTabBar::tab:!selected {
+    margin-top: 2px;
+}
+
+/* ---------------------------------------------------------------------
+   Group boxes -- thin gray border, plain (not bold) title, matching
+   Win7's quieter dialog typography.
+   --------------------------------------------------------------------- */
+
+QGroupBox {
+    border: 1px solid #B4B4B4;
+    border-radius: 4px;
+    margin-top: 10px;
+    padding-top: 6px;
+    background-color: #F0F0F0;
+    font-weight: normal;
+    color: #000000;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 4px;
+    color: #000000;
+}
+
+/* ---------------------------------------------------------------------
+   Buttons -- glossy Aero gradient, rounded corners, blue glow on hover.
+   --------------------------------------------------------------------- */
+
+QPushButton {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #FFFFFF, stop:0.5 #F5F5F5, stop:1 #E1E1E1);
+    border: 1px solid #ADADAD;
+    border-radius: 4px;
+    padding: 4px 12px;
+    min-height: 18px;
+    color: #000000;
+}
+
+QPushButton:hover:!pressed {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #ECF6FE, stop:0.5 #DCECFE, stop:1 #C4E0FC);
+    border: 1px solid #3D95F2;
+}
+
+QPushButton:pressed {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #C4E0FC, stop:1 #DCECFE);
+    border: 1px solid #2A6FCB;
+    padding: 5px 11px 3px 13px;
+}
+
+QPushButton:default {
+    border-width: 2px;
+    border-color: #3D95F2;
+}
+
+QPushButton:disabled {
+    background: #F0F0F0;
+    border: 1px solid #D3D3D3;
+    color: #A0A0A0;
+}
+
+/* Secondary destructive actions -- same glossy button, muted red tint,
+   roughly half the strength of the title bar's close-hover red. */
+QPushButton#dangerButton {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #FBE4E1, stop:0.5 #F5C6C0, stop:1 #EDA9A1);
+    border: 1px solid #C97F78;
+    border-radius: 4px;
+    padding: 2px 10px;
+    min-height: 16px;
+    color: #000000;
+}
+
+QPushButton#dangerButton:hover:!pressed {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #FCEFED, stop:1 #F2BAB2);
+    border: 1px solid #3D95F2;
+}
+
+QPushButton#dangerButton:pressed {
+    background: #E5A29B;
+    border: 1px solid #8A3A34;
+    padding: 3px 9px 1px 11px;
+}
+
+/* ---------------------------------------------------------------------
+   Inputs -- flat white boxes, thin gray border, blue focus/hover glow.
+   --------------------------------------------------------------------- */
+
+QLineEdit, QSpinBox, QAbstractSpinBox {
+    background-color: #FFFFFF;
+    border: 1px solid #B4B4B4;
+    border-radius: 3px;
+    padding: 2px 4px;
+    selection-background-color: #3D95F2;
+    selection-color: #FFFFFF;
+}
+
+QLineEdit:hover, QSpinBox:hover, QAbstractSpinBox:hover {
+    border: 1px solid #3D95F2;
+}
+
+QComboBox {
+    background-color: #FFFFFF;
+    border: 1px solid #B4B4B4;
+    border-radius: 3px;
+    padding: 2px 4px;
+}
+
+QComboBox:hover {
+    border: 1px solid #3D95F2;
+}
+
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: right;
+    width: 20px;
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #FFFFFF, stop:1 #E1E1E1);
+    border-left: 1px solid #B4B4B4;
+    border-top-right-radius: 3px;
+    border-bottom-right-radius: 3px;
+}
+
+QComboBox::down-arrow {
+    width: 8px;
+    height: 8px;
+    image: none;
+    border-left: 3px solid transparent;
+    border-right: 3px solid transparent;
+    border-top: 4px solid #404040;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #FFFFFF;
+    border: 1px solid #B4B4B4;
+    selection-background-color: #3D95F2;
+    selection-color: #FFFFFF;
+}
+
+/* ---------------------------------------------------------------------
+   Checkboxes -- flat white box, blue check, rounded corners.
+   --------------------------------------------------------------------- */
+
+QCheckBox::indicator {
+    width: 13px;
+    height: 13px;
+    background-color: #FFFFFF;
+    border: 1px solid #B4B4B4;
+    border-radius: 3px;
+}
+
+QCheckBox::indicator:hover {
+    border: 1px solid #3D95F2;
+}
+
+QCheckBox::indicator:checked {
+    background-color: #FFFFFF;
+    border: 1px solid #3D95F2;
+    image: url(theme:checkmark.png);
+}
+
+/* ---------------------------------------------------------------------
+   Sliders -- thin groove, round-ish blue-accented handle.
+   --------------------------------------------------------------------- */
+
+QSlider::groove:horizontal {
+    height: 4px;
+    background-color: #C7C7C7;
+    border-radius: 2px;
+}
+
+QSlider::handle:horizontal {
+    width: 14px;
+    height: 14px;
+    margin: -6px 0;
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #FFFFFF, stop:1 #DCECFE);
+    border: 1px solid #3D95F2;
+    border-radius: 7px;
+}
+
+QTableWidget, QTreeWidget {
+    background-color: #FFFFFF;
+    alternate-background-color: #F5F9FE;
+    gridline-color: #E1E1E1;
+    border: 1px solid #B4B4B4;
+    border-radius: 3px;
+    selection-background-color: #3D95F2;
+    selection-color: #FFFFFF;
+}
+
+QHeaderView::section {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #FDFDFD, stop:1 #E5E5E5);
+    border: 1px solid #C7C7C7;
+    padding: 3px;
+    font-weight: normal;
+    color: #000000;
+}
+
+QProgressBar {
+    border: 1px solid #B4B4B4;
+    border-radius: 3px;
+    background-color: #FFFFFF;
+    text-align: center;
+    color: #000000;
+}
+
+QProgressBar::chunk {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #6FC4FB, stop:1 #2A85E0);
+    border-radius: 2px;
+    margin: 1px;
+}
+
+QLabel {
+    background: transparent;
+}
+
+QSplitter::handle {
+    background-color: #F0F0F0;
+}
+
+QScrollBar:vertical {
+    background: #F0F0F0;
+    width: 16px;
+    border: 1px solid #D3D3D3;
+}
+
+QScrollBar::handle:vertical {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #E1E1E1, stop:1 #C7C7C7);
+    border: 1px solid #ADADAD;
+    border-radius: 3px;
+    min-height: 24px;
+}
+
+/* ---------------------------------------------------------------------
+   Custom title bar sits directly above the tab widget in a frameless
+   window -- drop the pane's top border to avoid a double line/gap.
+   --------------------------------------------------------------------- */
+
+QTabWidget#mainTabs::pane {
+    border-top: none;
+    top: 0px;
+}
+
+QSizeGrip {
+    background-color: #F0F0F0;
+    width: 16px;
+    height: 16px;
+}

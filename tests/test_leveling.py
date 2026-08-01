@@ -1,9 +1,11 @@
 from torrent2000.stats.leveling import (
     LEVEL_BASE_BYTES,
+    UPLOAD_LEVEL_WEIGHT,
     level_for_total_bytes,
     progress_within_level,
     snapshot,
     threshold_for_level,
+    weighted_total_bytes,
 )
 
 
@@ -73,3 +75,30 @@ def test_snapshot_combines_download_and_upload():
     assert snap.total_uploaded == LEVEL_BASE_BYTES // 2
     assert snap.current_threshold == threshold_for_level(1)
     assert snap.next_threshold == threshold_for_level(2)
+
+
+def test_upload_is_weighted_at_150_percent():
+    assert UPLOAD_LEVEL_WEIGHT == 1.5
+    # 1 GiB uploaded should count as 1.5 GiB toward the level.
+    assert weighted_total_bytes(0, LEVEL_BASE_BYTES) == round(LEVEL_BASE_BYTES * 1.5)
+    # Downloaded bytes are not weighted at all.
+    assert weighted_total_bytes(LEVEL_BASE_BYTES, 0) == LEVEL_BASE_BYTES
+
+
+def test_upload_only_reaches_a_higher_level_than_equal_download_only():
+    upload_only = snapshot(0, LEVEL_BASE_BYTES)
+    download_only = snapshot(LEVEL_BASE_BYTES, 0)
+    assert upload_only.progress_to_next > download_only.progress_to_next
+
+
+def test_snapshot_displays_raw_totals_even_though_level_uses_weighted_total():
+    # 0.5 GiB down + 0.5 GiB up is only 1.0 GiB raw (exactly level 1), but the
+    # weighted total (0.5 + 0.75 = 1.25 GiB) pushes progress further into
+    # level 1 than an unweighted sum would.
+    down = LEVEL_BASE_BYTES // 2
+    up = LEVEL_BASE_BYTES // 2
+    snap = snapshot(down, up)
+    assert snap.total_downloaded == down  # raw, unweighted, for honest display
+    assert snap.total_uploaded == up
+    unweighted_progress = (down + up - threshold_for_level(1)) / (threshold_for_level(2) - threshold_for_level(1))
+    assert snap.progress_to_next > unweighted_progress

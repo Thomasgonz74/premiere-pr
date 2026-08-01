@@ -1,43 +1,52 @@
-"""Custom-painted Windows XP "Luna" caption bar.
+"""Custom-painted caption bar standing in for the native OS title bar.
 
-QSS cannot restyle the OS-owned window frame/title bar (on Windows 11 that
-frame is a native dark title bar, nothing like XP), so to make Torrent 2000
-actually look like a real XP window -- horizontal blue gradient caption,
-bold white title, red close button -- the main window is created frameless
-(see MainWindow) and this widget stands in for the native title bar: it
-paints the gradient + icon + title, hosts the minimize/maximize/close
-buttons, and implements click-drag-to-move plus double-click-to-maximize.
+QSS cannot restyle the OS-owned window frame (on Windows 11 that's a native
+dark title bar, nothing like any of the four themes this app offers), so the
+main window is created frameless and this widget paints the caption itself:
+background (gradient for XP/7, flat for 10/11), icon, title, and the
+minimize/maximize/close buttons, plus click-drag-to-move and
+double-click-to-maximize. Its exact look is driven by a TitleBarStyle (see
+theme/theme_manager.py) so the same widget serves all four themes.
 """
 
-from PySide6.QtCore import QPoint, Qt
-from PySide6.QtGui import QColor, QIcon, QLinearGradient, QMouseEvent, QPainter, QPaintEvent, QPen
+from PySide6.QtCore import QPoint, QRectF, Qt
+from PySide6.QtGui import (
+    QColor,
+    QIcon,
+    QLinearGradient,
+    QMouseEvent,
+    QPainter,
+    QPainterPath,
+    QPaintEvent,
+    QPen,
+)
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QWidget
 
+from torrent2000.ui.theme.theme_manager import TitleBarStyle
 from torrent2000.utils.resource_path import resource_path
 
 TITLE_BAR_HEIGHT = 30
-
-# Horizontal gradient, lighter blue on the left blending to the darker
-# "active caption" blue on the right -- matches the reference XP screenshots.
-CAPTION_LIGHT = QColor("#3169C6")
-CAPTION_DARK = QColor("#0A246A")
-
 _BUTTON_SIZE = 21
+
+_MODERN_HOVER_MIN_MAX = "#E5E5E5"
+_MODERN_HOVER_CLOSE = "#E81123"
+_MODERN_GLYPH_COLOR = "#000000"
 
 
 class _CaptionButton(QPushButton):
-    """A small flat XP caption button that paints its own glyph.
+    """A caption button that paints its own glyph -- either the XP style
+    (a colored square with a white-outlined glyph) or the "modern" style
+    shared by 7/10/11 (transparent until hover, then a light/red highlight
+    with a thin glyph, the close button's glyph turning white on hover)."""
 
-    minimize/maximize get a blue-ish fill so they read as part of the
-    caption; close is distinctly red, both per the reference screenshots,
-    and brightens further on hover.
-    """
-
-    def __init__(self, glyph: str, fill_color: str, hover_color: str, parent=None) -> None:
+    def __init__(self, glyph: str, parent=None) -> None:
         super().__init__(parent)
         self._glyph = glyph
-        self._fill_color = QColor(fill_color)
-        self._hover_color = QColor(hover_color)
+        self._variant = "xp"
+        self._fill_color = QColor("#3D6FC9")
+        self._hover_color = QColor("#5C8CE0")
+        self._glyph_color = QColor("#FFFFFF")
+        self._hover_radius = 0
         self.setFixedSize(_BUTTON_SIZE, TITLE_BAR_HEIGHT - 11)
         self.setFlat(True)
         self.setCursor(Qt.ArrowCursor)
@@ -48,24 +57,54 @@ class _CaptionButton(QPushButton):
         self._glyph = glyph
         self.update()
 
+    def apply_style(self, style: TitleBarStyle) -> None:
+        self._variant = style.button_variant
+        self._hover_radius = style.button_hover_radius
+        if style.button_variant == "xp":
+            if self._glyph in ("close",):
+                self._fill_color, self._hover_color = QColor("#D42A2A"), QColor("#F04A3C")
+            else:
+                self._fill_color, self._hover_color = QColor("#3D6FC9"), QColor("#5C8CE0")
+            self._glyph_color = QColor("#FFFFFF")
+        else:
+            self._glyph_color = QColor(_MODERN_GLYPH_COLOR)
+            self._hover_color = QColor(_MODERN_HOVER_CLOSE if self._glyph == "close" else _MODERN_HOVER_MIN_MAX)
+        self.update()
+
     def paintEvent(self, event: QPaintEvent) -> None:
         painter = QPainter(self)
         rect = self.rect().adjusted(0, 0, -1, -1)
+        hovering = self.underMouse() and self.isEnabled()
 
-        fill = self._hover_color if (self.underMouse() and self.isEnabled()) else self._fill_color
-        painter.fillRect(rect, fill)
-        painter.setPen(QPen(QColor("#FFFFFF"), 1))
-        painter.drawRect(rect)
+        if self._variant == "xp":
+            fill = self._hover_color if hovering else self._fill_color
+            painter.fillRect(rect, fill)
+            painter.setPen(QPen(QColor("#FFFFFF"), 1))
+            painter.drawRect(rect)
+            glyph_color = self._glyph_color
+        else:
+            painter.setRenderHint(QPainter.Antialiasing, True)
+            if hovering:
+                path = QPainterPath()
+                path.addRoundedRect(QRectF(rect), self._hover_radius, self._hover_radius)
+                painter.fillPath(path, self._hover_color)
+            painter.setRenderHint(QPainter.Antialiasing, False)
+            # Close's glyph turns white against its red hover fill, matching
+            # real Windows 10/11 behavior; min/max stay dark on their light
+            # gray hover fill.
+            glyph_color = QColor("#FFFFFF") if (hovering and self._glyph == "close") else self._glyph_color
+            painter.setPen(QPen(glyph_color, 1))
 
-        cx = rect.center().x()
-        cy = rect.center().y()
+        cx, cy = rect.center().x(), rect.center().y()
         if self._glyph == "min":
             painter.drawLine(cx - 4, cy + 4, cx + 4, cy + 4)
         elif self._glyph == "max":
             painter.drawRect(cx - 4, cy - 4, 8, 8)
         elif self._glyph == "restore":
             painter.drawRect(cx - 5, cy - 1, 6, 6)
-            painter.fillRect(cx - 4, cy - 4, 6, 6, fill)
+            if self._variant == "xp":
+                fill = self._hover_color if hovering else self._fill_color
+                painter.fillRect(cx - 4, cy - 4, 6, 6, fill)
             painter.drawRect(cx - 4, cy - 4, 6, 6)
         elif self._glyph == "close":
             painter.drawLine(cx - 4, cy - 4, cx + 4, cy + 4)
@@ -73,14 +112,16 @@ class _CaptionButton(QPushButton):
         painter.end()
 
 
-class XPTitleBar(QWidget):
-    """Frameless-window stand-in for the native XP title bar."""
+class AppTitleBar(QWidget):
+    """Frameless-window stand-in for the native title bar, themeable via
+    apply_style()."""
 
-    def __init__(self, title: str, parent=None) -> None:
+    def __init__(self, title: str, style: TitleBarStyle, parent=None) -> None:
         super().__init__(parent)
-        self.setObjectName("xpTitleBar")
+        self.setObjectName("appTitleBar")
         self.setFixedHeight(TITLE_BAR_HEIGHT)
         self._drag_offset: QPoint | None = None
+        self._style = style
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(4, 0, 4, 0)
@@ -94,31 +135,40 @@ class XPTitleBar(QWidget):
         layout.addWidget(self._icon_label)
 
         self._title_label = QLabel(title, self)
-        font = self._title_label.font()
-        font.setBold(True)
-        self._title_label.setFont(font)
-        self._title_label.setStyleSheet("color: #FFFFFF; background: transparent;")
         layout.addWidget(self._title_label)
 
         layout.addStretch(1)
 
-        self._minimize_button = _CaptionButton("min", "#3D6FC9", "#5C8CE0", self)
+        self._minimize_button = _CaptionButton("min", self)
         self._minimize_button.setToolTip("Réduire")
         self._minimize_button.clicked.connect(self._on_minimize)
         layout.addWidget(self._minimize_button)
 
-        self._maximize_button = _CaptionButton("max", "#3D6FC9", "#5C8CE0", self)
+        self._maximize_button = _CaptionButton("max", self)
         self._maximize_button.setToolTip("Agrandir")
         self._maximize_button.clicked.connect(self._on_maximize_restore)
         layout.addWidget(self._maximize_button)
 
-        self._close_button = _CaptionButton("close", "#D42A2A", "#F04A3C", self)
+        self._close_button = _CaptionButton("close", self)
         self._close_button.setToolTip("Fermer")
         self._close_button.clicked.connect(self._on_close)
         layout.addWidget(self._close_button)
 
+        self.apply_style(style)
+
     def set_title(self, title: str) -> None:
         self._title_label.setText(title)
+
+    def apply_style(self, style: TitleBarStyle) -> None:
+        self._style = style
+        font = self._title_label.font()
+        font.setFamily(style.font_family)
+        font.setBold(style.font_bold)
+        self._title_label.setFont(font)
+        self._title_label.setStyleSheet(f"color: {style.title_text_color}; background: transparent;")
+        for button in (self._minimize_button, self._maximize_button, self._close_button):
+            button.apply_style(style)
+        self.update()
 
     def refresh_maximize_glyph(self) -> None:
         window = self.window()
@@ -129,10 +179,14 @@ class XPTitleBar(QWidget):
 
     def paintEvent(self, event: QPaintEvent) -> None:
         painter = QPainter(self)
-        gradient = QLinearGradient(0, 0, self.width(), 0)
-        gradient.setColorAt(0.0, CAPTION_LIGHT)
-        gradient.setColorAt(1.0, CAPTION_DARK)
-        painter.fillRect(self.rect(), gradient)
+        if self._style.caption_gradient is not None:
+            left, right = self._style.caption_gradient
+            gradient = QLinearGradient(0, 0, self.width(), 0)
+            gradient.setColorAt(0.0, QColor(left))
+            gradient.setColorAt(1.0, QColor(right))
+            painter.fillRect(self.rect(), gradient)
+        else:
+            painter.fillRect(self.rect(), QColor(self._style.caption_flat_color))
         painter.end()
         super().paintEvent(event)
 

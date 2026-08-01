@@ -12,7 +12,7 @@
    The title bar (blue gradient caption + red close button) is NOT drawn by
    this stylesheet -- QSS cannot restyle the OS-owned window frame, so that
    part is a custom-painted widget: see
-   src/torrent2000/ui/widgets/xp_title_bar.py
+   src/torrent2000/ui/widgets/app_title_bar.py
 */
 
 * {
@@ -45,6 +45,8 @@ QTabBar::tab {
     background-color: #D4D0C8;
     border: 1px solid #ACA899;
     border-bottom: none;
+    border-top-left-radius: 3px;
+    border-top-right-radius: 3px;
     padding: 4px 14px;
     margin-right: 1px;
     color: #000000;
@@ -87,15 +89,20 @@ QGroupBox::title {
 }
 
 /* ---------------------------------------------------------------------
-   Buttons -- classic Win32 3D beveled push buttons. Flat gray/silver fill,
-   crisp raised bevel (light top/left, dark bottom/right). Bevel inverts
-   on :pressed to look pushed in.
+   Buttons -- classic XP "Luna" push buttons: gray/silver fill, a raised
+   bevel (light top/left, dark bottom/right), and slightly rounded corners
+   (real XP buttons are not sharp-cornered like Windows Classic). The
+   corner radius is kept small so it renders as a chunky/pixelated round
+   rather than a smooth modern curve. Bevel inverts on :pressed to look
+   pushed in; hover gets a light blue "hot-track" outline, matching XP's
+   own hover highlight.
    --------------------------------------------------------------------- */
 
 QPushButton {
     background-color: #ECE9D8;
     border-width: 1px;
     border-style: outset;
+    border-radius: 3px;
     border-top-color: #FFFFFF;
     border-left-color: #FFFFFF;
     border-right-color: #404040;
@@ -107,10 +114,7 @@ QPushButton {
 
 QPushButton:hover:!pressed {
     background-color: #ECE9D8;
-    border-top-color: #FFFFFF;
-    border-left-color: #FFFFFF;
-    border-right-color: #000000;
-    border-bottom-color: #000000;
+    border-color: #3169C6;
 }
 
 QPushButton:pressed {
@@ -136,6 +140,39 @@ QPushButton:disabled {
     border-right-color: #ACA899;
     border-bottom-color: #ACA899;
     color: #ACA899;
+}
+
+/* Secondary destructive actions (remove a torrent / remove a tracker row)
+   -- same beveled button, tinted a muted red at roughly half the strength
+   of the title bar's close button (#D42A2A) so it reads as "destructive"
+   without competing with that button's full-alarm red. */
+QPushButton#dangerButton {
+    background-color: #E5A29B;
+    border-width: 1px;
+    border-style: outset;
+    border-radius: 3px;
+    border-top-color: #F5D3CE;
+    border-left-color: #F5D3CE;
+    border-right-color: #8A3A34;
+    border-bottom-color: #8A3A34;
+    padding: 2px 10px;
+    min-height: 16px;
+    color: #000000;
+}
+
+QPushButton#dangerButton:hover:!pressed {
+    background-color: #EAB0AA;
+    border-color: #3169C6;
+}
+
+QPushButton#dangerButton:pressed {
+    background-color: #C97F78;
+    border-style: inset;
+    border-top-color: #8A3A34;
+    border-left-color: #8A3A34;
+    border-right-color: #F5D3CE;
+    border-bottom-color: #F5D3CE;
+    padding: 3px 9px 1px 11px;
 }
 
 /* ---------------------------------------------------------------------
@@ -298,7 +335,7 @@ QScrollBar::handle:vertical {
 }
 
 /* ---------------------------------------------------------------------
-   Custom XP title bar (src/torrent2000/ui/widgets/xp_title_bar.py) sits
+   Custom title bar (src/torrent2000/ui/widgets/app_title_bar.py) sits
    directly above the tab widget in a frameless window -- the window frame
    that used to separate them is gone, so drop the pane's top border to
    avoid a double line/gap directly under the caption.

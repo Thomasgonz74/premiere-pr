@@ -8,7 +8,7 @@ does turn on must default to a fail-closed ("force proxy") kill switch.
 
 import libtorrent as lt
 
-from torrent2000.config.settings import ProxySettings, Settings
+from torrent2000.config.settings import ProxySettings, RssFeedSubscription, Settings
 from torrent2000.engine import add_params
 
 
@@ -69,3 +69,35 @@ def test_from_magnet_uri_sets_discovery_flags_when_restricted():
 def test_from_magnet_uri_leaves_discovery_flags_unset_by_default():
     atp = add_params.from_magnet_uri(_MAGNET, "C:/downloads")
     assert atp.flags & _DISCOVERY_FLAGS == 0
+
+
+def test_auto_shutdown_disabled_by_default():
+    # Explicit product requirement: this must never be on unless the user
+    # opts in from the Profile tab themselves.
+    settings = Settings()
+    assert settings.auto_shutdown_enabled is False
+
+
+def test_new_feature_settings_round_trip(tmp_path, monkeypatch):
+    monkeypatch.setenv("TORRENT2000_DATA_DIR", str(tmp_path))
+
+    settings = Settings.load()
+    settings.rss_feeds = [RssFeedSubscription(url="https://example.com/feed.xml", filter_keyword="linux")]
+    settings.watch_folder_enabled = True
+    settings.watch_folder_path = "C:/watch"
+    settings.disk_space_warning_threshold_mb = 2048
+    settings.encryption_mode = "forced"
+    settings.auto_shutdown_enabled = True
+    settings.auto_shutdown_action = "hibernate"
+    settings.save()
+
+    reloaded = Settings.load()
+    assert len(reloaded.rss_feeds) == 1
+    assert reloaded.rss_feeds[0].url == "https://example.com/feed.xml"
+    assert reloaded.rss_feeds[0].filter_keyword == "linux"
+    assert reloaded.watch_folder_enabled is True
+    assert reloaded.watch_folder_path == "C:/watch"
+    assert reloaded.disk_space_warning_threshold_mb == 2048
+    assert reloaded.encryption_mode == "forced"
+    assert reloaded.auto_shutdown_enabled is True
+    assert reloaded.auto_shutdown_action == "hibernate"

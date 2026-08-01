@@ -155,25 +155,47 @@ def test_progress_can_increase_after_settling():
 
 
 def test_piece_fall_distance_is_capped_on_tall_boards():
-    # (Adapted travel-span test.) Even when the true resting row (gravity
-    # drop distance) is far from the spawn edge, a single piece's visible
-    # fall is bounded to MAX_FALL_ROWS ticks so a big backlog doesn't take a
-    # long time to visually resolve.
+    # Even though placement is random (a piece can land anywhere, not just
+    # near the floor), a single piece's visible fall animation is still
+    # bounded to MAX_FALL_ROWS ticks so it never takes a long time to
+    # visually resolve, no matter how far its target row is from row 0.
     random.seed(2)
     model = TetrisBoardModel(rows=20, cols=10)
-    model.set_progress(1 / model.total_cells)  # first piece drops on an empty board
+    model.set_progress(1 / model.total_cells)  # first piece placed on an empty board
     model.step()  # spawn
     piece = model.current_piece
     assert piece is not None
     fall_distance = piece.target_row - piece.row
     assert fall_distance <= MAX_FALL_ROWS
-    assert piece.target_row >= model.rows - 4  # genuinely lands near the floor
 
     ticks_to_land = 0
     while model.current_piece is not None:
         model.step()
         ticks_to_land += 1
     assert ticks_to_land == fall_distance + 1
+
+
+def test_placement_is_scattered_not_gravity_biased_toward_the_floor():
+    # This is the actual fix being tested: pieces used to always drop via
+    # gravity onto the top of the existing per-column stack, so an empty
+    # board's first several pieces always landed near the floor -- reading
+    # as "filling by line" rather than random. Placement is now chosen
+    # uniformly among every valid spot on the board, so across many spawns
+    # on a tall, otherwise-empty board, target rows should spread out
+    # instead of clustering near the bottom.
+    random.seed(3)
+    model = TetrisBoardModel(rows=20, cols=10)
+    target_rows = []
+    for _ in range(15):
+        model.current_piece = None
+        placement = model._find_placement()
+        assert placement is not None
+        _, _, _, target_row = placement
+        target_rows.append(target_row)
+
+    near_floor = sum(1 for r in target_rows if r >= model.rows - 4)
+    assert near_floor < len(target_rows)  # not every piece hugs the floor
+    assert min(target_rows) < model.rows // 2  # some pieces land in the upper half
 
 
 def test_large_backlog_catches_up_quickly():

@@ -1,5 +1,6 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
+    QCheckBox,
     QGroupBox,
     QHBoxLayout,
     QHeaderView,
@@ -18,7 +19,8 @@ from torrent2000.ui.widgets.tetris_progress import TetrisProgressWidget
 from torrent2000.ui.widgets.tracker_editor import TrackerEditorWidget
 from torrent2000.utils.formatting import human_eta, human_rate, human_size
 
-COLUMNS = ["Nom", "Progression", "↓ Vitesse", "↑ Vitesse", "Pairs", "État"]
+COLUMNS = ["Nom", "Progression", "↓ Vitesse", "↑ Vitesse", "Pairs", "État", "Action"]
+ACTION_COLUMN = 6
 
 _STATE_LABELS = {
     TorrentState.QUEUED: "En attente",
@@ -66,11 +68,23 @@ class DownloadsTab(QWidget):
         self.resume_button = QPushButton("Reprendre", details_box)
         self.resume_button.clicked.connect(self._on_resume_clicked)
         actions_row.addWidget(self.resume_button)
-        self.remove_button = QPushButton("Retirer", details_box)
-        self.remove_button.clicked.connect(self._on_remove_clicked)
-        actions_row.addWidget(self.remove_button)
         actions_row.addStretch(1)
         details_layout.addLayout(actions_row)
+
+        priority_row = QHBoxLayout()
+        self.queue_label = QLabel("File d'attente : —", details_box)
+        priority_row.addWidget(self.queue_label)
+        self.queue_up_button = QPushButton("Monter la priorité", details_box)
+        self.queue_up_button.clicked.connect(self._on_queue_up_clicked)
+        priority_row.addWidget(self.queue_up_button)
+        self.queue_down_button = QPushButton("Baisser la priorité", details_box)
+        self.queue_down_button.clicked.connect(self._on_queue_down_clicked)
+        priority_row.addWidget(self.queue_down_button)
+        self.sequential_checkbox = QCheckBox("Téléchargement séquentiel (pour lecture en streaming)", details_box)
+        self.sequential_checkbox.toggled.connect(self._on_sequential_toggled)
+        priority_row.addWidget(self.sequential_checkbox)
+        priority_row.addStretch(1)
+        details_layout.addLayout(priority_row)
 
         self.tracker_editor = TrackerEditorWidget(details_box)
         details_layout.addWidget(self.tracker_editor)
@@ -140,6 +154,13 @@ class DownloadsTab(QWidget):
             item = self.table.item(row, col)
             item.setData(Qt.UserRole, record.info_hash)
 
+        remove_button = QPushButton("Retirer", self.table)
+        remove_button.setObjectName("dangerButton")
+        remove_button.clicked.connect(
+            lambda checked=False, ih=record.info_hash: self._session_manager.remove_torrent(ih)
+        )
+        self.table.setCellWidget(row, ACTION_COLUMN, remove_button)
+
     def _reindex_rows(self) -> None:
         self._rows.clear()
         for row in range(self.table.rowCount()):
@@ -156,6 +177,7 @@ class DownloadsTab(QWidget):
             self._selected_info_hash = None
             self.tracker_editor.bind(self._session_manager, None)
             self.tracker_label.setText("Tracker actuel : —")
+            self.queue_label.setText("File d'attente : —")
             return
         info_hash = selected[0].data(Qt.UserRole)
         self._selected_info_hash = info_hash
@@ -166,6 +188,15 @@ class DownloadsTab(QWidget):
 
     def _update_details(self, record: TorrentRecord) -> None:
         self.tracker_label.setText(f"Tracker actuel : {record.current_tracker or '—'}")
+        position = record.queue_position
+        # libtorrent reports -1 once a torrent is actually active (not
+        # waiting its turn) -- a meaningful position only exists while it's
+        # still queued behind the active-torrent limit.
+        queue_text = f"position {position + 1}" if position >= 0 else "actif (pas en attente)"
+        self.queue_label.setText(f"File d'attente : {queue_text}")
+        self.sequential_checkbox.blockSignals(True)
+        self.sequential_checkbox.setChecked(record.sequential_download)
+        self.sequential_checkbox.blockSignals(False)
 
     # -------------------------------------------------------------- actions
 
@@ -177,6 +208,14 @@ class DownloadsTab(QWidget):
         if self._selected_info_hash:
             self._session_manager.resume_torrent(self._selected_info_hash)
 
-    def _on_remove_clicked(self) -> None:
+    def _on_queue_up_clicked(self) -> None:
         if self._selected_info_hash:
-            self._session_manager.remove_torrent(self._selected_info_hash)
+            self._session_manager.move_queue_up(self._selected_info_hash)
+
+    def _on_queue_down_clicked(self) -> None:
+        if self._selected_info_hash:
+            self._session_manager.move_queue_down(self._selected_info_hash)
+
+    def _on_sequential_toggled(self, checked: bool) -> None:
+        if self._selected_info_hash:
+            self._session_manager.set_sequential_download(self._selected_info_hash, checked)

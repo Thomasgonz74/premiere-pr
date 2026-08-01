@@ -1,3 +1,4 @@
+from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
     QFileDialog,
     QGroupBox,
@@ -20,6 +21,10 @@ from torrent2000.ui.widgets.file_tree_risk import FileTreeRiskWidget
 
 
 class AddTorrentTab(QWidget):
+    # Emitted right after a torrent is actually started (not just added-and-
+    # awaiting-analysis) so MainWindow can switch to the Downloads tab.
+    torrent_started = Signal()
+
     def __init__(self, session_manager: SessionManager, settings: Settings, parent=None) -> None:
         super().__init__(parent)
         self._session_manager = session_manager
@@ -82,6 +87,16 @@ class AddTorrentTab(QWidget):
 
         self.file_tree = FileTreeRiskWidget(analysis_box)
         analysis_layout.addWidget(self.file_tree)
+
+        selection_row = QHBoxLayout()
+        self.check_all_button = QPushButton("Tout cocher", analysis_box)
+        self.check_all_button.clicked.connect(self.file_tree.check_all)
+        selection_row.addWidget(self.check_all_button)
+        self.uncheck_all_button = QPushButton("Tout décocher", analysis_box)
+        self.uncheck_all_button.clicked.connect(self.file_tree.uncheck_all)
+        selection_row.addWidget(self.uncheck_all_button)
+        selection_row.addStretch(1)
+        analysis_layout.addLayout(selection_row)
 
         layout.addWidget(analysis_box, 1)
 
@@ -164,11 +179,13 @@ class AddTorrentTab(QWidget):
                 self._session_manager.exclude_files(self._pending_magnet_hash, excluded)
             self._session_manager.start_after_analysis(self._pending_magnet_hash)
             self._reset_form()
+            self.torrent_started.emit()
             return
 
         if self._torrent_path:
             self._session_manager.add_torrent_from_file(self._torrent_path, dest, excluded)
             self._reset_form()
+            self.torrent_started.emit()
             return
 
         magnet_uri = self.magnet_input.text().strip()
@@ -176,6 +193,7 @@ class AddTorrentTab(QWidget):
             info_hash = self._session_manager.add_torrent_from_magnet(magnet_uri, dest)
             self._session_manager.start_after_analysis(info_hash)
             self._reset_form()
+            self.torrent_started.emit()
             return
 
         QMessageBox.information(self, "Aucune source", "Sélectionnez un fichier .torrent ou saisissez un lien magnet.")
