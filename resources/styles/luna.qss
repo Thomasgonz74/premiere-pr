@@ -1,0 +1,316 @@
+/* Torrent 2000 -- "Windows Classic" XP retro skin (matches real XP
+   "Windows Classic" control theme, NOT the blue "Luna" skin).
+
+   Reference Win32 system colors:
+     window / button face   #ECE9D8
+     button highlight       #FFFFFF   (top/left bevel on raised controls)
+     button light shadow    #808080   (bottom/right bevel on raised controls)
+     button dark shadow     #404040   (outer-most bottom/right line)
+     window text            #000000
+     disabled text          #ACA899
+
+   The title bar (blue gradient caption + red close button) is NOT drawn by
+   this stylesheet -- QSS cannot restyle the OS-owned window frame, so that
+   part is a custom-painted widget: see
+   src/torrent2000/ui/widgets/xp_title_bar.py
+*/
+
+* {
+    font-family: "Tahoma", "MS Shell Dlg 2", sans-serif;
+    font-size: 9pt;
+}
+
+QMainWindow, QWidget#centralWidget {
+    background-color: #ECE9D8;
+}
+
+QWidget {
+    background-color: #ECE9D8;
+    color: #000000;
+}
+
+/* ---------------------------------------------------------------------
+   Tabs -- flat gray/tan, NOT a blue gradient. The selected tab is a hair
+   lighter and merges seamlessly with the pane below it (no visible seam);
+   unselected tabs are flatter and sit slightly lower/behind.
+   --------------------------------------------------------------------- */
+
+QTabWidget::pane {
+    border: 1px solid #ACA899;
+    background-color: #ECE9D8;
+    top: -1px;
+}
+
+QTabBar::tab {
+    background-color: #D4D0C8;
+    border: 1px solid #ACA899;
+    border-bottom: none;
+    padding: 4px 14px;
+    margin-right: 1px;
+    color: #000000;
+}
+
+QTabBar::tab:selected {
+    background-color: #ECE9D8;
+    border-color: #ACA899;
+    border-bottom: 1px solid #ECE9D8;
+    margin-top: 0px;
+}
+
+QTabBar::tab:!selected {
+    margin-top: 2px;
+}
+
+/* ---------------------------------------------------------------------
+   Group boxes -- thin etched/sunken groove border (approximated with a
+   solid outer line plus a lighter inset on the bottom/right), plain black
+   bold title text.
+   --------------------------------------------------------------------- */
+
+QGroupBox {
+    border: 1px solid #ACA899;
+    border-right-color: #FFFFFF;
+    border-bottom-color: #FFFFFF;
+    border-radius: 0px;
+    margin-top: 10px;
+    padding-top: 6px;
+    background-color: #ECE9D8;
+    font-weight: bold;
+    color: #000000;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 4px;
+    color: #000000;
+}
+
+/* ---------------------------------------------------------------------
+   Buttons -- classic Win32 3D beveled push buttons. Flat gray/silver fill,
+   crisp raised bevel (light top/left, dark bottom/right). Bevel inverts
+   on :pressed to look pushed in.
+   --------------------------------------------------------------------- */
+
+QPushButton {
+    background-color: #ECE9D8;
+    border-width: 1px;
+    border-style: outset;
+    border-top-color: #FFFFFF;
+    border-left-color: #FFFFFF;
+    border-right-color: #404040;
+    border-bottom-color: #404040;
+    padding: 4px 12px;
+    min-height: 18px;
+    color: #000000;
+}
+
+QPushButton:hover:!pressed {
+    background-color: #ECE9D8;
+    border-top-color: #FFFFFF;
+    border-left-color: #FFFFFF;
+    border-right-color: #000000;
+    border-bottom-color: #000000;
+}
+
+QPushButton:pressed {
+    background-color: #D4D0C8;
+    border-style: inset;
+    border-top-color: #808080;
+    border-left-color: #808080;
+    border-right-color: #FFFFFF;
+    border-bottom-color: #FFFFFF;
+    padding: 5px 11px 3px 13px;
+}
+
+QPushButton:default {
+    border-width: 2px;
+}
+
+QPushButton:disabled {
+    background-color: #ECE9D8;
+    border-width: 1px;
+    border-style: outset;
+    border-top-color: #FFFFFF;
+    border-left-color: #FFFFFF;
+    border-right-color: #ACA899;
+    border-bottom-color: #ACA899;
+    color: #ACA899;
+}
+
+/* ---------------------------------------------------------------------
+   Inputs -- sunken white boxes with a thin dark/light groove border.
+   --------------------------------------------------------------------- */
+
+QLineEdit, QSpinBox, QAbstractSpinBox {
+    background-color: #FFFFFF;
+    border-width: 1px;
+    border-style: inset;
+    border-top-color: #808080;
+    border-left-color: #808080;
+    border-right-color: #FFFFFF;
+    border-bottom-color: #FFFFFF;
+    padding: 2px 4px;
+    selection-background-color: #316AC5;
+    selection-color: #FFFFFF;
+}
+
+QComboBox {
+    background-color: #FFFFFF;
+    border-width: 1px;
+    border-style: inset;
+    border-top-color: #808080;
+    border-left-color: #808080;
+    border-right-color: #FFFFFF;
+    border-bottom-color: #FFFFFF;
+    padding: 2px 4px;
+}
+
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: right;
+    width: 18px;
+    background-color: #ECE9D8;
+    border-width: 1px;
+    border-style: outset;
+    border-top-color: #FFFFFF;
+    border-left-color: #FFFFFF;
+    border-right-color: #404040;
+    border-bottom-color: #404040;
+}
+
+QComboBox::down-arrow {
+    width: 8px;
+    height: 8px;
+    image: none;
+    border-left: 3px solid transparent;
+    border-right: 3px solid transparent;
+    border-top: 4px solid #000000;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #FFFFFF;
+    border: 1px solid #808080;
+    selection-background-color: #316AC5;
+    selection-color: #FFFFFF;
+}
+
+/* ---------------------------------------------------------------------
+   Checkboxes -- sunken 3D well (inverse bevel of a button).
+   --------------------------------------------------------------------- */
+
+QCheckBox::indicator {
+    width: 12px;
+    height: 12px;
+    background-color: #FFFFFF;
+    border-width: 1px;
+    border-style: inset;
+    border-top-color: #808080;
+    border-left-color: #808080;
+    border-right-color: #FFFFFF;
+    border-bottom-color: #FFFFFF;
+}
+
+QCheckBox::indicator:checked {
+    background-color: #FFFFFF;
+    image: url(theme:checkmark.png);
+}
+
+/* ---------------------------------------------------------------------
+   Sliders -- thin groove, raised beveled thumb.
+   --------------------------------------------------------------------- */
+
+QSlider::groove:horizontal {
+    height: 4px;
+    background-color: #ACA899;
+    border: 1px solid #808080;
+}
+
+QSlider::handle:horizontal {
+    width: 12px;
+    margin: -6px 0;
+    background-color: #ECE9D8;
+    border-width: 1px;
+    border-style: outset;
+    border-top-color: #FFFFFF;
+    border-left-color: #FFFFFF;
+    border-right-color: #404040;
+    border-bottom-color: #404040;
+}
+
+QTableWidget, QTreeWidget {
+    background-color: #FFFFFF;
+    alternate-background-color: #F3F1E7;
+    gridline-color: #D4D0C8;
+    border: 1px solid #808080;
+    selection-background-color: #316AC5;
+    selection-color: #FFFFFF;
+}
+
+QHeaderView::section {
+    background-color: #ECE9D8;
+    border-width: 1px;
+    border-style: outset;
+    border-top-color: #FFFFFF;
+    border-left-color: #FFFFFF;
+    border-right-color: #808080;
+    border-bottom-color: #808080;
+    padding: 3px;
+    font-weight: bold;
+    color: #000000;
+}
+
+QProgressBar {
+    border: 1px solid #808080;
+    background-color: #FFFFFF;
+    text-align: center;
+    color: #000000;
+}
+
+QProgressBar::chunk {
+    background-color: #316AC5;
+    margin: 1px;
+}
+
+QLabel {
+    background: transparent;
+}
+
+QSplitter::handle {
+    background-color: #ECE9D8;
+}
+
+QScrollBar:vertical {
+    background: #ECE9D8;
+    width: 16px;
+    border: 1px solid #808080;
+}
+
+QScrollBar::handle:vertical {
+    background-color: #ECE9D8;
+    border-width: 1px;
+    border-style: outset;
+    border-top-color: #FFFFFF;
+    border-left-color: #FFFFFF;
+    border-right-color: #404040;
+    border-bottom-color: #404040;
+    min-height: 24px;
+}
+
+/* ---------------------------------------------------------------------
+   Custom XP title bar (src/torrent2000/ui/widgets/xp_title_bar.py) sits
+   directly above the tab widget in a frameless window -- the window frame
+   that used to separate them is gone, so drop the pane's top border to
+   avoid a double line/gap directly under the caption.
+   --------------------------------------------------------------------- */
+
+QTabWidget#mainTabs::pane {
+    border-top: none;
+    top: 0px;
+}
+
+QSizeGrip {
+    background-color: #ECE9D8;
+    width: 16px;
+    height: 16px;
+}

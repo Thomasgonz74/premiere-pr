@@ -1,0 +1,24 @@
+[project]
+name = "torrent2000"
+version = "0.1.0"
+description = "Torrent 2000 - client BitTorrent retro Windows XP"
+requires-python = ">=3.12"
+dependencies = [
+    "PySide6>=6.11",
+    "libtorrent>=2.0.11",
+    "psutil>=5.9",
+]
+
+[project.scripts]
+torrent2000 = "torrent2000.app:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
