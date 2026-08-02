@@ -33,11 +33,31 @@ from torrent2000.engine.bandwidth_scheduler import BandwidthScheduler
 from torrent2000.engine.disk_space_monitor import DiskSpaceMonitor
 from torrent2000.engine.session_manager import SessionManager
 from torrent2000.stats.history_service import HistoryService
-from torrent2000.stats.leveling import UPLOAD_LEVEL_WEIGHT, weighted_total_bytes
+from torrent2000.stats.leveling import UPLOAD_LEVEL_WEIGHT, score_factors_for, weighted_total_bytes
 from torrent2000.stats.models import StatsSnapshot
 from torrent2000.stats.service import StatsService
+from torrent2000.theme_ids import CCCP_THEME_ID, MACOS_THEME_ID
 from torrent2000.ui.theme.theme_manager import APPEARANCE_MODE_LABELS, THEME_LABELS
 from torrent2000.utils.formatting import human_size
+
+# Shown once, right when the user switches TO one of these joke themes, so
+# the rule changes they're about to hit aren't a silent surprise.
+_THEME_SWITCH_NOTICES = {
+    MACOS_THEME_ID: (
+        "Ça marche. C'est tout.",
+        "Nouveau design, nouvelle puce, mêmes fichiers -- mais désormais "
+        "deux fois moins de points de niveau pour chaque Go téléchargé ou "
+        "envoyé. L'élégance a un prix, et il est facturé en Go.",
+    ),
+    CCCP_THEME_ID: (
+        "Bienvenue, camarade.",
+        "Sous ce régime, la propriété individuelle de fichiers est abolie : "
+        "impossible de démarrer ou reprendre un téléchargement tant que ce "
+        "thème reste actif -- on est là pour partager, pas pour posséder. "
+        "En échange, le partage est glorifié : vos envois rapportent "
+        "désormais 3 fois plus de points de niveau. Le peuple vous remercie.",
+    ),
+}
 
 _PROXY_TYPE_LABELS = [
     ("Aucun", "none"),
@@ -477,7 +497,15 @@ class ProfileTab(QWidget):
         # an instant switch, and it's low-stakes enough to persist right away.
         self._settings.theme = theme_id
         self._settings.save()
+        # CCCP's "no downloading" rule takes effect immediately, pausing
+        # any in-progress downloads -- MainWindow shows the "N paused"
+        # notice reactively via SessionManager.theme_downloads_paused.
+        self._session_manager.enforce_theme_download_policy()
         self.theme_changed.emit(theme_id, self._settings.appearance_mode)
+        notice = _THEME_SWITCH_NOTICES.get(theme_id)
+        if notice:
+            title, text = notice
+            QMessageBox.information(self, title, text)
 
     def _on_appearance_changed(self, index: int) -> None:
         mode_id = self.appearance_combo.itemData(index)
@@ -584,9 +612,17 @@ class ProfileTab(QWidget):
     def _on_snapshot_updated(self, snap: StatsSnapshot) -> None:
         self.level_label.setText(f"Niveau {snap.level}")
         self.level_progress_bar.setValue(int(snap.progress_to_next * 1000))
-        weighted = weighted_total_bytes(snap.total_downloaded, snap.total_uploaded)
+        download_factor, upload_factor = score_factors_for(self._settings.theme)
+        weighted = weighted_total_bytes(snap.total_downloaded, snap.total_uploaded, download_factor, upload_factor)
         self.level_progress_bar.setFormat(f"{human_size(weighted)} / {human_size(snap.next_threshold)}")
+        multiplier_note = ""
+        if self._settings.theme == MACOS_THEME_ID:
+            multiplier_note = " -- thème macOS : scores divisés par 2"
+        elif self._settings.theme == CCCP_THEME_ID:
+            multiplier_note = " -- thème CCCP : partage compté x3, téléchargement bloqué"
+        else:
+            multiplier_note = f" (compté à {int(UPLOAD_LEVEL_WEIGHT * 100)}% pour le niveau)"
         self.totals_label.setText(
-            f"Téléchargé : {human_size(snap.total_downloaded)} -- Envoyé : {human_size(snap.total_uploaded)} "
-            f"(compté à {int(UPLOAD_LEVEL_WEIGHT * 100)}% pour le niveau)"
+            f"Téléchargé : {human_size(snap.total_downloaded)} -- Envoyé : {human_size(snap.total_uploaded)}"
+            f"{multiplier_note}"
         )

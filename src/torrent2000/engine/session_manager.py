@@ -8,6 +8,7 @@ from torrent2000.config.settings import Settings
 from torrent2000.engine import add_params, persistence, proxy, trackers as tracker_ops
 from torrent2000.engine.alerts import AlertDispatcher, status_to_record
 from torrent2000.engine.torrent_item import TorrentRecord, TorrentState, TrackerInfo
+from torrent2000.theme_ids import CCCP_THEME_ID
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +35,14 @@ _ENCRYPTION_POLICY_MAP = {
     "enabled": (int(lt.enc_policy.enabled), int(lt.enc_level.both)),
     "disabled": (int(lt.enc_policy.disabled), int(lt.enc_level.both)),
 }
+
+
+def _is_download_start_blocked(theme_id: str, progress: float) -> bool:
+    """True when the active theme's "no downloading" rule (currently just
+    CCCP -- "on est là pour partager, pas posséder") refuses to start or
+    resume a torrent at this progress. A torrent already at 100% is pure
+    seeding, which every theme allows -- sharing is the whole point."""
+    return theme_id == CCCP_THEME_ID and progress < 1.0
 
 
 def _encryption_settings_fragment(mode: str) -> dict:
@@ -93,6 +102,12 @@ class SessionManager(QObject):
     torrent_finished = Signal(str)
     metadata_received = Signal(str)
     tracker_error = Signal(str, str)
+    # The CCCP theme's "no downloading, only sharing" rule refused to start
+    # or resume this not-yet-complete torrent (str info_hash).
+    download_blocked_by_theme = Signal(str)
+    # Switching TO the CCCP theme paused this many still-downloading
+    # torrents outright (see enforce_theme_download_policy).
+    theme_downloads_paused = Signal(int)
 
     def __init__(self, settings: Settings, parent=None) -> None:
         super().__init__(parent)
@@ -169,7 +184,18 @@ class SessionManager(QObject):
         atp = add_params.from_torrent_file(
             path, save_path, excluded_indices, restrict_discovery=self._settings.restrict_discovery
         )
-        return self._add(atp, awaiting_analysis=False)
+        blocked = _is_download_start_blocked(self._settings.theme, progress=0.0)
+        if blocked:
+            # Unlike a magnet (always added paused pending analysis), a
+            # .torrent file normally starts downloading immediately -- hold
+            # it paused instead so "no downloading under CCCP" is actually
+            # enforced here too, not just at start_after_analysis/resume.
+            atp.flags &= ~lt.torrent_flags.auto_managed
+            atp.flags |= lt.torrent_flags.paused
+        info_hash = self._add(atp, awaiting_analysis=False)
+        if blocked:
+            self.download_blocked_by_theme.emit(info_hash)
+        return info_hash
 
     def add_torrent_from_magnet(self, uri: str, save_path: str | None = None) -> str:
         save_path = save_path or str(get_default_download_dir())
@@ -237,6 +263,9 @@ class SessionManager(QObject):
         record = self._records.get(info_hash)
         if handle is None or record is None:
             return
+        if _is_download_start_blocked(self._settings.theme, record.progress):
+            self.download_blocked_by_theme.emit(info_hash)
+            return
         record.awaiting_analysis = False
         handle.set_flags(lt.torrent_flags.auto_managed)
         handle.resume()
@@ -255,10 +284,31 @@ class SessionManager(QObject):
 
     def resume_torrent(self, info_hash: str) -> None:
         handle = self._handles.get(info_hash)
+        record = self._records.get(info_hash)
         if handle is None:
+            return
+        if record is not None and _is_download_start_blocked(self._settings.theme, record.progress):
+            self.download_blocked_by_theme.emit(info_hash)
             return
         handle.set_flags(lt.torrent_flags.auto_managed)
         handle.resume()
+
+    def enforce_theme_download_policy(self) -> None:
+        """Call after the active theme changes. CCCP's "no downloading,
+        only sharing" rule pauses every torrent still short of 100% the
+        moment it's switched on; switching away doesn't auto-resume them,
+        matching how pause/resume already require an explicit user action
+        everywhere else in the app."""
+        if self._settings.theme != CCCP_THEME_ID:
+            return
+        paused_count = 0
+        for info_hash, record in list(self._records.items()):
+            if record.awaiting_analysis or record.progress >= 1.0 or record.state == TorrentState.PAUSED:
+                continue
+            self.pause_torrent(info_hash)
+            paused_count += 1
+        if paused_count:
+            self.theme_downloads_paused.emit(paused_count)
 
     def set_sequential_download(self, info_hash: str, enabled: bool) -> None:
         handle = self._handles.get(info_hash)

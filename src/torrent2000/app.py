@@ -39,11 +39,11 @@ def main() -> int:
     init_theme_runtime(app)
 
     settings = Settings.load()
-    apply_theme(app, settings.theme)
+    apply_theme(app, settings.theme, settings.appearance_mode)
 
     session_manager = SessionManager(settings)
     stats_store = StatsStore(get_stats_db_path())
-    stats_service = StatsService(stats_store, session_manager)
+    stats_service = StatsService(stats_store, session_manager, settings)
     share_limit_service = ShareLimitService(session_manager)
     bandwidth_scheduler = BandwidthScheduler(session_manager, settings)
     notification_service = NotificationService(session_manager, share_limit_service, settings, app)

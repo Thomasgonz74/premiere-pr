@@ -1,8 +1,9 @@
 from PySide6.QtCore import QObject, QTimer, Signal
 
+from torrent2000.config.settings import Settings
 from torrent2000.engine.session_manager import SessionManager
 from torrent2000.engine.torrent_item import TorrentRecord
-from torrent2000.stats.leveling import snapshot
+from torrent2000.stats.leveling import score_factors_for, snapshot
 from torrent2000.stats.models import StatsSnapshot
 from torrent2000.stats.store import StatsStore
 
@@ -17,10 +18,13 @@ class StatsService(QObject):
 
     snapshot_updated = Signal(object)  # StatsSnapshot
 
-    def __init__(self, store: StatsStore, session_manager: SessionManager, parent=None) -> None:
+    def __init__(
+        self, store: StatsStore, session_manager: SessionManager, settings: Settings | None = None, parent=None
+    ) -> None:
         super().__init__(parent)
         self._store = store
         self._session_manager = session_manager
+        self._settings = settings
         self._current: dict[str, tuple[int, int]] = {}
         self._last_seen: dict[str, tuple[int, int]] = {}
 
@@ -63,7 +67,9 @@ class StatsService(QObject):
 
     def current_snapshot(self) -> StatsSnapshot:
         total_down, total_up = self._store.get_totals()
-        return snapshot(total_down, total_up)
+        theme_id = self._settings.theme if self._settings is not None else None
+        download_factor, upload_factor = score_factors_for(theme_id)
+        return snapshot(total_down, total_up, download_factor, upload_factor)
 
     def shutdown(self) -> None:
         self._flush_timer.stop()

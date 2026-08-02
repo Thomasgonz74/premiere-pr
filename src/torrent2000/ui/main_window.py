@@ -1,6 +1,6 @@
 from PySide6.QtCore import QEvent, QRect, QRectF, Qt
 from PySide6.QtGui import QCursor, QGuiApplication, QPainterPath, QRegion
-from PySide6.QtWidgets import QHBoxLayout, QMainWindow, QSizeGrip, QTabWidget, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QHBoxLayout, QMainWindow, QMessageBox, QSizeGrip, QTabWidget, QVBoxLayout, QWidget
 
 RESIZE_MARGIN = 5  # px band around the frameless window's edge that grabs for resize
 MIN_WINDOW_SIZE = (640, 420)
@@ -109,6 +109,8 @@ class MainWindow(QMainWindow):
 
         self._add_tab.torrent_started.connect(self._on_torrent_started)
         auto_shutdown_service.shutdown_countdown_started.connect(self._on_shutdown_countdown_started)
+        session_manager.download_blocked_by_theme.connect(self._on_download_blocked_by_theme)
+        session_manager.theme_downloads_paused.connect(self._on_theme_downloads_paused)
 
         # A visible QSizeGrip reinforces the bottom-right corner as a resize
         # handle (the eventFilter below already lets you drag from any edge
@@ -182,6 +184,24 @@ class MainWindow(QMainWindow):
                 if not event.buttons():
                     edge = self._edge_at(event.position().toPoint())
                     self._central.setCursor(QCursor(_CURSOR_FOR_EDGE[edge]) if edge else QCursor(Qt.ArrowCursor))
+            elif event_type == QEvent.Type.Enter:
+                # central only ever receives MouseMove on its own thin
+                # RESIZE_MARGIN band (everywhere else is covered by the title
+                # bar/tabs), so re-entering the window over a child widget --
+                # or from outside the app entirely -- produced no MouseMove
+                # on central to refresh the cursor, leaving a stale resize
+                # icon stuck until the user happened to hover the margin
+                # again. Enter fires reliably on every re-entry regardless of
+                # where the cursor lands, so refresh the cursor from it too.
+                if self._resize_edge is None:
+                    edge = self._edge_at(self._central.mapFromGlobal(QCursor.pos()))
+                    self._central.setCursor(QCursor(_CURSOR_FOR_EDGE[edge]) if edge else QCursor(Qt.ArrowCursor))
+            elif event_type == QEvent.Type.Leave:
+                # Moving from the margin onto a child widget (tabs, title
+                # bar) also needs a reset -- once a child is under the
+                # cursor, central stops receiving MouseMove entirely.
+                if self._resize_edge is None:
+                    self._central.unsetCursor()
             elif event_type == QEvent.Type.MouseButtonPress:
                 if event.button() == Qt.LeftButton:
                     edge = self._edge_at(event.position().toPoint())
@@ -211,6 +231,26 @@ class MainWindow(QMainWindow):
         dialog.finished.connect(self._on_shutdown_dialog_finished)
         self._shutdown_dialog = dialog
         dialog.show()
+
+    def _on_download_blocked_by_theme(self, info_hash: str) -> None:
+        QMessageBox.warning(
+            self,
+            "Nyet.",
+            "Ce téléchargement reste en pause : sous le thème CCCP, on ne "
+            "possède pas de fichiers, on les partage. Changez de thème si "
+            "vous tenez vraiment à télécharger quelque chose.",
+        )
+
+    def _on_theme_downloads_paused(self, count: int) -> None:
+        plural = "s" if count > 1 else ""
+        QMessageBox.information(
+            self,
+            "Décret du Politburo",
+            f"{count} téléchargement{plural} en cours {'ont' if count > 1 else 'a'} été "
+            f"mis en pause : la propriété individuelle de fichiers est désormais "
+            f"interdite. Vos partages, eux, continuent -- et rapportent 3 fois "
+            f"plus de gloire collective.",
+        )
 
     def _on_shutdown_dialog_finished(self) -> None:
         self._shutdown_dialog = None

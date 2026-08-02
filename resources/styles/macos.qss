@@ -1,0 +1,284 @@
+/* Torrent 2000 -- "macOS" skin, matching the light appearance of recent
+   macOS versions.
+
+   Reference colors:
+     window background      #ECECEC
+     panel/control white     #FFFFFF
+     accent blue             #007AFF  (macOS system blue)
+     border gray             #D1D1D6
+     text                    #1D1D1F
+     disabled text           #98989D
+
+   Fully flat, heavily rounded everywhere (buttons, tabs, inputs, group
+   boxes, and -- via MainWindow's corner mask -- the window itself), no
+   bevels or gradients. The title bar's left-aligned circular traffic
+   lights are NOT drawn by this stylesheet -- see
+   src/torrent2000/ui/widgets/app_title_bar.py.
+*/
+
+* {
+    font-family: "Segoe UI", "Helvetica Neue", "Arial", sans-serif;
+    font-size: 9pt;
+}
+
+QMainWindow, QWidget#centralWidget {
+    background-color: #ECECEC;
+}
+
+QWidget {
+    background-color: #ECECEC;
+    color: #1D1D1F;
+}
+
+QTabWidget::pane {
+    border: 1px solid #D1D1D6;
+    border-radius: 8px;
+    background-color: #ECECEC;
+    top: -1px;
+}
+
+QTabBar::tab {
+    background-color: #E1E1E4;
+    border: 1px solid #D1D1D6;
+    border-bottom: none;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    padding: 6px 16px;
+    margin-right: 2px;
+    color: #1D1D1F;
+}
+
+QTabBar::tab:selected {
+    background-color: #FBFBFB;
+    border-color: #D1D1D6;
+    border-bottom: 2px solid #007AFF;
+    margin-top: 0px;
+}
+
+QTabBar::tab:!selected {
+    margin-top: 2px;
+    color: #6E6E73;
+}
+
+QGroupBox {
+    border: 1px solid #D1D1D6;
+    border-radius: 10px;
+    margin-top: 10px;
+    padding-top: 6px;
+    background-color: #FFFFFF;
+    font-weight: 600;
+    color: #1D1D1F;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 12px;
+    padding: 0 4px;
+    color: #1D1D1F;
+}
+
+QPushButton {
+    background-color: #FFFFFF;
+    border: 1px solid #D1D1D6;
+    border-radius: 7px;
+    padding: 4px 14px;
+    min-height: 18px;
+    color: #1D1D1F;
+}
+
+QPushButton:hover:!pressed {
+    background-color: #F0F6FF;
+    border: 1px solid #007AFF;
+}
+
+QPushButton:pressed {
+    background-color: #007AFF;
+    border: 1px solid #006EE6;
+    color: #FFFFFF;
+}
+
+QPushButton:default {
+    background-color: #007AFF;
+    border: 1px solid #006EE6;
+    color: #FFFFFF;
+}
+
+QPushButton:disabled {
+    background-color: #F5F5F5;
+    border: 1px solid #E2E2E5;
+    color: #98989D;
+}
+
+QPushButton#dangerButton {
+    background-color: #FFFFFF;
+    border: 1px solid #FF3B30;
+    border-radius: 7px;
+    padding: 2px 12px;
+    min-height: 16px;
+    color: #FF3B30;
+}
+
+QPushButton#dangerButton:hover:!pressed {
+    background-color: #FFF1F0;
+    border: 1px solid #FF3B30;
+}
+
+QPushButton#dangerButton:pressed {
+    background-color: #FF3B30;
+    border: 1px solid #E0281E;
+    color: #FFFFFF;
+}
+
+QLineEdit, QSpinBox, QAbstractSpinBox {
+    background-color: #FFFFFF;
+    border: 1px solid #D1D1D6;
+    border-radius: 6px;
+    padding: 3px 6px;
+    selection-background-color: #007AFF;
+    selection-color: #FFFFFF;
+}
+
+QLineEdit:hover, QSpinBox:hover, QAbstractSpinBox:hover {
+    border: 1px solid #007AFF;
+}
+
+QComboBox {
+    background-color: #FFFFFF;
+    border: 1px solid #D1D1D6;
+    border-radius: 6px;
+    padding: 3px 6px;
+}
+
+QComboBox:hover {
+    border: 1px solid #007AFF;
+}
+
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: right;
+    width: 20px;
+    background-color: transparent;
+    border: none;
+}
+
+QComboBox::down-arrow {
+    width: 8px;
+    height: 8px;
+    image: none;
+    border-left: 3px solid transparent;
+    border-right: 3px solid transparent;
+    border-top: 4px solid #6E6E73;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #FFFFFF;
+    border: 1px solid #D1D1D6;
+    border-radius: 8px;
+    selection-background-color: #007AFF;
+    selection-color: #FFFFFF;
+}
+
+QCheckBox::indicator {
+    width: 15px;
+    height: 15px;
+    background-color: #FFFFFF;
+    border: 1px solid #C7C7CC;
+    border-radius: 4px;
+}
+
+QCheckBox::indicator:hover {
+    border: 1px solid #007AFF;
+}
+
+QCheckBox::indicator:checked {
+    background-color: #007AFF;
+    border: 1px solid #007AFF;
+    image: url(theme:checkmark.png);
+}
+
+QSlider::groove:horizontal {
+    height: 4px;
+    background-color: #D1D1D6;
+    border-radius: 2px;
+}
+
+QSlider::handle:horizontal {
+    width: 16px;
+    height: 16px;
+    margin: -6px 0;
+    background-color: #FFFFFF;
+    border: 1px solid #C7C7CC;
+    border-radius: 8px;
+}
+
+QTableWidget, QTreeWidget {
+    background-color: #FFFFFF;
+    alternate-background-color: #F5F5F7;
+    gridline-color: #E5E5EA;
+    border: 1px solid #D1D1D6;
+    border-radius: 8px;
+    selection-background-color: #007AFF;
+    selection-color: #FFFFFF;
+}
+
+QHeaderView::section {
+    background-color: #F5F5F7;
+    border: 1px solid #D1D1D6;
+    padding: 3px;
+    font-weight: 600;
+    color: #6E6E73;
+}
+
+QProgressBar {
+    border: 1px solid #D1D1D6;
+    border-radius: 6px;
+    background-color: #E5E5EA;
+    text-align: center;
+    color: #1D1D1F;
+}
+
+QProgressBar::chunk {
+    background-color: #007AFF;
+    border-radius: 5px;
+    margin: 1px;
+}
+
+QLabel {
+    background: transparent;
+}
+
+QSplitter::handle {
+    background-color: #ECECEC;
+}
+
+QScrollBar:vertical {
+    background: #ECECEC;
+    width: 11px;
+    border: none;
+}
+
+QScrollBar::handle:vertical {
+    background-color: #C7C7CC;
+    border-radius: 5px;
+    min-height: 24px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background-color: #A8A8AD;
+}
+
+/* ---------------------------------------------------------------------
+   Custom title bar sits directly above the tab widget in a frameless
+   window -- drop the pane's top border to avoid a double line/gap.
+   --------------------------------------------------------------------- */
+
+QTabWidget#mainTabs::pane {
+    border-top: none;
+    top: 0px;
+}
+
+QSizeGrip {
+    background-color: #ECECEC;
+    width: 16px;
+    height: 16px;
+}

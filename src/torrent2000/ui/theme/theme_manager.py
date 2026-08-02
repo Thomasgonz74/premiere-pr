@@ -1,16 +1,20 @@
-"""Multi-theme support: 5 shapes (Windows XP -- the default/base look --
-7, 10, 11, and 95) each combinable with 3 appearance modes (light, dark,
-dark high-contrast).
+"""Multi-theme support: 7 shapes (Windows XP -- the default/base look --
+7, 10, 11, 95, macOS, and CCCP) each combinable with 3 appearance modes
+(light, dark, dark high-contrast).
 
 QSS handles the body chrome (buttons, tabs, inputs...) per (theme,
 appearance) pair via a dedicated stylesheet file. The custom title bar
 (native OS chrome can't be restyled -- see widgets/app_title_bar.py) is
-parameterized through TitleBarStyle: XP/7/95 keep their characteristic
+parameterized through TitleBarStyle: XP/7/95/CCCP keep their characteristic
 colorful caption regardless of appearance mode (matching how those real OS
-eras had no concept of a system dark mode), while 10/11's flat caption
-darkens for "dark" and turns solid black for "dark_hc"; button glyph
-rendering (colored-box vs modern-flat) and window corner rounding (11 only)
-are also per-theme.
+eras -- or in CCCP's case, non-OS -- had no concept of a system dark mode),
+while 10/11/macOS's captions darken for "dark" and turn solid black for
+"dark_hc"; button glyph rendering (colored-box / modern-flat / macOS
+traffic-light) and window corner rounding are also per-theme.
+
+macOS and CCCP aren't just skins -- see theme_ids.py, stats/leveling.py
+(macOS halves leveling "scores", CCCP triples upload's) and
+engine/session_manager.py (CCCP blocks starting new downloads outright).
 """
 
 import dataclasses
@@ -22,6 +26,7 @@ from PySide6.QtCore import QDir
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication
 
+from torrent2000.theme_ids import CCCP_THEME_ID, MACOS_THEME_ID
 from torrent2000.utils.resource_path import resource_path
 
 DEFAULT_THEME = "luna_xp"
@@ -33,6 +38,8 @@ THEME_LABELS: list[tuple[str, str]] = [
     ("Windows 10", "win10_fluent"),
     ("Windows 11", "win11_mica"),
     ("Windows 95", "win95_classic"),
+    ("macOS", MACOS_THEME_ID),
+    ("CCCP", CCCP_THEME_ID),
 ]
 
 APPEARANCE_MODE_LABELS: list[tuple[str, str]] = [
@@ -49,6 +56,8 @@ _QSS_BASENAMES = {
     "win10_fluent": "win10",
     "win11_mica": "win11",
     "win95_classic": "win95",
+    MACOS_THEME_ID: "macos",
+    CCCP_THEME_ID: "cccp",
 }
 
 
@@ -59,7 +68,7 @@ class TitleBarStyle:
     title_text_color: str
     font_family: str
     font_bold: bool
-    button_variant: str  # "xp" | "modern"
+    button_variant: str  # "xp" | "modern" | "mac"
     button_hover_radius: int  # hover-highlight corner radius, "modern" variant only
     window_corner_radius: int  # 0 = square window corners
     minmax_fill_color: str = "#3D6FC9"  # "xp" variant only
@@ -134,6 +143,39 @@ TITLE_BAR_STYLES: dict[str, TitleBarStyle] = {
         close_hover_color="#D4D0C8",
         button_glyph_color="#000000",
     ),
+    MACOS_THEME_ID: TitleBarStyle(
+        # Flat, light gray caption -- macOS's traffic-light buttons (drawn
+        # by app_title_bar.py's "mac" button variant, left-aligned, colors
+        # hardcoded there since they never change with theme/appearance)
+        # are the visual signature here, not the caption color itself.
+        caption_gradient=None,
+        caption_flat_color="#ECECEC",
+        title_text_color="#1D1D1F",
+        font_family="Segoe UI",
+        font_bold=False,
+        button_variant="mac",
+        button_hover_radius=0,
+        window_corner_radius=10,
+    ),
+    CCCP_THEME_ID: TitleBarStyle(
+        # Solid, uncompromising red -- no gradient, no glass, no mercy.
+        caption_gradient=None,
+        caption_flat_color="#7A0C0C",
+        title_text_color="#F2E4C4",
+        font_family="Arial",
+        font_bold=True,
+        button_variant="xp",
+        button_hover_radius=0,
+        window_corner_radius=0,
+        # Caption buttons in bold red with a gold hover -- the same red the
+        # caption itself uses, so they read as part of the poster rather
+        # than a foreign Windows-blue import.
+        minmax_fill_color="#A31515",
+        minmax_hover_color="#D4AF37",
+        close_fill_color="#5C0A0A",
+        close_hover_color="#D4AF37",
+        button_glyph_color="#F2E4C4",
+    ),
 }
 
 # Only flat-caption themes (10/11) actually darken their title bar for dark
@@ -143,6 +185,9 @@ TITLE_BAR_STYLES: dict[str, TitleBarStyle] = {
 _DARK_TITLE_BAR_OVERRIDES = {
     "win10_fluent": {"caption_flat_color": "#202020", "title_text_color": "#FFFFFF"},
     "win11_mica": {"caption_flat_color": "#202020", "title_text_color": "#FFFFFF"},
+    MACOS_THEME_ID: {"caption_flat_color": "#2B2B2D", "title_text_color": "#F2F2F2"},
+    # CCCP has no dark-mode override: it predates the concept the same way
+    # XP/7/95 do (see module docstring) -- the caption stays red in "dark".
 }
 
 

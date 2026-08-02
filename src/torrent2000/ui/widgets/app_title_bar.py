@@ -1,12 +1,13 @@
 """Custom-painted caption bar standing in for the native OS title bar.
 
-QSS cannot restyle the OS-owned window frame (on Windows 11 that's a native
-dark title bar, nothing like any of the four themes this app offers), so the
-main window is created frameless and this widget paints the caption itself:
-background (gradient for XP/7, flat for 10/11), icon, title, and the
-minimize/maximize/close buttons, plus click-drag-to-move and
-double-click-to-maximize. Its exact look is driven by a TitleBarStyle (see
-theme/theme_manager.py) so the same widget serves all four themes.
+QSS cannot restyle the OS-owned window frame, so the main window is created
+frameless and this widget paints the caption itself: background (gradient
+for XP/7, flat for 10/11/macOS/CCCP), icon, title, and the minimize/
+maximize/close buttons, plus click-drag-to-move and double-click-to-
+maximize. Its exact look -- including macOS's left-aligned circular
+traffic lights, the one variant with a fundamentally different button
+layout rather than just different colors -- is driven by a TitleBarStyle
+(see theme/theme_manager.py) so the same widget serves every theme.
 """
 
 from PySide6.QtCore import QPoint, QRectF, Qt
@@ -27,10 +28,23 @@ from torrent2000.utils.resource_path import resource_path
 
 TITLE_BAR_HEIGHT = 30
 _BUTTON_SIZE = 21
+_MAC_BUTTON_SIZE = 14
 
 _MODERN_HOVER_MIN_MAX_LIGHT = "#E5E5E5"
 _MODERN_HOVER_MIN_MAX_DARK = "#3A3A3A"
 _MODERN_HOVER_CLOSE = "#E81123"
+
+# Real macOS traffic lights are always red/yellow/green regardless of the
+# system's light/dark/high-contrast appearance -- so unlike every other
+# button_variant, these are hardcoded here rather than sourced from
+# TitleBarStyle.
+_MAC_CLOSE_FILL = "#FF5F57"
+_MAC_CLOSE_HOVER = "#FF453A"
+_MAC_MINIMIZE_FILL = "#FEBC2E"
+_MAC_MINIMIZE_HOVER = "#FFB01E"
+_MAC_MAXIMIZE_FILL = "#28C840"
+_MAC_MAXIMIZE_HOVER = "#1DAD34"
+_MAC_GLYPH_COLOR = "#4D0000"
 
 
 class _CaptionButton(QPushButton):
@@ -70,6 +84,17 @@ class _CaptionButton(QPushButton):
             self._hover_glyph_color = (
                 QColor(style.button_hover_glyph_color) if style.button_hover_glyph_color else None
             )
+            self.setFixedSize(_BUTTON_SIZE, TITLE_BAR_HEIGHT - 11)
+        elif style.button_variant == "mac":
+            if self._glyph == "close":
+                self._fill_color, self._hover_color = QColor(_MAC_CLOSE_FILL), QColor(_MAC_CLOSE_HOVER)
+            elif self._glyph == "min":
+                self._fill_color, self._hover_color = QColor(_MAC_MINIMIZE_FILL), QColor(_MAC_MINIMIZE_HOVER)
+            else:  # "max" / "restore"
+                self._fill_color, self._hover_color = QColor(_MAC_MAXIMIZE_FILL), QColor(_MAC_MAXIMIZE_HOVER)
+            self._glyph_color = QColor(_MAC_GLYPH_COLOR)
+            self._hover_glyph_color = None
+            self.setFixedSize(_MAC_BUTTON_SIZE, _MAC_BUTTON_SIZE)
         else:
             # "modern" glyphs track the caption's own text color, so they
             # stay legible whether the title bar is light or dark.
@@ -77,6 +102,7 @@ class _CaptionButton(QPushButton):
             is_dark_caption = QColor(style.title_text_color).lightness() > 128
             hover_min_max = _MODERN_HOVER_MIN_MAX_DARK if is_dark_caption else _MODERN_HOVER_MIN_MAX_LIGHT
             self._hover_color = QColor(_MODERN_HOVER_CLOSE if self._glyph == "close" else hover_min_max)
+            self.setFixedSize(_BUTTON_SIZE, TITLE_BAR_HEIGHT - 11)
         self.update()
 
     def paintEvent(self, event: QPaintEvent) -> None:
@@ -91,6 +117,14 @@ class _CaptionButton(QPushButton):
             painter.drawRect(rect)
             glyph_color = self._hover_glyph_color if (hovering and self._hover_glyph_color is not None) else self._glyph_color
             painter.setPen(QPen(glyph_color, 1))
+        elif self._variant == "mac":
+            painter.setRenderHint(QPainter.Antialiasing, True)
+            fill = self._hover_color if hovering else self._fill_color
+            painter.setBrush(fill)
+            painter.setPen(Qt.NoPen)
+            painter.drawEllipse(rect)
+            glyph_color = self._glyph_color
+            painter.setPen(QPen(glyph_color, 1.4))
         else:
             painter.setRenderHint(QPainter.Antialiasing, True)
             if hovering:
@@ -132,44 +166,74 @@ class AppTitleBar(QWidget):
         self._drag_offset: QPoint | None = None
         self._style = style
 
-        layout = QHBoxLayout(self)
-        layout.setContentsMargins(4, 0, 4, 0)
-        layout.setSpacing(6)
-
         self._icon_label = QLabel(self)
         self._icon_label.setFixedSize(16, 16)
         icon_path = resource_path("assets/icon.ico")
         if icon_path.exists():
             self._icon_label.setPixmap(QIcon(str(icon_path)).pixmap(16, 16))
-        layout.addWidget(self._icon_label)
 
         self._title_label = QLabel(title, self)
-        layout.addWidget(self._title_label)
-
-        layout.addStretch(1)
 
         self._minimize_button = _CaptionButton("min", self)
         self._minimize_button.setToolTip("Réduire")
         self._minimize_button.clicked.connect(self._on_minimize)
-        layout.addWidget(self._minimize_button)
 
         self._maximize_button = _CaptionButton("max", self)
         self._maximize_button.setToolTip("Agrandir")
         self._maximize_button.clicked.connect(self._on_maximize_restore)
-        layout.addWidget(self._maximize_button)
 
         self._close_button = _CaptionButton("close", self)
         self._close_button.setToolTip("Fermer")
         self._close_button.clicked.connect(self._on_close)
-        layout.addWidget(self._close_button)
+
+        self._layout = QHBoxLayout(self)
+        self._layout.setContentsMargins(4, 0, 4, 0)
+        self._layout.setSpacing(6)
+        self._is_mac_layout = False
+        self._build_layout(mac_layout=(style.button_variant == "mac"))
 
         self.apply_style(style)
+
+    def _build_layout(self, mac_layout: bool) -> None:
+        # macOS puts its traffic lights on the LEFT with a centered title,
+        # the reverse of every other theme here (buttons on the right,
+        # left-aligned title next to the icon) -- different enough that it
+        # needs its own widget order, not just different colors, so the
+        # whole layout is torn down and rebuilt when the variant changes.
+        while self._layout.count():
+            self._layout.takeAt(0)
+        if mac_layout:
+            self._layout.addWidget(self._close_button)
+            self._layout.addWidget(self._minimize_button)
+            self._layout.addWidget(self._maximize_button)
+            self._layout.addStretch(1)
+            self._layout.addWidget(self._title_label)
+            self._layout.addStretch(1)
+            # Invisible spacer roughly matching the traffic-light cluster's
+            # width, so the centered title is actually centered instead of
+            # skewed toward the right by the unbalanced left-side buttons.
+            cluster_width = 3 * _MAC_BUTTON_SIZE + 2 * self._layout.spacing()
+            self._layout.addSpacing(cluster_width)
+            self._icon_label.hide()
+            self._title_label.setAlignment(Qt.AlignCenter)
+        else:
+            self._layout.addWidget(self._icon_label)
+            self._layout.addWidget(self._title_label)
+            self._layout.addStretch(1)
+            self._layout.addWidget(self._minimize_button)
+            self._layout.addWidget(self._maximize_button)
+            self._layout.addWidget(self._close_button)
+            self._icon_label.show()
+            self._title_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        self._is_mac_layout = mac_layout
 
     def set_title(self, title: str) -> None:
         self._title_label.setText(title)
 
     def apply_style(self, style: TitleBarStyle) -> None:
         self._style = style
+        if (style.button_variant == "mac") != self._is_mac_layout:
+            self._build_layout(mac_layout=(style.button_variant == "mac"))
         font = self._title_label.font()
         font.setFamily(style.font_family)
         font.setBold(style.font_bold)

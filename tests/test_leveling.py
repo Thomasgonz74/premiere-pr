@@ -3,10 +3,12 @@ from torrent2000.stats.leveling import (
     UPLOAD_LEVEL_WEIGHT,
     level_for_total_bytes,
     progress_within_level,
+    score_factors_for,
     snapshot,
     threshold_for_level,
     weighted_total_bytes,
 )
+from torrent2000.theme_ids import CCCP_THEME_ID, MACOS_THEME_ID
 
 
 def test_threshold_level_zero_is_zero():
@@ -102,3 +104,40 @@ def test_snapshot_displays_raw_totals_even_though_level_uses_weighted_total():
     assert snap.total_uploaded == up
     unweighted_progress = (down + up - threshold_for_level(1)) / (threshold_for_level(2) - threshold_for_level(1))
     assert snap.progress_to_next > unweighted_progress
+
+
+# --------------------------------------------------------- theme score factors
+
+
+def test_default_and_unknown_themes_use_the_baseline_factors():
+    assert score_factors_for("luna_xp") == (1.0, UPLOAD_LEVEL_WEIGHT)
+    assert score_factors_for("some_theme_that_does_not_exist") == (1.0, UPLOAD_LEVEL_WEIGHT)
+    assert score_factors_for(None) == (1.0, UPLOAD_LEVEL_WEIGHT)
+
+
+def test_macos_theme_halves_both_scores():
+    download_factor, upload_factor = score_factors_for(MACOS_THEME_ID)
+    assert download_factor == 0.5
+    assert upload_factor == UPLOAD_LEVEL_WEIGHT * 0.5
+    # 1 GiB downloaded is worth half a GiB toward the level under macOS.
+    assert weighted_total_bytes(LEVEL_BASE_BYTES, 0, download_factor, upload_factor) == LEVEL_BASE_BYTES // 2
+
+
+def test_cccp_theme_triples_upload_score():
+    download_factor, upload_factor = score_factors_for(CCCP_THEME_ID)
+    assert upload_factor == 3.0
+    # 1 GiB uploaded is worth 3 GiB toward the level under CCCP -- twice the
+    # normal 1.5x weight (not stacked on top of it).
+    assert weighted_total_bytes(0, LEVEL_BASE_BYTES, download_factor, upload_factor) == LEVEL_BASE_BYTES * 3
+
+
+def test_theme_factors_apply_live_to_the_whole_total_not_just_new_bytes():
+    # Matches how UPLOAD_LEVEL_WEIGHT already works: switching themes
+    # rescales the CURRENT total immediately and reversibly, it doesn't
+    # require separate per-era bucket accounting.
+    down, up = LEVEL_BASE_BYTES, LEVEL_BASE_BYTES
+    baseline = snapshot(down, up, *score_factors_for("luna_xp"))
+    mac = snapshot(down, up, *score_factors_for(MACOS_THEME_ID))
+    cccp = snapshot(down, up, *score_factors_for(CCCP_THEME_ID))
+    assert mac.progress_to_next < baseline.progress_to_next or mac.level < baseline.level
+    assert cccp.level > baseline.level or cccp.progress_to_next > baseline.progress_to_next
