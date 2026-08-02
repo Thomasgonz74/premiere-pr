@@ -90,6 +90,8 @@ class Settings:
     auto_shutdown_action: str = "shutdown"  # "shutdown" | "hibernate"
     auto_shutdown_delay_seconds: int = 60  # cancellable countdown before it actually fires
 
+    audio_volume: int = 70  # 0-100, currently drives only the CCCP theme's anthem playback
+
     @staticmethod
     def load() -> "Settings":
         path = get_config_path()

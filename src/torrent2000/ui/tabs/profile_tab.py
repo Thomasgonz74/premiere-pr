@@ -3,7 +3,7 @@ from dataclasses import asdict
 from pathlib import Path
 
 import psutil
-from PySide6.QtCore import QUrl, Signal
+from PySide6.QtCore import QUrl, Qt, Signal
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import (
     QCheckBox,
@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (
     QProgressBar,
     QPushButton,
     QScrollArea,
+    QSlider,
     QSpinBox,
     QTableWidget,
     QTableWidgetItem,
@@ -90,6 +91,7 @@ def _list_local_ipv4_interfaces() -> list[tuple[str, str]]:
 class ProfileTab(QWidget):
     theme_changed = Signal(str, str)  # theme_id, appearance_mode
     language_changed = Signal(str)  # language code
+    volume_changed = Signal(int)  # 0-100, applied live so a currently-playing anthem reacts immediately
 
     def __init__(
         self,
@@ -186,6 +188,28 @@ class ProfileTab(QWidget):
         general_form.addRow(self.notifications_checkbox)
 
         layout.addWidget(self.general_box)
+
+        self.audio_box = QGroupBox(tr("profile_tab.audio_group"), self)
+        audio_form = QFormLayout(self.audio_box)
+        self._audio_form = audio_form
+
+        volume_row = QHBoxLayout()
+        self.volume_slider = QSlider(Qt.Horizontal, self.audio_box)
+        self.volume_slider.setRange(0, 100)
+        self.volume_slider.setValue(settings.audio_volume)
+        self.volume_slider.valueChanged.connect(self._on_volume_changed)
+        self.volume_slider.sliderReleased.connect(self._on_volume_slider_released)
+        volume_row.addWidget(self.volume_slider, 1)
+        self.volume_value_label = QLabel(f"{settings.audio_volume}%", self.audio_box)
+        self.volume_value_label.setFixedWidth(40)
+        volume_row.addWidget(self.volume_value_label)
+        self._add_row(audio_form, "profile_tab.audio_volume_label", volume_row)
+
+        self.audio_note = QLabel(tr("profile_tab.audio_note"), self.audio_box)
+        self.audio_note.setWordWrap(True)
+        audio_form.addRow(self.audio_note)
+
+        layout.addWidget(self.audio_box)
 
         self.schedule_box = QGroupBox(tr("profile_tab.schedule_group"), self)
         schedule_form = QFormLayout(self.schedule_box)
@@ -465,6 +489,9 @@ class ProfileTab(QWidget):
         self._populate_combo(self.appearance_combo, appearance_mode_labels(), self._settings.appearance_mode)
         self.notifications_checkbox.setText(tr("profile_tab.notifications_checkbox"))
 
+        self.audio_box.setTitle(tr("profile_tab.audio_group"))
+        self.audio_note.setText(tr("profile_tab.audio_note"))
+
         self.schedule_box.setTitle(tr("profile_tab.schedule_group"))
         self.schedule_enabled_checkbox.setText(tr("profile_tab.schedule_enabled"))
         self.schedule_from_label.setText(tr("profile_tab.schedule_from"))
@@ -548,6 +575,18 @@ class ProfileTab(QWidget):
             title_key, message_key = notice_keys
             QMessageBox.information(self, tr(title_key), tr(message_key))
 
+    def _on_volume_changed(self, value: int) -> None:
+        # Applied live (in-memory + signal emit) on every tick so a
+        # currently-playing anthem reacts while dragging, but the disk write
+        # is deferred to slider-release/Save -- saving on every tick of a
+        # drag would otherwise hammer the config file dozens of times a second.
+        self.volume_value_label.setText(f"{value}%")
+        self._settings.audio_volume = value
+        self.volume_changed.emit(value)
+
+    def _on_volume_slider_released(self) -> None:
+        self._settings.save()
+
     def _on_appearance_changed(self, index: int) -> None:
         mode_id = self.appearance_combo.itemData(index)
         if not mode_id:
@@ -605,6 +644,7 @@ class ProfileTab(QWidget):
         self._settings.upload_rate_limit_kbps = self.upload_limit_spin.value()
         self._settings.danger_auto_exclude_threshold = self.danger_threshold_spin.value()
         self._settings.notifications_enabled = self.notifications_checkbox.isChecked()
+        self._settings.audio_volume = self.volume_slider.value()
 
         self._settings.bandwidth_schedule.enabled = self.schedule_enabled_checkbox.isChecked()
         self._settings.bandwidth_schedule.start_hour = self.schedule_start_spin.value()

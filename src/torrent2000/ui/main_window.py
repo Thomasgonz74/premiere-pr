@@ -1,4 +1,4 @@
-from PySide6.QtCore import QEvent, QRect, QRectF, Qt
+from PySide6.QtCore import QEvent, QRect, QRectF, Qt, QTimer
 from PySide6.QtGui import QCursor, QGuiApplication, QPainterPath, QRegion
 from PySide6.QtWidgets import QHBoxLayout, QMainWindow, QMessageBox, QSizeGrip, QTabWidget, QVBoxLayout, QWidget
 
@@ -18,6 +18,7 @@ _CURSOR_FOR_EDGE = {
 
 from torrent2000 import APP_NAME
 from torrent2000.config.settings import Settings
+from torrent2000.engine.anthem_player import AnthemPlayer
 from torrent2000.engine.auto_shutdown_service import AutoShutdownService
 from torrent2000.engine.bandwidth_scheduler import BandwidthScheduler
 from torrent2000.engine.disk_space_monitor import DiskSpaceMonitor
@@ -121,6 +122,8 @@ class MainWindow(QMainWindow):
         )
         self._profile_tab.theme_changed.connect(self.set_theme)
         self._profile_tab.language_changed.connect(self._on_language_changed)
+        self._anthem_player = AnthemPlayer(settings.audio_volume)
+        self._profile_tab.volume_changed.connect(self._anthem_player.set_volume)
         tabs.addTab(self._profile_tab, tr("tabs.profile"))
         content_row.addWidget(tabs, 1)
         self._tabs = tabs
@@ -156,10 +159,36 @@ class MainWindow(QMainWindow):
         self._cccp_panel_active = False
         self._apply_window_style(settings.theme, settings.appearance_mode)
 
+        # The Enter/Leave handlers above only fire when the cursor actually
+        # crosses central's own background. On the left/right/top edges that
+        # background is a razor-thin RESIZE_MARGIN band sandwiched between
+        # the title bar/tabs and the screen edge, so a cursor moving with any
+        # real speed skips over it between one mouse-move sample and the
+        # next -- no Enter, no Leave, and the last resize cursor sticks
+        # forever. The bottom edge doesn't show this because grip_row's
+        # mostly-empty strip (QSizeGrip plus stretch) gives central a much
+        # taller exposed area there, wide enough to reliably catch the
+        # crossing. This timer is a ground-truth backstop that doesn't
+        # depend on Enter/Leave delivery at all: it just polls where the
+        # cursor actually is and corrects the shape if it's wrong.
+        self._cursor_watchdog = QTimer(self)
+        self._cursor_watchdog.setInterval(120)
+        self._cursor_watchdog.timeout.connect(self._check_cursor_watchdog)
+        self._cursor_watchdog.start()
+
     # -------------------------------------------------------- edge resize
 
     def _edge_at(self, pos) -> str | None:
         w, h = self._central.width(), self._central.height()
+        # A position outside central's own bounds isn't on any of its edges,
+        # regardless of how close it is to the margin band's threshold --
+        # without this, "pos.x() >= w - m" and "pos.y() <= m" stay true for
+        # ANY x beyond w or any negative y, so once the cursor is off the
+        # window entirely (which is exactly when a caller like the watchdog
+        # below needs a real answer of "no edge"), this used to keep
+        # reporting whichever edge the cursor last exited through.
+        if pos.x() < 0 or pos.y() < 0 or pos.x() > w or pos.y() > h:
+            return None
         m = RESIZE_MARGIN
         left, right = pos.x() <= m, pos.x() >= w - m
         top, bottom = pos.y() <= m, pos.y() >= h - m
@@ -180,6 +209,22 @@ class MainWindow(QMainWindow):
         if bottom:
             return "bottom"
         return None
+
+    def _check_cursor_watchdog(self) -> None:
+        if self._resize_edge is not None or self.isMaximized():
+            return
+        global_pos = QCursor.pos()
+        if not self.geometry().contains(global_pos):
+            if self._central.cursor().shape() != Qt.ArrowCursor:
+                self._central.unsetCursor()
+            return
+        edge = self._edge_at(self._central.mapFromGlobal(global_pos))
+        desired_shape = _CURSOR_FOR_EDGE[edge] if edge else Qt.ArrowCursor
+        if self._central.cursor().shape() != desired_shape:
+            if edge:
+                self._central.setCursor(QCursor(desired_shape))
+            else:
+                self._central.unsetCursor()
 
     def _perform_resize(self, global_pos) -> None:
         delta = global_pos - self._resize_start_pos
@@ -315,10 +360,12 @@ class MainWindow(QMainWindow):
         if active:
             self._propaganda_panel.show()
             self._propaganda_panel.start()
+            self._anthem_player.start()
             self.resize(self.width() + PANEL_WIDTH, self.height())
         else:
             self._propaganda_panel.stop()
             self._propaganda_panel.hide()
+            self._anthem_player.stop()
             self.resize(max(MIN_WINDOW_SIZE[0], self.width() - PANEL_WIDTH), self.height())
 
     def _update_corner_mask(self) -> None:

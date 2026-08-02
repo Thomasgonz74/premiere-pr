@@ -14,6 +14,7 @@ a = Analysis(
         (os.path.join(REPO_ROOT, "resources", "i18n", "*.json"), os.path.join("resources", "i18n")),
         (os.path.join(REPO_ROOT, "assets", "icon.ico"), "assets"),
         (os.path.join(REPO_ROOT, "assets", "checkmark.png"), "assets"),
+        (os.path.join(REPO_ROOT, "assets", "audio", "*.mp3"), os.path.join("assets", "audio")),
     ],
     hiddenimports=["libtorrent"],
     hookspath=[],

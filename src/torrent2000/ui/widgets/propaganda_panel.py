@@ -16,32 +16,37 @@ from PySide6.QtGui import QColor, QPainter, QPaintEvent, QPen, QPolygonF
 from PySide6.QtWidgets import QFrame, QLabel, QVBoxLayout, QWidget
 
 from torrent2000.i18n.translator import tr
+from torrent2000.ui.widgets.soviet_emblem import paint_hammer_and_sickle
 
 PANEL_WIDTH = 220
-_MESSAGE_INTERVAL_MS = 9000
+# Slower than the original 9s -- long enough to actually read a message
+# (some run two sentences) before it flips to the next one.
+_MESSAGE_INTERVAL_MS = 17000
 _DEFAULT_ICON_COLOR = "#CC1B1B"
 
-# (illustration kind, message translation key) -- illustration kinds cycle
-# through the same three hand-drawn icons, message text is what varies.
+# (illustration kind, message translation key) -- cycles through 8 distinct
+# illustrations (star / hammer-and-sickle / gear / rising sun / wheat sheaf /
+# rocket / factory / raised fist) rather than just 3, so the panel doesn't
+# feel as repetitive over a full cycle.
 _MESSAGE_SPECS: list[tuple[str, str]] = [
     ("star", "cccp.propaganda.msg_01"),
     ("hammer_sickle", "cccp.propaganda.msg_02"),
     ("gear", "cccp.propaganda.msg_03"),
-    ("star", "cccp.propaganda.msg_04"),
-    ("hammer_sickle", "cccp.propaganda.msg_05"),
-    ("gear", "cccp.propaganda.msg_06"),
-    ("star", "cccp.propaganda.msg_07"),
-    ("hammer_sickle", "cccp.propaganda.msg_08"),
-    ("gear", "cccp.propaganda.msg_09"),
-    ("star", "cccp.propaganda.msg_10"),
-    ("hammer_sickle", "cccp.propaganda.msg_11"),
-    ("gear", "cccp.propaganda.msg_12"),
-    ("star", "cccp.propaganda.msg_13"),
-    ("hammer_sickle", "cccp.propaganda.msg_14"),
-    ("gear", "cccp.propaganda.msg_15"),
-    ("star", "cccp.propaganda.msg_16"),
-    ("hammer_sickle", "cccp.propaganda.msg_17"),
-    ("gear", "cccp.propaganda.msg_18"),
+    ("sun_rays", "cccp.propaganda.msg_04"),
+    ("wheat", "cccp.propaganda.msg_05"),
+    ("rocket", "cccp.propaganda.msg_06"),
+    ("factory", "cccp.propaganda.msg_07"),
+    ("fist", "cccp.propaganda.msg_08"),
+    ("star", "cccp.propaganda.msg_09"),
+    ("hammer_sickle", "cccp.propaganda.msg_10"),
+    ("gear", "cccp.propaganda.msg_11"),
+    ("sun_rays", "cccp.propaganda.msg_12"),
+    ("wheat", "cccp.propaganda.msg_13"),
+    ("rocket", "cccp.propaganda.msg_14"),
+    ("factory", "cccp.propaganda.msg_15"),
+    ("fist", "cccp.propaganda.msg_16"),
+    ("star", "cccp.propaganda.msg_17"),
+    ("hammer_sickle", "cccp.propaganda.msg_18"),
 ]
 
 
@@ -88,22 +93,18 @@ class _PropagandaIcon(QWidget):
                 painter.rotate(i * 45)
                 painter.fillRect(QRectF(-3, -30, 6, 10), color)
                 painter.restore()
-        else:  # "hammer_sickle"
-            pen = QPen(color, 5)
-            pen.setCapStyle(Qt.RoundCap)
-            painter.setPen(pen)
-            painter.setBrush(Qt.NoBrush)
-            sickle_rect = QRectF(cx - 22, cy - 24, 40, 40)
-            painter.drawArc(sickle_rect, -20 * 16, 260 * 16)
-            painter.drawLine(QPointF(cx + 17, cy - 21), QPointF(cx + 26, cy - 29))
-            painter.save()
-            painter.translate(cx, cy)
-            painter.rotate(-40)
-            painter.drawLine(QPointF(-3, 26), QPointF(-3, -10))
-            painter.setBrush(color)
-            painter.setPen(Qt.NoPen)
-            painter.drawRect(QRectF(-13, -26, 20, 12))
-            painter.restore()
+        elif self._kind == "hammer_sickle":
+            paint_hammer_and_sickle(painter, cx, cy, 26.0, color)
+        elif self._kind == "sun_rays":
+            _draw_sun_rays(painter, cx, cy, color)
+        elif self._kind == "wheat":
+            _draw_wheat(painter, cx, cy, color)
+        elif self._kind == "rocket":
+            _draw_rocket(painter, cx, cy, color)
+        elif self._kind == "factory":
+            _draw_factory(painter, cx, cy, color)
+        else:  # "fist"
+            _draw_fist(painter, cx, cy, color)
         painter.end()
 
 
@@ -114,6 +115,127 @@ def _star_polygon(cx: float, cy: float, outer_r: float, inner_r: float) -> QPoly
         r = outer_r if i % 2 == 0 else inner_r
         points.append(QPointF(cx + r * math.cos(angle), cy - r * math.sin(angle)))
     return QPolygonF(points)
+
+
+def _draw_sun_rays(painter: QPainter, cx: float, cy: float, color: QColor) -> None:
+    """A rising sun over a horizon bar -- "the dawn of the collective"."""
+    r = 15
+    painter.setBrush(color)
+    painter.setPen(Qt.NoPen)
+    path = QPainterPath()
+    path.moveTo(cx - r, cy)
+    path.arcTo(QRectF(cx - r, cy - r, 2 * r, 2 * r), 180, 180)
+    path.closeSubpath()
+    painter.drawPath(path)
+    for i in range(9):
+        rad = math.radians(200 - i * 25)
+        inner, outer = r * 1.18, r * 1.9
+        dirx, diry = math.cos(rad), -math.sin(rad)
+        tip = QPointF(cx + outer * dirx, cy + outer * diry)
+        base = QPointF(cx + inner * dirx, cy + inner * diry)
+        perp = (-diry, dirx)
+        p1 = QPointF(base.x() + perp[0] * 3.0, base.y() + perp[1] * 3.0)
+        p2 = QPointF(base.x() - perp[0] * 3.0, base.y() - perp[1] * 3.0)
+        painter.drawPolygon(QPolygonF([p1, p2, tip]))
+    painter.drawRect(QRectF(cx - r * 2.0, cy - 1.5, r * 4.0, 3))
+
+
+def _draw_wheat(painter: QPainter, cx: float, cy: float, color: QColor) -> None:
+    """A tied sheaf of wheat -- the harvest half of the hammer-and-sickle's
+    usual wreath, standing on its own as an icon of agricultural plenty."""
+    base = QPointF(cx, cy + 24)
+    for a in (-50, -30, -10, 10, 30, 50):
+        rad = math.radians(90 + a)
+        length = 34 - abs(a) * 0.12
+        end = QPointF(base.x() + length * math.cos(rad), base.y() - length * math.sin(rad))
+        ctrl = QPointF(base.x() + length * 0.55 * math.cos(rad), base.y() - length * 0.55 * math.sin(rad))
+        pen = QPen(color, 2.4)
+        pen.setCapStyle(Qt.RoundCap)
+        painter.setPen(pen)
+        stalk = QPainterPath(base)
+        stalk.quadTo(ctrl, end)
+        painter.drawPath(stalk)
+        painter.save()
+        painter.translate(end)
+        painter.rotate(-a)
+        painter.setBrush(color)
+        painter.setPen(Qt.NoPen)
+        ear = QPainterPath()
+        ear.moveTo(0, 2)
+        ear.cubicTo(-4.5, -4, -3.2, -13, 0, -19)
+        ear.cubicTo(3.2, -13, 4.5, -4, 0, 2)
+        painter.drawPath(ear)
+        awn_pen = QPen(color, 1.1)
+        painter.setPen(awn_pen)
+        for t in (-9, -5, -1):
+            painter.drawLine(QPointF(0, t), QPointF(-5.5, t - 3))
+            painter.drawLine(QPointF(0, t), QPointF(5.5, t - 3))
+        painter.restore()
+    painter.setBrush(color)
+    painter.setPen(Qt.NoPen)
+    painter.drawRect(QRectF(base.x() - 5, base.y() - 4, 10, 6))
+
+
+def _draw_rocket(painter: QPainter, cx: float, cy: float, color: QColor) -> None:
+    """An ascending rocket -- the Soviet space program's pride, angled into
+    a dynamic climb rather than sitting upright and static."""
+    painter.save()
+    painter.translate(cx, cy)
+    painter.rotate(-25)
+    painter.setBrush(color)
+    painter.setPen(Qt.NoPen)
+    body = QPainterPath()
+    body.moveTo(0, -28)
+    body.quadTo(9, -10, 7, 14)
+    body.lineTo(-7, 14)
+    body.quadTo(-9, -10, 0, -28)
+    painter.drawPath(body)
+    painter.drawPolygon(QPolygonF([QPointF(-7, 6), QPointF(-17, 21), QPointF(-7, 16)]))
+    painter.drawPolygon(QPolygonF([QPointF(7, 6), QPointF(17, 21), QPointF(7, 16)]))
+    flame = QPainterPath()
+    flame.moveTo(-5, 14)
+    flame.quadTo(0, 27, 5, 14)
+    flame.closeSubpath()
+    painter.drawPath(flame)
+    painter.restore()
+
+
+def _draw_factory(painter: QPainter, cx: float, cy: float, color: QColor) -> None:
+    """A factory block with sawtooth roofline and two smoking chimneys --
+    industrial output, the other pillar the hammer alone can only gesture at."""
+    painter.setBrush(color)
+    painter.setPen(Qt.NoPen)
+    painter.drawRect(QRectF(cx - 24, cy + 2, 48, 20))
+    roof = QPainterPath()
+    roof.moveTo(cx - 24, cy + 2)
+    for i in range(4):
+        x0 = cx - 24 + i * 12
+        roof.lineTo(x0 + 6, cy - 8)
+        roof.lineTo(x0 + 12, cy + 2)
+    roof.closeSubpath()
+    painter.drawPath(roof)
+    painter.drawRect(QRectF(cx - 18, cy - 24, 6, 24))
+    painter.drawRect(QRectF(cx + 6, cy - 32, 6, 32))
+    painter.drawEllipse(QPointF(cx - 15, cy - 30), 4, 4)
+    painter.drawEllipse(QPointF(cx - 11, cy - 37), 5, 5)
+    painter.drawEllipse(QPointF(cx + 9, cy - 38), 4, 4)
+    painter.drawEllipse(QPointF(cx + 13, cy - 45), 5, 5)
+
+
+def _draw_fist(painter: QPainter, cx: float, cy: float, color: QColor) -> None:
+    """A raised, clenched fist -- solidarity, the poster staple that isn't
+    the hammer-and-sickle itself."""
+    painter.setBrush(color)
+    painter.setPen(Qt.NoPen)
+    painter.drawRect(QRectF(cx - 8, cy + 8, 16, 20))
+    painter.drawRoundedRect(QRectF(cx - 17, cy - 14, 34, 24), 6, 6)
+    for dx in (-12, -4, 4, 12):
+        painter.drawEllipse(QRectF(cx + dx - 5, cy - 20, 10, 12))
+    painter.save()
+    painter.translate(cx - 15, cy - 1)
+    painter.rotate(-25)
+    painter.drawRoundedRect(QRectF(-5, -11, 10, 20), 4, 4)
+    painter.restore()
 
 
 class CccpPropagandaPanel(QWidget):

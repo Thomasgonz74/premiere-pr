@@ -10,7 +10,7 @@ layout rather than just different colors -- is driven by a TitleBarStyle
 (see theme/theme_manager.py) so the same widget serves every theme.
 """
 
-from PySide6.QtCore import QPoint, QPointF, QRectF, Qt
+from PySide6.QtCore import QPoint, QRectF, Qt
 from PySide6.QtGui import (
     QColor,
     QIcon,
@@ -25,6 +25,7 @@ from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QWidget
 
 from torrent2000.i18n.translator import tr
 from torrent2000.ui.theme.theme_manager import TitleBarStyle
+from torrent2000.ui.widgets.soviet_emblem import paint_hammer_and_sickle
 from torrent2000.utils.resource_path import resource_path
 
 TITLE_BAR_HEIGHT = 30
@@ -157,22 +158,8 @@ class _CaptionButton(QPushButton):
         elif self._glyph == "close":
             if self._close_glyph_style == "hammer_sickle":
                 painter.save()
-                pen = QPen(glyph_color, 1.5)
-                pen.setCapStyle(Qt.RoundCap)
-                painter.setPen(pen)
                 painter.setRenderHint(QPainter.Antialiasing, True)
-                # Sickle: a thick crescent blade curving from upper-right
-                # down and around to lower-left, with a short handle tip.
-                sickle_rect = QRectF(cx - 5.5, cy - 6.0, 10.0, 10.0)
-                painter.drawArc(sickle_rect, -20 * 16, 260 * 16)
-                painter.drawLine(QPointF(cx + 4.3, cy - 5.2), QPointF(cx + 6.4, cy - 7.2))
-                # Hammer: crosses the sickle diagonally -- a handle plus a
-                # small rectangular head at the top end.
-                painter.translate(cx, cy)
-                painter.rotate(-40)
-                painter.drawLine(QPointF(-1, 6.5), QPointF(-1, -3))
-                painter.setBrush(glyph_color)
-                painter.drawRect(QRectF(-3.5, -6.5, 5, 3))
+                paint_hammer_and_sickle(painter, cx, cy, 8.0, glyph_color)
                 painter.setRenderHint(QPainter.Antialiasing, False)
                 painter.restore()
             else:
