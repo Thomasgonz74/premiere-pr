@@ -1,17 +1,22 @@
-/* Torrent 2000 -- "CCCP" skin: bold Soviet-constructivist propaganda-poster
-   red, sharp square corners, thick borders, gold accents. No gradients, no
-   glass, no mercy.
+/* Torrent 2000 -- "CCCP" skin: Soviet-constructivist propaganda-poster
+   look (think Rodchenko/El Lissitzky), sharp square corners, thick white
+   borders. Red is used as an ACCENT against a black/charcoal base -- not
+   as the base itself -- matching how real constructivist posters actually
+   balance the palette (mostly black and white, red used sparingly for
+   maximum punch).
 
    Reference colors:
-     window background       #6E0E0E  (poster red)
-     panel background         #5A0C0C  (darker maroon)
-     recessed input background #3A0A0A
-     gold accent               #D4AF37  (selection, progress, hover)
-     text                      #F2E4C4  (parchment/cream, like aged paper)
-     disabled text              #A97A7A
+     window background        #161616  (near-black)
+     panel background          #1F1F1F
+     recessed input background  #0D0D0D
+     red accent                 #CC1B1B  (selection, progress, headers, hover)
+     border white                #E8E8E8
+     text                         #EDEDED
+     disabled text                 #6E6E6E
 
-   The title bar (solid red caption) is NOT drawn by this stylesheet --
-   see src/torrent2000/ui/widgets/app_title_bar.py. Two theme-specific
+   The title bar (solid red caption, hammer-and-sickle close button) is
+   NOT drawn by this stylesheet -- see
+   src/torrent2000/ui/widgets/app_title_bar.py. Two theme-specific
    mechanics live outside QSS entirely: downloading is blocked while this
    theme is active (engine/session_manager.py) and sharing counts for 3x
    toward the level (stats/leveling.py).
@@ -23,37 +28,37 @@
 }
 
 QMainWindow, QWidget#centralWidget {
-    background-color: #6E0E0E;
+    background-color: #161616;
 }
 
 QWidget {
-    background-color: #6E0E0E;
-    color: #F2E4C4;
+    background-color: #161616;
+    color: #EDEDED;
 }
 
 QTabWidget::pane {
-    border: 2px solid #2A0808;
-    background-color: #6E0E0E;
+    border: 2px solid #E8E8E8;
+    background-color: #161616;
     top: -1px;
 }
 
 QTabBar::tab {
-    background-color: #5A0C0C;
-    border: 2px solid #2A0808;
+    background-color: #1F1F1F;
+    border: 2px solid #E8E8E8;
     border-bottom: none;
     border-radius: 0px;
     padding: 5px 16px;
     margin-right: 1px;
-    color: #F2E4C4;
+    color: #EDEDED;
     font-weight: bold;
 }
 
 QTabBar::tab:selected {
-    background-color: #6E0E0E;
-    border-color: #D4AF37;
-    border-bottom: 2px solid #6E0E0E;
+    background-color: #161616;
+    border-color: #E8E8E8;
+    border-bottom: 3px solid #CC1B1B;
     margin-top: 0px;
-    color: #D4AF37;
+    color: #CC1B1B;
 }
 
 QTabBar::tab:!selected {
@@ -61,110 +66,109 @@ QTabBar::tab:!selected {
 }
 
 QGroupBox {
-    border: 2px solid #2A0808;
+    border: 2px solid #E8E8E8;
     border-radius: 0px;
     margin-top: 10px;
     padding-top: 6px;
-    background-color: #5A0C0C;
+    background-color: #1F1F1F;
     font-weight: bold;
-    color: #D4AF37;
+    color: #CC1B1B;
 }
 
 QGroupBox::title {
     subcontrol-origin: margin;
     left: 10px;
     padding: 0 4px;
-    color: #D4AF37;
+    color: #CC1B1B;
 }
 
 QPushButton {
-    background-color: #A31515;
-    border: 2px solid #2A0808;
+    background-color: #1F1F1F;
+    border: 2px solid #E8E8E8;
     border-radius: 0px;
     padding: 4px 12px;
     min-height: 18px;
-    color: #F2E4C4;
+    color: #EDEDED;
     font-weight: bold;
 }
 
 QPushButton:hover:!pressed {
-    background-color: #B81E1E;
-    border: 2px solid #D4AF37;
-    color: #D4AF37;
+    background-color: #2A2A2A;
+    border: 2px solid #CC1B1B;
+    color: #CC1B1B;
 }
 
 QPushButton:pressed {
-    background-color: #5C0A0A;
-    border: 2px solid #D4AF37;
+    background-color: #0D0D0D;
+    border: 2px solid #CC1B1B;
 }
 
 QPushButton:default {
     border-width: 3px;
-    border-color: #D4AF37;
+    border-color: #CC1B1B;
 }
 
 QPushButton:disabled {
-    background-color: #5A0C0C;
-    border: 2px solid #3A0A0A;
-    color: #A97A7A;
+    background-color: #1F1F1F;
+    border: 2px solid #3A3A3A;
+    color: #6E6E6E;
 }
 
-/* The one button that gets to be gold instead of red -- retiring a torrent
-   isn't "downloading", the rule this theme actually cares about. */
+/* The one button that's allowed to BE red instead of just bordered by it --
+   removing a torrent is exactly the kind of decisive action this theme's
+   sparing red accent is reserved for. */
 QPushButton#dangerButton {
-    background-color: #3A0A0A;
-    border: 2px solid #D4AF37;
+    background-color: #CC1B1B;
+    border: 2px solid #E8E8E8;
     border-radius: 0px;
     padding: 2px 10px;
     min-height: 16px;
-    color: #D4AF37;
+    color: #EDEDED;
     font-weight: bold;
 }
 
 QPushButton#dangerButton:hover:!pressed {
-    background-color: #4D0E0E;
-    border: 2px solid #FFD700;
-    color: #FFD700;
+    background-color: #E23434;
+    border: 2px solid #FFFFFF;
 }
 
 QPushButton#dangerButton:pressed {
-    background-color: #D4AF37;
-    border: 2px solid #D4AF37;
-    color: #3A0A0A;
+    background-color: #8F1212;
+    border: 2px solid #E8E8E8;
 }
 
 QLineEdit, QSpinBox, QAbstractSpinBox {
-    background-color: #3A0A0A;
-    border: 2px solid #2A0808;
+    background-color: #0D0D0D;
+    border: 2px solid #3A3A3A;
     border-radius: 0px;
     padding: 2px 4px;
-    color: #F2E4C4;
-    selection-background-color: #D4AF37;
-    selection-color: #3A0A0A;
+    color: #EDEDED;
+    selection-background-color: #CC1B1B;
+    selection-color: #FFFFFF;
 }
 
 QLineEdit:hover, QSpinBox:hover, QAbstractSpinBox:hover {
-    border: 2px solid #D4AF37;
+    border: 2px solid #CC1B1B;
 }
 
 QComboBox {
-    background-color: #3A0A0A;
-    border: 2px solid #2A0808;
+    background-color: #0D0D0D;
+    border: 2px solid #3A3A3A;
     border-radius: 0px;
     padding: 2px 4px;
-    color: #F2E4C4;
+    color: #EDEDED;
 }
 
 QComboBox:hover {
-    border: 2px solid #D4AF37;
+    border: 2px solid #CC1B1B;
 }
 
 QComboBox::drop-down {
     subcontrol-origin: padding;
     subcontrol-position: right;
     width: 20px;
-    background-color: #A31515;
-    border-left: 2px solid #2A0808;
+    background-color: #1F1F1F;
+    border-left: 2px solid #3A3A3A;
 }
 
 QComboBox::down-arrow {
@@ -173,101 +177,101 @@ QComboBox::down-arrow {
     image: none;
     border-left: 3px solid transparent;
     border-right: 3px solid transparent;
-    border-top: 4px solid #F2E4C4;
+    border-top: 4px solid #EDEDED;
 }
 
 QComboBox QAbstractItemView {
-    background-color: #3A0A0A;
-    color: #F2E4C4;
-    border: 2px solid #D4AF37;
-    selection-background-color: #D4AF37;
-    selection-color: #3A0A0A;
+    background-color: #0D0D0D;
+    color: #EDEDED;
+    border: 2px solid #CC1B1B;
+    selection-background-color: #CC1B1B;
+    selection-color: #FFFFFF;
 }
 
 QCheckBox::indicator {
     width: 13px;
     height: 13px;
-    background-color: #3A0A0A;
-    border: 2px solid #2A0808;
+    background-color: #0D0D0D;
+    border: 2px solid #3A3A3A;
 }
 
 QCheckBox::indicator:hover {
-    border: 2px solid #D4AF37;
+    border: 2px solid #CC1B1B;
 }
 
 QCheckBox::indicator:checked {
-    background-color: #D4AF37;
+    background-color: #CC1B1B;
     image: url(theme:checkmark.png);
 }
 
 QSlider::groove:horizontal {
     height: 4px;
-    background-color: #3A0A0A;
-    border: 2px solid #2A0808;
+    background-color: #3A3A3A;
+    border: 2px solid #0D0D0D;
 }
 
 QSlider::handle:horizontal {
     width: 14px;
     margin: -6px 0;
-    background-color: #D4AF37;
-    border: 2px solid #2A0808;
+    background-color: #CC1B1B;
+    border: 2px solid #E8E8E8;
 }
 
 QTableWidget, QTreeWidget {
-    background-color: #3A0A0A;
-    alternate-background-color: #4A0E0E;
-    gridline-color: #2A0808;
-    border: 2px solid #2A0808;
-    color: #F2E4C4;
-    selection-background-color: #D4AF37;
-    selection-color: #3A0A0A;
+    background-color: #0D0D0D;
+    alternate-background-color: #1A1A1A;
+    gridline-color: #3A3A3A;
+    border: 2px solid #3A3A3A;
+    color: #EDEDED;
+    selection-background-color: #CC1B1B;
+    selection-color: #FFFFFF;
 }
 
 QHeaderView::section {
-    background-color: #5A0C0C;
-    border: 2px solid #2A0808;
+    background-color: #1F1F1F;
+    border: 2px solid #3A3A3A;
     padding: 3px;
     font-weight: bold;
-    color: #D4AF37;
+    color: #CC1B1B;
 }
 
-/* The "People's Progress" -- gold filling on a dark groove. */
+/* The "People's Progress" -- red filling on a dark groove. */
 QProgressBar {
-    border: 2px solid #2A0808;
-    background-color: #3A0A0A;
+    border: 2px solid #3A3A3A;
+    background-color: #0D0D0D;
     text-align: center;
-    color: #F2E4C4;
+    color: #EDEDED;
     font-weight: bold;
 }
 
 QProgressBar::chunk {
-    background-color: #D4AF37;
+    background-color: #CC1B1B;
     margin: 1px;
 }
 
 QLabel {
     background: transparent;
-    color: #F2E4C4;
+    color: #EDEDED;
 }
 
 QSplitter::handle {
-    background-color: #6E0E0E;
+    background-color: #161616;
 }
 
 QScrollBar:vertical {
-    background: #5A0C0C;
+    background: #1F1F1F;
     width: 16px;
-    border: 2px solid #2A0808;
+    border: 2px solid #3A3A3A;
 }
 
 QScrollBar::handle:vertical {
-    background-color: #A31515;
-    border: 1px solid #2A0808;
+    background-color: #3A3A3A;
+    border: 1px solid #0D0D0D;
     min-height: 24px;
 }
 
 QScrollBar::handle:vertical:hover {
-    background-color: #D4AF37;
+    background-color: #CC1B1B;
 }
 
 QTabWidget#mainTabs::pane {
@@ -276,7 +280,33 @@ QTabWidget#mainTabs::pane {
 }
 
 QSizeGrip {
-    background-color: #6E0E0E;
+    background-color: #161616;
     width: 16px;
     height: 16px;
+}
+
+/* ---------------------------------------------------------------------
+   Propaganda side panel (src/torrent2000/ui/widgets/propaganda_panel.py)
+   -- the extra strip of window width shown only under this theme.
+   --------------------------------------------------------------------- */
+
+QWidget#cccpPropagandaPanel {
+    background-color: #0D0D0D;
+    border-left: 3px solid #CC1B1B;
+}
+
+QLabel#propagandaHeader {
+    color: #CC1B1B;
+    font-weight: bold;
+    font-size: 10pt;
+}
+
+QLabel#propagandaMessage {
+    color: #EDEDED;
+    font-size: 9pt;
+}
+
+QFrame#propagandaDivider {
+    background-color: #CC1B1B;
+    border: none;
 }

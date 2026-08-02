@@ -78,6 +78,22 @@ def test_auto_shutdown_disabled_by_default():
     assert settings.auto_shutdown_enabled is False
 
 
+def test_language_defaults_to_french():
+    settings = Settings()
+    assert settings.language == "fr"
+
+
+def test_language_round_trips(tmp_path, monkeypatch):
+    monkeypatch.setenv("TORRENT2000_DATA_DIR", str(tmp_path))
+
+    settings = Settings.load()
+    settings.language = "ja"
+    settings.save()
+
+    reloaded = Settings.load()
+    assert reloaded.language == "ja"
+
+
 def test_new_feature_settings_round_trip(tmp_path, monkeypatch):
     monkeypatch.setenv("TORRENT2000_DATA_DIR", str(tmp_path))
 

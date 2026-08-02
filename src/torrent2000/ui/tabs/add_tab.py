@@ -16,6 +16,7 @@ from torrent2000.config.settings import Settings
 from torrent2000.danger_scanner import scan_files
 from torrent2000.engine.session_manager import SessionManager
 from torrent2000.engine.torrent_files import files_from_torrent_path
+from torrent2000.i18n.translator import tr
 from torrent2000.ui.widgets.drop_zone import DropZoneWidget
 from torrent2000.ui.widgets.file_tree_risk import FileTreeRiskWidget
 
@@ -34,85 +35,104 @@ class AddTorrentTab(QWidget):
 
         layout = QVBoxLayout(self)
 
-        source_box = QGroupBox("Source du torrent", self)
-        source_layout = QVBoxLayout(source_box)
+        self.source_box = QGroupBox(tr("add_tab.source_group"), self)
+        source_layout = QVBoxLayout(self.source_box)
 
-        self.drop_zone = DropZoneWidget(source_box)
+        self.drop_zone = DropZoneWidget(self.source_box)
         self.drop_zone.torrent_file_dropped.connect(self._on_torrent_file_selected)
         source_layout.addWidget(self.drop_zone)
 
         browse_row = QHBoxLayout()
-        self.browse_button = QPushButton("Parcourir un fichier .torrent...", source_box)
+        self.browse_button = QPushButton(tr("add_tab.browse_torrent"), self.source_box)
         self.browse_button.clicked.connect(self._on_browse_clicked)
         browse_row.addWidget(self.browse_button)
-        self.selected_file_label = QLabel("", source_box)
+        self.selected_file_label = QLabel("", self.source_box)
         browse_row.addWidget(self.selected_file_label, 1)
         source_layout.addLayout(browse_row)
 
         magnet_row = QHBoxLayout()
-        magnet_row.addWidget(QLabel("Lien magnet:", source_box))
-        self.magnet_input = QLineEdit(source_box)
+        self.magnet_label = QLabel(tr("add_tab.magnet_label"), self.source_box)
+        magnet_row.addWidget(self.magnet_label)
+        self.magnet_input = QLineEdit(self.source_box)
         self.magnet_input.setPlaceholderText("magnet:?xt=urn:btih:...")
         magnet_row.addWidget(self.magnet_input, 1)
         source_layout.addLayout(magnet_row)
 
-        layout.addWidget(source_box)
+        layout.addWidget(self.source_box)
 
-        dest_box = QGroupBox("Destination", self)
-        dest_layout = QHBoxLayout(dest_box)
-        self.dest_input = QLineEdit(settings.default_download_dir, dest_box)
+        self.dest_box = QGroupBox(tr("add_tab.destination_group"), self)
+        dest_layout = QHBoxLayout(self.dest_box)
+        self.dest_input = QLineEdit(settings.default_download_dir, self.dest_box)
         dest_layout.addWidget(self.dest_input, 1)
-        self.dest_browse_button = QPushButton("Parcourir...", dest_box)
+        self.dest_browse_button = QPushButton(tr("common.browse"), self.dest_box)
         self.dest_browse_button.clicked.connect(self._on_browse_dest_clicked)
         dest_layout.addWidget(self.dest_browse_button)
-        layout.addWidget(dest_box)
+        layout.addWidget(self.dest_box)
 
-        analysis_box = QGroupBox("Analyse des fichiers (facultative)", self)
-        analysis_layout = QVBoxLayout(analysis_box)
+        self.analysis_box = QGroupBox(tr("add_tab.analysis_group"), self)
+        analysis_layout = QVBoxLayout(self.analysis_box)
 
         analysis_controls = QHBoxLayout()
-        self.analyze_button = QPushButton("Analyser", analysis_box)
+        self.analyze_button = QPushButton(tr("add_tab.analyze_button"), self.analysis_box)
         self.analyze_button.clicked.connect(self._on_analyze_clicked)
         analysis_controls.addWidget(self.analyze_button)
-        analysis_controls.addWidget(QLabel("Seuil d'auto-exclusion (score ≥):", analysis_box))
-        self.threshold_spin = QSpinBox(analysis_box)
+        self.threshold_label = QLabel(tr("add_tab.threshold_label"), self.analysis_box)
+        analysis_controls.addWidget(self.threshold_label)
+        self.threshold_spin = QSpinBox(self.analysis_box)
         self.threshold_spin.setRange(0, 100)
         self.threshold_spin.setValue(settings.danger_auto_exclude_threshold)
         analysis_controls.addWidget(self.threshold_spin)
         analysis_controls.addStretch(1)
         analysis_layout.addLayout(analysis_controls)
 
-        self.status_label = QLabel("", analysis_box)
+        self.status_label = QLabel("", self.analysis_box)
         analysis_layout.addWidget(self.status_label)
 
-        self.file_tree = FileTreeRiskWidget(analysis_box)
+        self.file_tree = FileTreeRiskWidget(self.analysis_box)
         analysis_layout.addWidget(self.file_tree)
 
         selection_row = QHBoxLayout()
-        self.check_all_button = QPushButton("Tout cocher", analysis_box)
+        self.check_all_button = QPushButton(tr("add_tab.check_all"), self.analysis_box)
         self.check_all_button.clicked.connect(self.file_tree.check_all)
         selection_row.addWidget(self.check_all_button)
-        self.uncheck_all_button = QPushButton("Tout décocher", analysis_box)
+        self.uncheck_all_button = QPushButton(tr("add_tab.uncheck_all"), self.analysis_box)
         self.uncheck_all_button.clicked.connect(self.file_tree.uncheck_all)
         selection_row.addWidget(self.uncheck_all_button)
         selection_row.addStretch(1)
         analysis_layout.addLayout(selection_row)
 
-        layout.addWidget(analysis_box, 1)
+        layout.addWidget(self.analysis_box, 1)
 
         start_row = QHBoxLayout()
         start_row.addStretch(1)
-        self.start_button = QPushButton("Démarrer le téléchargement", self)
+        self.start_button = QPushButton(tr("add_tab.start_button"), self)
         self.start_button.clicked.connect(self._on_start_clicked)
         start_row.addWidget(self.start_button)
         layout.addLayout(start_row)
 
         self._session_manager.metadata_received.connect(self._on_metadata_received)
 
+    # ----------------------------------------------------------- retranslate
+
+    def retranslate_ui(self) -> None:
+        self.source_box.setTitle(tr("add_tab.source_group"))
+        self.drop_zone.retranslate_ui()
+        self.browse_button.setText(tr("add_tab.browse_torrent"))
+        self.magnet_label.setText(tr("add_tab.magnet_label"))
+        self.dest_box.setTitle(tr("add_tab.destination_group"))
+        self.dest_browse_button.setText(tr("common.browse"))
+        self.analysis_box.setTitle(tr("add_tab.analysis_group"))
+        self.analyze_button.setText(tr("add_tab.analyze_button"))
+        self.threshold_label.setText(tr("add_tab.threshold_label"))
+        self.file_tree.retranslate_ui()
+        self.check_all_button.setText(tr("add_tab.check_all"))
+        self.uncheck_all_button.setText(tr("add_tab.uncheck_all"))
+        self.start_button.setText(tr("add_tab.start_button"))
+
     # ---------------------------------------------------------------- source
 
     def _on_browse_clicked(self) -> None:
-        path, _ = QFileDialog.getOpenFileName(self, "Choisir un fichier .torrent", "", "Torrent (*.torrent)")
+        path, _ = QFileDialog.getOpenFileName(self, tr("add_tab.choose_torrent_title"), "", "Torrent (*.torrent)")
         if path:
             self._on_torrent_file_selected(path)
 
@@ -125,7 +145,7 @@ class AddTorrentTab(QWidget):
         self.status_label.setText("")
 
     def _on_browse_dest_clicked(self) -> None:
-        directory = QFileDialog.getExistingDirectory(self, "Choisir le dossier de destination", self.dest_input.text())
+        directory = QFileDialog.getExistingDirectory(self, tr("add_tab.choose_dest_title"), self.dest_input.text())
         if directory:
             self.dest_input.setText(directory)
 
@@ -136,11 +156,11 @@ class AddTorrentTab(QWidget):
             try:
                 files = files_from_torrent_path(self._torrent_path)
             except Exception as exc:
-                QMessageBox.warning(self, "Analyse impossible", f"Impossible de lire ce fichier .torrent :\n{exc}")
+                QMessageBox.warning(self, tr("add_tab.analysis_failed_title"), tr("add_tab.analysis_failed_message", error=exc))
                 return
             result = scan_files(files)
             self.file_tree.load_scan_result(result, self.threshold_spin.value())
-            self.status_label.setText(f"{len(files)} fichier(s) analysé(s).")
+            self.status_label.setText(tr("add_tab.files_analyzed", count=len(files)))
             return
 
         magnet_uri = self.magnet_input.text().strip()
@@ -148,13 +168,10 @@ class AddTorrentTab(QWidget):
             if self._pending_magnet_hash is None:
                 info_hash = self._session_manager.add_torrent_from_magnet(magnet_uri, self.dest_input.text())
                 self._pending_magnet_hash = info_hash
-            self.status_label.setText(
-                "En attente des métadonnées du magnet (recherche de pairs)... "
-                "l'analyse s'affichera automatiquement dès qu'elles arrivent."
-            )
+            self.status_label.setText(tr("add_tab.awaiting_metadata"))
             return
 
-        QMessageBox.information(self, "Aucune source", "Sélectionnez un fichier .torrent ou saisissez un lien magnet.")
+        QMessageBox.information(self, tr("add_tab.no_source_title"), tr("add_tab.no_source_message"))
 
     def _on_metadata_received(self, info_hash: str) -> None:
         if info_hash != self._pending_magnet_hash:
@@ -162,14 +179,14 @@ class AddTorrentTab(QWidget):
         files = self._session_manager.get_torrent_files(info_hash)
         result = scan_files(files)
         self.file_tree.load_scan_result(result, self.threshold_spin.value())
-        self.status_label.setText(f"Métadonnées reçues -- {len(files)} fichier(s) analysé(s).")
+        self.status_label.setText(tr("add_tab.metadata_received", count=len(files)))
 
     # ------------------------------------------------------------------ start
 
     def _on_start_clicked(self) -> None:
         dest = self.dest_input.text().strip()
         if not dest:
-            QMessageBox.warning(self, "Destination manquante", "Choisissez un dossier de destination.")
+            QMessageBox.warning(self, tr("add_tab.missing_dest_title"), tr("add_tab.missing_dest_message"))
             return
 
         excluded = self.file_tree.excluded_indices() if self.file_tree.topLevelItemCount() else set()
@@ -196,7 +213,7 @@ class AddTorrentTab(QWidget):
             self.torrent_started.emit()
             return
 
-        QMessageBox.information(self, "Aucune source", "Sélectionnez un fichier .torrent ou saisissez un lien magnet.")
+        QMessageBox.information(self, tr("add_tab.no_source_title"), tr("add_tab.no_source_message"))
 
     def _reset_form(self) -> None:
         self._torrent_path = None
@@ -204,4 +221,4 @@ class AddTorrentTab(QWidget):
         self.selected_file_label.setText("")
         self.magnet_input.clear()
         self.file_tree.clear()
-        self.status_label.setText("Téléchargement ajouté.")
+        self.status_label.setText(tr("add_tab.torrent_added"))

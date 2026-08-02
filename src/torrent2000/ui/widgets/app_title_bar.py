@@ -10,7 +10,7 @@ layout rather than just different colors -- is driven by a TitleBarStyle
 (see theme/theme_manager.py) so the same widget serves every theme.
 """
 
-from PySide6.QtCore import QPoint, QRectF, Qt
+from PySide6.QtCore import QPoint, QPointF, QRectF, Qt
 from PySide6.QtGui import (
     QColor,
     QIcon,
@@ -23,6 +23,7 @@ from PySide6.QtGui import (
 )
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QWidget
 
+from torrent2000.i18n.translator import tr
 from torrent2000.ui.theme.theme_manager import TitleBarStyle
 from torrent2000.utils.resource_path import resource_path
 
@@ -62,6 +63,7 @@ class _CaptionButton(QPushButton):
         self._glyph_color = QColor("#FFFFFF")
         self._hover_glyph_color: QColor | None = None
         self._hover_radius = 0
+        self._close_glyph_style = "x"
         self.setFixedSize(_BUTTON_SIZE, TITLE_BAR_HEIGHT - 11)
         self.setFlat(True)
         self.setCursor(Qt.ArrowCursor)
@@ -84,6 +86,7 @@ class _CaptionButton(QPushButton):
             self._hover_glyph_color = (
                 QColor(style.button_hover_glyph_color) if style.button_hover_glyph_color else None
             )
+            self._close_glyph_style = style.close_glyph
             self.setFixedSize(_BUTTON_SIZE, TITLE_BAR_HEIGHT - 11)
         elif style.button_variant == "mac":
             if self._glyph == "close":
@@ -94,6 +97,7 @@ class _CaptionButton(QPushButton):
                 self._fill_color, self._hover_color = QColor(_MAC_MAXIMIZE_FILL), QColor(_MAC_MAXIMIZE_HOVER)
             self._glyph_color = QColor(_MAC_GLYPH_COLOR)
             self._hover_glyph_color = None
+            self._close_glyph_style = "x"
             self.setFixedSize(_MAC_BUTTON_SIZE, _MAC_BUTTON_SIZE)
         else:
             # "modern" glyphs track the caption's own text color, so they
@@ -102,6 +106,7 @@ class _CaptionButton(QPushButton):
             is_dark_caption = QColor(style.title_text_color).lightness() > 128
             hover_min_max = _MODERN_HOVER_MIN_MAX_DARK if is_dark_caption else _MODERN_HOVER_MIN_MAX_LIGHT
             self._hover_color = QColor(_MODERN_HOVER_CLOSE if self._glyph == "close" else hover_min_max)
+            self._close_glyph_style = "x"
             self.setFixedSize(_BUTTON_SIZE, TITLE_BAR_HEIGHT - 11)
         self.update()
 
@@ -150,8 +155,29 @@ class _CaptionButton(QPushButton):
                 painter.fillRect(cx - 4, cy - 4, 6, 6, fill)
             painter.drawRect(cx - 4, cy - 4, 6, 6)
         elif self._glyph == "close":
-            painter.drawLine(cx - 4, cy - 4, cx + 4, cy + 4)
-            painter.drawLine(cx - 4, cy + 4, cx + 4, cy - 4)
+            if self._close_glyph_style == "hammer_sickle":
+                painter.save()
+                pen = QPen(glyph_color, 1.5)
+                pen.setCapStyle(Qt.RoundCap)
+                painter.setPen(pen)
+                painter.setRenderHint(QPainter.Antialiasing, True)
+                # Sickle: a thick crescent blade curving from upper-right
+                # down and around to lower-left, with a short handle tip.
+                sickle_rect = QRectF(cx - 5.5, cy - 6.0, 10.0, 10.0)
+                painter.drawArc(sickle_rect, -20 * 16, 260 * 16)
+                painter.drawLine(QPointF(cx + 4.3, cy - 5.2), QPointF(cx + 6.4, cy - 7.2))
+                # Hammer: crosses the sickle diagonally -- a handle plus a
+                # small rectangular head at the top end.
+                painter.translate(cx, cy)
+                painter.rotate(-40)
+                painter.drawLine(QPointF(-1, 6.5), QPointF(-1, -3))
+                painter.setBrush(glyph_color)
+                painter.drawRect(QRectF(-3.5, -6.5, 5, 3))
+                painter.setRenderHint(QPainter.Antialiasing, False)
+                painter.restore()
+            else:
+                painter.drawLine(cx - 4, cy - 4, cx + 4, cy + 4)
+                painter.drawLine(cx - 4, cy + 4, cx + 4, cy - 4)
         painter.end()
 
 
@@ -175,15 +201,15 @@ class AppTitleBar(QWidget):
         self._title_label = QLabel(title, self)
 
         self._minimize_button = _CaptionButton("min", self)
-        self._minimize_button.setToolTip("Réduire")
+        self._minimize_button.setToolTip(tr("titlebar.minimize"))
         self._minimize_button.clicked.connect(self._on_minimize)
 
         self._maximize_button = _CaptionButton("max", self)
-        self._maximize_button.setToolTip("Agrandir")
+        self._maximize_button.setToolTip(tr("titlebar.maximize"))
         self._maximize_button.clicked.connect(self._on_maximize_restore)
 
         self._close_button = _CaptionButton("close", self)
-        self._close_button.setToolTip("Fermer")
+        self._close_button.setToolTip(tr("titlebar.close"))
         self._close_button.clicked.connect(self._on_close)
 
         self._layout = QHBoxLayout(self)
@@ -246,7 +272,12 @@ class AppTitleBar(QWidget):
     def refresh_maximize_glyph(self) -> None:
         window = self.window()
         self._maximize_button.set_glyph("restore" if window.isMaximized() else "max")
-        self._maximize_button.setToolTip("Restaurer" if window.isMaximized() else "Agrandir")
+        self._maximize_button.setToolTip(tr("titlebar.restore") if window.isMaximized() else tr("titlebar.maximize"))
+
+    def retranslate_ui(self) -> None:
+        self._minimize_button.setToolTip(tr("titlebar.minimize"))
+        self._close_button.setToolTip(tr("titlebar.close"))
+        self.refresh_maximize_glyph()
 
     # -- painting -----------------------------------------------------
 

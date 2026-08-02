@@ -10,9 +10,11 @@ directly) to `AutoShutdownService.cancel_shutdown()`.
 from PySide6.QtCore import QTimer, Signal
 from PySide6.QtWidgets import QDialog, QHBoxLayout, QLabel, QPushButton, QVBoxLayout
 
-_ACTION_LABELS = {
-    "shutdown": "L'ordinateur va s'éteindre",
-    "hibernate": "L'ordinateur va se mettre en veille prolongée",
+from torrent2000.i18n.translator import tr
+
+_ACTION_LABEL_KEYS = {
+    "shutdown": "shutdown_dialog.action_shutdown",
+    "hibernate": "shutdown_dialog.action_hibernate",
 }
 
 
@@ -25,12 +27,12 @@ class ShutdownCountdownDialog(QDialog):
 
     def __init__(self, delay_seconds: int, action: str = "shutdown", parent=None) -> None:
         super().__init__(parent)
-        self.setWindowTitle("Extinction automatique")
+        self.setWindowTitle(tr("shutdown_dialog.window_title"))
         self._remaining = max(0, delay_seconds)
 
         layout = QVBoxLayout(self)
 
-        self.message_label = QLabel(_ACTION_LABELS.get(action, _ACTION_LABELS["shutdown"]), self)
+        self.message_label = QLabel(tr(_ACTION_LABEL_KEYS.get(action, _ACTION_LABEL_KEYS["shutdown"])), self)
         layout.addWidget(self.message_label)
 
         self.countdown_label = QLabel(self)
@@ -39,7 +41,7 @@ class ShutdownCountdownDialog(QDialog):
 
         button_row = QHBoxLayout()
         button_row.addStretch(1)
-        self.cancel_button = QPushButton("Annuler", self)
+        self.cancel_button = QPushButton(tr("common.cancel"), self)
         self.cancel_button.clicked.connect(self._on_cancel_clicked)
         button_row.addWidget(self.cancel_button)
         layout.addLayout(button_row)
@@ -49,7 +51,7 @@ class ShutdownCountdownDialog(QDialog):
         self._timer.start(1000)
 
     def _update_label(self) -> None:
-        self.countdown_label.setText(f"Tous les téléchargements sont terminés. Extinction dans {self._remaining} s.")
+        self.countdown_label.setText(tr("shutdown_dialog.countdown", seconds=self._remaining))
 
     def _on_tick(self) -> None:
         self._remaining -= 1

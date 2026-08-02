@@ -54,6 +54,7 @@ class Settings:
     danger_auto_exclude_threshold: int = 60  # 0-100, files scoring >= this get auto-excluded
     theme: str = "luna_xp"
     appearance_mode: str = "light"  # "light" | "dark" | "dark_hc"
+    language: str = "fr"  # see i18n/translator.py LANGUAGE_LABELS for the full list
     network_interface: str = ""  # empty = default / all interfaces
     proxy: ProxySettings = field(default_factory=ProxySettings)
     max_active_downloads: int = 8

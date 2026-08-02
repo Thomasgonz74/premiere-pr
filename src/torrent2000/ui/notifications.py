@@ -8,9 +8,10 @@ from torrent2000 import APP_NAME
 from torrent2000.config.settings import Settings
 from torrent2000.engine.session_manager import SessionManager
 from torrent2000.engine.share_limits import ShareLimitService
+from torrent2000.i18n.translator import tr
 from torrent2000.utils.resource_path import resource_path
 
-_LIMIT_REASON_LABELS = {"time": "limite de temps atteinte", "data": "limite de données atteinte"}
+_LIMIT_REASON_KEYS = {"time": "notifications.limit_reason_time", "data": "notifications.limit_reason_data"}
 _MESSAGE_DURATION_MS = 6000
 
 
@@ -43,10 +44,10 @@ class NotificationService:
     def _on_torrent_finished(self, info_hash: str) -> None:
         record = self._session_manager.get_record(info_hash)
         name = record.name if record is not None else info_hash[:12]
-        self._notify("Téléchargement terminé", name)
+        self._notify(tr("notifications.download_finished_title"), name)
 
     def _on_limit_reached(self, info_hash: str, reason: str) -> None:
         record = self._session_manager.get_record(info_hash)
         name = record.name if record is not None else info_hash[:12]
-        label = _LIMIT_REASON_LABELS.get(reason, "limite atteinte")
-        self._notify("Partage mis en pause", f"{name} -- {label}")
+        label = tr(_LIMIT_REASON_KEYS.get(reason, "notifications.limit_reason_generic"))
+        self._notify(tr("notifications.share_paused_title"), tr("notifications.share_paused_message", name=name, reason=label))

@@ -20,9 +20,18 @@ from PySide6.QtWidgets import (
 from torrent2000.config.settings import RssFeedSubscription, Settings
 from torrent2000.engine.rss_feed_service import RssFeedService
 from torrent2000.engine.session_manager import SessionManager
+from torrent2000.i18n.translator import tr
 
-COLUMNS = ["Flux RSS", "Mot-clé", "Actif", "Action"]
 MAX_LOG_ENTRIES = 200
+
+
+def _columns() -> list[str]:
+    return [
+        tr("rss_tab.column_feed"),
+        tr("rss_tab.column_keyword"),
+        tr("rss_tab.column_active"),
+        tr("rss_tab.column_action"),
+    ]
 
 
 class RssTab(QWidget):
@@ -45,62 +54,83 @@ class RssTab(QWidget):
         layout = QVBoxLayout(self)
 
         top_row = QHBoxLayout()
-        top_row.addWidget(QLabel("Abonnements RSS", self))
+        self.subscriptions_label = QLabel(tr("rss_tab.subscriptions"), self)
+        top_row.addWidget(self.subscriptions_label)
         top_row.addStretch(1)
-        self.check_now_button = QPushButton("Vérifier maintenant", self)
+        self.check_now_button = QPushButton(tr("rss_tab.check_now"), self)
         self.check_now_button.clicked.connect(self._rss_feed_service.check_now)
         top_row.addWidget(self.check_now_button)
         layout.addLayout(top_row)
 
-        add_box = QGroupBox("Ajouter un flux", self)
-        add_layout = QVBoxLayout(add_box)
+        self.add_box = QGroupBox(tr("rss_tab.add_feed_group"), self)
+        add_layout = QVBoxLayout(self.add_box)
 
         url_row = QHBoxLayout()
-        url_row.addWidget(QLabel("URL du flux:", add_box))
-        self.url_input = QLineEdit(add_box)
+        self.url_label = QLabel(tr("rss_tab.feed_url_label"), self.add_box)
+        url_row.addWidget(self.url_label)
+        self.url_input = QLineEdit(self.add_box)
         self.url_input.setPlaceholderText("https://exemple.com/rss")
         url_row.addWidget(self.url_input, 1)
         add_layout.addLayout(url_row)
 
         keyword_row = QHBoxLayout()
-        keyword_row.addWidget(QLabel("Mot-clé (filtre):", add_box))
-        self.keyword_input = QLineEdit(add_box)
-        self.keyword_input.setPlaceholderText("laisser vide pour tout télécharger")
+        self.keyword_label = QLabel(tr("rss_tab.keyword_label"), self.add_box)
+        keyword_row.addWidget(self.keyword_label)
+        self.keyword_input = QLineEdit(self.add_box)
+        self.keyword_input.setPlaceholderText(tr("rss_tab.keyword_placeholder"))
         keyword_row.addWidget(self.keyword_input, 1)
         add_layout.addLayout(keyword_row)
 
         add_button_row = QHBoxLayout()
         add_button_row.addStretch(1)
-        self.add_button = QPushButton("Ajouter", add_box)
+        self.add_button = QPushButton(tr("common.add"), self.add_box)
         self.add_button.clicked.connect(self._on_add_clicked)
         add_button_row.addWidget(self.add_button)
         add_layout.addLayout(add_button_row)
 
-        layout.addWidget(add_box)
+        layout.addWidget(self.add_box)
 
-        self.table = QTableWidget(0, len(COLUMNS), self)
-        self.table.setHorizontalHeaderLabels(COLUMNS)
+        self.table = QTableWidget(0, 4, self)
+        self.table.setHorizontalHeaderLabels(_columns())
         self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
         self.table.verticalHeader().setVisible(False)
         layout.addWidget(self.table, 2)
 
-        log_box = QGroupBox("Éléments récemment ajoutés", self)
-        log_layout = QVBoxLayout(log_box)
-        self.log_list = QListWidget(log_box)
+        self.log_box = QGroupBox(tr("rss_tab.log_group"), self)
+        log_layout = QVBoxLayout(self.log_box)
+        self.log_list = QListWidget(self.log_box)
         log_layout.addWidget(self.log_list)
-        layout.addWidget(log_box, 1)
+        layout.addWidget(self.log_box, 1)
 
         self._rss_feed_service.items_found.connect(self._on_items_found)
         self._rss_feed_service.feed_check_failed.connect(self._on_feed_check_failed)
 
         self._refresh_table()
 
+    # ----------------------------------------------------------- retranslate
+
+    def retranslate_ui(self) -> None:
+        self.subscriptions_label.setText(tr("rss_tab.subscriptions"))
+        self.check_now_button.setText(tr("rss_tab.check_now"))
+        self.add_box.setTitle(tr("rss_tab.add_feed_group"))
+        self.url_label.setText(tr("rss_tab.feed_url_label"))
+        self.keyword_label.setText(tr("rss_tab.keyword_label"))
+        self.keyword_input.setPlaceholderText(tr("rss_tab.keyword_placeholder"))
+        self.add_button.setText(tr("common.add"))
+        self.table.setHorizontalHeaderLabels(_columns())
+        self.log_box.setTitle(tr("rss_tab.log_group"))
+        remove_label = tr("common.remove")
+        for row in range(self.table.rowCount()):
+            widget = self.table.cellWidget(row, 3)
+            if widget is not None:
+                widget.setText(remove_label)
+
     # ------------------------------------------------------------------ add
 
     def _on_add_clicked(self) -> None:
         url = self.url_input.text().strip()
         if not url:
-            QMessageBox.information(self, "URL manquante", "Saisissez l'URL du flux RSS à ajouter.")
+            QMessageBox.information(self, tr("rss_tab.missing_url_title"), tr("rss_tab.missing_url_message"))
             return
 
         keyword = self.keyword_input.text().strip()
@@ -135,7 +165,7 @@ class RssTab(QWidget):
         enabled_layout.addWidget(enabled_checkbox)
         self.table.setCellWidget(row, 2, enabled_container)
 
-        remove_button = QPushButton("Retirer", self.table)
+        remove_button = QPushButton(tr("common.remove"), self.table)
         remove_button.setObjectName("dangerButton")
         remove_button.clicked.connect(lambda checked=False, f=feed: self._on_remove_clicked(f))
         self.table.setCellWidget(row, 3, remove_button)
@@ -169,6 +199,6 @@ class RssTab(QWidget):
 
     def _on_feed_check_failed(self, feed_url: str, message: str) -> None:
         timestamp = datetime.now().strftime("%H:%M:%S")
-        self.log_list.insertItem(0, f"[{timestamp}] Échec: {feed_url} ({message})")
+        self.log_list.insertItem(0, f"[{timestamp}] {tr('rss_tab.check_failed', feed_url=feed_url, message=message)}")
         while self.log_list.count() > MAX_LOG_ENTRIES:
             self.log_list.takeItem(self.log_list.count() - 1)

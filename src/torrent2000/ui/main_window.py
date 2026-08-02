@@ -24,6 +24,7 @@ from torrent2000.engine.disk_space_monitor import DiskSpaceMonitor
 from torrent2000.engine.rss_feed_service import RssFeedService
 from torrent2000.engine.session_manager import SessionManager
 from torrent2000.engine.share_limits import ShareLimitService
+from torrent2000.i18n.translator import set_language, tr
 from torrent2000.stats.history_service import HistoryService
 from torrent2000.stats.service import StatsService
 from torrent2000.ui.tabs.add_tab import AddTorrentTab
@@ -31,9 +32,15 @@ from torrent2000.ui.tabs.downloads_tab import DownloadsTab
 from torrent2000.ui.tabs.profile_tab import ProfileTab
 from torrent2000.ui.tabs.rss_tab import RssTab
 from torrent2000.ui.tabs.share_tab import ShareTab
+from torrent2000.theme_ids import CCCP_THEME_ID
 from torrent2000.ui.theme.theme_manager import apply_theme, title_bar_style_for
 from torrent2000.ui.widgets.app_title_bar import AppTitleBar
+from torrent2000.ui.widgets.propaganda_panel import PANEL_WIDTH, CccpPropagandaPanel
 from torrent2000.ui.widgets.shutdown_countdown_dialog import ShutdownCountdownDialog
+
+# Icon/accent color for the propaganda panel, per appearance mode -- dark_hc
+# needs yellow like every other accent in that mode, not red.
+_CCCP_PANEL_ACCENT_COLORS = {"light": "#CC1B1B", "dark": "#E2261F", "dark_hc": "#FFFF00"}
 
 
 class MainWindow(QMainWindow):
@@ -91,21 +98,38 @@ class MainWindow(QMainWindow):
         self._title_bar = AppTitleBar(APP_NAME, title_bar_style_for(settings.theme, settings.appearance_mode), central)
         outer_layout.addWidget(self._title_bar)
 
+        # Tabs + the CCCP theme's propaganda side panel sit side by side --
+        # the panel is only ever shown while that theme is active (see
+        # _set_cccp_panel_active), as extra window width reserved for it.
+        content_row = QHBoxLayout()
+        content_row.setContentsMargins(0, 0, 0, 0)
+        content_row.setSpacing(0)
+
         tabs = QTabWidget(central)
         tabs.setObjectName("mainTabs")
         self._add_tab = AddTorrentTab(session_manager, settings)
-        tabs.addTab(self._add_tab, "Ajout / Analyse")
+        tabs.addTab(self._add_tab, tr("tabs.add"))
         self._downloads_tab_index = tabs.count()
-        tabs.addTab(DownloadsTab(session_manager), "Téléchargements")
-        tabs.addTab(ShareTab(session_manager, share_limit_service, settings), "Partage")
-        tabs.addTab(RssTab(session_manager, rss_feed_service, settings), "RSS")
+        self._downloads_tab = DownloadsTab(session_manager)
+        tabs.addTab(self._downloads_tab, tr("tabs.downloads"))
+        self._share_tab = ShareTab(session_manager, share_limit_service, settings)
+        tabs.addTab(self._share_tab, tr("tabs.share"))
+        self._rss_tab = RssTab(session_manager, rss_feed_service, settings)
+        tabs.addTab(self._rss_tab, tr("tabs.rss"))
         self._profile_tab = ProfileTab(
             session_manager, stats_service, bandwidth_scheduler, history_service, settings, disk_space_monitor
         )
         self._profile_tab.theme_changed.connect(self.set_theme)
-        tabs.addTab(self._profile_tab, "Profil")
-        outer_layout.addWidget(tabs, 1)
+        self._profile_tab.language_changed.connect(self._on_language_changed)
+        tabs.addTab(self._profile_tab, tr("tabs.profile"))
+        content_row.addWidget(tabs, 1)
         self._tabs = tabs
+
+        self._propaganda_panel = CccpPropagandaPanel(central)
+        self._propaganda_panel.hide()
+        content_row.addWidget(self._propaganda_panel)
+
+        outer_layout.addLayout(content_row, 1)
 
         self._add_tab.torrent_started.connect(self._on_torrent_started)
         auto_shutdown_service.shutdown_countdown_started.connect(self._on_shutdown_countdown_started)
@@ -115,7 +139,10 @@ class MainWindow(QMainWindow):
         # A visible QSizeGrip reinforces the bottom-right corner as a resize
         # handle (the eventFilter below already lets you drag from any edge
         # or corner of the window, but a corner grip is a more discoverable
-        # affordance for the same gesture).
+        # affordance for the same gesture). Kept in its own full-width row
+        # below content_row (rather than nested under just the tabs) so it
+        # stays anchored at the window's actual bottom-right corner even
+        # when the propaganda panel is showing.
         grip_row = QHBoxLayout()
         grip_row.setContentsMargins(0, 0, 2, 2)
         grip_row.addStretch(1)
@@ -126,6 +153,7 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(central)
 
         self._corner_radius = 0
+        self._cccp_panel_active = False
         self._apply_window_style(settings.theme, settings.appearance_mode)
 
     # -------------------------------------------------------- edge resize
@@ -233,24 +261,11 @@ class MainWindow(QMainWindow):
         dialog.show()
 
     def _on_download_blocked_by_theme(self, info_hash: str) -> None:
-        QMessageBox.warning(
-            self,
-            "Nyet.",
-            "Ce téléchargement reste en pause : sous le thème CCCP, on ne "
-            "possède pas de fichiers, on les partage. Changez de thème si "
-            "vous tenez vraiment à télécharger quelque chose.",
-        )
+        QMessageBox.warning(self, tr("cccp.nyet_title"), tr("cccp.download_blocked_message"))
 
     def _on_theme_downloads_paused(self, count: int) -> None:
-        plural = "s" if count > 1 else ""
-        QMessageBox.information(
-            self,
-            "Décret du Politburo",
-            f"{count} téléchargement{plural} en cours {'ont' if count > 1 else 'a'} été "
-            f"mis en pause : la propriété individuelle de fichiers est désormais "
-            f"interdite. Vos partages, eux, continuent -- et rapportent 3 fois "
-            f"plus de gloire collective.",
-        )
+        key = "cccp.downloads_paused_singular" if count == 1 else "cccp.downloads_paused_plural"
+        QMessageBox.information(self, tr("cccp.politburo_decree_title"), tr(key, count=count))
 
     def _on_shutdown_dialog_finished(self) -> None:
         self._shutdown_dialog = None
@@ -261,11 +276,50 @@ class MainWindow(QMainWindow):
             apply_theme(app, theme_id, appearance_mode)
         self._apply_window_style(theme_id, appearance_mode)
 
+    def _on_language_changed(self, language_code: str) -> None:
+        set_language(language_code)
+        self.retranslate_ui()
+
+    def retranslate_ui(self) -> None:
+        self._title_bar.set_title(APP_NAME)
+        self._title_bar.retranslate_ui()
+        self._tabs.setTabText(self._tabs.indexOf(self._add_tab), tr("tabs.add"))
+        self._tabs.setTabText(self._tabs.indexOf(self._downloads_tab), tr("tabs.downloads"))
+        self._tabs.setTabText(self._tabs.indexOf(self._share_tab), tr("tabs.share"))
+        self._tabs.setTabText(self._tabs.indexOf(self._rss_tab), tr("tabs.rss"))
+        self._tabs.setTabText(self._tabs.indexOf(self._profile_tab), tr("tabs.profile"))
+        self._add_tab.retranslate_ui()
+        self._downloads_tab.retranslate_ui()
+        self._share_tab.retranslate_ui()
+        self._rss_tab.retranslate_ui()
+        self._profile_tab.retranslate_ui()
+        self._propaganda_panel.retranslate_ui()
+
     def _apply_window_style(self, theme_id: str, appearance_mode: str) -> None:
         style = title_bar_style_for(theme_id, appearance_mode)
         self._title_bar.apply_style(style)
         self._corner_radius = style.window_corner_radius
         self._update_corner_mask()
+        self._set_cccp_panel_active(theme_id == CCCP_THEME_ID)
+        if theme_id == CCCP_THEME_ID:
+            self._propaganda_panel.set_accent_color(_CCCP_PANEL_ACCENT_COLORS.get(appearance_mode, "#CC1B1B"))
+
+    def _set_cccp_panel_active(self, active: bool) -> None:
+        # The panel is extra window width, not space carved out of the
+        # existing content -- growing/shrinking the window on toggle is
+        # what "il faudrait rajouter une largeur supplémentaire" asked for,
+        # rather than the tabs just getting narrower to make room.
+        if active == self._cccp_panel_active:
+            return
+        self._cccp_panel_active = active
+        if active:
+            self._propaganda_panel.show()
+            self._propaganda_panel.start()
+            self.resize(self.width() + PANEL_WIDTH, self.height())
+        else:
+            self._propaganda_panel.stop()
+            self._propaganda_panel.hide()
+            self.resize(max(MIN_WINDOW_SIZE[0], self.width() - PANEL_WIDTH), self.height())
 
     def _update_corner_mask(self) -> None:
         if self._corner_radius <= 0 or self.isMaximized():

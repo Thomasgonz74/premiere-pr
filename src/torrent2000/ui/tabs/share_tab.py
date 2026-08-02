@@ -19,20 +19,39 @@ from torrent2000.config.settings import Settings
 from torrent2000.engine.session_manager import SessionManager
 from torrent2000.engine.share_limits import ShareLimitService
 from torrent2000.engine.torrent_item import TorrentRecord, TorrentState
+from torrent2000.i18n.translator import tr
 from torrent2000.ui.widgets.drop_zone import DropZoneWidget
 from torrent2000.utils.formatting import human_eta, human_rate, human_size
 
-COLUMNS = ["Nom", "↑ Vitesse", "Envoyé (session)", "Temps", "Données", "État", "Action"]
-
-_STATE_LABELS = {
-    TorrentState.SEEDING: "Partage en cours",
-    TorrentState.PAUSED: "En pause",
-    TorrentState.QUEUED: "En attente",
-    TorrentState.CHECKING_METADATA: "Vérification...",
-    TorrentState.ERROR: "Erreur",
+_STATE_LABEL_KEYS = {
+    TorrentState.SEEDING: "share_tab.state_seeding",
+    TorrentState.PAUSED: "share_tab.state_paused",
+    TorrentState.QUEUED: "share_tab.state_queued",
+    TorrentState.CHECKING_METADATA: "share_tab.state_checking",
+    TorrentState.ERROR: "share_tab.state_error",
 }
 
-_LIMIT_REASON_LABELS = {"time": "Limite de temps atteinte", "data": "Limite de données atteinte"}
+_LIMIT_REASON_KEYS = {"time": "share_tab.limit_reason_time", "data": "share_tab.limit_reason_data"}
+
+
+def _columns() -> list[str]:
+    return [
+        tr("share_tab.column_name"),
+        tr("share_tab.column_upload_rate"),
+        tr("share_tab.column_uploaded_session"),
+        tr("share_tab.column_time"),
+        tr("share_tab.column_data"),
+        tr("share_tab.column_state"),
+        tr("share_tab.column_action"),
+    ]
+
+
+def _state_label(state: TorrentState) -> str:
+    return tr(_STATE_LABEL_KEYS.get(state, "share_tab.state_error"))
+
+
+def _limit_reason_label(reason: str) -> str:
+    return tr(_LIMIT_REASON_KEYS.get(reason, "share_tab.limit_reached"))
 
 
 class ShareTab(QWidget):
@@ -53,63 +72,67 @@ class ShareTab(QWidget):
 
         layout = QVBoxLayout(self)
 
-        source_box = QGroupBox("Ajouter un partage", self)
-        source_layout = QVBoxLayout(source_box)
+        self.source_box = QGroupBox(tr("share_tab.add_share_group"), self)
+        source_layout = QVBoxLayout(self.source_box)
 
-        self.drop_zone = DropZoneWidget(source_box)
+        self.drop_zone = DropZoneWidget(self.source_box)
         self.drop_zone.torrent_file_dropped.connect(self._on_torrent_file_selected)
         source_layout.addWidget(self.drop_zone)
 
         browse_row = QHBoxLayout()
-        self.browse_button = QPushButton("Parcourir un fichier .torrent...", source_box)
+        self.browse_button = QPushButton(tr("share_tab.browse_torrent"), self.source_box)
         self.browse_button.clicked.connect(self._on_browse_clicked)
         browse_row.addWidget(self.browse_button)
-        self.selected_file_label = QLabel("", source_box)
+        self.selected_file_label = QLabel("", self.source_box)
         browse_row.addWidget(self.selected_file_label, 1)
         source_layout.addLayout(browse_row)
 
         magnet_row = QHBoxLayout()
-        magnet_row.addWidget(QLabel("Lien magnet:", source_box))
-        self.magnet_input = QLineEdit(source_box)
+        self.magnet_label = QLabel(tr("share_tab.magnet_label"), self.source_box)
+        magnet_row.addWidget(self.magnet_label)
+        self.magnet_input = QLineEdit(self.source_box)
         self.magnet_input.setPlaceholderText("magnet:?xt=urn:btih:...")
         magnet_row.addWidget(self.magnet_input, 1)
         source_layout.addLayout(magnet_row)
 
         data_row = QHBoxLayout()
-        data_row.addWidget(QLabel("Dossier contenant déjà les fichiers :", source_box))
-        self.data_dir_input = QLineEdit(source_box)
+        self.data_dir_label = QLabel(tr("share_tab.data_dir_label"), self.source_box)
+        data_row.addWidget(self.data_dir_label)
+        self.data_dir_input = QLineEdit(self.source_box)
         data_row.addWidget(self.data_dir_input, 1)
-        data_browse_button = QPushButton("Parcourir...", source_box)
-        data_browse_button.clicked.connect(self._on_browse_data_dir)
-        data_row.addWidget(data_browse_button)
+        self.data_browse_button = QPushButton(tr("common.browse"), self.source_box)
+        self.data_browse_button.clicked.connect(self._on_browse_data_dir)
+        data_row.addWidget(self.data_browse_button)
         source_layout.addLayout(data_row)
 
         limits_row = QHBoxLayout()
-        limits_row.addWidget(QLabel("Limite de temps :", source_box))
-        self.time_limit_spin = QSpinBox(source_box)
+        self.time_limit_label = QLabel(tr("share_tab.time_limit_label"), self.source_box)
+        limits_row.addWidget(self.time_limit_label)
+        self.time_limit_spin = QSpinBox(self.source_box)
         self.time_limit_spin.setRange(0, 999)
-        self.time_limit_spin.setSuffix(" h (0 = illimité)")
+        self.time_limit_spin.setSuffix(tr("share_tab.time_limit_suffix"))
         limits_row.addWidget(self.time_limit_spin)
         limits_row.addSpacing(16)
-        limits_row.addWidget(QLabel("Limite de données :", source_box))
-        self.data_limit_spin = QSpinBox(source_box)
+        self.data_limit_label = QLabel(tr("share_tab.data_limit_label"), self.source_box)
+        limits_row.addWidget(self.data_limit_label)
+        self.data_limit_spin = QSpinBox(self.source_box)
         self.data_limit_spin.setRange(0, 1_000_000)
-        self.data_limit_spin.setSuffix(" Mo (0 = illimité)")
+        self.data_limit_spin.setSuffix(tr("share_tab.data_limit_suffix"))
         limits_row.addWidget(self.data_limit_spin)
         limits_row.addStretch(1)
         source_layout.addLayout(limits_row)
 
         start_row = QHBoxLayout()
         start_row.addStretch(1)
-        self.start_button = QPushButton("Démarrer le partage", source_box)
+        self.start_button = QPushButton(tr("share_tab.start_button"), self.source_box)
         self.start_button.clicked.connect(self._on_start_clicked)
         start_row.addWidget(self.start_button)
         source_layout.addLayout(start_row)
 
-        layout.addWidget(source_box)
+        layout.addWidget(self.source_box)
 
-        self.table = QTableWidget(0, len(COLUMNS), self)
-        self.table.setHorizontalHeaderLabels(COLUMNS)
+        self.table = QTableWidget(0, 7, self)
+        self.table.setHorizontalHeaderLabels(_columns())
         self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
         self.table.verticalHeader().setVisible(False)
         layout.addWidget(self.table, 1)
@@ -118,10 +141,30 @@ class ShareTab(QWidget):
         self._session_manager.torrent_removed.connect(self._on_torrent_removed)
         self._share_limit_service.limit_reached.connect(self._on_limit_reached)
 
+    # ----------------------------------------------------------- retranslate
+
+    def retranslate_ui(self) -> None:
+        self.source_box.setTitle(tr("share_tab.add_share_group"))
+        self.drop_zone.retranslate_ui()
+        self.browse_button.setText(tr("share_tab.browse_torrent"))
+        self.magnet_label.setText(tr("share_tab.magnet_label"))
+        self.data_dir_label.setText(tr("share_tab.data_dir_label"))
+        self.data_browse_button.setText(tr("common.browse"))
+        self.time_limit_label.setText(tr("share_tab.time_limit_label"))
+        self.time_limit_spin.setSuffix(tr("share_tab.time_limit_suffix"))
+        self.data_limit_label.setText(tr("share_tab.data_limit_label"))
+        self.data_limit_spin.setSuffix(tr("share_tab.data_limit_suffix"))
+        self.start_button.setText(tr("share_tab.start_button"))
+        self.table.setHorizontalHeaderLabels(_columns())
+        for info_hash, row in self._rows.items():
+            record = self._session_manager.get_record(info_hash)
+            if record is not None:
+                self._update_row(row, info_hash, record)
+
     # ---------------------------------------------------------------- source
 
     def _on_browse_clicked(self) -> None:
-        path, _ = QFileDialog.getOpenFileName(self, "Choisir un fichier .torrent", "", "Torrent (*.torrent)")
+        path, _ = QFileDialog.getOpenFileName(self, tr("share_tab.choose_torrent_title"), "", "Torrent (*.torrent)")
         if path:
             self._on_torrent_file_selected(path)
 
@@ -131,7 +174,7 @@ class ShareTab(QWidget):
         self.magnet_input.clear()
 
     def _on_browse_data_dir(self) -> None:
-        directory = QFileDialog.getExistingDirectory(self, "Dossier contenant déjà les fichiers", self.data_dir_input.text())
+        directory = QFileDialog.getExistingDirectory(self, tr("share_tab.choose_data_dir_title"), self.data_dir_input.text())
         if directory:
             self.data_dir_input.setText(directory)
 
@@ -140,9 +183,7 @@ class ShareTab(QWidget):
     def _on_start_clicked(self) -> None:
         data_dir = self.data_dir_input.text().strip()
         if not data_dir:
-            QMessageBox.warning(
-                self, "Dossier manquant", "Indiquez le dossier qui contient déjà les fichiers à partager."
-            )
+            QMessageBox.warning(self, tr("share_tab.missing_dir_title"), tr("share_tab.missing_dir_message"))
             return
 
         time_limit = self.time_limit_spin.value() * 3600 or None
@@ -153,9 +194,7 @@ class ShareTab(QWidget):
         else:
             magnet_uri = self.magnet_input.text().strip()
             if not magnet_uri:
-                QMessageBox.information(
-                    self, "Aucune source", "Sélectionnez un fichier .torrent ou saisissez un lien magnet."
-                )
+                QMessageBox.information(self, tr("share_tab.no_source_title"), tr("share_tab.no_source_message"))
                 return
             info_hash = self._session_manager.add_torrent_from_magnet(magnet_uri, data_dir)
             self._session_manager.start_after_analysis(info_hash)
@@ -191,7 +230,7 @@ class ShareTab(QWidget):
     def _on_limit_reached(self, info_hash: str, reason: str) -> None:
         row = self._rows.get(info_hash)
         if row is not None:
-            self.table.item(row, 5).setText(_LIMIT_REASON_LABELS.get(reason, "Limite atteinte"))
+            self.table.item(row, 5).setText(_limit_reason_label(reason))
 
     # ------------------------------------------------------------------ rows
 
@@ -207,11 +246,11 @@ class ShareTab(QWidget):
         actions = QWidget(self.table)
         actions_layout = QHBoxLayout(actions)
         actions_layout.setContentsMargins(2, 2, 2, 2)
-        pause_button = QPushButton("Pause", actions)
+        pause_button = QPushButton(tr("share_tab.pause"), actions)
         pause_button.setObjectName("pauseResumeButton")
         pause_button.clicked.connect(lambda checked=False, ih=info_hash: self._on_pause_resume_clicked(ih))
         actions_layout.addWidget(pause_button)
-        remove_button = QPushButton("Retirer", actions)
+        remove_button = QPushButton(tr("common.remove"), actions)
         remove_button.setObjectName("dangerButton")
         remove_button.clicked.connect(lambda checked=False, ih=info_hash: self._session_manager.remove_torrent(ih))
         actions_layout.addWidget(remove_button)
@@ -245,12 +284,12 @@ class ShareTab(QWidget):
         if limit is not None and limit.data_limit_bytes is not None:
             self.table.item(row, 4).setText(f"{human_size(uploaded)} / {human_size(limit.data_limit_bytes)}")
         else:
-            self.table.item(row, 4).setText("Illimité")
+            self.table.item(row, 4).setText(tr("share_tab.unlimited"))
 
         if limit is not None and limit.reached:
-            self.table.item(row, 5).setText(_LIMIT_REASON_LABELS.get(limit.reached_reason, "Limite atteinte"))
+            self.table.item(row, 5).setText(_limit_reason_label(limit.reached_reason))
         else:
-            self.table.item(row, 5).setText(_STATE_LABELS.get(record.state, str(record.state)))
+            self.table.item(row, 5).setText(_state_label(record.state))
 
     def _on_pause_resume_clicked(self, info_hash: str) -> None:
         record = self._session_manager.get_record(info_hash)

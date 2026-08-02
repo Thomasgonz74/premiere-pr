@@ -3,14 +3,15 @@ from PySide6.QtGui import QBrush, QColor
 from PySide6.QtWidgets import QTreeWidget, QTreeWidgetItem
 
 from torrent2000.danger_scanner.models import RiskLevel, ScanResult
+from torrent2000.i18n.translator import tr
 from torrent2000.utils.formatting import human_size
 
-_LEVEL_LABELS = {
-    RiskLevel.SAFE: "Sûr",
-    RiskLevel.LOW: "Faible",
-    RiskLevel.MEDIUM: "Moyen",
-    RiskLevel.HIGH: "Élevé",
-    RiskLevel.CRITICAL: "Critique",
+_LEVEL_LABEL_KEYS = {
+    RiskLevel.SAFE: "file_tree_risk.level_safe",
+    RiskLevel.LOW: "file_tree_risk.level_low",
+    RiskLevel.MEDIUM: "file_tree_risk.level_medium",
+    RiskLevel.HIGH: "file_tree_risk.level_high",
+    RiskLevel.CRITICAL: "file_tree_risk.level_critical",
 }
 
 _LEVEL_COLORS = {
@@ -29,10 +30,23 @@ class FileTreeRiskWidget(QTreeWidget):
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
         self.setColumnCount(4)
-        self.setHeaderLabels(["Fichier", "Taille", "Risque", "Raisons"])
+        self._apply_header_labels()
         self.setSortingEnabled(False)
         self.setRootIsDecorated(False)
         self.header().setStretchLastSection(True)
+
+    def _apply_header_labels(self) -> None:
+        self.setHeaderLabels(
+            [
+                tr("file_tree_risk.column_file"),
+                tr("file_tree_risk.column_size"),
+                tr("file_tree_risk.column_risk"),
+                tr("file_tree_risk.column_reasons"),
+            ]
+        )
+
+    def retranslate_ui(self) -> None:
+        self._apply_header_labels()
 
     def load_scan_result(self, result: ScanResult, auto_exclude_threshold: int) -> None:
         self.clear()
@@ -42,7 +56,7 @@ class FileTreeRiskWidget(QTreeWidget):
                 [
                     file_risk.file.path,
                     human_size(file_risk.file.size),
-                    _LEVEL_LABELS[file_risk.level],
+                    tr(_LEVEL_LABEL_KEYS[file_risk.level]),
                     "; ".join(file_risk.reasons) if file_risk.reasons else "",
                 ]
             )

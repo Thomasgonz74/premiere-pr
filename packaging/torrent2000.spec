@@ -11,6 +11,7 @@ a = Analysis(
     binaries=[],
     datas=[
         (os.path.join(REPO_ROOT, "resources", "styles", "*.qss"), os.path.join("resources", "styles")),
+        (os.path.join(REPO_ROOT, "resources", "i18n", "*.json"), os.path.join("resources", "i18n")),
         (os.path.join(REPO_ROOT, "assets", "icon.ico"), "assets"),
         (os.path.join(REPO_ROOT, "assets", "checkmark.png"), "assets"),
     ],

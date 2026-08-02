@@ -15,6 +15,7 @@ from PySide6.QtCore import QObject, QTimer, Signal
 from torrent2000.config.settings import Settings
 from torrent2000.engine.session_manager import SessionManager
 from torrent2000.engine.torrent_item import TorrentState
+from torrent2000.i18n.translator import tr
 
 logger = logging.getLogger(__name__)
 
@@ -73,10 +74,7 @@ class DiskSpaceMonitor(QObject):
             if free_mb < threshold:
                 if path not in self._warned_paths:
                     self._warned_paths.add(path)
-                    message = (
-                        f"Espace disque faible pour {path} : "
-                        f"{free_mb:.0f} Mo restants (seuil configuré : {threshold} Mo)."
-                    )
+                    message = tr("disk_space.low_space_warning", path=path, free_mb=f"{free_mb:.0f}", threshold=threshold)
                     self.low_space_warning.emit(path, message)
             else:
                 self._warned_paths.discard(path)

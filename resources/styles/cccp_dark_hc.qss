@@ -262,3 +262,29 @@ QSizeGrip {
     width: 16px;
     height: 16px;
 }
+
+/* ---------------------------------------------------------------------
+   Propaganda side panel (src/torrent2000/ui/widgets/propaganda_panel.py)
+   -- the extra strip of window width shown only under this theme.
+   --------------------------------------------------------------------- */
+
+QWidget#cccpPropagandaPanel {
+    background-color: #000000;
+    border-left: 3px solid #FFFFFF;
+}
+
+QLabel#propagandaHeader {
+    color: #FFFF00;
+    font-weight: bold;
+    font-size: 10pt;
+}
+
+QLabel#propagandaMessage {
+    color: #FFFFFF;
+    font-size: 9pt;
+}
+
+QFrame#propagandaDivider {
+    background-color: #FFFF00;
+    border: none;
+}

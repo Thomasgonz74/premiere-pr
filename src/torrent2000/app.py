@@ -14,6 +14,7 @@ from torrent2000.engine.rss_seen_store import RssSeenStore
 from torrent2000.engine.session_manager import SessionManager
 from torrent2000.engine.share_limits import ShareLimitService
 from torrent2000.engine.watch_folder_service import WatchFolderService
+from torrent2000.i18n.translator import set_language
 from torrent2000.stats.history_service import HistoryService
 from torrent2000.stats.history_store import HistoryStore
 from torrent2000.stats.service import StatsService
@@ -39,6 +40,7 @@ def main() -> int:
     init_theme_runtime(app)
 
     settings = Settings.load()
+    set_language(settings.language)
     apply_theme(app, settings.theme, settings.appearance_mode)
 
     session_manager = SessionManager(settings)

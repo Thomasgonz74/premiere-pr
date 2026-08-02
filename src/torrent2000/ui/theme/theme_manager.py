@@ -26,6 +26,7 @@ from PySide6.QtCore import QDir
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication
 
+from torrent2000.i18n.translator import tr
 from torrent2000.theme_ids import CCCP_THEME_ID, MACOS_THEME_ID
 from torrent2000.utils.resource_path import resource_path
 
@@ -42,11 +43,17 @@ THEME_LABELS: list[tuple[str, str]] = [
     ("CCCP", CCCP_THEME_ID),
 ]
 
-APPEARANCE_MODE_LABELS: list[tuple[str, str]] = [
-    ("Clair", "light"),
-    ("Sombre", "dark"),
-    ("Sombre (contraste élevé)", "dark_hc"),
-]
+def appearance_mode_labels() -> list[tuple[str, str]]:
+    # A function (not a static list like THEME_LABELS) because these are
+    # ordinary words that get translated -- "Clair"/"Sombre" -- unlike
+    # theme names (Windows XP, macOS, CCCP...), which are proper nouns and
+    # stay the same in every language. Re-call this after a language
+    # change to get fresh labels.
+    return [
+        (tr("appearance_mode.light"), "light"),
+        (tr("appearance_mode.dark"), "dark"),
+        (tr("appearance_mode.dark_hc"), "dark_hc"),
+    ]
 
 _APPEARANCE_SUFFIX = {"light": "", "dark": "_dark", "dark_hc": "_dark_hc"}
 
@@ -82,6 +89,7 @@ class TitleBarStyle:
     # hover fill needs a black glyph to stay legible -- a white glyph on
     # yellow would fail contrast, which a high-contrast mode can't afford.
     button_hover_glyph_color: Optional[str] = None
+    close_glyph: str = "x"  # "x" | "hammer_sickle" (CCCP only)
 
 
 TITLE_BAR_STYLES: dict[str, TitleBarStyle] = {
@@ -167,14 +175,15 @@ TITLE_BAR_STYLES: dict[str, TitleBarStyle] = {
         button_variant="xp",
         button_hover_radius=0,
         window_corner_radius=0,
-        # Caption buttons in bold red with a gold hover -- the same red the
-        # caption itself uses, so they read as part of the poster rather
-        # than a foreign Windows-blue import.
+        # All three caption buttons share the same red-flag-square look
+        # (gold hover) -- differentiated by their glyph, not their color:
+        # close gets a hammer and sickle instead of an X.
         minmax_fill_color="#A31515",
         minmax_hover_color="#D4AF37",
-        close_fill_color="#5C0A0A",
+        close_fill_color="#A31515",
         close_hover_color="#D4AF37",
         button_glyph_color="#F2E4C4",
+        close_glyph="hammer_sickle",
     ),
 }
 

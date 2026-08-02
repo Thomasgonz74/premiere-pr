@@ -11,8 +11,11 @@ from PySide6.QtWidgets import (
 )
 
 from torrent2000.engine.torrent_item import TrackerInfo
+from torrent2000.i18n.translator import tr
 
-COLUMNS = ["URL", "Tier", "Dernière erreur", "Action"]
+
+def _columns() -> list[str]:
+    return [tr("tracker_editor.column_url"), tr("tracker_editor.column_tier"), tr("tracker_editor.column_last_error"), tr("tracker_editor.column_action")]
 
 
 class TrackerEditorWidget(QWidget):
@@ -28,8 +31,8 @@ class TrackerEditorWidget(QWidget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
 
-        self.table = QTableWidget(0, len(COLUMNS), self)
-        self.table.setHorizontalHeaderLabels(COLUMNS)
+        self.table = QTableWidget(0, 4, self)
+        self.table.setHorizontalHeaderLabels(_columns())
         self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
         layout.addWidget(self.table)
@@ -38,10 +41,15 @@ class TrackerEditorWidget(QWidget):
         self.url_input = QLineEdit(self)
         self.url_input.setPlaceholderText("http://tracker.example.com/announce")
         add_row.addWidget(self.url_input)
-        self.add_button = QPushButton("Ajouter", self)
+        self.add_button = QPushButton(tr("common.add"), self)
         self.add_button.clicked.connect(self._on_add_clicked)
         add_row.addWidget(self.add_button)
         layout.addLayout(add_row)
+
+    def retranslate_ui(self) -> None:
+        self.table.setHorizontalHeaderLabels(_columns())
+        self.add_button.setText(tr("common.add"))
+        self.refresh()
 
     def bind(self, session_manager, info_hash: str | None) -> None:
         self._session_manager = session_manager
@@ -59,7 +67,7 @@ class TrackerEditorWidget(QWidget):
             self.table.setItem(row, 1, QTableWidgetItem(str(tracker.tier)))
             self.table.setItem(row, 2, QTableWidgetItem(tracker.last_error))
 
-            remove_button = QPushButton("Retirer", self.table)
+            remove_button = QPushButton(tr("common.remove"), self.table)
             remove_button.setObjectName("dangerButton")
             remove_button.clicked.connect(lambda checked=False, url=tracker.url: self._on_remove_row_clicked(url))
             self.table.setCellWidget(row, 3, remove_button)
