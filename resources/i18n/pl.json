@@ -154,6 +154,7 @@
   "profile_tab.appearance_mode_label": "Tryb wyświetlania:",
   "profile_tab.language_label": "Język:",
   "profile_tab.notifications_checkbox": "Powiadamiaj o zakończeniu pobierania lub udostępniania",
+  "profile_tab.launch_at_startup_checkbox": "Uruchamiaj automatycznie przy starcie Windows",
   "profile_tab.audio_group": "Dźwięk",
   "profile_tab.audio_volume_label": "Głośność",
   "profile_tab.audio_note": "Steruje głośnością hymnu odtwarzanego w tle przez motyw CCCP.",

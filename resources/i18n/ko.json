@@ -154,6 +154,7 @@
   "profile_tab.appearance_mode_label": "표시 모드:",
   "profile_tab.language_label": "언어:",
   "profile_tab.notifications_checkbox": "다운로드 또는 공유가 완료되면 알림",
+  "profile_tab.launch_at_startup_checkbox": "Windows 시작 시 자동 실행",
   "profile_tab.audio_group": "오디오",
   "profile_tab.audio_volume_label": "볼륨",
   "profile_tab.audio_note": "CCCP 테마가 배경에서 재생하는 국가의 음량을 조절합니다.",

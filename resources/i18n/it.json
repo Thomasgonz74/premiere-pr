@@ -154,6 +154,7 @@
   "profile_tab.appearance_mode_label": "Modalità di visualizzazione:",
   "profile_tab.language_label": "Lingua:",
   "profile_tab.notifications_checkbox": "Notifica al termine di un download o di una condivisione",
+  "profile_tab.launch_at_startup_checkbox": "Avvia automaticamente all'avvio di Windows",
   "profile_tab.audio_group": "Audio",
   "profile_tab.audio_volume_label": "Volume",
   "profile_tab.audio_note": "Controlla il volume dell'inno riprodotto in sottofondo dal tema CCCP.",

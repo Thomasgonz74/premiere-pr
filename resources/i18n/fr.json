@@ -170,6 +170,7 @@
   "profile_tab.appearance_mode_label": "Mode d'affichage :",
   "profile_tab.language_label": "Langue :",
   "profile_tab.notifications_checkbox": "Notifier la fin d'un téléchargement ou d'un partage",
+  "profile_tab.launch_at_startup_checkbox": "Lancer automatiquement au démarrage de Windows",
 
   "profile_tab.audio_group": "Audio",
   "profile_tab.audio_volume_label": "Volume",

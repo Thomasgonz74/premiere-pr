@@ -296,6 +296,16 @@ class MainWindow(QMainWindow):
         # anything happened.
         self._tabs.setCurrentIndex(self._downloads_tab_index)
 
+    def open_source(self, source: str) -> None:
+        """Called with a .torrent path or magnet: URI when the app is
+        launched via the installer's file/protocol association (double-
+        clicking a .torrent file, or clicking a magnet link in a browser)."""
+        self._tabs.setCurrentWidget(self._add_tab)
+        if source.lower().startswith("magnet:"):
+            self._add_tab.open_magnet(source)
+        else:
+            self._add_tab.open_torrent_file(source)
+
     def _on_shutdown_countdown_started(self, delay_seconds: int) -> None:
         if self._shutdown_dialog is not None:
             return  # a countdown is already showing

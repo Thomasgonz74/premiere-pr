@@ -154,6 +154,7 @@
   "profile_tab.appearance_mode_label": "Режим отображения:",
   "profile_tab.language_label": "Язык:",
   "profile_tab.notifications_checkbox": "Уведомлять о завершении загрузки или раздачи",
+  "profile_tab.launch_at_startup_checkbox": "Запускать автоматически при старте Windows",
   "profile_tab.audio_group": "Аудио",
   "profile_tab.audio_volume_label": "Громкость",
   "profile_tab.audio_note": "Регулирует громкость гимна, звучащего в фоновом режиме в теме CCCP.",

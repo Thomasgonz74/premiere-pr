@@ -154,6 +154,7 @@
   "profile_tab.appearance_mode_label": "表示モード:",
   "profile_tab.language_label": "言語:",
   "profile_tab.notifications_checkbox": "ダウンロードや共有の完了時に通知する",
+  "profile_tab.launch_at_startup_checkbox": "Windows起動時に自動的に起動する",
   "profile_tab.audio_group": "オーディオ",
   "profile_tab.audio_volume_label": "音量",
   "profile_tab.audio_note": "CCCPテーマがバックグラウンドで再生する国歌の音量を調整します。",

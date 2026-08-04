@@ -154,6 +154,7 @@
   "profile_tab.appearance_mode_label": "Display mode:",
   "profile_tab.language_label": "Language:",
   "profile_tab.notifications_checkbox": "Notify when a download or share finishes",
+  "profile_tab.launch_at_startup_checkbox": "Launch automatically when Windows starts",
   "profile_tab.audio_group": "Audio",
   "profile_tab.audio_volume_label": "Volume",
   "profile_tab.audio_note": "Controls the volume of the anthem played in the background by the CCCP theme.",

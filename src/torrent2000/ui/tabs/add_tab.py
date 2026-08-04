@@ -136,6 +136,23 @@ class AddTorrentTab(QWidget):
         if path:
             self._on_torrent_file_selected(path)
 
+    def open_torrent_file(self, path: str) -> None:
+        """Entry point for the .torrent file association: pre-fills the form
+        exactly like a manual browse/drop would, so the user still goes
+        through Analyser/Démarrer themselves rather than the danger-scanning
+        step being silently skipped just because the file arrived via
+        double-click instead of drag-and-drop."""
+        self._on_torrent_file_selected(path)
+
+    def open_magnet(self, uri: str) -> None:
+        """Entry point for the magnet: URI protocol association."""
+        self._torrent_path = None
+        self._pending_magnet_hash = None
+        self.selected_file_label.setText("")
+        self.file_tree.clear()
+        self.status_label.setText("")
+        self.magnet_input.setText(uri)
+
     def _on_torrent_file_selected(self, path: str) -> None:
         self._torrent_path = path
         self._pending_magnet_hash = None

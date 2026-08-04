@@ -154,6 +154,7 @@
   "profile_tab.appearance_mode_label": "Modo de exibição:",
   "profile_tab.language_label": "Idioma:",
   "profile_tab.notifications_checkbox": "Notificar ao concluir uma transferência ou uma partilha",
+  "profile_tab.launch_at_startup_checkbox": "Iniciar automaticamente com o Windows",
   "profile_tab.audio_group": "Áudio",
   "profile_tab.audio_volume_label": "Volume",
   "profile_tab.audio_note": "Controla o volume do hino tocado em segundo plano pelo tema CCCP.",

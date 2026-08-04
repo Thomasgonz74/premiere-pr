@@ -67,6 +67,8 @@ def main() -> int:
         disk_space_monitor,
         auto_shutdown_service,
     )
+    if len(sys.argv) > 1:
+        window.open_source(sys.argv[1])
     window.show()
 
     return app.exec()

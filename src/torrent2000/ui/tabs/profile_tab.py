@@ -30,6 +30,7 @@ from PySide6.QtWidgets import (
 
 from torrent2000.config.paths import get_config_path
 from torrent2000.config.settings import Settings
+from torrent2000.engine import startup_registration
 from torrent2000.engine.bandwidth_scheduler import BandwidthScheduler
 from torrent2000.engine.disk_space_monitor import DiskSpaceMonitor
 from torrent2000.engine.session_manager import SessionManager
@@ -186,6 +187,13 @@ class ProfileTab(QWidget):
         self.notifications_checkbox = QCheckBox(tr("profile_tab.notifications_checkbox"), self.general_box)
         self.notifications_checkbox.setChecked(settings.notifications_enabled)
         general_form.addRow(self.notifications_checkbox)
+
+        self.launch_at_startup_checkbox = QCheckBox(tr("profile_tab.launch_at_startup_checkbox"), self.general_box)
+        # Reflects the real HKCU Run key rather than the possibly-stale saved
+        # setting -- if the user (or a reinstall) removed it by hand, this
+        # should show unchecked rather than lying about it.
+        self.launch_at_startup_checkbox.setChecked(startup_registration.is_launch_at_startup_enabled())
+        general_form.addRow(self.launch_at_startup_checkbox)
 
         layout.addWidget(self.general_box)
 
@@ -488,6 +496,7 @@ class ProfileTab(QWidget):
         self.upload_limit_spin.setSuffix(tr("common.kbps_unlimited_suffix"))
         self._populate_combo(self.appearance_combo, appearance_mode_labels(), self._settings.appearance_mode)
         self.notifications_checkbox.setText(tr("profile_tab.notifications_checkbox"))
+        self.launch_at_startup_checkbox.setText(tr("profile_tab.launch_at_startup_checkbox"))
 
         self.audio_box.setTitle(tr("profile_tab.audio_group"))
         self.audio_note.setText(tr("profile_tab.audio_note"))
@@ -645,6 +654,8 @@ class ProfileTab(QWidget):
         self._settings.danger_auto_exclude_threshold = self.danger_threshold_spin.value()
         self._settings.notifications_enabled = self.notifications_checkbox.isChecked()
         self._settings.audio_volume = self.volume_slider.value()
+        self._settings.launch_at_startup = self.launch_at_startup_checkbox.isChecked()
+        startup_registration.set_launch_at_startup(self._settings.launch_at_startup)
 
         self._settings.bandwidth_schedule.enabled = self.schedule_enabled_checkbox.isChecked()
         self._settings.bandwidth_schedule.start_hour = self.schedule_start_spin.value()

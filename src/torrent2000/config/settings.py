@@ -92,6 +92,8 @@ class Settings:
 
     audio_volume: int = 70  # 0-100, currently drives only the CCCP theme's anthem playback
 
+    launch_at_startup: bool = False  # mirrors the actual HKCU Run key state, see engine/startup_registration.py
+
     @staticmethod
     def load() -> "Settings":
         path = get_config_path()
