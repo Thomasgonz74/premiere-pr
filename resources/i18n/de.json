@@ -251,5 +251,11 @@
   "cccp.propaganda.msg_15": "Der glorreiche Fünfjahresplan der Bandbreite schreitet dank Ihres heldenhaften Opfers voran, Genosse Maschinist des Bytes.",
   "cccp.propaganda.msg_16": "Ein verstecktes Byte ist ein dem Volke gestohlenes Byte. Ballen Sie die Faust, nicht die Datei, Genosse.",
   "cccp.propaganda.msg_17": "Hier sagt man nicht „herunterladen\". Man sagt „würdevoll warten im Dienste des Volkes\", wie in jeder guten sowjetischen Warteschlange.",
-  "cccp.propaganda.msg_18": "Genosse, Ihre Seedbox wird auf dem digitalen Roten Platz verewigt, gleich neben dem Mausoleum des Trackers."
+  "cccp.propaganda.msg_18": "Genosse, Ihre Seedbox wird auf dem digitalen Roten Platz verewigt, gleich neben dem Mausoleum des Trackers.",
+
+  "update.title": "Update verfügbar",
+  "update.message": "Eine neue Version ({version}) von Torrent 2000 ist verfügbar. Möchten Sie sie herunterladen?",
+  "update.download_button": "Herunterladen",
+  "update.later_button": "Später",
+  "profile_tab.check_for_updates_checkbox": "Beim Start nach Updates suchen"
 }

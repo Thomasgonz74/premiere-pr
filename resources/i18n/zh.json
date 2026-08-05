@@ -251,5 +251,11 @@
   "cccp.propaganda.msg_15": "光荣的带宽五年计划正稳步推进,全靠您这位字节机车手同志的英勇牺牲。",
   "cccp.propaganda.msg_16": "隐藏的字节,就是从人民那里偷走的字节。同志,握紧您的拳头,别攥紧您的文件。",
   "cccp.propaganda.msg_17": "在这里,我们不说「下载」,而说「庄严排队,为人民服务」,正如每一条优秀的苏维埃队伍那样。",
-  "cccp.propaganda.msg_18": "同志,您的保种箱将被永久铭刻在数字红场上,就在追踪器陵墓旁边。"
+  "cccp.propaganda.msg_18": "同志,您的保种箱将被永久铭刻在数字红场上,就在追踪器陵墓旁边。",
+
+  "update.title": "有可用更新",
+  "update.message": "Torrent 2000 有新版本 ({version}) 可用。是否要下载？",
+  "update.download_button": "下载",
+  "update.later_button": "以后再说",
+  "profile_tab.check_for_updates_checkbox": "启动时检查更新"
 }

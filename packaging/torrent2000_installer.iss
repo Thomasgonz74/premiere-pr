@@ -5,7 +5,7 @@
 ; (run packaging\torrent2000.spec first).
 
 #define MyAppName "Torrent 2000"
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "1.0.1"
 #define MyAppPublisher "Torrent 2000"
 #define MyAppExeName "Torrent2000.exe"
 

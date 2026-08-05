@@ -251,5 +251,11 @@
   "cccp.propaganda.msg_15": "栄光ある帯域幅の五カ年計画は、同志よ、バイトの機関士たるあなたの英雄的犠牲によって前進している。",
   "cccp.propaganda.msg_16": "隠されたバイトは、人民から盗まれたバイトである。同志、握りしめるべきは拳であって、ファイルではない。",
   "cccp.propaganda.msg_17": "ここでは「ダウンロードする」とは言わない。「人民に奉仕しつつ、尊厳をもって待つ」と言うのだ。あらゆる立派なソビエトの行列がそうであるように。",
-  "cccp.propaganda.msg_18": "同志、あなたのシードボックスはデジタル赤の広場に、トラッカー廟のすぐ隣に記念されるだろう。"
+  "cccp.propaganda.msg_18": "同志、あなたのシードボックスはデジタル赤の広場に、トラッカー廟のすぐ隣に記念されるだろう。",
+
+  "update.title": "アップデートが利用可能です",
+  "update.message": "Torrent 2000 の新しいバージョン ({version}) が利用可能です。ダウンロードしますか？",
+  "update.download_button": "ダウンロード",
+  "update.later_button": "後で",
+  "profile_tab.check_for_updates_checkbox": "起動時に更新を確認する"
 }

@@ -45,6 +45,10 @@ def get_rss_seen_db_path() -> Path:
     return get_app_data_dir() / "rss_seen.sqlite3"
 
 
+def get_share_limits_path() -> Path:
+    return get_app_data_dir() / "share_limits.json"
+
+
 def get_default_download_dir() -> Path:
     downloads = Path.home() / "Downloads" / "Torrent2000"
     downloads.mkdir(parents=True, exist_ok=True)

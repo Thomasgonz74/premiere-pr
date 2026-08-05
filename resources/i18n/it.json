@@ -251,5 +251,11 @@
   "cccp.propaganda.msg_15": "Il glorioso piano quinquennale della banda avanza grazie al tuo eroico sacrificio, compagno macchinista del byte.",
   "cccp.propaganda.msg_16": "Un byte nascosto è un byte rubato al popolo. Stringi il pugno, non il file, compagno.",
   "cccp.propaganda.msg_17": "Qui non si dice \"scaricare\". Si dice \"attendere con dignità servendo il popolo\", come in ogni buona fila sovietica.",
-  "cccp.propaganda.msg_18": "Compagno, il tuo seedbox sarà commemorato sulla Piazza Rossa digitale, proprio accanto al mausoleo del tracker."
+  "cccp.propaganda.msg_18": "Compagno, il tuo seedbox sarà commemorato sulla Piazza Rossa digitale, proprio accanto al mausoleo del tracker.",
+
+  "update.title": "Aggiornamento disponibile",
+  "update.message": "È disponibile una nuova versione ({version}) di Torrent 2000. Vuoi scaricarla?",
+  "update.download_button": "Scarica",
+  "update.later_button": "Più tardi",
+  "profile_tab.check_for_updates_checkbox": "Controlla aggiornamenti all'avvio"
 }

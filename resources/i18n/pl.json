@@ -251,5 +251,11 @@
   "cccp.propaganda.msg_15": "Chwalebny plan pięcioletni pasma posuwa się naprzód dzięki Twojemu bohaterskiemu poświęceniu, towarzyszu maszynisto bajtu.",
   "cccp.propaganda.msg_16": "Ukryty bajt to bajt skradziony ludowi. Zaciśnij pięść, nie plik, towarzyszu.",
   "cccp.propaganda.msg_17": "Tutaj nie mówi się „pobierać”. Mówi się „godnie czekać, służąc ludowi”, jak w każdej porządnej radzieckiej kolejce.",
-  "cccp.propaganda.msg_18": "Towarzyszu, Twój seedbox zostanie upamiętniony na cyfrowym Placu Czerwonym, tuż obok mauzoleum trackera."
+  "cccp.propaganda.msg_18": "Towarzyszu, Twój seedbox zostanie upamiętniony na cyfrowym Placu Czerwonym, tuż obok mauzoleum trackera.",
+
+  "update.title": "Dostępna aktualizacja",
+  "update.message": "Dostępna jest nowa wersja ({version}) Torrent 2000. Czy chcesz ją pobrać?",
+  "update.download_button": "Pobierz",
+  "update.later_button": "Później",
+  "profile_tab.check_for_updates_checkbox": "Sprawdzaj aktualizacje przy starcie"
 }

@@ -28,6 +28,7 @@ def window():
         MagicMock(),
         MagicMock(),
         MagicMock(),
+        MagicMock(),
     )
     win._anthem_player = MagicMock()
     yield win
@@ -66,7 +67,7 @@ def test_profile_tab_volume_changes_propagate_to_anthem_player():
     # time -- swapping the attribute afterwards wouldn't rewire that connection.
     win = MainWindow(
         MagicMock(), MagicMock(), MagicMock(), MagicMock(), MagicMock(),
-        Settings(), MagicMock(), MagicMock(), MagicMock(),
+        Settings(), MagicMock(), MagicMock(), MagicMock(), MagicMock(),
     )
     win._profile_tab.volume_changed.emit(33)
     assert win._anthem_player._audio_output.volume() == pytest.approx(0.33)

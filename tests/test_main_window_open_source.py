@@ -19,7 +19,7 @@ def qapp():
 def window():
     win = MainWindow(
         MagicMock(), MagicMock(), MagicMock(), MagicMock(), MagicMock(),
-        Settings(), MagicMock(), MagicMock(), MagicMock(),
+        Settings(), MagicMock(), MagicMock(), MagicMock(), MagicMock(),
     )
     # Spy on the real AddTorrentTab's methods rather than replacing the whole
     # widget -- open_source() also passes it to QTabWidget.setCurrentWidget(),

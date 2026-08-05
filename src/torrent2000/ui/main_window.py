@@ -1,5 +1,5 @@
-from PySide6.QtCore import QEvent, QRect, QRectF, Qt, QTimer
-from PySide6.QtGui import QCursor, QGuiApplication, QPainterPath, QRegion
+from PySide6.QtCore import QEvent, QRect, QRectF, Qt, QTimer, QUrl
+from PySide6.QtGui import QCursor, QDesktopServices, QGuiApplication, QPainterPath, QRegion
 from PySide6.QtWidgets import QHBoxLayout, QMainWindow, QMessageBox, QSizeGrip, QTabWidget, QVBoxLayout, QWidget
 
 RESIZE_MARGIN = 5  # px band around the frameless window's edge that grabs for resize
@@ -25,6 +25,7 @@ from torrent2000.engine.disk_space_monitor import DiskSpaceMonitor
 from torrent2000.engine.rss_feed_service import RssFeedService
 from torrent2000.engine.session_manager import SessionManager
 from torrent2000.engine.share_limits import ShareLimitService
+from torrent2000.engine.update_checker import UpdateChecker
 from torrent2000.i18n.translator import set_language, tr
 from torrent2000.stats.history_service import HistoryService
 from torrent2000.stats.service import StatsService
@@ -56,6 +57,7 @@ class MainWindow(QMainWindow):
         rss_feed_service: RssFeedService,
         disk_space_monitor: DiskSpaceMonitor,
         auto_shutdown_service: AutoShutdownService,
+        update_checker: UpdateChecker,
         parent=None,
     ) -> None:
         super().__init__(parent)
@@ -67,6 +69,7 @@ class MainWindow(QMainWindow):
         self._settings = settings
         self._auto_shutdown_service = auto_shutdown_service
         self._shutdown_dialog = None
+        update_checker.update_available.connect(self._on_update_available)
 
         self.setWindowTitle(APP_NAME)
         # The native Windows title bar can't be restyled to match any of
@@ -324,6 +327,22 @@ class MainWindow(QMainWindow):
 
     def _on_shutdown_dialog_finished(self) -> None:
         self._shutdown_dialog = None
+
+    def _on_update_available(self, version: str, release_url: str) -> None:
+        # Custom buttons (not QMessageBox's built-in Yes/No) so their labels
+        # follow the app's own language setting rather than the OS locale,
+        # matching how every other dialog here already resolves through tr().
+        box = QMessageBox(self)
+        box.setWindowTitle(tr("update.title"))
+        box.setText(tr("update.message", version=version))
+        download_button = box.addButton(tr("update.download_button"), QMessageBox.AcceptRole)
+        box.addButton(tr("update.later_button"), QMessageBox.RejectRole)
+        box.exec()
+        if box.clickedButton() is download_button:
+            QDesktopServices.openUrl(QUrl(release_url))
+        else:
+            self._settings.dismissed_update_version = version
+            self._settings.save()
 
     def set_theme(self, theme_id: str, appearance_mode: str) -> None:
         app = QGuiApplication.instance()

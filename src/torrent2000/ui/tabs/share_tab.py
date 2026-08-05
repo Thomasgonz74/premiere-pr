@@ -133,13 +133,38 @@ class ShareTab(QWidget):
 
         self.table = QTableWidget(0, 7, self)
         self.table.setHorizontalHeaderLabels(_columns())
-        self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
+        # Deliberately NOT QHeaderView.Stretch: a Stretch column keeps total
+        # header width pinned to the viewport, so resizing any OTHER column
+        # silently shrinks/grows this one to compensate -- from the user's
+        # side, dragging a column border elsewhere makes THIS column's
+        # border move instead, while the one actually dragged snaps back
+        # to where it started. A fixed initial width with plain Interactive
+        # resizing (the default) makes every column resize independently.
+        self.table.setColumnWidth(0, 220)
+        # The Action column holds TWO buttons (Pause/Resume + Remove), unlike
+        # every other table's single-button Action column -- left at the
+        # default ~100px Interactive width, Qt forces both buttons to
+        # squeeze into that regardless of their actual text, clipping it.
+        # ResizeToContents re-measures from the cell widget's real sizeHint,
+        # including after retranslate_ui() swaps in a longer/shorter locale.
+        self.table.horizontalHeader().setSectionResizeMode(6, QHeaderView.ResizeToContents)
         self.table.verticalHeader().setVisible(False)
         layout.addWidget(self.table, 1)
 
         self._session_manager.torrent_status_updated.connect(self._on_status_updated)
         self._session_manager.torrent_removed.connect(self._on_torrent_removed)
         self._share_limit_service.limit_reached.connect(self._on_limit_reached)
+
+        # ShareLimitService restores which torrents were being tracked for
+        # sharing from disk in its own __init__ (run before this one, since
+        # it's constructed first in app.py) -- populate the table with those
+        # right away rather than waiting for the next torrent_status_updated
+        # tick, matching how DownloadsTab already does this for all_records().
+        for info_hash in self._share_limit_service.tracked_info_hashes():
+            record = self._session_manager.get_record(info_hash)
+            if record is not None:
+                self._add_row(info_hash, record)
+                self._update_row(self._rows[info_hash], info_hash, record)
 
     # ----------------------------------------------------------- retranslate
 
@@ -221,7 +246,8 @@ class ShareTab(QWidget):
         self._update_row(row, info_hash, record)
 
     def _on_torrent_removed(self, info_hash: str) -> None:
-        self._share_limit_service.untrack(info_hash)
+        # ShareLimitService untracks itself (connected to the same signal),
+        # so this only needs to worry about its own table row.
         row = self._rows.pop(info_hash, None)
         if row is not None:
             self.table.removeRow(row)

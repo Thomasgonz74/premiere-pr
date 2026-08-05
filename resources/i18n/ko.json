@@ -251,5 +251,11 @@
   "cccp.propaganda.msg_15": "영광스러운 대역폭 5개년 계획은 그대의 영웅적 희생 덕분에 전진한다, 바이트의 기관사 동무여.",
   "cccp.propaganda.msg_16": "숨겨진 바이트는 인민에게서 훔친 바이트다. 파일이 아니라 주먹을 움켜쥐어라, 동무.",
   "cccp.propaganda.msg_17": "여기서는 '다운로드한다'고 하지 않는다. '인민을 섬기며 품위 있게 기다린다'고 한다, 훌륭한 소비에트식 줄서기가 다 그렇듯이.",
-  "cccp.propaganda.msg_18": "동무, 그대의 시드박스는 디지털 붉은 광장에 영원히 기려질 것이다, 트래커 영묘 바로 옆에서."
+  "cccp.propaganda.msg_18": "동무, 그대의 시드박스는 디지털 붉은 광장에 영원히 기려질 것이다, 트래커 영묘 바로 옆에서.",
+
+  "update.title": "업데이트 사용 가능",
+  "update.message": "Torrent 2000의 새 버전({version})을 사용할 수 있습니다. 다운로드하시겠습니까?",
+  "update.download_button": "다운로드",
+  "update.later_button": "나중에",
+  "profile_tab.check_for_updates_checkbox": "시작 시 업데이트 확인"
 }

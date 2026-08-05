@@ -3,6 +3,7 @@ import logging
 import libtorrent as lt
 from PySide6.QtCore import QObject, QTimer, Signal
 
+from torrent2000 import APP_VERSION
 from torrent2000.config.paths import get_default_download_dir
 from torrent2000.config.settings import Settings
 from torrent2000.engine import add_params, persistence, proxy, trackers as tracker_ops
@@ -61,8 +62,17 @@ def _build_session_settings(settings: Settings) -> dict:
             "alert_mask": ALERT_MASK,
             "active_downloads": settings.max_active_downloads,
             "active_seeds": settings.max_active_downloads,
+            # libtorrent's own default is 1 -- only ONE auto-managed torrent,
+            # session-wide, may occupy the "checking files" slot at a time.
+            # Every torrent added via the Partage tab has to pass through
+            # this check (it's already on disk, libtorrent must verify it)
+            # before it can start seeding, so leaving this at the default
+            # made a second share sit paused/stuck at 0% until the first
+            # one's check finished -- looking exactly like "can't share two
+            # torrents at once".
+            "active_checking": settings.max_active_downloads,
             "active_limit": settings.max_active_downloads * 2,
-            "user_agent": "Torrent2000/0.1.0",
+            "user_agent": f"Torrent2000/{APP_VERSION}",
             "download_rate_limit": settings.download_rate_limit_kbps * 1024,
             "upload_rate_limit": settings.upload_rate_limit_kbps * 1024,
             # Zero-config privacy hardening, active from the very first launch
@@ -130,6 +140,16 @@ class SessionManager(QObject):
         self._timer.timeout.connect(self._on_tick)
         self._timer.start(300)
 
+        # shutdown() (MainWindow.closeEvent) is the main save point, but
+        # relying on it alone means an abnormal exit -- a crash, a killed
+        # process, a power loss -- loses every torrent added since the last
+        # clean close. This periodic save is the same save_resume_data()/
+        # save_resume_data_alert pipeline shutdown() already uses, just
+        # triggered on a timer instead of only at exit.
+        self._resume_save_timer = QTimer(self)
+        self._resume_save_timer.timeout.connect(self._save_all_resume_data)
+        self._resume_save_timer.start(120_000)
+
         self._restore_previous_session()
 
     # ------------------------------------------------------------------ tick
@@ -139,6 +159,15 @@ class SessionManager(QObject):
         alerts = self._session.pop_alerts()
         if alerts:
             self._dispatcher.dispatch_all(alerts)
+
+    def _save_all_resume_data(self) -> None:
+        for handle in self._handles.values():
+            if handle.is_valid():
+                # only_if_modified skips torrents whose state hasn't changed
+                # since their last save -- this timer fires every 2 minutes
+                # for potentially many torrents, most of which are usually
+                # idle between ticks.
+                handle.save_resume_data(lt.torrent_handle.save_info_dict | lt.torrent_handle.only_if_modified)
 
     # ------------------------------------------------------------- alert cbs
 
@@ -397,6 +426,7 @@ class SessionManager(QObject):
             {
                 "active_downloads": count,
                 "active_seeds": count,
+                "active_checking": count,
                 "active_limit": count * 2,
             }
         )
@@ -405,9 +435,16 @@ class SessionManager(QObject):
 
     def _restore_previous_session(self) -> None:
         for atp in persistence.load_all_resume_params():
+            # One corrupt/stale resume entry (e.g. its save_path no longer
+            # exists) must not take down startup for every other torrent --
+            # add_torrent(atp) itself needs covering here too, not just
+            # info_hash_hex, since it's the call that can actually raise on
+            # bad data.
             try:
                 info_hash = add_params.info_hash_hex(atp)
+                handle = self._session.add_torrent(atp)
             except Exception:
+                logger.exception("Failed to restore a torrent from saved resume data")
                 continue
             record = TorrentRecord(
                 info_hash=info_hash,
@@ -417,16 +454,22 @@ class SessionManager(QObject):
                 all_time_uploaded=getattr(atp, "total_uploaded", 0),
             )
             self._records[info_hash] = record
-            handle = self._session.add_torrent(atp)
             self._handles[info_hash] = handle
             self.torrent_added.emit(info_hash)
 
     def shutdown(self, timeout_ms: int = 3000) -> None:
         self._timer.stop()
+        self._resume_save_timer.stop()
         pending = 0
         for handle in self._handles.values():
             if handle.is_valid():
-                handle.save_resume_data()
+                # save_info_dict is required for the saved .fastresume to
+                # carry the torrent's actual metadata (atp.ti) -- without it,
+                # _restore_previous_session() gets an atp with ti=None on the
+                # next launch, and libtorrent silently re-fetches metadata
+                # and re-hashes everything from scratch instead of doing a
+                # real fast-resume, discarding all prior verified progress.
+                handle.save_resume_data(lt.torrent_handle.save_info_dict)
                 pending += 1
 
         import time

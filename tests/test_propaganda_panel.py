@@ -3,10 +3,19 @@ import os
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 import pytest
+from PySide6.QtGui import QColor, QImage, QPainter
 from PySide6.QtWidgets import QApplication
 
 from torrent2000.i18n.translator import tr
-from torrent2000.ui.widgets.propaganda_panel import _MESSAGE_SPECS, CccpPropagandaPanel
+from torrent2000.ui.widgets.propaganda_panel import (
+    _MESSAGE_SPECS,
+    CccpPropagandaPanel,
+    _draw_factory,
+    _draw_fist,
+    _draw_rocket,
+    _draw_sun_rays,
+    _draw_wheat,
+)
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -58,3 +67,33 @@ def test_retranslate_ui_refreshes_the_currently_shown_message_and_header():
     panel.retranslate_ui()
     assert panel._header.text() == tr("cccp.propaganda.header")
     assert panel._message_label.text() in _all_message_texts()
+
+
+_DRAW_FUNCS = {
+    "sun_rays": _draw_sun_rays,
+    "wheat": _draw_wheat,
+    "rocket": _draw_rocket,
+    "factory": _draw_factory,
+    "fist": _draw_fist,
+}
+
+
+@pytest.mark.parametrize("kind", sorted(_DRAW_FUNCS))
+def test_every_new_illustration_actually_renders_without_raising(kind):
+    # Regression guard: a missing import (QPainterPath was never imported in
+    # this module) made these functions raise NameError as soon as they
+    # actually ran. Constructing _PropagandaIcon and calling set_kind() never
+    # exercises the drawing code at all -- it only runs inside paintEvent,
+    # triggered by an actual repaint. Deliberately calling these draw
+    # functions directly (rather than forcing a real paintEvent via
+    # icon.grab()) is the safe way to test this: a NameError inside a
+    # Qt virtual method override like paintEvent doesn't reach pytest as a
+    # normal catchable exception -- verified empirically, it aborts the
+    # whole Python process instead, which would take down the entire test
+    # suite rather than failing just this one test.
+    img = QImage(72, 72, QImage.Format_ARGB32)
+    painter = QPainter(img)
+    try:
+        _DRAW_FUNCS[kind](painter, 36.0, 36.0, QColor("#CC1B1B"))
+    finally:
+        painter.end()

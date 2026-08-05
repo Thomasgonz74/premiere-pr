@@ -1,6 +1,7 @@
 import logging
 import sys
 
+from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QApplication
 
 from torrent2000 import APP_NAME
@@ -13,6 +14,7 @@ from torrent2000.engine.rss_feed_service import RssFeedService
 from torrent2000.engine.rss_seen_store import RssSeenStore
 from torrent2000.engine.session_manager import SessionManager
 from torrent2000.engine.share_limits import ShareLimitService
+from torrent2000.engine.update_checker import UpdateChecker
 from torrent2000.engine.watch_folder_service import WatchFolderService
 from torrent2000.i18n.translator import set_language
 from torrent2000.stats.history_service import HistoryService
@@ -56,6 +58,7 @@ def main() -> int:
     watch_folder_service = WatchFolderService(session_manager, settings)
     disk_space_monitor = DiskSpaceMonitor(session_manager, settings)
     auto_shutdown_service = AutoShutdownService(session_manager, settings)
+    update_checker = UpdateChecker(settings)
     window = MainWindow(
         session_manager,
         stats_service,
@@ -66,10 +69,14 @@ def main() -> int:
         rss_feed_service,
         disk_space_monitor,
         auto_shutdown_service,
+        update_checker,
     )
     if len(sys.argv) > 1:
         window.open_source(sys.argv[1])
     window.show()
+    # Delayed so the update check's network request doesn't compete with the
+    # rest of startup (session restore, stats DB open, etc).
+    QTimer.singleShot(3000, update_checker.check_now)
 
     return app.exec()
 

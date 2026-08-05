@@ -94,6 +94,12 @@ class Settings:
 
     launch_at_startup: bool = False  # mirrors the actual HKCU Run key state, see engine/startup_registration.py
 
+    check_for_updates: bool = True
+    # Set when the user dismisses an update notification, so the same
+    # already-seen version doesn't nag again every launch -- a genuinely
+    # newer release still triggers a fresh notification.
+    dismissed_update_version: str = ""
+
     @staticmethod
     def load() -> "Settings":
         path = get_config_path()

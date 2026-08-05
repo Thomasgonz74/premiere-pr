@@ -5,7 +5,6 @@ from PySide6.QtWidgets import (
     QCheckBox,
     QGroupBox,
     QHBoxLayout,
-    QHeaderView,
     QLabel,
     QLineEdit,
     QListWidget,
@@ -92,7 +91,14 @@ class RssTab(QWidget):
 
         self.table = QTableWidget(0, 4, self)
         self.table.setHorizontalHeaderLabels(_columns())
-        self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
+        # Deliberately NOT QHeaderView.Stretch: a Stretch column keeps total
+        # header width pinned to the viewport, so resizing any OTHER column
+        # silently shrinks/grows this one to compensate -- from the user's
+        # side, dragging a column border elsewhere makes THIS column's
+        # border move instead, while the one actually dragged snaps back
+        # to where it started. A fixed initial width with plain Interactive
+        # resizing (the default) makes every column resize independently.
+        self.table.setColumnWidth(0, 280)
         self.table.verticalHeader().setVisible(False)
         layout.addWidget(self.table, 2)
 

@@ -28,6 +28,7 @@ def window():
         MagicMock(),
         MagicMock(),
         MagicMock(),
+        MagicMock(),
     )
     win.resize(980, 640)
     win.move(100, 100)

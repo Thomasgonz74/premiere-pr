@@ -251,5 +251,11 @@
   "cccp.propaganda.msg_15": "O glorioso plano quinquenal da largura de banda avança graças ao seu sacrifício heroico, camarada maquinista do byte.",
   "cccp.propaganda.msg_16": "Um byte escondido é um byte roubado ao povo. Cerre o punho, não o ficheiro, camarada.",
   "cccp.propaganda.msg_17": "Aqui não se diz «transferir». Diz-se «esperar dignamente ao serviço do povo», como em qualquer boa fila soviética.",
-  "cccp.propaganda.msg_18": "Camarada, a sua seedbox será comemorada na Praça Vermelha digital, mesmo ao lado do mausoléu do tracker."
+  "cccp.propaganda.msg_18": "Camarada, a sua seedbox será comemorada na Praça Vermelha digital, mesmo ao lado do mausoléu do tracker.",
+
+  "update.title": "Atualização disponível",
+  "update.message": "Uma nova versão ({version}) do Torrent 2000 está disponível. Deseja transferi-la?",
+  "update.download_button": "Transferir",
+  "update.later_button": "Mais tarde",
+  "profile_tab.check_for_updates_checkbox": "Verificar atualizações ao iniciar"
 }

@@ -251,5 +251,11 @@
   "cccp.propaganda.msg_15": "The glorious Five-Year Plan for bandwidth advances on your heroic sacrifice, comrade byte-machinist.",
   "cccp.propaganda.msg_16": "A hidden byte is a byte stolen from the people. Clench your fist, not your files, comrade.",
   "cccp.propaganda.msg_17": "Here, we do not say \"download.\" We say \"wait with dignity in service of the people\" — as in any proper Soviet queue.",
-  "cccp.propaganda.msg_18": "Comrade, your seedbox will be enshrined on the digital Red Square, right beside the Tracker's Mausoleum."
+  "cccp.propaganda.msg_18": "Comrade, your seedbox will be enshrined on the digital Red Square, right beside the Tracker's Mausoleum.",
+
+  "update.title": "Update available",
+  "update.message": "A new version ({version}) of Torrent 2000 is available. Would you like to download it?",
+  "update.download_button": "Download",
+  "update.later_button": "Later",
+  "profile_tab.check_for_updates_checkbox": "Check for updates on startup"
 }

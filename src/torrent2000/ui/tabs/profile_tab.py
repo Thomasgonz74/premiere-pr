@@ -13,7 +13,6 @@ from PySide6.QtWidgets import (
     QFrame,
     QGroupBox,
     QHBoxLayout,
-    QHeaderView,
     QLabel,
     QLineEdit,
     QMessageBox,
@@ -194,6 +193,10 @@ class ProfileTab(QWidget):
         # should show unchecked rather than lying about it.
         self.launch_at_startup_checkbox.setChecked(startup_registration.is_launch_at_startup_enabled())
         general_form.addRow(self.launch_at_startup_checkbox)
+
+        self.check_for_updates_checkbox = QCheckBox(tr("profile_tab.check_for_updates_checkbox"), self.general_box)
+        self.check_for_updates_checkbox.setChecked(settings.check_for_updates)
+        general_form.addRow(self.check_for_updates_checkbox)
 
         layout.addWidget(self.general_box)
 
@@ -422,7 +425,14 @@ class ProfileTab(QWidget):
         history_layout = QVBoxLayout(self.history_box)
         self.history_table = QTableWidget(0, 5, self.history_box)
         self.history_table.setHorizontalHeaderLabels(self._history_columns())
-        self.history_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
+        # Deliberately NOT QHeaderView.Stretch: a Stretch column keeps total
+        # header width pinned to the viewport, so resizing any OTHER column
+        # silently shrinks/grows this one to compensate -- from the user's
+        # side, dragging a column border elsewhere makes THIS column's
+        # border move instead, while the one actually dragged snaps back
+        # to where it started. A fixed initial width with plain Interactive
+        # resizing (the default) makes every column resize independently.
+        self.history_table.setColumnWidth(0, 220)
         self.history_table.verticalHeader().setVisible(False)
         self.history_table.setMaximumHeight(160)
         history_layout.addWidget(self.history_table)
@@ -497,6 +507,7 @@ class ProfileTab(QWidget):
         self._populate_combo(self.appearance_combo, appearance_mode_labels(), self._settings.appearance_mode)
         self.notifications_checkbox.setText(tr("profile_tab.notifications_checkbox"))
         self.launch_at_startup_checkbox.setText(tr("profile_tab.launch_at_startup_checkbox"))
+        self.check_for_updates_checkbox.setText(tr("profile_tab.check_for_updates_checkbox"))
 
         self.audio_box.setTitle(tr("profile_tab.audio_group"))
         self.audio_note.setText(tr("profile_tab.audio_note"))
@@ -656,6 +667,7 @@ class ProfileTab(QWidget):
         self._settings.audio_volume = self.volume_slider.value()
         self._settings.launch_at_startup = self.launch_at_startup_checkbox.isChecked()
         startup_registration.set_launch_at_startup(self._settings.launch_at_startup)
+        self._settings.check_for_updates = self.check_for_updates_checkbox.isChecked()
 
         self._settings.bandwidth_schedule.enabled = self.schedule_enabled_checkbox.isChecked()
         self._settings.bandwidth_schedule.start_hour = self.schedule_start_spin.value()

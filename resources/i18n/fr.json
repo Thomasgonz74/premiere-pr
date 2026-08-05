@@ -271,5 +271,11 @@
   "cccp.propaganda.msg_15": "Le glorieux plan quinquennal de la bande passante avance grâce à votre sacrifice héroïque, camarade machiniste de l'octet.",
   "cccp.propaganda.msg_16": "Un octet caché est un octet volé au peuple. Serrez le poing, pas le fichier, camarade.",
   "cccp.propaganda.msg_17": "Ici, on ne dit pas « télécharger ». On dit « attendre dignement en servant le peuple », comme dans toute bonne file d'attente soviétique.",
-  "cccp.propaganda.msg_18": "Camarade, votre seedbox sera commémorée sur la Place Rouge numérique, juste à côté du mausolée du tracker."
+  "cccp.propaganda.msg_18": "Camarade, votre seedbox sera commémorée sur la Place Rouge numérique, juste à côté du mausolée du tracker.",
+
+  "update.title": "Mise à jour disponible",
+  "update.message": "Une nouvelle version ({version}) de Torrent 2000 est disponible. Voulez-vous la télécharger ?",
+  "update.download_button": "Télécharger",
+  "update.later_button": "Plus tard",
+  "profile_tab.check_for_updates_checkbox": "Vérifier les mises à jour au démarrage"
 }

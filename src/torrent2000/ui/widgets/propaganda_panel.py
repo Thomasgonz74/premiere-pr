@@ -12,7 +12,7 @@ import math
 import random
 
 from PySide6.QtCore import QPointF, QRectF, Qt, QTimer
-from PySide6.QtGui import QColor, QPainter, QPaintEvent, QPen, QPolygonF
+from PySide6.QtGui import QColor, QPainter, QPainterPath, QPaintEvent, QPen, QPolygonF
 from PySide6.QtWidgets import QFrame, QLabel, QVBoxLayout, QWidget
 
 from torrent2000.i18n.translator import tr

@@ -36,6 +36,7 @@ from xml.etree import ElementTree
 
 from PySide6.QtCore import QObject, QRunnable, QThreadPool, QTimer, Signal
 
+from torrent2000 import APP_VERSION
 from torrent2000.config.settings import Settings
 from torrent2000.engine.rss_seen_store import RssSeenStore
 from torrent2000.engine.session_manager import SessionManager
@@ -44,7 +45,7 @@ logger = logging.getLogger(__name__)
 
 CHECK_INTERVAL_MS = 15 * 60 * 1000  # 15 minutes
 FETCH_TIMEOUT_SECONDS = 20
-USER_AGENT = "Torrent2000/0.1.0"
+USER_AGENT = f"Torrent2000/{APP_VERSION}"
 
 
 def parse_rss_items(xml_bytes: bytes) -> list[dict]:
