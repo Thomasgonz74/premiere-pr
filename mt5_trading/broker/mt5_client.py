@@ -59,6 +59,9 @@ class Mt5Client(Broker):
     def shutdown(self) -> None:
         mt5.shutdown()
 
+    def list_symbols(self) -> list[str]:
+        return [s.name for s in (mt5.symbols_get() or [])]
+
     def account(self) -> AccountState:
         info = mt5.account_info()
         return AccountState(

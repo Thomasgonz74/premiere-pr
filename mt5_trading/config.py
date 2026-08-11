@@ -13,19 +13,23 @@ from dataclasses import dataclass, field
 class SymbolSpec:
     """Instrument surveillé et ses métadonnées."""
 
-    name: str            # nom du symbole côté broker (à adapter : XAUUSD, GOLD, ...)
+    name: str            # nom canonique (résolu automatiquement côté broker)
     kind: str            # "commodity" ou "forex"
     description: str
     priority: int        # 1 = cœur de la watchlist, 2 = secondaire
     max_spread_points: float  # spread max toléré (en points) pour scalper
+    aliases: tuple[str, ...] = ()  # noms alternatifs selon les brokers
 
 
 # Watchlist : matières premières + forex, choisie pour la liquidité et la
 # volatilité intra-journalière (conditions nécessaires au scalping < 30 min).
 WATCHLIST: list[SymbolSpec] = [
-    SymbolSpec("XAUUSD", "commodity", "Or — le roi du scalping, volatil et liquide", 1, 35.0),
-    SymbolSpec("XAGUSD", "commodity", "Argent — volatil, spreads plus larges", 2, 45.0),
-    SymbolSpec("XTIUSD", "commodity", "Pétrole WTI — fort en session US", 2, 60.0),
+    SymbolSpec("XAUUSD", "commodity", "Or — le roi du scalping, volatil et liquide", 1, 35.0,
+               aliases=("GOLD",)),
+    SymbolSpec("XAGUSD", "commodity", "Argent — volatil, spreads plus larges", 2, 45.0,
+               aliases=("SILVER",)),
+    SymbolSpec("XTIUSD", "commodity", "Pétrole WTI — fort en session US", 2, 60.0,
+               aliases=("USOIL", "WTI", "CL-OIL", "CRUDEOIL", "OILUS")),
     SymbolSpec("EURUSD", "forex", "Paire la plus liquide, spread minimal", 1, 12.0),
     SymbolSpec("GBPUSD", "forex", "Volatile en session Londres", 1, 15.0),
     SymbolSpec("USDJPY", "forex", "Liquide, propre techniquement", 2, 15.0),
@@ -70,3 +74,26 @@ class AppConfig:
 
     def core_symbols(self) -> list[SymbolSpec]:
         return [s for s in self.watchlist if s.priority == 1]
+
+
+# Profils de stratégie prêts à tester (comparaison A/B en session).
+PROFILES: dict[str, str] = {
+    "standard": "score min 3.0, 30 trades/jour, risque 0.5 %/trade",
+    "selectif": "score min 4.0 — ne prend que les meilleures confluences",
+    "prudent": "score min 4.0, 5 trades/jour, 1 position, risque 0.25 %/trade "
+               "— recommandé pour les premières sessions réelles",
+}
+
+
+def make_config(profile: str = "standard") -> AppConfig:
+    if profile == "standard":
+        return AppConfig()
+    if profile == "selectif":
+        return AppConfig(trading=TradingConfig(min_confluence_score=4.0))
+    if profile == "prudent":
+        return AppConfig(
+            risk=RiskConfig(risk_per_trade_pct=0.25, max_trades_per_day=5,
+                            max_open_positions=1),
+            trading=TradingConfig(min_confluence_score=4.0),
+        )
+    raise ValueError(f"Profil inconnu : {profile} (choix : {', '.join(PROFILES)})")

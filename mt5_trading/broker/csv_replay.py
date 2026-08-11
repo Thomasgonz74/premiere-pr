@@ -93,6 +93,9 @@ class CsvReplayBroker(PaperBroker):
             log.info("Replay %s : %d bougies M1, du %s au %s", symbol, len(df),
                      df.index[0], df.index[-1])
 
+    def list_symbols(self) -> list[str]:
+        return list(self._full)
+
     def replayable_minutes(self) -> int:
         """Minutes de marché disponibles entre l'horloge actuelle et la fin."""
         return max(0, int((self._end - self._clock).total_seconds() // 60))

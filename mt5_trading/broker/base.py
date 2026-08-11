@@ -58,6 +58,10 @@ class OrderResult:
 class Broker(abc.ABC):
     """Contrat minimal entre les agents et le marché."""
 
+    def list_symbols(self) -> list[str]:
+        """Noms de tous les instruments proposés par le broker."""
+        raise NotImplementedError
+
     @abc.abstractmethod
     def account(self) -> AccountState: ...
 

@@ -119,6 +119,9 @@ class PaperBroker(Broker):
                  pos.symbol, "LONG" if pos.direction > 0 else "SHORT", price, reason, pnl)
 
     # ------------------------------------------------------------------ Broker
+    def list_symbols(self) -> list[str]:
+        return list(_BASE_PRICES)
+
     def account(self) -> AccountState:
         equity = self._balance
         margin = 0.0

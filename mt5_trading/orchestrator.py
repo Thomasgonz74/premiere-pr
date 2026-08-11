@@ -24,6 +24,7 @@ from .agents.trend_agent import TrendContextAgent
 from .broker.base import Broker
 from .broker.paper import PaperBroker
 from .config import AppConfig
+from .symbols import resolve_watchlist
 
 log = logging.getLogger(__name__)
 
@@ -32,6 +33,7 @@ class Orchestrator:
     def __init__(self, broker: Broker, config: AppConfig | None = None) -> None:
         self.broker = broker
         self.config = config or AppConfig()
+        resolve_watchlist(broker, self.config)
         self.scanner = MarketScannerAgent(broker, self.config)
         self.trend = TrendContextAgent(broker, self.config)
         self.analyst = ChartAnalystAgent(broker, self.config)

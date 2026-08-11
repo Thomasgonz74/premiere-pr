@@ -138,6 +138,38 @@ python -m pytest tests/test_trading_analysis.py tests/test_trading_risk.py
 Le mode `live` ne touche **que** les positions ouvertes par le système
 (magic number dédié) — vos positions manuelles sont ignorées.
 
+## Profils de stratégie (`--profile`)
+
+| Profil | Score min | Trades/jour | Positions | Risque/trade | Usage |
+|---|---|---|---|---|---|
+| `prudent` | 4,0 | 5 | 1 | 0,25 % | **Premières sessions réelles** |
+| `selectif` | 4,0 | 30 | 2 | 0,5 % | Ne prend que les meilleures confluences |
+| `standard` | 3,0 | 30 | 2 | 0,5 % | Comportement par défaut |
+
+Pour comparer deux profils honnêtement, backtestez-les sur le même fichier
+CSV (`--mode csv --profile selectif` vs `--profile standard`).
+
+## Session réelle (ex. compte AXI) — checklist
+
+1. **Compte DÉMO d'abord**, toujours. AXI fournit des comptes démo MT5
+   illimités — validez-y le système plusieurs semaines.
+2. Dans le terminal MT5 : bouton **« Algo Trading » activé** (barre d'outils)
+   et Outils → Options → Expert Advisors → autoriser le trading algorithmique.
+3. Le terminal doit être **connecté au compte** (coin bas-droit vert).
+4. Lancez : `python -m mt5_trading.main --mode live --profile prudent`
+   — les noms de symboles sont **résolus automatiquement** au démarrage
+   (suffixes type `EURUSD.a`, pétrole `USOIL`, etc.) ; le log affiche la
+   correspondance retenue, vérifiez-la avant de laisser tourner.
+5. Le système ne trade que pendant les sessions Londres (7h–11h UTC) et
+   New York (12h–17h UTC) ; en dehors, il veille sans rien faire.
+6. Une seule instance à la fois sur un compte donné. Si un autre outil ou
+   une autre session pilote le même compte, coordonnez-les : ce système
+   n'interfère qu'avec ses propres positions (magic 573001), mais le risque
+   du compte (marge, perte journalière), lui, est partagé.
+7. Pour l'arrêter : Ctrl+C — les positions ouvertes restent protégées par
+   leurs SL/TP côté serveur, mais la fermeture à 30 min et le breakeven ne
+   s'appliquent plus une fois le programme éteint.
+
 ## Limites connues
 
 - Le mode `paper` utilise des prix synthétiques (marche aléatoire) : il valide

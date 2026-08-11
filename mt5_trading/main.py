@@ -19,7 +19,7 @@ import argparse
 import getpass
 import logging
 
-from .config import AppConfig
+from .config import PROFILES, make_config
 from .orchestrator import Orchestrator
 
 log = logging.getLogger(__name__)
@@ -37,6 +37,9 @@ def build_parser() -> argparse.ArgumentParser:
                         metavar="SYMBOLE=FICHIER.csv",
                         help="mode csv : données M1 réelles, répétable "
                              "(ex. --data XAUUSD=xauusd_m1.csv --data EURUSD=eu.csv)")
+    parser.add_argument("--profile", choices=sorted(PROFILES), default="standard",
+                        help="profil de stratégie : "
+                             + " | ".join(f"{k} = {v}" for k, v in PROFILES.items()))
     parser.add_argument("--login", type=int, default=None, help="login MT5 (mode live)")
     parser.add_argument("--server", type=str, default=None, help="serveur broker (mode live)")
     parser.add_argument("-v", "--verbose", action="store_true")
@@ -49,7 +52,8 @@ def main() -> None:
         level=logging.DEBUG if args.verbose else logging.INFO,
         format="%(asctime)s %(levelname)-7s %(name)s: %(message)s",
     )
-    config = AppConfig()
+    config = make_config(args.profile)
+    log.info("Profil « %s » : %s", args.profile, PROFILES[args.profile])
 
     if args.mode == "paper":
         from .broker.paper import PaperBroker
@@ -71,9 +75,13 @@ def main() -> None:
             raise SystemExit("Le mode csv exige au moins un --data SYMBOLE=FICHIER.csv")
         broker = CsvReplayBroker(data_files, balance=args.balance,
                                  leverage=config.risk.account_leverage)
-        # Seuls les symboles fournis sont surveillés.
-        config.watchlist = [s for s in config.watchlist if s.name in data_files]
-        unknown = set(data_files) - {s.name for s in config.watchlist}
+        # Seuls les symboles fournis sont surveillés (alias acceptés : USOIL → XTIUSD).
+        config.watchlist = [
+            s for s in config.watchlist
+            if s.name in data_files or any(a in data_files for a in s.aliases)
+        ]
+        known = {n for s in config.watchlist for n in (s.name, *s.aliases)}
+        unknown = set(data_files) - known
         if unknown:
             log.warning("Symboles hors watchlist (ajoutez-les dans config.py) : %s",
                         ", ".join(sorted(unknown)))
