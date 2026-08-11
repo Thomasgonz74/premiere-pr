@@ -1,0 +1,7 @@
+# Noyau
+pandas>=2.0
+numpy>=1.26
+
+# Connexion MetaTrader 5 (Windows uniquement — le terminal MT5 doit être installé)
+# Sur macOS/Linux, le mode "paper" fonctionne sans cette dépendance.
+MetaTrader5>=5.0.45; sys_platform == "win32"
