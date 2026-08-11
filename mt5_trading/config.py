@@ -43,7 +43,7 @@ class RiskConfig:
     max_open_positions: int = 2          # positions simultanées max
     max_margin_usage_pct: float = 5.0    # marge utilisée max (malgré le levier 1000)
     min_reward_risk: float = 1.5         # ratio TP/SL minimal accepté
-    max_trades_per_day: int = 10         # anti-overtrading
+    max_trades_per_day: int = 30         # anti-overtrading
 
 
 @dataclass(frozen=True)
