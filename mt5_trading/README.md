@@ -122,7 +122,12 @@ pip install -r mt5_trading/requirements.txt
 # 1. Simulation locale (aucun compte requis, fonctionne partout)
 python -m mt5_trading.main --mode paper --minutes 480 --balance 500
 
-# 2. Compte DÉMO puis réel (Windows + terminal MT5 installé et connecté)
+# 2. Backtest sur données M1 RÉELLES (export MT5 : Affichage → Symboles →
+#    Barres → Exporter, ou tout CSV avec colonnes time/open/high/low/close)
+python -m mt5_trading.main --mode csv --balance 3000 --minutes 0 \
+    --data XAUUSD=xauusd_m1.csv --data EURUSD=eurusd_m1.csv
+
+# 3. Compte DÉMO puis réel (Windows + terminal MT5 installé et connecté)
 python -m mt5_trading.main --mode live
 python -m mt5_trading.main --mode live --login 123456 --server MonBroker-Demo
 
@@ -135,9 +140,14 @@ Le mode `live` ne touche **que** les positions ouvertes par le système
 
 ## Limites connues
 
-- Le mode `paper` utilise des prix synthétiques : il valide la mécanique des
-  agents, **pas** la rentabilité de la stratégie. Pour un vrai backtest,
-  branchez des données historiques réelles.
+- Le mode `paper` utilise des prix synthétiques (marche aléatoire) : il valide
+  la mécanique des agents, **pas** la rentabilité — n'optimisez jamais les
+  paramètres contre lui. Utilisez le mode `csv` avec de vraies données M1.
+- En mode `csv`, prévoyez plusieurs semaines de M1 : le biais journalier (D1)
+  a besoin d'une dizaine de jours d'historique pour se calculer ; `--minutes 0`
+  rejoue tout le fichier. Les horodatages sont supposés UTC — si votre export
+  est en heure serveur broker (souvent UTC+2/3), décalez `sessions_utc` dans
+  `config.py`. Le spread est forfaitaire (10 points) car absent des exports.
 - Pas de filtre de calendrier économique : coupez le système manuellement
   autour des annonces majeures (NFP, CPI, décisions de la Fed), ou pendant
   les 30 minutes qui les suivent si vous ne voulez pas de la volatilité.

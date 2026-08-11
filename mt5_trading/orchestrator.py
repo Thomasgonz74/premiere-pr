@@ -77,15 +77,20 @@ class Orchestrator:
     def run_simulation(self, minutes: int = 480) -> dict:
         """Fait tourner le système sur `minutes` de marché simulé (mode paper)."""
         assert isinstance(self.broker, PaperBroker), "run_simulation exige le PaperBroker"
+        elapsed = 0
         for _ in range(minutes):
+            if getattr(self.broker, "exhausted", False):
+                log.info("Fin des données de replay atteinte après %d minutes.", elapsed)
+                break
             self.tick()
             self.broker.advance(1)
+            elapsed += 1
         # Bilan
         account = self.broker.account()
         trades = self.broker.closed_trades
         wins = [t for t in trades if t["pnl"] > 0]
         report = {
-            "minutes_simulees": minutes,
+            "minutes_simulees": elapsed,
             "trades_fermes": len(trades),
             "gagnants": len(wins),
             "taux_reussite_pct": round(100 * len(wins) / len(trades), 1) if trades else 0.0,
