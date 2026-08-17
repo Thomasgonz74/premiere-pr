@@ -17,24 +17,16 @@ from PySide6.QtCore import QObject, QTimer, Signal
 
 from torrent2000.config.settings import Settings
 from torrent2000.engine.session_manager import SessionManager
-from torrent2000.engine.torrent_item import TorrentRecord, TorrentState
+from torrent2000.engine.torrent_item import ACTIVE_DOWNLOAD_STATES, TorrentRecord
 
 logger = logging.getLogger(__name__)
-
-# Mirrors the "actively downloading" definition used by
-# engine/disk_space_monitor.py.
-_ACTIVE_DOWNLOAD_STATES = {
-    TorrentState.DOWNLOADING,
-    TorrentState.QUEUED,
-    TorrentState.CHECKING_METADATA,
-}
 
 
 def all_torrents_idle(records: list[TorrentRecord]) -> bool:
     """True when none of the given records are still actively downloading
     (i.e. every torrent has finished, is seeding, paused, awaiting analysis,
     or errored)."""
-    return not any(record.state in _ACTIVE_DOWNLOAD_STATES for record in records)
+    return not any(record.state in ACTIVE_DOWNLOAD_STATES for record in records)
 
 
 class AutoShutdownService(QObject):

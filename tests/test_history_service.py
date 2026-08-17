@@ -95,3 +95,37 @@ def test_all_entries_respects_limit(tmp_path):
     assert len(service.all_entries(limit=3)) == 3
     # Most recent first.
     assert service.all_entries(limit=1)[0].name == "Torrent4"
+
+
+def test_history_store_clear_empties_the_table(tmp_path):
+    store = HistoryStore(tmp_path / "history.sqlite3")
+    fake_sm = FakeSessionManager()
+    service = HistoryService(store, fake_sm)
+    fake_sm.torrent_status_updated.emit("abc", FakeRecord(info_hash="abc"))
+    fake_sm.torrent_removed.emit("abc")
+    fake_sm.torrent_status_updated.emit("def", FakeRecord(info_hash="def"))
+    fake_sm.torrent_removed.emit("def")
+    assert len(store.all_entries()) == 2
+
+    store.clear()
+
+    assert store.all_entries() == []
+
+
+def test_history_service_clear_empties_the_store_and_emits_entry_added(tmp_path):
+    store = HistoryStore(tmp_path / "history.sqlite3")
+    fake_sm = FakeSessionManager()
+    service = HistoryService(store, fake_sm)
+    fake_sm.torrent_status_updated.emit("abc", FakeRecord(info_hash="abc"))
+    fake_sm.torrent_removed.emit("abc")
+    fake_sm.torrent_status_updated.emit("def", FakeRecord(info_hash="def"))
+    fake_sm.torrent_removed.emit("def")
+    assert len(service.all_entries()) == 2
+
+    fired = []
+    service.entry_added.connect(lambda: fired.append(True))
+
+    service.clear()
+
+    assert service.all_entries() == []
+    assert fired == [True]

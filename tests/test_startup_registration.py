@@ -4,13 +4,42 @@ import pytest
 
 from torrent2000.engine import startup_registration as sr
 
+# Throwaway subkey under HKCU, isolated from the real
+# Software\Microsoft\Windows\CurrentVersion\Run key that startup_registration
+# touches by default -- these tests must never read/write the developer's
+# actual Windows startup entry.
+_TEST_ROOT_KEY_PATH = r"Software\Torrent2000_test_isolated"
+_TEST_RUN_KEY_PATH = _TEST_ROOT_KEY_PATH + "\\Run"
+
+
+def _delete_key_tree(root, path):
+    try:
+        key = winreg.OpenKey(root, path, 0, winreg.KEY_ALL_ACCESS)
+    except FileNotFoundError:
+        return
+    try:
+        # Subkeys shift down after each deletion, so re-querying index 0
+        # each time (rather than enumerating once up front) is required.
+        while True:
+            try:
+                child_name = winreg.EnumKey(key, 0)
+            except OSError:
+                break
+            _delete_key_tree(root, f"{path}\\{child_name}")
+    finally:
+        winreg.CloseKey(key)
+    winreg.DeleteKey(root, path)
+
 
 @pytest.fixture(autouse=True)
-def cleanup_registry_value():
-    # Regardless of what a test does, never leave a real "launch at Windows
-    # startup" entry behind in the developer's own registry.
+def isolated_registry(monkeypatch):
+    monkeypatch.setattr(sr, "_RUN_KEY_PATH", _TEST_RUN_KEY_PATH)
+    # set_launch_at_startup() uses OpenKey (not CreateKey), which requires
+    # the key to already exist -- unlike the real Run key, our throwaway
+    # subkey has to be created up front.
+    winreg.CloseKey(winreg.CreateKey(winreg.HKEY_CURRENT_USER, _TEST_RUN_KEY_PATH))
     yield
-    sr.set_launch_at_startup(False)
+    _delete_key_tree(winreg.HKEY_CURRENT_USER, _TEST_ROOT_KEY_PATH)
 
 
 def test_disabled_by_default_on_a_clean_machine():

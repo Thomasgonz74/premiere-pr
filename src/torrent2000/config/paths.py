@@ -49,6 +49,18 @@ def get_share_limits_path() -> Path:
     return get_app_data_dir() / "share_limits.json"
 
 
+def get_categories_path() -> Path:
+    return get_config_path().parent / "categories.json"
+
+
+def get_settings_profiles_path() -> Path:
+    return get_config_path().parent / "settings_profiles.json"
+
+
+def get_routing_rules_path() -> Path:
+    return get_config_path().parent / "routing_rules.json"
+
+
 def get_default_download_dir() -> Path:
     downloads = Path.home() / "Downloads" / "Torrent2000"
     downloads.mkdir(parents=True, exist_ok=True)

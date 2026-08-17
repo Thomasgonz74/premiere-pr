@@ -51,5 +51,26 @@ class StatsStore:
         )
         self._conn.commit()
 
+    def apply_flush(
+        self,
+        total_delta_downloaded: int,
+        total_delta_uploaded: int,
+        torrent_counters: dict[str, tuple[int, int]],
+    ) -> None:
+        if total_delta_downloaded > 0 or total_delta_uploaded > 0:
+            self._conn.execute(
+                "UPDATE totals SET total_downloaded = total_downloaded + ?, "
+                "total_uploaded = total_uploaded + ? WHERE id = 1",
+                (max(0, total_delta_downloaded), max(0, total_delta_uploaded)),
+            )
+        for info_hash, (last_downloaded, last_uploaded) in torrent_counters.items():
+            self._conn.execute(
+                "INSERT INTO torrent_counters (info_hash, last_downloaded, last_uploaded) VALUES (?, ?, ?) "
+                "ON CONFLICT(info_hash) DO UPDATE SET last_downloaded = excluded.last_downloaded, "
+                "last_uploaded = excluded.last_uploaded",
+                (info_hash, last_downloaded, last_uploaded),
+            )
+        self._conn.commit()
+
     def close(self) -> None:
         self._conn.close()

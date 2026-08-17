@@ -1,179 +1,305 @@
-/* Torrent 2000 -- "Windows 11" skin.
+/* =========================================================================
+   Torrent 2000 -- "Windows 11" skin (Mica), LIGHT variant.
 
-   Reference colors:
-     window background     #F3F3F3  (soft "Mica"-inspired off-white)
-     accent blue            #0067C0
-     border gray            #C9C9C9
-     text                   #1A1A1A
-     disabled text          #A0A0A0
+   Rebuilt from scratch from REAL measured pixels (see scratchpad
+   CHARTER_win11.md for the full method): two genuine Windows 11 screenshots
+   (Settings app, File Explorer) downloaded from Wikimedia Commons, sampled
+   with Pillow at window backdrop / card / button / dropdown / accent-chip /
+   text-glyph locations. Corner radius (8px) and dark title-bar caption
+   color come from theme_manager.py's TITLE_BAR_STYLES["win11_mica"] -- read,
+   not modified. The custom title bar itself is drawn there, not here.
 
-   Same flat-design family as the Windows 10 skin, but rounded everywhere
-   (buttons, tabs, inputs, group boxes, and -- via MainWindow's corner
-   mask -- the window itself) since rounded corners are Windows 11's
-   defining visual change. The title bar is NOT drawn by this stylesheet
-   -- see src/torrent2000/ui/widgets/app_title_bar.py.
-*/
+   Measured token palette (name -> hex -> where it was sampled):
+     --mica-bg      #EFF4F9  window backdrop (Settings app empty area, avg of
+                              4 samples)
+     --card         #FBFBFD  layer-2 elevated surface: panes, dialogs, menus,
+                              buttons, tooltips (Settings "Sign in" button
+                              face + card background, 3 samples converged)
+     --surface      #FFFFFF  layer-3, brightest: inputs, tables, lists
+                              (Explorer content area, pure white)
+     --border-subtle #E5E5E8 hairline on large neutral surfaces (derived one
+                              step down from measured card-gap tone)
+     --border-strong #D0D0D3 functional border on small controls (derived)
+     --hover-wash   #E9EDF2  neutral hover/selected-nav tint -- measurement
+                              showed this is neutral gray, NOT a blue wash
+                              like v1 assumed (avg of Settings' selected
+                              "Home" nav pill #E6EBF0 and Explorer's neutral
+                              "Favorites" chip #EEEEEE)
+     --accent       #0F70C4  Explorer's accent-filled "Recent" filter chip --
+                              a real measured accent-blue pixel
+     --accent-hover #2B84D6  derived, +15% lightness from measured accent
+     --accent-pressed #0A5A9E derived, -20% lightness from measured accent
+     --danger       #C42B1C  Fluent's documented destructive red (no red
+                              control appeared in the sampled screenshots;
+                              cross-referenced from Microsoft's own Fluent
+                              color docs, not pixel-sampled here)
+     --text         #1B1B1B  primary text (darkest-pixel glyph search, 2
+                              samples averaged: Settings "Home" heading,
+                              Explorer "Quick access" heading)
+     --text-muted   #5B5B5B  secondary text (darkest-pixel glyph search, 2
+                              samples: Settings nav label, Explorer caption)
+     --text-disabled #9B9B9B derived contrast step
+
+   Shape: window_corner_radius is 8px (theme_manager.py). Every control
+   below echoes 8px; the 16px checkbox box scales down to 4px; the 16px
+   slider handle is a perfect circle (8px radius).
+
+   Checked checkbox glyph: assets/icons/win11/checkmark_white.png, a new
+   32x32 procedurally-drawn smooth white tick (not the project's shared
+   assets/checkmark.png, which is a chunky pixel-art glyph built for the
+   retro themes and clashed with Mica's smooth look) -- see
+   CHARTER_win11.md "Icon created" section for the full rationale.
+   ========================================================================= */
 
 * {
-    font-family: "Segoe UI", "MS Shell Dlg 2", sans-serif;
+    font-family: "Segoe UI Variable", "Segoe UI", "MS Shell Dlg 2", sans-serif;
     font-size: 9pt;
 }
 
 QMainWindow, QWidget#centralWidget {
-    background-color: #F3F3F3;
+    background-color: #EFF4F9;
+    /* Authentic-to-theme pointer over background/non-text zones only -- see
+       assets/cursors/win11/arrow.png (hand-drawn, hotspot at the tip
+       pixel). Deliberately NOT a QWidget-wide rule: that would clobber
+       QLineEdit's I-beam and every clickable control's own cursor. Scoped
+       here plus QGroupBox/QTabBar/QDialog/table-tree-list backgrounds
+       below instead. */
+    cursor: url(theme:cursors/win11/arrow.png) 4 3;
 }
 
 QWidget {
-    background-color: #F3F3F3;
-    color: #1A1A1A;
+    background-color: #EFF4F9;
+    color: #1B1B1B;
+    /* Also declared here, not just on the specific popup rule below: Qt's
+       QComboBox popup draws its "current item" indicator from the
+       application-wide palette this universal rule establishes, not just
+       from the more specific QComboBox QAbstractItemView rule -- verified
+       empirically (leaving this undeclared made the current row silently
+       fall back to a mismatched default color, reproducing the exact
+       invisible-selected-item bug this file's popup section guards
+       against). */
+    selection-background-color: #0F70C4;
+    selection-color: #FFFFFF;
 }
 
 /* ---------------------------------------------------------------------
-   Tabs -- rounded top corners, flat fill, thin accent underline on the
-   selected tab (same idea as Win10, softened with rounding).
+   Tabs
    --------------------------------------------------------------------- */
 
 QTabWidget::pane {
-    border: 1px solid #D6D6D6;
-    border-radius: 6px;
-    background-color: #F3F3F3;
+    border: 1px solid #E5E5E8;
+    border-radius: 8px;
+    background-color: #FBFBFD;
     top: -1px;
+    padding: 6px;
+}
+
+QTabBar {
+    cursor: url(theme:cursors/win11/arrow.png) 4 3;
 }
 
 QTabBar::tab {
-    background-color: #E9E9E9;
-    border: 1px solid #D6D6D6;
+    background-color: #E9EDF2;
+    border: 1px solid #E5E5E8;
     border-bottom: none;
     border-top-left-radius: 8px;
     border-top-right-radius: 8px;
-    padding: 6px 16px;
-    margin-right: 2px;
-    color: #1A1A1A;
+    padding: 8px 20px;
+    margin-right: 3px;
+    color: #5B5B5B;
 }
 
 QTabBar::tab:selected {
-    background-color: #FBFBFB;
-    border-color: #D6D6D6;
-    border-bottom: 2px solid #0067C0;
+    background-color: #FBFBFD;
+    border-color: #E5E5E8;
+    border-bottom: 3px solid #0F70C4;
+    color: #1B1B1B;
     margin-top: 0px;
+    padding-bottom: 5px;
 }
 
 QTabBar::tab:!selected {
-    margin-top: 2px;
-    color: #4A4A4A;
+    margin-top: 3px;
+}
+
+QTabBar::tab:hover:!selected {
+    background-color: #E9EDF2;
+    color: #1B1B1B;
+}
+
+QTabBar::tab:focus {
+    border-width: 2px;
+    border-color: #0F70C4;
 }
 
 /* ---------------------------------------------------------------------
-   Group boxes -- rounded border, plain title.
+   Group boxes
    --------------------------------------------------------------------- */
 
 QGroupBox {
-    border: 1px solid #D6D6D6;
+    border: 1px solid #E5E5E8;
     border-radius: 8px;
-    margin-top: 10px;
-    padding-top: 6px;
-    background-color: #FBFBFB;
-    font-weight: normal;
-    color: #1A1A1A;
+    margin-top: 12px;
+    padding-top: 10px;
+    background-color: #FBFBFD;
+    font-weight: 600;
+    color: #1B1B1B;
+    cursor: url(theme:cursors/win11/arrow.png) 4 3;
 }
 
 QGroupBox::title {
     subcontrol-origin: margin;
-    left: 10px;
-    padding: 0 4px;
-    color: #1A1A1A;
+    left: 12px;
+    padding: 0 6px;
+    color: #1B1B1B;
 }
 
 /* ---------------------------------------------------------------------
-   Buttons -- flat fill, fully rounded (Fluent 2 style), soft tint shift
-   on hover/press instead of any 3D bevel.
+   Buttons
    --------------------------------------------------------------------- */
 
 QPushButton {
-    background-color: #FBFBFB;
-    border: 1px solid #C9C9C9;
-    border-radius: 6px;
-    padding: 4px 12px;
-    min-height: 18px;
-    color: #1A1A1A;
+    background-color: #FBFBFD;
+    border: 1px solid #D0D0D3;
+    border-radius: 8px;
+    padding: 7px 20px;
+    min-height: 20px;
+    color: #1B1B1B;
 }
 
 QPushButton:hover:!pressed {
-    background-color: #E9F1FA;
-    border: 1px solid #0067C0;
+    background-color: #E9EDF2;
+    border: 1px solid #B8C4D6;
 }
 
 QPushButton:pressed {
-    background-color: #D3E6F5;
-    border: 1px solid #004D8C;
+    background-color: #DCE6F0;
+    border: 1px solid #0F70C4;
 }
 
 QPushButton:default {
+    background-color: #0F70C4;
+    border: 1px solid #0F70C4;
+    color: #FFFFFF;
+}
+
+QPushButton:default:hover:!pressed {
+    background-color: #2B84D6;
+    border: 1px solid #2B84D6;
+}
+
+QPushButton:default:pressed {
+    background-color: #0A5A9E;
+    border: 1px solid #0A5A9E;
+}
+
+QPushButton:focus {
     border-width: 2px;
-    border-color: #0067C0;
+    border-color: #0F70C4;
 }
 
 QPushButton:disabled {
-    background-color: #F3F3F3;
-    border: 1px solid #E0E0E0;
-    color: #A0A0A0;
+    background-color: #EFF4F9;
+    border: 1px solid #E5E5E8;
+    color: #9B9B9B;
 }
 
-/* Secondary destructive actions -- rounded flat button, muted red tint,
-   roughly half the strength of the title bar's close-hover red. */
+/* Destructive actions -- red at rest, deepens on hover/press; focus ring
+   stays the theme's normal accent blue so focus is never confused with
+   hover. */
 QPushButton#dangerButton {
-    background-color: #F9DAD6;
-    border: 1px solid #C97F78;
-    border-radius: 6px;
-    padding: 2px 10px;
-    min-height: 16px;
-    color: #1A1A1A;
+    background-color: #FCEBE9;
+    border: 1px solid #E3A29A;
+    border-radius: 8px;
+    padding: 5px 16px;
+    min-height: 18px;
+    color: #A42317;
 }
 
 QPushButton#dangerButton:hover:!pressed {
-    background-color: #FCE9E6;
-    border: 1px solid #0067C0;
+    background-color: #F8D3CE;
+    border: 1px solid #C42B1C;
+    color: #A42317;
 }
 
 QPushButton#dangerButton:pressed {
-    background-color: #E5A29B;
-    border: 1px solid #8A3A34;
+    background-color: #C42B1C;
+    border: 1px solid #A42317;
+    color: #FFFFFF;
+}
+
+QPushButton#dangerButton:focus {
+    border-width: 2px;
+    border-color: #0F70C4;
+}
+
+QPushButton#dangerButton:disabled {
+    background-color: #EFF4F9;
+    border: 1px solid #E5E5E8;
+    color: #9B9B9B;
 }
 
 /* ---------------------------------------------------------------------
-   Inputs -- rounded white boxes, thin gray border, accent-blue on focus.
+   Inputs
    --------------------------------------------------------------------- */
 
 QLineEdit, QSpinBox, QAbstractSpinBox {
     background-color: #FFFFFF;
-    border: 1px solid #C9C9C9;
-    border-radius: 5px;
-    padding: 2px 4px;
-    selection-background-color: #0067C0;
+    border: 1px solid #D0D0D3;
+    border-radius: 8px;
+    padding: 5px 10px;
+    selection-background-color: #0F70C4;
     selection-color: #FFFFFF;
 }
 
 QLineEdit:hover, QSpinBox:hover, QAbstractSpinBox:hover {
-    border: 1px solid #0067C0;
+    border: 1px solid #8FADCB;
+}
+
+QLineEdit:focus, QSpinBox:focus, QAbstractSpinBox:focus {
+    border-width: 2px;
+    border-color: #0F70C4;
+    padding: 4px 9px;
+}
+
+QLineEdit:disabled, QSpinBox:disabled, QAbstractSpinBox:disabled {
+    background-color: #EFF4F9;
+    border: 1px solid #E5E5E8;
+    color: #9B9B9B;
 }
 
 QComboBox {
     background-color: #FFFFFF;
-    border: 1px solid #C9C9C9;
-    border-radius: 5px;
-    padding: 2px 4px;
+    border: 1px solid #D0D0D3;
+    border-radius: 8px;
+    padding: 5px 10px;
+    min-height: 20px;
 }
 
 QComboBox:hover {
-    border: 1px solid #0067C0;
+    border: 1px solid #8FADCB;
+}
+
+QComboBox:focus {
+    border-width: 2px;
+    border-color: #0F70C4;
+    padding: 4px 9px;
+}
+
+QComboBox:disabled {
+    background-color: #EFF4F9;
+    border: 1px solid #E5E5E8;
+    color: #9B9B9B;
 }
 
 QComboBox::drop-down {
     subcontrol-origin: padding;
     subcontrol-position: right;
-    width: 20px;
+    width: 26px;
     background-color: transparent;
     border: none;
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
 }
 
 QComboBox::down-arrow {
@@ -182,87 +308,252 @@ QComboBox::down-arrow {
     image: none;
     border-left: 3px solid transparent;
     border-right: 3px solid transparent;
-    border-top: 4px solid #1A1A1A;
+    border-top: 4px solid #1B1B1B;
 }
 
+QComboBox::down-arrow:disabled {
+    border-top: 4px solid #9B9B9B;
+}
+
+/* Open popup -- v1's Windows 7 theme had a bug where the currently-selected
+   item became invisible (same text/bg color). Guarded explicitly here, and
+   confirmed by actually rendering the popup open offscreen: QComboBox's
+   popup paints rows via the view's palette (background-color/color for
+   unselected, selection-background-color/selection-color for the current
+   row), NOT via ::item/::item:selected pseudo-states -- those silently do
+   not paint for a QComboBox popup in this Qt build, verified empirically
+   (a saturated debug color placed on ::item:selected rendered zero
+   pixels), so this theme relies solely on the mechanism that actually
+   renders. */
 QComboBox QAbstractItemView {
     background-color: #FFFFFF;
-    border: 1px solid #C9C9C9;
-    border-radius: 6px;
-    selection-background-color: #0067C0;
+    border: 1px solid #D0D0D3;
+    border-radius: 8px;
+    padding: 4px;
+    outline: none;
+    color: #1B1B1B;
+    selection-background-color: #0F70C4;
     selection-color: #FFFFFF;
 }
 
 /* ---------------------------------------------------------------------
-   Checkboxes -- rounded white box, accent-blue check.
+   Checkboxes -- 16px box scales the 8px window radius down to 4px.
    --------------------------------------------------------------------- */
 
+QCheckBox {
+    spacing: 8px;
+}
+
 QCheckBox::indicator {
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
     background-color: #FFFFFF;
-    border: 1px solid #C9C9C9;
+    border: 1px solid #D0D0D3;
     border-radius: 4px;
 }
 
 QCheckBox::indicator:hover {
-    border: 1px solid #0067C0;
+    /* Lighter, less-saturated steel-blue than the focus ring's full accent
+       (#0F70C4) -- same hover-vs-focus color split already used by
+       QLineEdit/QComboBox above, so hover and keyboard focus never read as
+       the same state (focus below also grows the border to 2px). */
+    border: 1px solid #8FADCB;
 }
 
 QCheckBox::indicator:checked {
-    background-color: #0067C0;
-    border: 1px solid #0067C0;
-    image: url(theme:checkmark.png);
+    background-color: #0F70C4;
+    border: 1px solid #0F70C4;
+    /* Custom smooth white tick (assets/icons/win11/), not the shared
+       chunky pixel-art checkmark.png -- that one was drawn for the
+       retro/pixelated themes (Win95, CCCP) and clashes with Mica's
+       smooth Fluent look. Same pattern win10.qss already uses for its
+       own Fluent-1 checkmark. */
+    image: url(theme:icons/win11/checkmark_white.png);
+}
+
+QCheckBox::indicator:checked:hover {
+    background-color: #2B84D6;
+    border: 1px solid #2B84D6;
+}
+
+QCheckBox::indicator:focus {
+    border-width: 2px;
+    border-color: #0F70C4;
+}
+
+QCheckBox::indicator:disabled {
+    background-color: #EFF4F9;
+    border: 1px solid #E5E5E8;
+}
+
+QCheckBox::indicator:checked:disabled {
+    background-color: #D0D0D3;
+    border: 1px solid #D0D0D3;
+}
+
+QCheckBox:disabled {
+    color: #9B9B9B;
 }
 
 /* ---------------------------------------------------------------------
-   Sliders -- thin flat groove, round accent handle.
+   Sliders -- thin flat groove, round accent handle (16px handle = 8px
+   radius, a perfect circle).
    --------------------------------------------------------------------- */
 
 QSlider::groove:horizontal {
-    height: 3px;
-    background-color: #D6D6D6;
-    border-radius: 1px;
+    height: 4px;
+    background-color: #D6D6D9;
+    border-radius: 2px;
 }
 
 QSlider::handle:horizontal {
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
     margin: -6px 0;
-    background-color: #0067C0;
-    border: 1px solid #004D8C;
-    border-radius: 7px;
+    background-color: #0F70C4;
+    border: 1px solid #0A5A9E;
+    border-radius: 8px;
 }
+
+QSlider::handle:horizontal:hover {
+    background-color: #2B84D6;
+}
+
+QSlider::handle:horizontal:focus {
+    border-width: 2px;
+    border-color: #0F70C4;
+}
+
+QSlider::handle:horizontal:disabled {
+    background-color: #E0E0E3;
+    border: 1px solid #D0D0D3;
+}
+
+/* ---------------------------------------------------------------------
+   Tables / trees / lists
+   --------------------------------------------------------------------- */
 
 QTableWidget, QTreeWidget {
     background-color: #FFFFFF;
-    alternate-background-color: #F7F9FC;
-    gridline-color: #E5E5E5;
-    border: 1px solid #D6D6D6;
-    border-radius: 6px;
-    selection-background-color: #0067C0;
+    alternate-background-color: #F5F8FC;
+    gridline-color: #EAEAED;
+    border: 1px solid #E5E5E8;
+    border-radius: 8px;
+    selection-background-color: #0F70C4;
     selection-color: #FFFFFF;
+    /* Widget-level cursor, not per-item -- a cell's editor (when one is
+       actually spawned) is a separate QLineEdit with its own default
+       I-beam, untouched by this rule. */
+    cursor: url(theme:cursors/win11/arrow.png) 4 3;
+}
+
+QTableWidget::item, QTreeWidget::item {
+    padding: 3px;
+}
+
+QTableWidget::item:hover, QTreeWidget::item:hover {
+    background-color: #E9EDF2;
+}
+
+QTableWidget::item:selected, QTreeWidget::item:selected {
+    background-color: #0F70C4;
+    color: #FFFFFF;
 }
 
 QHeaderView::section {
-    background-color: #E9E9E9;
-    border: 1px solid #D6D6D6;
-    padding: 3px;
-    font-weight: normal;
-    color: #1A1A1A;
+    background-color: #E9EDF2;
+    border: none;
+    border-right: 1px solid #E5E5E8;
+    border-bottom: 1px solid #E5E5E8;
+    padding: 6px 8px;
+    font-weight: 600;
+    color: #1B1B1B;
+}
+
+QListWidget {
+    background-color: #FFFFFF;
+    border: 1px solid #E5E5E8;
+    border-radius: 8px;
+    padding: 4px;
+    outline: none;
+    selection-background-color: #0F70C4;
+    selection-color: #FFFFFF;
+    cursor: url(theme:cursors/win11/arrow.png) 4 3;
+}
+
+QListWidget::item {
+    padding: 6px 10px;
+    border-radius: 6px;
+    color: #1B1B1B;
+    margin: 1px 2px;
+}
+
+QListWidget::item:hover {
+    background-color: #E9EDF2;
+}
+
+QListWidget::item:selected {
+    background-color: #0F70C4;
+    color: #FFFFFF;
+}
+
+/* ---------------------------------------------------------------------
+   Context menus
+   --------------------------------------------------------------------- */
+
+QMenu {
+    background-color: #FBFBFD;
+    border: 1px solid #D6D6D9;
+    border-radius: 8px;
+    padding: 6px;
+}
+
+QMenu::item {
+    background-color: transparent;
+    padding: 7px 16px;
+    border-radius: 6px;
+    margin: 1px 4px;
+    color: #1B1B1B;
+}
+
+QMenu::item:selected {
+    background-color: #0F70C4;
+    color: #FFFFFF;
+}
+
+QMenu::item:disabled {
+    color: #9B9B9B;
+    background-color: transparent;
+}
+
+QMenu::separator {
+    height: 1px;
+    background-color: #E5E5E8;
+    margin: 6px 10px;
+}
+
+/* ---------------------------------------------------------------------
+   Dialogs
+   --------------------------------------------------------------------- */
+
+QDialog {
+    background-color: #EFF4F9;
+    color: #1B1B1B;
+    cursor: url(theme:cursors/win11/arrow.png) 4 3;
 }
 
 QProgressBar {
-    border: 1px solid #D6D6D6;
-    border-radius: 6px;
-    background-color: #E9E9E9;
+    border: 1px solid #E5E5E8;
+    border-radius: 8px;
+    background-color: #E9EDF2;
     text-align: center;
-    color: #1A1A1A;
+    color: #1B1B1B;
+    min-height: 16px;
 }
 
 QProgressBar::chunk {
-    background-color: #0067C0;
-    border-radius: 5px;
+    background-color: #0F70C4;
+    border-radius: 7px;
     margin: 1px;
 }
 
@@ -271,23 +562,49 @@ QLabel {
 }
 
 QSplitter::handle {
-    background-color: #F3F3F3;
+    background-color: #EFF4F9;
 }
 
 QScrollBar:vertical {
-    background: #F3F3F3;
-    width: 12px;
+    background: #EFF4F9;
+    width: 14px;
     border: none;
+    margin: 2px;
 }
 
 QScrollBar::handle:vertical {
-    background-color: #C1C1C1;
-    border-radius: 5px;
-    min-height: 24px;
+    background-color: #C1C1C4;
+    border-radius: 6px;
+    min-height: 28px;
 }
 
 QScrollBar::handle:vertical:hover {
-    background-color: #A6A6A6;
+    background-color: #8A8A8D;
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    height: 0px;
+}
+
+QScrollBar:horizontal {
+    background: #EFF4F9;
+    height: 14px;
+    border: none;
+    margin: 2px;
+}
+
+QScrollBar::handle:horizontal {
+    background-color: #C1C1C4;
+    border-radius: 6px;
+    min-width: 28px;
+}
+
+QScrollBar::handle:horizontal:hover {
+    background-color: #8A8A8D;
+}
+
+QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
+    width: 0px;
 }
 
 /* ---------------------------------------------------------------------
@@ -300,8 +617,20 @@ QTabWidget#mainTabs::pane {
     top: 0px;
 }
 
+/* ---------------------------------------------------------------------
+   Tooltips
+   --------------------------------------------------------------------- */
+
+QToolTip {
+    background-color: #FBFBFD;
+    color: #1B1B1B;
+    border: 1px solid #D0D0D3;
+    border-radius: 8px;
+    padding: 5px 10px;
+}
+
 QSizeGrip {
-    background-color: #F3F3F3;
+    background-color: #EFF4F9;
     width: 16px;
     height: 16px;
 }

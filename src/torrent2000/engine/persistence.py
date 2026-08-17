@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 import libtorrent as lt
@@ -11,7 +12,10 @@ def resume_file_path(info_hash: str) -> Path:
 
 def save_resume_params(info_hash: str, params: "lt.add_torrent_params") -> None:
     data = lt.write_resume_data_buf(params)
-    resume_file_path(info_hash).write_bytes(data)
+    path = resume_file_path(info_hash)
+    tmp_path = path.with_suffix(path.suffix + ".tmp")
+    tmp_path.write_bytes(data)
+    os.replace(tmp_path, path)
 
 
 def load_all_resume_params() -> list["lt.add_torrent_params"]:

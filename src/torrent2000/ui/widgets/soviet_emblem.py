@@ -7,6 +7,7 @@ this one drawing routine so the shape only needs to look right in one place.
 
 from __future__ import annotations
 
+import functools
 import math
 
 from PySide6.QtCore import QPointF, Qt
@@ -114,12 +115,29 @@ def _hammer_polygon(cx: float, cy: float, s: float) -> QPolygonF:
     return QPolygonF(rotated)
 
 
+@functools.lru_cache(maxsize=32)
+def _cached_geometry(cx: float, cy: float, size: float) -> tuple[QPolygonF, QPainterPath, QPolygonF]:
+    """Geometry for one (cx, cy, size) combo, memoized. Both call sites
+    (title-bar close button, propaganda-panel icon) repaint the same widget
+    at a fixed position/size over and over -- only `color` varies per call,
+    and color plays no part in this cache key. The distinct (cx, cy, size)
+    tuples in a running app are just a handful of fixed call sites, not
+    something that grows unboundedly, so maxsize=32 comfortably covers it
+    without needing to be unbounded."""
+    return (
+        _hammer_polygon(cx, cy, size),
+        _crescent_blade_path(cx, cy, size),
+        _sickle_handle_polygon(cx, cy, size),
+    )
+
+
 def paint_hammer_and_sickle(painter: QPainter, cx: float, cy: float, size: float, color: QColor) -> None:
     """Paint the emblem centered at (cx, cy); `size` is roughly the glyph's
     radius. Caller is responsible for antialiasing/pen state around this
     call (both current call sites already manage that themselves)."""
+    hammer, blade, handle = _cached_geometry(cx, cy, size)
     painter.setBrush(color)
     painter.setPen(Qt.NoPen)
-    painter.drawPolygon(_hammer_polygon(cx, cy, size))
-    painter.drawPath(_crescent_blade_path(cx, cy, size))
-    painter.drawPolygon(_sickle_handle_polygon(cx, cy, size))
+    painter.drawPolygon(hammer)
+    painter.drawPath(blade)
+    painter.drawPolygon(handle)

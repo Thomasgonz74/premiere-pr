@@ -1,20 +1,44 @@
-/* Torrent 2000 -- "macOS" skin, HIGH-CONTRAST DARK variant.
+/* =========================================================================
+   Torrent 2000 -- "macOS" skin, HIGH-CONTRAST DARK variant.
 
-   Matches the real Windows "High Contrast Black" accessibility theme's
-   color contract (pure black background, pure white text/borders, yellow
-   focus/selection accent, no gradients) while keeping this theme's heavily
-   rounded shape and font.
+   Matches the real Windows "High Contrast Black" accessibility contract
+   already established across this project (see theme_manager.py's dark_hc
+   override, and every sibling theme's own *_dark_hc.qss, e.g.
+   win11_dark_hc.qss / win7_dark_hc.qss): every surface collapses to pure
+   black, every border/text to pure white, and the one universal accent for
+   focus/selection/checked state is #FFFF00. What stays THIS theme's own,
+   per that same precedent of keeping each family's shape language in HC
+   mode: the 10px window corner radius (theme_manager.py) is echoed on
+   every "card" control (10px) and 8px on inline controls, matching macos.qss
+   /macos_dark.qss's own control/card split, and "SF Pro Display" stays the
+   font (falls back to Segoe UI on Windows).
 
-   The title bar's traffic lights stay red/yellow/green even here -- see
-   src/torrent2000/ui/widgets/app_title_bar.py.
-*/
+   Token palette (dark_hc):
+     bg            #000000   window / page background
+     surface       #000000   secondary surface -- true HC has no elevation
+                              tiers; regions are separated by a white
+                              border, never by a different fill
+     border        #FFFFFF   every control border, hairline or thick
+     text          #FFFFFF   primary text
+     text-muted    #D0D0D0   unselected tab label
+     text-disabled #7F7F7F   disabled controls -- the "GrayText" HC
+                              convention, kept distinct from text-muted so
+                              "de-emphasized" and "disabled" don't collapse
+     hover-fill    #1A1A1A   the one non-black fill, for hover states only
+     accent/focus  #FFFF00   universal focus ring, selection fill, checked
+                              state, hover indication
+     danger        #FF3B30   destructive red, kept apart from the yellow
+                              accent so destructive controls stay
+                              identifiable
+   ========================================================================= */
 
 * {
-    font-family: "Segoe UI", "Helvetica Neue", "Arial", sans-serif;
+    font-family: "SF Pro Display", "Helvetica Neue", "Segoe UI", "Arial", sans-serif;
     font-size: 9pt;
 }
 
 QMainWindow, QWidget#centralWidget {
+    cursor: url(theme:cursors/macos/arrow.png) 4 3;
     background-color: #000000;
 }
 
@@ -23,41 +47,65 @@ QWidget {
     color: #FFFFFF;
 }
 
+QDialog {
+    cursor: url(theme:cursors/macos/arrow.png) 4 3;
+    background-color: #000000;
+    color: #FFFFFF;
+}
+
+QTabBar {
+    cursor: url(theme:cursors/macos/arrow.png) 4 3;
+}
+
 QTabWidget::pane {
     border: 2px solid #FFFFFF;
-    border-radius: 8px;
+    border-radius: 10px;
     background-color: #000000;
     top: -1px;
+    padding: 6px;
 }
 
 QTabBar::tab {
     background-color: #000000;
     border: 2px solid #FFFFFF;
     border-bottom: none;
-    border-top-left-radius: 8px;
-    border-top-right-radius: 8px;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
     padding: 6px 16px;
-    margin-right: 2px;
-    color: #FFFFFF;
+    margin-right: 3px;
+    color: #D0D0D0;
 }
 
 QTabBar::tab:selected {
     background-color: #000000;
     border-color: #FFFF00;
-    border-bottom: 2px solid #000000;
+    border-bottom: 3px solid #FFFF00;
     margin-top: 0px;
+    padding-bottom: 3px;
+    color: #FFFFFF;
 }
 
 QTabBar::tab:!selected {
-    margin-top: 2px;
-    color: #D0D0D0;
+    margin-top: 3px;
+}
+
+QTabBar::tab:hover:!selected {
+    background-color: #1A1A1A;
+    border-color: #FFFF00;
+    color: #FFFFFF;
+}
+
+QTabBar::tab:focus {
+    outline: 2px solid #FFFF00;
+    outline-offset: -4px;
 }
 
 QGroupBox {
+    cursor: url(theme:cursors/macos/arrow.png) 4 3;
     border: 2px solid #FFFFFF;
     border-radius: 10px;
-    margin-top: 10px;
-    padding-top: 6px;
+    margin-top: 12px;
+    padding-top: 10px;
     background-color: #000000;
     font-weight: 600;
     color: #FFFFFF;
@@ -66,16 +114,16 @@ QGroupBox {
 QGroupBox::title {
     subcontrol-origin: margin;
     left: 12px;
-    padding: 0 4px;
+    padding: 0 6px;
     color: #FFFFFF;
 }
 
 QPushButton {
     background-color: #000000;
     border: 2px solid #FFFFFF;
-    border-radius: 7px;
-    padding: 4px 14px;
-    min-height: 18px;
+    border-radius: 8px;
+    padding: 5px 16px;
+    min-height: 20px;
     color: #FFFFFF;
 }
 
@@ -90,9 +138,29 @@ QPushButton:pressed {
     color: #000000;
 }
 
+QPushButton:focus {
+    outline: 2px solid #FFFF00;
+    outline-offset: 1px;
+}
+
 QPushButton:default {
+    background-color: #000000;
     border-width: 3px;
     border-color: #FFFFFF;
+    color: #FFFFFF;
+}
+
+QPushButton:default:hover:!pressed {
+    border-width: 3px;
+    border-color: #FFFF00;
+    color: #FFFF00;
+}
+
+QPushButton:default:pressed {
+    background-color: #FFFF00;
+    border-width: 3px;
+    border-color: #FFFF00;
+    color: #000000;
 }
 
 QPushButton:disabled {
@@ -104,9 +172,9 @@ QPushButton:disabled {
 QPushButton#dangerButton {
     background-color: #000000;
     border: 2px solid #FF3B30;
-    border-radius: 7px;
-    padding: 2px 12px;
-    min-height: 16px;
+    border-radius: 8px;
+    padding: 5px 16px;
+    min-height: 20px;
     color: #FF3B30;
 }
 
@@ -121,11 +189,22 @@ QPushButton#dangerButton:pressed {
     color: #000000;
 }
 
+QPushButton#dangerButton:focus {
+    outline: 2px solid #FFFF00;
+    outline-offset: 1px;
+}
+
+QPushButton#dangerButton:disabled {
+    background-color: #000000;
+    border: 2px solid #7F7F7F;
+    color: #7F7F7F;
+}
+
 QLineEdit, QSpinBox, QAbstractSpinBox {
     background-color: #000000;
     border: 2px solid #FFFFFF;
-    border-radius: 6px;
-    padding: 3px 6px;
+    border-radius: 8px;
+    padding: 4px 8px;
     color: #FFFFFF;
     selection-background-color: #FFFF00;
     selection-color: #000000;
@@ -135,24 +214,105 @@ QLineEdit:hover, QSpinBox:hover, QAbstractSpinBox:hover {
     border: 2px solid #FFFF00;
 }
 
+QLineEdit:focus, QSpinBox:focus, QAbstractSpinBox:focus {
+    outline: 2px solid #FFFF00;
+    outline-offset: 1px;
+}
+
+QLineEdit:disabled, QSpinBox:disabled, QAbstractSpinBox:disabled {
+    background-color: #000000;
+    border: 2px solid #7F7F7F;
+    color: #7F7F7F;
+}
+
+QAbstractSpinBox::up-button, QAbstractSpinBox::down-button {
+    subcontrol-origin: border;
+    width: 18px;
+    background-color: #000000;
+    border-left: 2px solid #FFFFFF;
+}
+
+QAbstractSpinBox::up-button {
+    subcontrol-position: top right;
+    border-bottom: 2px solid #FFFFFF;
+    border-top-right-radius: 6px;
+}
+
+QAbstractSpinBox::down-button {
+    subcontrol-position: bottom right;
+    border-bottom-right-radius: 6px;
+}
+
+QAbstractSpinBox::up-button:hover, QAbstractSpinBox::down-button:hover {
+    background-color: #1A1A1A;
+    border-color: #FFFF00;
+}
+
+QAbstractSpinBox::up-button:pressed, QAbstractSpinBox::down-button:pressed {
+    background-color: #FFFF00;
+}
+
+QAbstractSpinBox::up-arrow {
+    width: 0px;
+    height: 0px;
+    border-left: 3px solid transparent;
+    border-right: 3px solid transparent;
+    border-bottom: 4px solid #FFFFFF;
+}
+
+QAbstractSpinBox::down-arrow {
+    width: 0px;
+    height: 0px;
+    border-left: 3px solid transparent;
+    border-right: 3px solid transparent;
+    border-top: 4px solid #FFFFFF;
+}
+
 QComboBox {
     background-color: #000000;
     border: 2px solid #FFFFFF;
-    border-radius: 6px;
-    padding: 3px 6px;
+    border-radius: 8px;
+    padding: 4px 8px;
+    min-height: 20px;
     color: #FFFFFF;
+    /* Also set here (not just on the popup rule below) -- Qt derives the
+       popup's effective palette from the combo box's own computed palette;
+       without this the popup's selection-background-color gets silently
+       defeated, leaving the current/selected row unhighlighted (verified
+       by rendering the open popup and sampling its pixels -- same fix
+       already established in luna.qss for the same underlying Qt quirk). */
+    selection-background-color: #FFFF00;
+    selection-color: #000000;
 }
 
 QComboBox:hover {
     border: 2px solid #FFFF00;
 }
 
+QComboBox:focus {
+    outline: 2px solid #FFFF00;
+    outline-offset: 1px;
+}
+
+QComboBox:disabled {
+    background-color: #000000;
+    border: 2px solid #7F7F7F;
+    color: #7F7F7F;
+}
+
 QComboBox::drop-down {
     subcontrol-origin: padding;
     subcontrol-position: right;
-    width: 20px;
-    background-color: transparent;
-    border: none;
+    width: 24px;
+    background-color: #000000;
+    border-left: 2px solid #FFFFFF;
+    border-top-right-radius: 6px;
+    border-bottom-right-radius: 6px;
+}
+
+QComboBox::drop-down:hover {
+    background-color: #1A1A1A;
+    border-left: 2px solid #FFFF00;
 }
 
 QComboBox::down-arrow {
@@ -164,36 +324,100 @@ QComboBox::down-arrow {
     border-top: 4px solid #FFFFFF;
 }
 
+QComboBox::down-arrow:disabled {
+    border-top: 4px solid #7F7F7F;
+}
+
+/* Open popup -- explicitly guarded against the known v1 Windows-7-only bug
+   where the currently-selected item became invisible (same text/bg color).
+   Verified by rendering the popup open: unselected items stay
+   white-on-black, hovered items get a dim highlight with yellow text, and
+   the currently-selected item ALWAYS gets the full yellow accent fill with
+   black text. */
 QComboBox QAbstractItemView {
     background-color: #000000;
     color: #FFFFFF;
     border: 2px solid #FFFFFF;
-    border-radius: 8px;
+    border-radius: 10px;
+    outline: none;
+    padding: 4px;
     selection-background-color: #FFFF00;
     selection-color: #000000;
 }
 
+QComboBox QAbstractItemView::item {
+    color: #FFFFFF;
+    padding: 5px 8px;
+    border-radius: 6px;
+    min-height: 20px;
+}
+
+QComboBox QAbstractItemView::item:hover {
+    background-color: #1A1A1A;
+    color: #FFFF00;
+}
+
+QComboBox QAbstractItemView::item:selected {
+    background-color: #FFFF00;
+    color: #000000;
+}
+
+QCheckBox {
+    spacing: 8px;
+    color: #FFFFFF;
+}
+
 QCheckBox::indicator {
-    width: 15px;
-    height: 15px;
+    width: 16px;
+    height: 16px;
     background-color: #000000;
     border: 2px solid #FFFFFF;
-    border-radius: 4px;
+    border-radius: 5px;
 }
 
 QCheckBox::indicator:hover {
     border: 2px solid #FFFF00;
 }
 
+QCheckBox::indicator:focus {
+    outline: 2px solid #FFFF00;
+    outline-offset: 1px;
+}
+
+QCheckBox::indicator:disabled {
+    background-color: #000000;
+    border: 2px solid #7F7F7F;
+}
+
 QCheckBox::indicator:checked {
     background-color: #FFFF00;
     border: 2px solid #FFFF00;
-    image: url(theme:checkmark.png);
+    image: url(theme:icons/macos/checkmark.png);
+}
+
+QCheckBox::indicator:checked:hover {
+    background-color: #FFFFFF;
+    border: 2px solid #FFFFFF;
+}
+
+QCheckBox::indicator:checked:disabled {
+    background-color: #7F7F7F;
+    border: 2px solid #7F7F7F;
+}
+
+QCheckBox:disabled {
+    color: #7F7F7F;
 }
 
 QSlider::groove:horizontal {
     height: 4px;
     background-color: #FFFFFF;
+    border-radius: 2px;
+}
+
+QSlider::sub-page:horizontal {
+    height: 4px;
+    background-color: #FFFF00;
     border-radius: 2px;
 }
 
@@ -206,36 +430,112 @@ QSlider::handle:horizontal {
     border-radius: 8px;
 }
 
-QTableWidget, QTreeWidget {
+QSlider::handle:horizontal:hover {
+    background-color: #FFFFFF;
+    border: 2px solid #FFFFFF;
+}
+
+QSlider::handle:horizontal:focus {
+    outline: 2px solid #FFFF00;
+    outline-offset: 3px;
+}
+
+QSlider::handle:horizontal:disabled {
+    background-color: #000000;
+    border: 2px solid #7F7F7F;
+}
+
+QTableWidget, QTreeWidget, QListWidget {
+    cursor: url(theme:cursors/macos/arrow.png) 4 3;
     background-color: #000000;
     alternate-background-color: #1A1A1A;
     gridline-color: #7F7F7F;
     border: 2px solid #FFFFFF;
-    border-radius: 8px;
+    border-radius: 10px;
+    outline: none;
     color: #FFFFFF;
     selection-background-color: #FFFF00;
     selection-color: #000000;
 }
 
+QTableWidget::item, QTreeWidget::item, QListWidget::item {
+    padding: 4px 6px;
+    color: #FFFFFF;
+}
+
+QTableWidget::item:hover, QTreeWidget::item:hover, QListWidget::item:hover {
+    background-color: #1A1A1A;
+    color: #FFFF00;
+}
+
+QTableWidget::item:selected, QTreeWidget::item:selected, QListWidget::item:selected {
+    background-color: #FFFF00;
+    color: #000000;
+}
+
 QHeaderView::section {
     background-color: #000000;
-    border: 2px solid #FFFFFF;
-    padding: 3px;
+    border: none;
+    border-right: 2px solid #FFFFFF;
+    border-bottom: 2px solid #FFFFFF;
+    padding: 6px 8px;
     font-weight: 600;
     color: #FFFFFF;
 }
 
+/* ---------------------------------------------------------------------
+   Context menus
+   --------------------------------------------------------------------- */
+
+QMenu {
+    background-color: #000000;
+    border: 2px solid #FFFFFF;
+    border-radius: 10px;
+    padding: 6px;
+}
+
+QMenu::item {
+    background-color: transparent;
+    padding: 6px 28px 6px 14px;
+    border-radius: 6px;
+    margin: 1px 4px;
+    color: #FFFFFF;
+}
+
+QMenu::item:selected {
+    background-color: #FFFF00;
+    color: #000000;
+}
+
+QMenu::item:disabled {
+    color: #7F7F7F;
+    background-color: transparent;
+}
+
+QMenu::separator {
+    height: 2px;
+    background-color: #FFFFFF;
+    margin: 6px 10px;
+}
+
+QMenu::indicator {
+    width: 14px;
+    height: 14px;
+    left: 4px;
+}
+
 QProgressBar {
     border: 2px solid #FFFFFF;
-    border-radius: 6px;
+    border-radius: 8px;
     background-color: #000000;
     text-align: center;
     color: #FFFFFF;
+    min-height: 14px;
 }
 
 QProgressBar::chunk {
     background-color: #FFFF00;
-    border-radius: 5px;
+    border-radius: 6px;
     margin: 1px;
 }
 
@@ -248,21 +548,76 @@ QSplitter::handle {
     background-color: #000000;
 }
 
+QSplitter::handle:hover {
+    background-color: #FFFF00;
+}
+
 QScrollBar:vertical {
     background: #000000;
     width: 14px;
     border: 2px solid #FFFFFF;
+    margin: 2px;
 }
 
 QScrollBar::handle:vertical {
     background-color: #FFFFFF;
-    border-radius: 5px;
-    min-height: 24px;
+    border-radius: 6px;
+    min-height: 28px;
 }
 
 QScrollBar::handle:vertical:hover {
     background-color: #FFFF00;
 }
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    height: 0px;
+    border: none;
+    background: none;
+}
+
+QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+    background: none;
+}
+
+QScrollBar:horizontal {
+    background: #000000;
+    height: 14px;
+    border: 2px solid #FFFFFF;
+    margin: 2px;
+}
+
+QScrollBar::handle:horizontal {
+    background-color: #FFFFFF;
+    border-radius: 6px;
+    min-width: 28px;
+}
+
+QScrollBar::handle:horizontal:hover {
+    background-color: #FFFF00;
+}
+
+QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
+    width: 0px;
+    border: none;
+    background: none;
+}
+
+QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
+    background: none;
+}
+
+QToolTip {
+    background-color: #000000;
+    color: #FFFFFF;
+    border: 2px solid #FFFFFF;
+    border-radius: 8px;
+    padding: 5px 10px;
+}
+
+/* ---------------------------------------------------------------------
+   Custom title bar sits directly above the tab widget in a frameless
+   window -- drop the pane's top border to avoid a double line/gap.
+   --------------------------------------------------------------------- */
 
 QTabWidget#mainTabs::pane {
     border-top: none;

@@ -1,6 +1,5 @@
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Optional
 
 from torrent2000.danger_scanner.models import ScanResult
 
@@ -31,11 +30,31 @@ class TorrentState(Enum):
         return TorrentState.DOWNLOADING
 
 
+# "Actively downloading" -- still consuming disk space/bandwidth, as opposed
+# to paused/seeding/finished/errored torrents that no longer are. Shared by
+# engine/auto_shutdown_service.py's idle check and
+# engine/disk_space_monitor.py's active-path scan.
+ACTIVE_DOWNLOAD_STATES = {
+    TorrentState.DOWNLOADING,
+    TorrentState.QUEUED,
+    TorrentState.CHECKING_METADATA,
+}
+
+
 @dataclass
 class TrackerInfo:
     url: str
     tier: int = 0
     last_error: str = ""
+
+
+@dataclass
+class PeerInfo:
+    ip: str  # "address:port"
+    client: str = ""
+    progress: float = 0.0  # 0.0 - 1.0
+    down_speed: int = 0  # bytes/sec
+    up_speed: int = 0
 
 
 @dataclass
@@ -59,7 +78,9 @@ class TorrentRecord:
     awaiting_analysis: bool = False
     trackers: list[TrackerInfo] = field(default_factory=list)
     current_tracker: str = ""
-    file_list: Optional[list] = None
-    danger_report: Optional[ScanResult] = None
+    file_list: list | None = None
+    danger_report: ScanResult | None = None
     sequential_download: bool = False
     queue_position: int = -1
+    is_private: bool = False
+    category: str = ""

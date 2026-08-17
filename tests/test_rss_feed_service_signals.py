@@ -12,11 +12,21 @@ from PySide6.QtWidgets import QApplication
 from torrent2000.config.settings import RssFeedSubscription, Settings
 from torrent2000.engine.rss_feed_service import RssFeedService
 from torrent2000.engine.rss_seen_store import RssSeenStore
+from torrent2000.engine.url_fetch import FetchError
 
 
 @pytest.fixture(scope="module", autouse=True)
 def qapp():
     return QApplication.instance() or QApplication([])
+
+
+@pytest.fixture(autouse=True)
+def isolated_data_dir(tmp_path, monkeypatch):
+    # RssFeedService now also owns a RoutingRuleStore (see
+    # engine/routing_rules.py) which reads/writes under the app-data
+    # directory -- isolate it so these tests never touch (or create) the
+    # real %APPDATA%/Torrent2000 folder on the machine running them.
+    monkeypatch.setenv("TORRENT2000_DATA_DIR", str(tmp_path))
 
 
 class FakeSessionManager:
@@ -160,3 +170,125 @@ def test_torrent_download_failure_is_relayed_via_feed_check_failed_signal(tmp_pa
 
     assert failures == [(feed.url, "connection reset")]
     assert session_manager.file_calls == []
+
+
+# ---------------------------------------------------------------- proxy passthrough
+
+
+class _SyncThreadPool:
+    """Runs a QRunnable's run() synchronously on start() -- lets a test
+    exercise the real production code path (check_now/_on_feed_fetched
+    constructing and scheduling a runnable) without any real threading or
+    network access, by mocking fetch_url itself below."""
+
+    def start(self, runnable, priority=0):
+        runnable.run()
+
+
+def test_check_now_relays_real_fetch_error_via_feed_check_failed_signal(tmp_path, monkeypatch):
+    """Unlike test_feed_fetch_failure_is_relayed_via_feed_check_failed_signal
+    above (which hand-emits _signals.feed_failed with a canned message), this
+    drives the real _FetchFeedRunnable.run() -- via check_now() and a
+    _SyncThreadPool -- so it's the actual try/except around fetch_url() that
+    catches FetchError and emits feed_failed, not a stand-in for it."""
+    feed = RssFeedSubscription(url="https://example.com/feed.xml", filter_keyword="", enabled=True)
+    service, session_manager, seen_store, settings = _make_service(tmp_path, [feed])
+
+    monkeypatch.setattr(
+        "torrent2000.engine.rss_feed_service.QThreadPool.globalInstance", staticmethod(lambda: _SyncThreadPool())
+    )
+
+    def fake_fetch_url(url, user_agent, timeout_seconds, extra_headers=None, proxy=None):
+        raise FetchError("simulated network failure")
+
+    monkeypatch.setattr("torrent2000.engine.rss_feed_service.fetch_url", fake_fetch_url)
+
+    failures = []
+    service.feed_check_failed.connect(lambda url, msg: failures.append((url, msg)))
+
+    service.check_now()
+
+    assert failures == [(feed.url, "simulated network failure")]
+
+
+def test_on_feed_fetched_relays_real_torrent_download_error_via_feed_check_failed_signal(tmp_path, monkeypatch):
+    """Unlike test_torrent_download_failure_is_relayed_via_feed_check_failed_signal
+    above (which hand-emits _signals.torrent_download_failed with a canned
+    message), this drives the real _DownloadTorrentRunnable.run() -- reached
+    via _on_feed_fetched scheduling it for an http(s) item link, run
+    synchronously by _SyncThreadPool -- so it's the actual try/except around
+    fetch_url() that catches FetchError and emits torrent_download_failed,
+    not a stand-in for it."""
+    feed = RssFeedSubscription(url="https://example.com/feed.xml", filter_keyword="", enabled=True)
+    service, session_manager, seen_store, settings = _make_service(tmp_path, [feed])
+
+    monkeypatch.setattr(
+        "torrent2000.engine.rss_feed_service.QThreadPool.globalInstance", staticmethod(lambda: _SyncThreadPool())
+    )
+
+    def fake_fetch_url(url, user_agent, timeout_seconds, extra_headers=None, proxy=None):
+        raise FetchError("simulated network failure")
+
+    monkeypatch.setattr("torrent2000.engine.rss_feed_service.fetch_url", fake_fetch_url)
+
+    failures = []
+    service.feed_check_failed.connect(lambda url, msg: failures.append((url, msg)))
+
+    item = {"title": "Something", "link": "https://example.com/x.torrent", "guid": "guid-real-download-fail"}
+    service._signals.feed_fetched.emit(feed.url, [item])
+
+    assert failures == [(feed.url, "simulated network failure")]
+    assert session_manager.file_calls == []
+
+
+def test_check_now_passes_settings_proxy_to_fetch_url(tmp_path, monkeypatch):
+    feed = RssFeedSubscription(url="https://example.com/feed.xml", filter_keyword="", enabled=True)
+    service, session_manager, seen_store, settings = _make_service(tmp_path, [feed])
+    settings.proxy.enabled = True
+    settings.proxy.proxy_type = "http"
+    settings.proxy.host = "proxy.example.com"
+    settings.proxy.port = 8080
+
+    monkeypatch.setattr(
+        "torrent2000.engine.rss_feed_service.QThreadPool.globalInstance", staticmethod(lambda: _SyncThreadPool())
+    )
+
+    captured_proxies = []
+
+    def fake_fetch_url(url, user_agent, timeout_seconds, extra_headers=None, proxy=None):
+        captured_proxies.append(proxy)
+        raise FetchError("stop before parsing -- only the proxy kwarg matters here")
+
+    monkeypatch.setattr("torrent2000.engine.rss_feed_service.fetch_url", fake_fetch_url)
+
+    service.check_now()
+
+    assert captured_proxies == [settings.proxy]
+
+
+def test_on_feed_fetched_passes_settings_proxy_to_fetch_url_for_torrent_download(tmp_path, monkeypatch):
+    feed = RssFeedSubscription(url="https://example.com/feed.xml", filter_keyword="", enabled=True)
+    service, session_manager, seen_store, settings = _make_service(tmp_path, [feed])
+    settings.proxy.enabled = True
+    settings.proxy.proxy_type = "http_pw"
+    settings.proxy.host = "proxy.example.com"
+    settings.proxy.port = 3128
+    settings.proxy.username = "alice"
+    settings.proxy.password = "s3cret"
+
+    monkeypatch.setattr(
+        "torrent2000.engine.rss_feed_service.QThreadPool.globalInstance", staticmethod(lambda: _SyncThreadPool())
+    )
+
+    captured_proxies = []
+
+    def fake_fetch_url(url, user_agent, timeout_seconds, extra_headers=None, proxy=None):
+        captured_proxies.append(proxy)
+        raise FetchError("stop before writing a file -- only the proxy kwarg matters here")
+
+    monkeypatch.setattr("torrent2000.engine.rss_feed_service.fetch_url", fake_fetch_url)
+
+    item = {"title": "Something", "link": "https://example.com/x.torrent", "guid": "guid-proxy"}
+    service._signals.feed_fetched.emit(feed.url, [item])
+
+    assert captured_proxies == [settings.proxy]

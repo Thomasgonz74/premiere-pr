@@ -43,6 +43,25 @@ def from_resume_data(data: bytes) -> "lt.add_torrent_params":
     return lt.read_resume_data(data)
 
 
+def resume_data_is_complete(atp: "lt.add_torrent_params") -> bool:
+    """True if every *wanted* piece recorded in resume data is already
+    present on disk -- i.e. this torrent was already fully done before this
+    process started, not just resuming an in-progress download. A piece
+    whose priority is 0 (excluded/"cleaned" file) doesn't count against
+    completeness -- it was never going to be downloaded."""
+    have_pieces = atp.have_pieces
+    if not have_pieces:
+        return False
+    priorities = atp.piece_priorities
+    for index, has_piece in enumerate(have_pieces):
+        if has_piece:
+            continue
+        priority = priorities[index] if index < len(priorities) else FILE_PRIORITY_DEFAULT
+        if priority != 0:
+            return False
+    return True
+
+
 def info_hash_hex(atp: "lt.add_torrent_params") -> str:
     # add_torrent_params.info_hashes is only populated by libtorrent once the
     # torrent has actually been added to a session; when building params from

@@ -28,18 +28,20 @@ SessionManager. See ui/tabs/rss_tab.py for the tab this backs.
 
 import logging
 import tempfile
-import urllib.error
-import urllib.request
 import uuid
 from pathlib import Path
+from urllib.parse import urlsplit, urlunsplit
 from xml.etree import ElementTree
 
-from PySide6.QtCore import QObject, QRunnable, QThreadPool, QTimer, Signal
+from PySide6.QtCore import QObject, QRunnable, QThreadPool, Signal
 
 from torrent2000 import APP_VERSION
-from torrent2000.config.settings import Settings
+from torrent2000.config.settings import ProxySettings, Settings
+from torrent2000.engine.routing_rules import RoutingRuleStore, resolve_destination
 from torrent2000.engine.rss_seen_store import RssSeenStore
 from torrent2000.engine.session_manager import SessionManager
+from torrent2000.engine.url_fetch import FetchError, fetch_url
+from torrent2000.utils.qt_timers import start_periodic_timer
 
 logger = logging.getLogger(__name__)
 
@@ -84,6 +86,14 @@ def _child_text(item_el, tag: str) -> str:
     return el.text.strip()
 
 
+def _redact_url(url: str) -> str:
+    """Strip the query string (and any fragment) from a URL before it is
+    ever written to a log line -- private-tracker RSS feed and item URLs
+    routinely carry the user's passkey as a query parameter."""
+    parts = urlsplit(url)
+    return urlunsplit((parts.scheme, parts.netloc, parts.path, "", ""))
+
+
 def matches_keyword(title: str, filter_keyword: str) -> bool:
     """Case-insensitive substring match; an empty keyword matches every item."""
     if not filter_keyword:
@@ -104,17 +114,16 @@ class _RunnableSignals(QObject):
 
 
 class _FetchFeedRunnable(QRunnable):
-    def __init__(self, feed_url: str, signals: _RunnableSignals) -> None:
+    def __init__(self, feed_url: str, signals: _RunnableSignals, proxy: ProxySettings | None = None) -> None:
         super().__init__()
         self._feed_url = feed_url
         self._signals = signals
+        self._proxy = proxy
 
     def run(self) -> None:
         try:
-            request = urllib.request.Request(self._feed_url, headers={"User-Agent": USER_AGENT})
-            with urllib.request.urlopen(request, timeout=FETCH_TIMEOUT_SECONDS) as response:
-                data = response.read()
-        except (urllib.error.URLError, OSError, ValueError) as exc:
+            data = fetch_url(self._feed_url, USER_AGENT, FETCH_TIMEOUT_SECONDS, proxy=self._proxy)
+        except FetchError as exc:
             self._signals.feed_failed.emit(self._feed_url, str(exc))
             return
         self._signals.feed_fetched.emit(self._feed_url, parse_rss_items(data))
@@ -125,20 +134,26 @@ class _DownloadTorrentRunnable(QRunnable):
     Adding it to the session still happens back on the main thread (see
     RssFeedService._on_torrent_downloaded)."""
 
-    def __init__(self, feed_url: str, item: dict, save_path: str, signals: _RunnableSignals) -> None:
+    def __init__(
+        self,
+        feed_url: str,
+        item: dict,
+        save_path: str,
+        signals: _RunnableSignals,
+        proxy: ProxySettings | None = None,
+    ) -> None:
         super().__init__()
         self._feed_url = feed_url
         self._item = item
         self._save_path = save_path
         self._signals = signals
+        self._proxy = proxy
 
     def run(self) -> None:
         url = self._item.get("link", "")
         try:
-            request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
-            with urllib.request.urlopen(request, timeout=FETCH_TIMEOUT_SECONDS) as response:
-                data = response.read()
-        except (urllib.error.URLError, OSError, ValueError) as exc:
+            data = fetch_url(url, USER_AGENT, FETCH_TIMEOUT_SECONDS, proxy=self._proxy)
+        except FetchError as exc:
             self._signals.torrent_download_failed.emit(self._feed_url, self._item, str(exc))
             return
 
@@ -162,6 +177,7 @@ class RssFeedService(QObject):
         self._session_manager = session_manager
         self._settings = settings
         self._seen_store = seen_store
+        self._routing_store = RoutingRuleStore()
 
         self._signals = _RunnableSignals()
         self._signals.feed_fetched.connect(self._on_feed_fetched)
@@ -169,9 +185,7 @@ class RssFeedService(QObject):
         self._signals.torrent_downloaded.connect(self._on_torrent_downloaded)
         self._signals.torrent_download_failed.connect(self._on_torrent_download_failed)
 
-        self._timer = QTimer(self)
-        self._timer.timeout.connect(self.check_now)
-        self._timer.start(CHECK_INTERVAL_MS)
+        self._timer = start_periodic_timer(self, CHECK_INTERVAL_MS, self.check_now)
 
     # ------------------------------------------------------------------ API
 
@@ -182,7 +196,7 @@ class RssFeedService(QObject):
         for feed in self._settings.rss_feeds:
             if not feed.enabled or not feed.url:
                 continue
-            runnable = _FetchFeedRunnable(feed.url, self._signals)
+            runnable = _FetchFeedRunnable(feed.url, self._signals, proxy=self._settings.proxy)
             QThreadPool.globalInstance().start(runnable)
 
     # ------------------------------------------------------------- GUI-thread slots
@@ -192,7 +206,6 @@ class RssFeedService(QObject):
         if feed_config is None or not feed_config.enabled:
             return  # subscription removed/disabled while the fetch was in flight
 
-        save_path = self._settings.default_download_dir
         newly_added = []
         for item in items:
             guid = item.get("guid", "")
@@ -200,6 +213,17 @@ class RssFeedService(QObject):
                 continue
             if not matches_keyword(item.get("title", ""), feed_config.filter_keyword):
                 continue
+
+            # Name-only matching: an RSS item exposes nothing but its title
+            # at this point -- the actual .torrent (and therefore its
+            # tracker list) hasn't been downloaded yet, so a "tracker"
+            # routing rule can never match here, only a "name" one. This is
+            # a real limitation of the RSS auto-download path, not something
+            # worth working around (e.g. by downloading the .torrent just to
+            # check its trackers before deciding whether to download it).
+            save_path = resolve_destination(
+                self._routing_store.list_rules(), self._settings.default_download_dir, name=item.get("title", "")
+            )
 
             link = item.get("link", "")
             if link.startswith("magnet:"):
@@ -213,33 +237,35 @@ class RssFeedService(QObject):
                     info_hash = self._session_manager.add_torrent_from_magnet(link, save_path)
                     self._session_manager.start_after_analysis(info_hash)
                 except Exception:
-                    logger.exception("Failed to add magnet from RSS feed %s", feed_url)
+                    logger.exception("Failed to add magnet from RSS feed %s", _redact_url(feed_url))
                     continue
                 newly_added.append(item)
             elif link.startswith("http://") or link.startswith("https://"):
                 self._seen_store.mark_seen(guid, feed_url, item.get("title", ""))
-                runnable = _DownloadTorrentRunnable(feed_url, item, save_path, self._signals)
+                runnable = _DownloadTorrentRunnable(
+                    feed_url, item, save_path, self._signals, proxy=self._settings.proxy
+                )
                 QThreadPool.globalInstance().start(runnable)
             else:
-                logger.warning("Skipping RSS item with unsupported link scheme: %s", link)
+                logger.warning("Skipping RSS item with unsupported link scheme: %s", _redact_url(link))
 
         if newly_added:
             self.items_found.emit(feed_url, newly_added)
 
     def _on_feed_failed(self, feed_url: str, message: str) -> None:
-        logger.warning("Failed to fetch RSS feed %s: %s", feed_url, message)
+        logger.warning("Failed to fetch RSS feed %s: %s", _redact_url(feed_url), message)
         self.feed_check_failed.emit(feed_url, message)
 
     def _on_torrent_downloaded(self, feed_url: str, item: dict, temp_path: str, save_path: str) -> None:
         try:
             self._session_manager.add_torrent_from_file(temp_path, save_path or None)
         except Exception:
-            logger.exception("Failed to add torrent downloaded from RSS feed %s", feed_url)
+            logger.exception("Failed to add torrent downloaded from RSS feed %s", _redact_url(feed_url))
             return
         self.items_found.emit(feed_url, [item])
 
     def _on_torrent_download_failed(self, feed_url: str, item: dict, message: str) -> None:
-        logger.warning("Failed to download .torrent linked from RSS feed %s: %s", feed_url, message)
+        logger.warning("Failed to download .torrent linked from RSS feed %s: %s", _redact_url(feed_url), message)
         self.feed_check_failed.emit(feed_url, message)
 
     # ------------------------------------------------------------------ helpers

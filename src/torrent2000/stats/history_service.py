@@ -44,3 +44,7 @@ class HistoryService(QObject):
 
     def all_entries(self, limit: int = 200) -> list[HistoryEntry]:
         return self._store.all_entries(limit)
+
+    def clear(self) -> None:
+        self._store.clear()
+        self.entry_added.emit()

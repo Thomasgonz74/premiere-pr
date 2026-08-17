@@ -13,7 +13,6 @@ whenever ProfileTab's language_changed signal fires.
 """
 
 import json
-from typing import Optional
 
 from torrent2000.utils.resource_path import resource_path
 
@@ -49,7 +48,7 @@ def _load_catalog(code: str) -> dict[str, str]:
     return _catalogs[code]
 
 
-def set_language(code: Optional[str]) -> None:
+def set_language(code: str | None) -> None:
     global _current_language
     _current_language = code if code in _VALID_LANGUAGE_CODES else DEFAULT_LANGUAGE
     _load_catalog(_current_language)

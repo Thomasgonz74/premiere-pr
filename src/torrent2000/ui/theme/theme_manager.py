@@ -20,10 +20,9 @@ engine/session_manager.py (CCCP blocks starting new downloads outright).
 import dataclasses
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
 from PySide6.QtCore import QDir
-from PySide6.QtGui import QIcon
+from PySide6.QtGui import QCursor, QIcon, QPixmap
 from PySide6.QtWidgets import QApplication
 
 from torrent2000.i18n.translator import tr
@@ -67,10 +66,26 @@ _QSS_BASENAMES = {
     CCCP_THEME_ID: "cccp",
 }
 
+# Hotspot (x, y) = the pixel that is actually "under the click" in each
+# theme's hand-drawn assets/cursors/<basename>/arrow.png -- chosen per-image
+# by whichever agent drew it, not a shared convention. QSS has no `cursor`
+# property (confirmed against the Qt 6 stylesheet reference and empirically:
+# it's silently ignored, never an error), so these can only be applied via
+# QWidget.setCursor() in Python -- see cursor_for_theme() below.
+_CURSOR_HOTSPOTS = {
+    "luna": (4, 3),
+    "win7": (2, 2),
+    "win10": (1, 1),
+    "win11": (4, 3),
+    "win95": (0, 0),
+    "macos": (4, 3),
+    "cccp": (4, 3),
+}
+
 
 @dataclass(frozen=True)
 class TitleBarStyle:
-    caption_gradient: Optional[tuple[str, str]]  # (left, right) horizontal gradient, or None for flat
+    caption_gradient: tuple[str, str] | None  # (left, right) horizontal gradient, or None for flat
     caption_flat_color: str  # used when caption_gradient is None
     title_text_color: str
     font_family: str
@@ -88,7 +103,7 @@ class TitleBarStyle:
     # hover look is unchanged). Only dark_hc sets this, because its yellow
     # hover fill needs a black glyph to stay legible -- a white glyph on
     # yellow would fail contrast, which a high-contrast mode can't afford.
-    button_hover_glyph_color: Optional[str] = None
+    button_hover_glyph_color: str | None = None
     close_glyph: str = "x"  # "x" | "hammer_sickle" (CCCP only)
 
 
@@ -240,6 +255,23 @@ def apply_theme(app: QApplication, theme_id: str, appearance_mode: str = DEFAULT
     qss_path = _qss_path(theme_id, appearance_mode)
     if qss_path.exists():
         app.setStyleSheet(qss_path.read_text(encoding="utf-8"))
+
+
+def cursor_for_theme(theme_id: str) -> QCursor | None:
+    """The era-authentic pointer for this theme, or None if its asset is
+    missing. Caller sets it on the main window (not per-widget) -- Qt's
+    cursor inheritance cascades it to every child that hasn't set its own
+    (QGroupBox, QTabBar, table backgrounds...), while QLineEdit/QSpinBox keep
+    the native IBeam they already set explicitly."""
+    basename = _QSS_BASENAMES.get(theme_id, _QSS_BASENAMES[DEFAULT_THEME])
+    cursor_path = resource_path("assets/cursors") / basename / "arrow.png"
+    if not cursor_path.exists():
+        return None
+    pixmap = QPixmap(str(cursor_path))
+    if pixmap.isNull():
+        return None
+    hot_x, hot_y = _CURSOR_HOTSPOTS.get(basename, (0, 0))
+    return QCursor(pixmap, hot_x, hot_y)
 
 
 def init_theme_runtime(app: QApplication) -> None:

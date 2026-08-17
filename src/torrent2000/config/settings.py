@@ -1,4 +1,5 @@
 import json
+import os
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
@@ -45,6 +46,14 @@ class RssFeedSubscription:
     enabled: bool = True
 
 
+def _from_dict(cls, raw: dict):
+    """Builds a dataclass instance from a raw dict, silently dropping any
+    key that isn't one of the dataclass's own fields -- so a settings.json
+    left over from an older/newer schema version loads without a
+    TypeError on unexpected keys."""
+    return cls(**{k: v for k, v in raw.items() if k in cls.__dataclass_fields__})
+
+
 @dataclass
 class Settings:
     schema_version: int = SCHEMA_VERSION
@@ -67,7 +76,18 @@ class Settings:
     # user configures below -- it only limits how far the IP is broadcast.
     restrict_discovery: bool = True
     bandwidth_schedule: BandwidthSchedule = field(default_factory=BandwidthSchedule)
+
+    # Default share policy, auto-applied the moment ANY torrent (not just ones
+    # manually tracked via the Partage tab) transitions to seeding -- off by
+    # default so existing behavior (unlimited seeding unless manually tracked)
+    # is unchanged until the user opts in.
+    default_share_policy_enabled: bool = False
+    default_share_ratio_limit: float = 0.0  # 0 = no ratio cap
+    default_share_time_limit_hours: int = 0  # 0 = no time cap
+    default_share_data_limit_mb: int = 0  # 0 = no data cap
+
     notifications_enabled: bool = True
+    minimize_to_tray: bool = True  # closing the window hides it to the system tray instead of quitting
 
     rss_feeds: list[RssFeedSubscription] = field(default_factory=list)
 
@@ -84,11 +104,38 @@ class Settings:
     # traffic; distinct from the IP-hiding proxy settings above).
     encryption_mode: str = "enabled"  # "forced" | "enabled" | "disabled"
 
+    # Off by default -- only takes effect once the user explicitly enables it in
+    # the Profile tab's Security section. Runs a Windows Defender custom scan on
+    # a torrent's files after it finishes downloading; never writes an exclusion,
+    # only ever scans.
+    scan_completed_files_with_defender: bool = False
+
     # Off by default -- only takes effect once the user explicitly enables it
     # in the Profile tab.
     auto_shutdown_enabled: bool = False
     auto_shutdown_action: str = "shutdown"  # "shutdown" | "hibernate"
     auto_shutdown_delay_seconds: int = 60  # cancellable countdown before it actually fires
+
+    # Off by default -- only takes effect once the user explicitly enables it in
+    # the Profile tab. Pauses active downloads on battery power, resumes them
+    # once external power returns; reversible, not destructive (matches
+    # auto_shutdown's own opt-in convention).
+    pause_on_battery_enabled: bool = False
+
+    # Off by default -- opens a small local HTTP server (see
+    # engine/remote_server.py) so torrent progress can be checked, and a
+    # share paused/resumed, from a phone on the same local network. It has
+    # to listen on every network interface to be reachable from another
+    # device, so remote_access_token is the ONLY thing standing between
+    # anyone on that network and the API -- never enabled without an
+    # explicit opt-in, same convention as scan_completed_files_with_defender/
+    # auto_shutdown_enabled/pause_on_battery_enabled above.
+    remote_access_enabled: bool = False
+    remote_access_port: int = 8642  # deliberately not a common dev-server port (3000/8080/5000/...)
+    # Generated via secrets.token_urlsafe(24) the first time the server is
+    # actually started (see RemoteAccessServer.start) -- never chosen by the
+    # user, never predictable. Regenerable on demand from the Profile tab.
+    remote_access_token: str = ""
 
     audio_volume: int = 70  # 0-100, currently drives only the CCCP theme's anthem playback
 
@@ -99,6 +146,10 @@ class Settings:
     # already-seen version doesn't nag again every launch -- a genuinely
     # newer release still triggers a fresh notification.
     dismissed_update_version: str = ""
+
+    # Set once the one-time welcome dialog (see ui/onboarding_dialog.py) has
+    # been acknowledged, so it only ever shows on the very first launch.
+    first_launch_seen: bool = False
 
     @staticmethod
     def load() -> "Settings":
@@ -117,19 +168,16 @@ class Settings:
         proxy_data = data.pop("proxy", {})
         schedule_data = data.pop("bandwidth_schedule", {})
         rss_feeds_data = data.pop("rss_feeds", [])
-        settings = Settings(**{k: v for k, v in data.items() if k in Settings.__dataclass_fields__})
-        settings.proxy = ProxySettings(**{k: v for k, v in proxy_data.items() if k in ProxySettings.__dataclass_fields__})
-        settings.bandwidth_schedule = BandwidthSchedule(
-            **{k: v for k, v in schedule_data.items() if k in BandwidthSchedule.__dataclass_fields__}
-        )
-        settings.rss_feeds = [
-            RssFeedSubscription(**{k: v for k, v in feed.items() if k in RssFeedSubscription.__dataclass_fields__})
-            for feed in rss_feeds_data
-        ]
+        settings = _from_dict(Settings, data)
+        settings.proxy = _from_dict(ProxySettings, proxy_data)
+        settings.bandwidth_schedule = _from_dict(BandwidthSchedule, schedule_data)
+        settings.rss_feeds = [_from_dict(RssFeedSubscription, feed) for feed in rss_feeds_data]
         if not settings.default_download_dir:
             settings.default_download_dir = str(get_default_download_dir())
         return settings
 
     def save(self) -> None:
         path = get_config_path()
-        path.write_text(json.dumps(asdict(self), indent=2, ensure_ascii=False), encoding="utf-8")
+        tmp_path = path.with_suffix(path.suffix + ".tmp")
+        tmp_path.write_text(json.dumps(asdict(self), indent=2, ensure_ascii=False), encoding="utf-8")
+        os.replace(tmp_path, path)

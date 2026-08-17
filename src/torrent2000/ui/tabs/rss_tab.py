@@ -20,6 +20,7 @@ from torrent2000.config.settings import RssFeedSubscription, Settings
 from torrent2000.engine.rss_feed_service import RssFeedService
 from torrent2000.engine.session_manager import SessionManager
 from torrent2000.i18n.translator import tr
+from torrent2000.ui.widgets.table_helpers import configure_no_stretch_table, make_remove_button
 
 MAX_LOG_ENTRIES = 200
 
@@ -49,6 +50,7 @@ class RssTab(QWidget):
         self._session_manager = session_manager
         self._rss_feed_service = rss_feed_service
         self._settings = settings
+        self._filter_text: str = ""
 
         layout = QVBoxLayout(self)
 
@@ -89,17 +91,14 @@ class RssTab(QWidget):
 
         layout.addWidget(self.add_box)
 
+        self.search_input = QLineEdit(self)
+        self.search_input.setPlaceholderText(tr("common.search_placeholder"))
+        self.search_input.textChanged.connect(self._on_filter_changed)
+        layout.addWidget(self.search_input)
+
         self.table = QTableWidget(0, 4, self)
         self.table.setHorizontalHeaderLabels(_columns())
-        # Deliberately NOT QHeaderView.Stretch: a Stretch column keeps total
-        # header width pinned to the viewport, so resizing any OTHER column
-        # silently shrinks/grows this one to compensate -- from the user's
-        # side, dragging a column border elsewhere makes THIS column's
-        # border move instead, while the one actually dragged snaps back
-        # to where it started. A fixed initial width with plain Interactive
-        # resizing (the default) makes every column resize independently.
-        self.table.setColumnWidth(0, 280)
-        self.table.verticalHeader().setVisible(False)
+        configure_no_stretch_table(self.table, 280)
         layout.addWidget(self.table, 2)
 
         self.log_box = QGroupBox(tr("rss_tab.log_group"), self)
@@ -123,6 +122,7 @@ class RssTab(QWidget):
         self.keyword_label.setText(tr("rss_tab.keyword_label"))
         self.keyword_input.setPlaceholderText(tr("rss_tab.keyword_placeholder"))
         self.add_button.setText(tr("common.add"))
+        self.search_input.setPlaceholderText(tr("common.search_placeholder"))
         self.table.setHorizontalHeaderLabels(_columns())
         self.log_box.setTitle(tr("rss_tab.log_group"))
         remove_label = tr("common.remove")
@@ -153,13 +153,16 @@ class RssTab(QWidget):
         self.table.setRowCount(0)
         for feed in self._settings.rss_feeds:
             self._add_row(feed)
+        self._apply_filter()
 
     def _add_row(self, feed: RssFeedSubscription) -> None:
         row = self.table.rowCount()
         self.table.insertRow(row)
 
         self.table.setItem(row, 0, QTableWidgetItem(feed.url))
+        self.table.item(row, 0).setToolTip(feed.url)
         self.table.setItem(row, 1, QTableWidgetItem(feed.filter_keyword))
+        self.table.item(row, 1).setToolTip(feed.filter_keyword)
 
         enabled_container = QWidget(self.table)
         enabled_layout = QHBoxLayout(enabled_container)
@@ -171,12 +174,28 @@ class RssTab(QWidget):
         enabled_layout.addWidget(enabled_checkbox)
         self.table.setCellWidget(row, 2, enabled_container)
 
-        remove_button = QPushButton(tr("common.remove"), self.table)
-        remove_button.setObjectName("dangerButton")
-        remove_button.clicked.connect(lambda checked=False, f=feed: self._on_remove_clicked(f))
+        remove_button = make_remove_button(self.table, lambda f=feed: self._on_remove_clicked(f))
         self.table.setCellWidget(row, 3, remove_button)
 
+    # ----------------------------------------------------------------- filter
+
+    def _on_filter_changed(self, text: str) -> None:
+        self._filter_text = text
+        self._apply_filter()
+
+    def _apply_filter(self) -> None:
+        needle = self._filter_text.strip().lower()
+        for row in range(self.table.rowCount()):
+            item = self.table.item(row, 0)
+            url = item.text() if item is not None else ""
+            self.table.setRowHidden(row, bool(needle) and needle not in url.lower())
+
     def _on_enabled_toggled(self, feed: RssFeedSubscription, checked: bool) -> None:
+        # Live-apply (saved immediately), unlike RssTab's Add-a-feed form
+        # above -- this is a single toggle on an already-saved subscription,
+        # not a multi-field form to review before committing, so there's no
+        # "Save" step to gate it behind. See profile_sections.py's module
+        # docstring for this app's live-apply-vs-save-on-click convention.
         feed.enabled = checked
         self._settings.save()
 

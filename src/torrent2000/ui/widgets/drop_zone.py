@@ -1,3 +1,5 @@
+import os
+
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QLabel
 
@@ -32,7 +34,10 @@ class DropZoneWidget(QLabel):
         for url in event.mimeData().urls():
             path = url.toLocalFile()
             if path.lower().endswith(".torrent"):
-                self.torrent_file_dropped.emit(path)
+                # toLocalFile() returns forward slashes on Windows; normalize
+                # to native separators so a dropped path matches what
+                # QFileDialog's Browse... would have produced.
+                self.torrent_file_dropped.emit(os.path.normpath(path))
                 event.acceptProposedAction()
                 return
         event.ignore()

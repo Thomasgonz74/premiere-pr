@@ -4,11 +4,14 @@ Kept separate from session_manager.py so the polling loop there isn't a
 giant if/elif ladder.
 """
 
+import logging
 from typing import Callable
 
 import libtorrent as lt
 
 from torrent2000.engine.torrent_item import TorrentRecord, TorrentState
+
+logger = logging.getLogger(__name__)
 
 
 def status_to_record(status: "lt.torrent_status", record: TorrentRecord) -> None:
@@ -48,6 +51,7 @@ class AlertDispatcher:
         on_save_resume_data: Callable[[str, "lt.add_torrent_params"], None],
         on_torrent_removed: Callable[[str], None],
         on_torrent_added: Callable[["lt.torrent_handle"], None],
+        on_storage_moved: Callable[[str, str], None],
     ) -> None:
         self._on_state_update = on_state_update
         self._on_metadata_received = on_metadata_received
@@ -56,10 +60,19 @@ class AlertDispatcher:
         self._on_save_resume_data = on_save_resume_data
         self._on_torrent_removed = on_torrent_removed
         self._on_torrent_added = on_torrent_added
+        self._on_storage_moved = on_storage_moved
 
     def dispatch_all(self, alerts: list) -> None:
+        # One handler raising (e.g. a race between an async torrent removal
+        # and a handle access in another alert's handler) must not abort the
+        # whole batch -- alerts later in the same pop_alerts() list, like the
+        # torrent_removed_alert that cleans up SessionManager's bookkeeping,
+        # would otherwise be silently skipped and never redelivered.
         for alert in alerts:
-            self.dispatch(alert)
+            try:
+                self.dispatch(alert)
+            except Exception:
+                logger.exception("Failed to process libtorrent alert %r", alert)
 
     def dispatch(self, alert) -> None:
         if isinstance(alert, lt.state_update_alert):
@@ -78,6 +91,8 @@ class AlertDispatcher:
         elif isinstance(alert, lt.add_torrent_alert):
             if not alert.error:
                 self._on_torrent_added(alert.handle)
+        elif isinstance(alert, lt.storage_moved_alert):
+            self._on_storage_moved(_hash_of(alert.handle), alert.storage_path)
 
 
 def _hash_of(handle: "lt.torrent_handle") -> str:

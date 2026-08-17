@@ -9,13 +9,7 @@ a = Analysis(
     [os.path.join(REPO_ROOT, "run.py")],
     pathex=[os.path.join(REPO_ROOT, "src")],
     binaries=[],
-    datas=[
-        (os.path.join(REPO_ROOT, "resources", "styles", "*.qss"), os.path.join("resources", "styles")),
-        (os.path.join(REPO_ROOT, "resources", "i18n", "*.json"), os.path.join("resources", "i18n")),
-        (os.path.join(REPO_ROOT, "assets", "icon.ico"), "assets"),
-        (os.path.join(REPO_ROOT, "assets", "checkmark.png"), "assets"),
-        (os.path.join(REPO_ROOT, "assets", "audio", "*.mp3"), os.path.join("assets", "audio")),
-    ],
+    datas=[],
     hiddenimports=["libtorrent"],
     hookspath=[],
     hooksconfig={},
@@ -24,6 +18,11 @@ a = Analysis(
     noarchive=False,
     cipher=block_cipher,
 )
+
+# Whole-folder Tree() inclusion so new files dropped into resources/ or assets/
+# are picked up automatically, without editing this spec.
+a.datas += Tree(os.path.join(REPO_ROOT, "resources"), prefix="resources")
+a.datas += Tree(os.path.join(REPO_ROOT, "assets"), prefix="assets")
 
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 

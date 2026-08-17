@@ -55,5 +55,9 @@ class HistoryStore:
         ).fetchall()
         return [HistoryEntry(*row) for row in rows]
 
+    def clear(self) -> None:
+        self._conn.execute("DELETE FROM history")
+        self._conn.commit()
+
     def close(self) -> None:
         self._conn.close()

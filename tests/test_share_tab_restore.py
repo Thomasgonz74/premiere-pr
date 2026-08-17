@@ -16,6 +16,33 @@ def qapp():
     return QApplication.instance() or QApplication([])
 
 
+def test_data_dir_input_prefills_with_default_download_dir():
+    session_manager = MagicMock()
+    share_limit_service = MagicMock()
+    share_limit_service.tracked_info_hashes.return_value = []
+    settings = Settings()
+    settings.default_download_dir = "D:\\Downloads\\Torrent2000"
+
+    tab = ShareTab(session_manager, share_limit_service, settings)
+
+    assert tab.data_dir_input.text() == "D:\\Downloads\\Torrent2000"
+
+
+def test_data_dir_input_resets_to_default_download_dir_not_blank():
+    session_manager = MagicMock()
+    share_limit_service = MagicMock()
+    share_limit_service.tracked_info_hashes.return_value = []
+    settings = Settings()
+    settings.default_download_dir = "D:\\Downloads\\Torrent2000"
+
+    tab = ShareTab(session_manager, share_limit_service, settings)
+    tab.data_dir_input.setText("E:\\Somewhere\\Else")
+
+    tab._reset_form()
+
+    assert tab.data_dir_input.text() == "D:\\Downloads\\Torrent2000"
+
+
 def test_tab_repopulates_from_already_tracked_torrents_on_construction():
     record = TorrentRecord(info_hash="abc123", name="Restored Share", save_path="C:\\x", state=TorrentState.SEEDING)
     session_manager = MagicMock()

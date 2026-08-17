@@ -85,6 +85,79 @@ def test_totals_survive_restart_with_fresh_handle_starting_at_zero(tmp_path):
     assert total_up == 100
 
 
+class _CommitCountingConnection:
+    """Wraps a sqlite3.Connection to count commit() calls; sqlite3.Connection
+    itself has no __dict__ so its methods can't be monkeypatched directly."""
+
+    def __init__(self, conn):
+        self._conn = conn
+        self.commit_calls = 0
+
+    def commit(self):
+        self.commit_calls += 1
+        self._conn.commit()
+
+    def __getattr__(self, name):
+        return getattr(self._conn, name)
+
+
+def test_flush_batches_multiple_torrents_into_a_single_commit(tmp_path):
+    store = StatsStore(tmp_path / "stats.sqlite3")
+    fake_sm = FakeSessionManager()
+    service = StatsService(store, fake_sm)
+
+    fake_sm.torrent_status_updated.emit("abc", FakeRecord(1000, 200))
+    fake_sm.torrent_status_updated.emit("def", FakeRecord(3000, 400))
+    fake_sm.torrent_status_updated.emit("ghi", FakeRecord(500, 50))
+
+    counting_conn = _CommitCountingConnection(store._conn)
+    store._conn = counting_conn
+
+    service.flush()
+
+    assert counting_conn.commit_calls == 1
+
+
+def test_flush_multiple_torrents_matches_per_torrent_flush_semantics(tmp_path):
+    # The batched flush() must produce totals/counters numerically identical
+    # to flushing each torrent one at a time via the old _flush_one path.
+    batched_store = StatsStore(tmp_path / "batched.sqlite3")
+    batched_sm = FakeSessionManager()
+    batched_service = StatsService(batched_store, batched_sm)
+
+    sequential_store = StatsStore(tmp_path / "sequential.sqlite3")
+    sequential_sm = FakeSessionManager()
+    sequential_service = StatsService(sequential_store, sequential_sm)
+
+    updates = [("abc", 1000, 200), ("def", 3000, 400), ("ghi", 500, 50)]
+    for info_hash, down, up in updates:
+        batched_sm.torrent_status_updated.emit(info_hash, FakeRecord(down, up))
+        sequential_sm.torrent_status_updated.emit(info_hash, FakeRecord(down, up))
+
+    batched_service.flush()
+    for info_hash, _, _ in updates:
+        sequential_service._flush_one(info_hash)
+
+    assert batched_store.get_totals() == sequential_store.get_totals()
+    for info_hash, _, _ in updates:
+        assert batched_store.get_torrent_counter(info_hash) == sequential_store.get_torrent_counter(info_hash)
+
+    # A second round of updates (deltas against the now-stored last-seen
+    # counters) must also stay in lockstep between the two paths.
+    second_updates = [("abc", 1500, 300), ("def", 3000, 900), ("ghi", 500, 50)]
+    for info_hash, down, up in second_updates:
+        batched_sm.torrent_status_updated.emit(info_hash, FakeRecord(down, up))
+        sequential_sm.torrent_status_updated.emit(info_hash, FakeRecord(down, up))
+
+    batched_service.flush()
+    for info_hash, _, _ in second_updates:
+        sequential_service._flush_one(info_hash)
+
+    assert batched_store.get_totals() == sequential_store.get_totals()
+    for info_hash, _, _ in second_updates:
+        assert batched_store.get_torrent_counter(info_hash) == sequential_store.get_torrent_counter(info_hash)
+
+
 def test_level_reflects_combined_download_and_upload(tmp_path):
     store = StatsStore(tmp_path / "stats.sqlite3")
     fake_sm = FakeSessionManager()

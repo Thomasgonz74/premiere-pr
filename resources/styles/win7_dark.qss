@@ -1,14 +1,50 @@
-/* Torrent 2000 -- "Windows 7 (Aero)" skin, DARK variant.
+/* Torrent 2000 -- "Windows 7 (Aero)" skin, DARK variant. FULL REWRITE.
 
-   Same glossy gradient control shapes as win7.qss, recolored onto a dark
-   base while keeping the Aero accent blue for hover/selection glow.
+   Windows 7 predates system dark mode -- there is no real "Win7 dark theme"
+   screenshot to sample, a fact theme_manager.py's own module docstring
+   already calls out. This file is therefore EXTRAPOLATED, not measured: it
+   inverts the lightness of win7.qss's measured palette while keeping (a)
+   the exact same accent blue (#3F88ED, measured from the Explorer glass
+   gradient in the light pass -- vivid enough to read on a near-black
+   surface) and (b) the same bevel delta magnitude the real "Back up now"
+   button showed (top-to-bottom lightness spread of roughly 16 percentage
+   points), just re-anchored to a dark base instead of #F0F0F0.
 
-   Reference colors:
-     window background      #1F1F1F
-     Aero accent blue        #3D95F2  (hover glow, selection, progress)
-     button face gradient    #4A4A4A -> #303030, glassy rounded look
-     text                    #F0F0F0
-     disabled text           #7A7A7A
+   Token palette (name -> hex -> role):
+     --win7-bg            #1F1F1F   window/dialog background
+     --win7-surface       #2A2A2A   inputs, lists, tables, menus, popups
+     --win7-border        #5A5A5A   standard control outline
+     --win7-border-soft   #3A3A3A   quiet separators, disabled outline
+     --win7-text          #F0F0F0   primary text
+     --win7-text-muted    #A8A8A8   secondary text
+     --win7-text-disabled #7A7A7A   disabled text
+     --win7-accent        #3F88ED   hover glow / selection / focus ring (unchanged
+                                     from the light pass -- same measured hue)
+     --win7-accent-deep   #6FB4FA   pressed-state accent (brightened, not
+                                     darkened, on a dark base)
+     --win7-accent-soft   #24405E   soft task-pane tint / zebra stripe (dark
+                                     analog of the light pass's measured #E8F0FA)
+     --win7-btn-top       #4A4A4A   button highlight peak
+     --win7-btn-mid       #3A3A3A   button face mid-tone
+     --win7-btn-bottom    #2A2A2A   button face bottom shadow
+     --win7-danger        #C0392B   destructive actions -- extrapolated, same
+                                     as the light pass (no red reference exists)
+     --win7-default-glow  #6FE0F7   QPushButton:default border only -- brightened
+                                     counterpart of the light pass's measured
+                                     #46D0F2 cyan glow
+
+   CONTRAST FIX (this pass): QCheckBox::indicator:checked previously filled
+   with a dark navy gradient and drew the shared GENERIC BLACK checkmark.png
+   on top -- ~2.6:1 contrast, under WCAG's 3:1 minimum for non-text UI
+   components (legible but weak, not literally invisible -- see the
+   checkbox rule below for the measurement and the corrected test method).
+   Fixed by keeping the box surface unchanged when checked (matches the
+   real photographed reference's behavior) and using a Win7-specific BRIGHT
+   tick glyph (assets/icons/win7/checkmark_dark.png, ~11:1) instead. See
+   PALETTE.md's "Second reference pass" section.
+
+   Window corner radius is 6px (TitleBarStyle["win7_aero"].window_corner_radius
+   in ui/theme/theme_manager.py) -- controls echo that 6px rounding.
 
    The title bar is NOT drawn by this stylesheet -- see
    src/torrent2000/ui/widgets/app_title_bar.py.
@@ -23,31 +59,75 @@ QMainWindow, QWidget#centralWidget {
     background-color: #1F1F1F;
 }
 
+/* Deliberately no background-color here (only color) -- see win7.qss for
+   the reproduced mechanism: a generic QWidget { background-color; } rule
+   defeats QComboBox QAbstractItemView's selection-background-color for
+   the popup's current/selected row. QMainWindow/#centralWidget/QDialog
+   below carry the actual #1F1F1F fill; plain QWidget containers stay
+   transparent and show that ancestor fill through, which looks identical. */
 QWidget {
+    color: #F0F0F0;
+}
+
+QDialog {
     background-color: #1F1F1F;
     color: #F0F0F0;
 }
 
+/* ---------------------------------------------------------------------
+   Cursor -- authentic-to-theme pointer glyph (assets/cursors/win7/arrow.png,
+   hand-drawn via PIL, not copied/traced from any real OS cursor -- same
+   principle as this theme's hand-drawn checkmark_dark.png icon). Shared
+   with the light variant -- a real system pointer doesn't change shape
+   with dark mode, and the white-fill/dark-outline glyph reads clearly on
+   this surface too. Hotspot is the arrow's tip, pixel (2, 2) in that 32x32
+   image.
+   Scoped to window/background chrome only -- the main window, the central
+   widget, dialogs, group boxes, the tab bar, and table/tree backgrounds --
+   deliberately NOT a blanket QWidget rule, which would stomp the native
+   I-beam cursor on QLineEdit/QSpinBox text entry and the hand/pointer
+   affordance already defined on hoverable controls.
+   NOTE: verified live against this project's PySide6 6.11.1 runtime and
+   against the official Qt Style Sheets Reference -- Qt does not actually
+   implement a `cursor` property in QSS (confirmed: "Unknown property
+   cursor", rest of the rule block still applies fine). This declaration is
+   therefore currently inert at runtime, not a mistake to "fix" by trying
+   another syntax -- making the pointer actually change shape needs a small
+   code-side companion (QWidget.setCursor(QCursor(QPixmap(...), 2, 2)) in
+   theme_manager.py, reading this same asset), which is outside this QSS
+   file's scope.
+   --------------------------------------------------------------------- */
+
+QMainWindow, QWidget#centralWidget, QDialog, QGroupBox, QTabBar, QTableWidget, QTreeWidget {
+    cursor: url(theme:cursors/win7/arrow.png) 2 2;
+}
+
+/* ---------------------------------------------------------------------
+   Tabs
+   --------------------------------------------------------------------- */
+
 QTabWidget::pane {
-    border: 1px solid #4A4A4A;
+    border: 1px solid #5A5A5A;
     background-color: #1F1F1F;
     top: -1px;
 }
 
 QTabBar::tab {
-    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #3A3A3A, stop:1 #26364A);
-    border: 1px solid #4A4A4A;
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 #4A4A4A, stop:0.4 #3A3A3A, stop:0.5 #313131, stop:1 #272727);
+    border: 1px solid #5A5A5A;
     border-bottom: none;
-    border-top-left-radius: 5px;
-    border-top-right-radius: 5px;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
     padding: 5px 16px;
     margin-right: 2px;
     color: #F0F0F0;
 }
 
 QTabBar::tab:selected {
-    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #3A3A3A, stop:1 #1F1F1F);
-    border-color: #4A4A4A;
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 #454545, stop:0.6 #2B2B2B, stop:1 #1F1F1F);
+    border-color: #5A5A5A;
     border-bottom: 1px solid #1F1F1F;
     margin-top: 0px;
 }
@@ -56,10 +136,41 @@ QTabBar::tab:!selected {
     margin-top: 2px;
 }
 
+QTabBar::tab:hover:!selected {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 #35424E, stop:0.4 #29384A, stop:0.5 #1F3049, stop:1 #16263B);
+    border-color: #3F88ED;
+    color: #F0F0F0;
+}
+
+QTabBar::tab:disabled {
+    color: #7A7A7A;
+}
+
+QTabBar::tab:focus {
+    outline: 2px solid #3F88ED;
+    outline-offset: -3px;
+}
+
+QTabWidget#mainTabs::pane {
+    border-top: none;
+    top: 0px;
+}
+
+/* ---------------------------------------------------------------------
+   Group boxes
+   --------------------------------------------------------------------- */
+
 QGroupBox {
-    border: 1px solid #4A4A4A;
-    border-radius: 4px;
-    margin-top: 10px;
+    border: 1px solid #5A5A5A;
+    border-radius: 6px;
+    /* margin-top must clear the title's real glyph height or the text
+       overlaps/gets cut by the border's top edge instead of floating above
+       it. Measured via GDI/QFontMetrics on real Segoe UI 9pt: ascent 13 +
+       descent 3 = 16px tall -- the previous 10px was 6px short (this was
+       the reported bug: section titles like "Audio" clipped by the frame
+       edge in the Profile screen). 18px gives a small margin above that. */
+    margin-top: 18px;
     padding-top: 6px;
     background-color: #1F1F1F;
     font-weight: normal;
@@ -73,29 +184,39 @@ QGroupBox::title {
     color: #F0F0F0;
 }
 
+/* ---------------------------------------------------------------------
+   Buttons
+   --------------------------------------------------------------------- */
+
 QPushButton {
-    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #4A4A4A, stop:0.5 #3A3A3A, stop:1 #2B2B2B);
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 #4A4A4A, stop:0.35 #404040, stop:0.5 #3A3A3A, stop:0.75 #303030, stop:1 #2A2A2A);
     border: 1px solid #5A5A5A;
-    border-radius: 4px;
-    padding: 4px 12px;
+    border-radius: 6px;
+    padding: 4px 14px;
     min-height: 18px;
     color: #F0F0F0;
 }
 
 QPushButton:hover:!pressed {
-    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #2C3D4F, stop:0.5 #223244, stop:1 #182838);
-    border: 1px solid #3D95F2;
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 #35424E, stop:0.35 #29384A, stop:0.5 #1F3049, stop:0.75 #182740, stop:1 #142235);
+    border: 1px solid #3F88ED;
 }
 
 QPushButton:pressed {
-    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #182838, stop:1 #223244);
-    border: 1px solid #2A6FCB;
-    padding: 5px 11px 3px 13px;
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 #142235, stop:0.4 #1A2E45, stop:0.55 #213954, stop:1 #182740);
+    border: 1px solid #6FB4FA;
+    padding: 5px 13px 3px 15px;
 }
 
+/* Brightened counterpart of the light pass's measured cyan default-button
+   glow (#46D0F2) -- same "brighten, don't darken, on a dark base" rule
+   already used for this file's other pressed/hover accents. */
 QPushButton:default {
     border-width: 2px;
-    border-color: #3D95F2;
+    border-color: #6FE0F7;
 }
 
 QPushButton:disabled {
@@ -104,60 +225,163 @@ QPushButton:disabled {
     color: #7A7A7A;
 }
 
+QPushButton:focus {
+    outline: 2px solid #3F88ED;
+    outline-offset: 2px;
+    outline-radius: 8px;
+}
+
 QPushButton#dangerButton {
-    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #5A322E, stop:0.5 #4A2622, stop:1 #3A1B18);
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 #6B3E38, stop:0.35 #5D342F, stop:0.5 #4E2A26, stop:0.75 #3F211D, stop:1 #301815);
     border: 1px solid #8A4A42;
-    border-radius: 4px;
-    padding: 2px 10px;
+    border-radius: 6px;
+    padding: 2px 12px;
     min-height: 16px;
     color: #F0F0F0;
 }
 
 QPushButton#dangerButton:hover:!pressed {
-    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #6B3B36, stop:1 #4A2622);
-    border: 1px solid #3D95F2;
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 #7C4A42, stop:0.35 #6B3B36, stop:0.5 #5A322E, stop:0.75 #4A2622, stop:1 #3A1B18);
+    border: 1px solid #D9483A;
 }
 
 QPushButton#dangerButton:pressed {
-    background: #3A1B18;
-    border: 1px solid #2A1310;
-    padding: 3px 9px 1px 11px;
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #2E1512, stop:0.5 #3A1B18, stop:1 #2A1210);
+    border: 1px solid #C0392B;
+    padding: 3px 11px 1px 13px;
 }
+
+QPushButton#dangerButton:disabled {
+    background: #1F1F1F;
+    border: 1px solid #3A3A3A;
+    color: #7A7A7A;
+}
+
+QPushButton#dangerButton:focus {
+    outline: 2px solid #3F88ED;
+    outline-offset: 2px;
+    outline-radius: 8px;
+}
+
+/* ---------------------------------------------------------------------
+   Inputs
+   --------------------------------------------------------------------- */
 
 QLineEdit, QSpinBox, QAbstractSpinBox {
     background-color: #2A2A2A;
-    border: 1px solid #4A4A4A;
-    border-radius: 3px;
-    padding: 2px 4px;
+    border: 1px solid #5A5A5A;
+    border-radius: 6px;
+    padding: 2px 5px;
     color: #F0F0F0;
-    selection-background-color: #3D95F2;
+    selection-background-color: #3F88ED;
     selection-color: #FFFFFF;
 }
 
 QLineEdit:hover, QSpinBox:hover, QAbstractSpinBox:hover {
-    border: 1px solid #3D95F2;
+    border: 1px solid #3F88ED;
 }
+
+QLineEdit:focus, QSpinBox:focus, QAbstractSpinBox:focus {
+    outline: 2px solid #3F88ED;
+    outline-offset: 1px;
+    outline-radius: 7px;
+}
+
+QLineEdit:disabled, QSpinBox:disabled, QAbstractSpinBox:disabled {
+    background-color: #1F1F1F;
+    border: 1px solid #3A3A3A;
+    color: #7A7A7A;
+}
+
+QAbstractSpinBox::up-button, QAbstractSpinBox::down-button {
+    subcontrol-origin: border;
+    width: 17px;
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #4A4A4A, stop:0.5 #3A3A3A, stop:1 #2A2A2A);
+    border-left: 1px solid #5A5A5A;
+}
+
+QAbstractSpinBox::up-button {
+    subcontrol-position: top right;
+    border-top-right-radius: 6px;
+}
+
+QAbstractSpinBox::down-button {
+    subcontrol-position: bottom right;
+    border-bottom-right-radius: 6px;
+}
+
+QAbstractSpinBox::up-button:hover, QAbstractSpinBox::down-button:hover {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #29384A, stop:1 #142235);
+}
+
+QAbstractSpinBox::up-button:pressed, QAbstractSpinBox::down-button:pressed {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #142235, stop:1 #0D1826);
+}
+
+QAbstractSpinBox::up-arrow {
+    width: 0; height: 0;
+    border-left: 3px solid transparent;
+    border-right: 3px solid transparent;
+    border-bottom: 4px solid #D0D0D0;
+}
+
+QAbstractSpinBox::down-arrow {
+    width: 0; height: 0;
+    border-left: 3px solid transparent;
+    border-right: 3px solid transparent;
+    border-top: 4px solid #D0D0D0;
+}
+
+/* ---------------------------------------------------------------------
+   Combo box -- and its POPUP. Same fix as the light pass: QComboBox needs
+   its own selection-background-color/selection-color in addition to the
+   popup view's, or the popup's currently-selected row opens with no
+   visible highlight (see win7.qss header for the full root-cause).
+   --------------------------------------------------------------------- */
 
 QComboBox {
     background-color: #2A2A2A;
-    border: 1px solid #4A4A4A;
-    border-radius: 3px;
-    padding: 2px 4px;
+    border: 1px solid #5A5A5A;
+    border-radius: 6px;
+    padding: 2px 5px;
     color: #F0F0F0;
+    /* Also required (not just on the popup view below) -- see win7.qss for
+       the reproduced/bisected mechanism: without this, the popup's
+       currently-selected row opens with no visible highlight at all. */
+    selection-background-color: #3F88ED;
+    selection-color: #FFFFFF;
 }
 
 QComboBox:hover {
-    border: 1px solid #3D95F2;
+    border: 1px solid #3F88ED;
+}
+
+QComboBox:focus {
+    outline: 2px solid #3F88ED;
+    outline-offset: 1px;
+    outline-radius: 7px;
+}
+
+QComboBox:disabled {
+    background-color: #1F1F1F;
+    border: 1px solid #3A3A3A;
+    color: #7A7A7A;
 }
 
 QComboBox::drop-down {
     subcontrol-origin: padding;
     subcontrol-position: right;
     width: 20px;
-    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #3A3A3A, stop:1 #2B2B2B);
-    border-left: 1px solid #4A4A4A;
-    border-top-right-radius: 3px;
-    border-bottom-right-radius: 3px;
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #4A4A4A, stop:0.5 #3A3A3A, stop:1 #2A2A2A);
+    border-left: 1px solid #5A5A5A;
+    border-top-right-radius: 6px;
+    border-bottom-right-radius: 6px;
+}
+
+QComboBox::drop-down:hover {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #29384A, stop:1 #142235);
 }
 
 QComboBox::down-arrow {
@@ -172,32 +396,97 @@ QComboBox::down-arrow {
 QComboBox QAbstractItemView {
     background-color: #2A2A2A;
     color: #F0F0F0;
-    border: 1px solid #4A4A4A;
-    selection-background-color: #3D95F2;
+    border: 1px solid #5A5A5A;
+    outline: none;
+    selection-background-color: #3F88ED;
     selection-color: #FFFFFF;
+    padding: 2px;
 }
+
+QComboBox QAbstractItemView::item {
+    padding: 4px 8px;
+    border-radius: 4px;
+    color: #F0F0F0;
+    background-color: transparent;
+}
+
+QComboBox QAbstractItemView::item:hover {
+    background-color: #1F3049;
+    color: #F0F0F0;
+}
+
+/* The bug-fix rule: explicit, always-contrasting selected/current state,
+   independent of whether the popup window itself is "active" yet. */
+QComboBox QAbstractItemView::item:selected,
+QComboBox QAbstractItemView::item:selected:active,
+QComboBox QAbstractItemView::item:selected:!active {
+    background-color: #3F88ED;
+    color: #FFFFFF;
+}
+
+/* ---------------------------------------------------------------------
+   Checkboxes -- CONTRAST FIX: the previous version filled the checked box
+   with a dark navy gradient (#3A4E60 -> #1F3049) and drew the shared
+   GENERIC BLACK checkmark.png on top. Rendered offscreen with the "theme:"
+   search path correctly registered (the first check used a test harness
+   that skipped that registration and made the tick look 100% invisible --
+   a test artifact, corrected here), the tick was faintly legible, not
+   literally invisible -- but black on that gradient's ~#2C4258 midtone
+   measures roughly 2.6:1 contrast, under WCAG's 3:1 minimum for non-text
+   UI components. Fixed the same way as win7.qss: keep the box surface
+   unchanged when checked (matches the real reference photo's behavior --
+   the box itself never fills with color) and swap only the glyph, to a
+   Win7-specific BRIGHT tick (assets/icons/win7/checkmark_dark.png, a
+   brightened recolor of the same shared shape) that reads clearly (~11:1)
+   against the #2A2A2A surface.
+   --------------------------------------------------------------------- */
 
 QCheckBox::indicator {
     width: 13px;
     height: 13px;
     background-color: #2A2A2A;
-    border: 1px solid #4A4A4A;
+    border: 1px solid #5A5A5A;
     border-radius: 3px;
 }
 
 QCheckBox::indicator:hover {
-    border: 1px solid #3D95F2;
+    border: 1px solid #3F88ED;
+    background-color: #1F3049;
 }
 
 QCheckBox::indicator:checked {
     background-color: #2A2A2A;
-    border: 1px solid #3D95F2;
-    image: url(theme:checkmark.png);
+    border: 1px solid #3F88ED;
+    image: url(theme:icons/win7/checkmark_dark.png);
 }
+
+QCheckBox::indicator:checked:hover {
+    background-color: #1F3049;
+    border: 1px solid #6FB4FA;
+}
+
+QCheckBox::indicator:focus {
+    outline: 2px solid #3F88ED;
+    outline-offset: 1px;
+    outline-radius: 5px;
+}
+
+QCheckBox::indicator:disabled {
+    background-color: #1F1F1F;
+    border: 1px solid #3A3A3A;
+}
+
+QCheckBox:disabled {
+    color: #7A7A7A;
+}
+
+/* ---------------------------------------------------------------------
+   Sliders
+   --------------------------------------------------------------------- */
 
 QSlider::groove:horizontal {
     height: 4px;
-    background-color: #4A4A4A;
+    background-color: #5A5A5A;
     border-radius: 2px;
 }
 
@@ -205,47 +494,180 @@ QSlider::handle:horizontal {
     width: 14px;
     height: 14px;
     margin: -6px 0;
-    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #3A3A3A, stop:1 #223244);
-    border: 1px solid #3D95F2;
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #4A4A4A, stop:0.5 #29384A, stop:1 #142235);
+    border: 1px solid #3F88ED;
     border-radius: 7px;
 }
 
+QSlider::handle:horizontal:hover {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #35424E, stop:0.5 #1F3049, stop:1 #142235);
+    border: 1px solid #6FB4FA;
+}
+
+QSlider::handle:horizontal:focus {
+    outline: 2px solid #3F88ED;
+    outline-offset: 2px;
+    outline-radius: 9px;
+}
+
+QSlider::handle:horizontal:disabled {
+    background: #1F1F1F;
+    border: 1px solid #3A3A3A;
+}
+
+/* ---------------------------------------------------------------------
+   Tables / trees
+   --------------------------------------------------------------------- */
+
 QTableWidget, QTreeWidget {
     background-color: #2A2A2A;
-    alternate-background-color: #232A34;
+    alternate-background-color: #24405E;
     gridline-color: #3A3A3A;
-    border: 1px solid #4A4A4A;
-    border-radius: 3px;
+    border: 1px solid #5A5A5A;
+    border-radius: 6px;
     color: #F0F0F0;
-    selection-background-color: #3D95F2;
+    selection-background-color: #3F88ED;
     selection-color: #FFFFFF;
 }
 
+QTableWidget::item, QTreeWidget::item {
+    padding: 2px 4px;
+}
+
+QTableWidget::item:hover, QTreeWidget::item:hover {
+    background-color: #1F3049;
+}
+
+QTableWidget::item:selected, QTreeWidget::item:selected {
+    background-color: #3F88ED;
+    color: #FFFFFF;
+}
+
 QHeaderView::section {
-    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #3A3A3A, stop:1 #262626);
-    border: 1px solid #4A4A4A;
-    padding: 3px;
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #4A4A4A, stop:0.5 #363636, stop:1 #272727);
+    border: 1px solid #5A5A5A;
+    padding: 3px 6px;
     font-weight: normal;
     color: #F0F0F0;
 }
 
+QHeaderView::section:hover {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #29384A, stop:1 #16263B);
+}
+
+/* ---------------------------------------------------------------------
+   List widget
+   --------------------------------------------------------------------- */
+
+QListWidget {
+    background-color: #2A2A2A;
+    border: 1px solid #5A5A5A;
+    border-radius: 6px;
+    padding: 2px;
+    outline: none;
+    color: #F0F0F0;
+}
+
+QListWidget::item {
+    padding: 4px 6px;
+    border-radius: 4px;
+    color: #F0F0F0;
+}
+
+QListWidget::item:hover:!selected {
+    background-color: #1F3049;
+}
+
+QListWidget::item:selected {
+    background-color: #3F88ED;
+    color: #FFFFFF;
+}
+
+QListWidget::item:selected:!active {
+    background-color: #3F88ED;
+    color: #FFFFFF;
+}
+
+QListWidget:focus {
+    outline: 2px solid #3F88ED;
+    outline-offset: -1px;
+}
+
+/* ---------------------------------------------------------------------
+   Context menus
+   --------------------------------------------------------------------- */
+
+QMenu {
+    background-color: #2A2A2A;
+    border: 1px solid #5A5A5A;
+    border-radius: 6px;
+    padding: 4px;
+    color: #F0F0F0;
+}
+
+QMenu::item {
+    background: transparent;
+    padding: 6px 28px 6px 14px;
+    margin: 1px;
+    border-radius: 4px;
+    color: #F0F0F0;
+}
+
+QMenu::item:selected {
+    background-color: #1F3049;
+    border: 1px solid #3F88ED;
+    color: #F0F0F0;
+}
+
+QMenu::item:disabled {
+    color: #7A7A7A;
+}
+
+QMenu::separator {
+    height: 1px;
+    background-color: #3A3A3A;
+    margin: 4px 8px;
+}
+
+QMenu::indicator {
+    width: 13px;
+    height: 13px;
+    left: 4px;
+}
+
+/* ---------------------------------------------------------------------
+   Progress bar
+   --------------------------------------------------------------------- */
+
 QProgressBar {
-    border: 1px solid #4A4A4A;
-    border-radius: 3px;
+    border: 1px solid #5A5A5A;
+    border-radius: 6px;
     background-color: #2A2A2A;
     text-align: center;
     color: #F0F0F0;
 }
 
 QProgressBar::chunk {
-    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #6FC4FB, stop:1 #2A85E0);
-    border-radius: 2px;
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #6FB4FA, stop:0.5 #3F88ED, stop:1 #2A6FCB);
+    border-radius: 5px;
     margin: 1px;
+}
+
+QToolTip {
+    background-color: #2A2A2A;
+    color: #F0F0F0;
+    border: 1px solid #3F88ED;
+    border-radius: 4px;
+    padding: 4px 8px;
 }
 
 QLabel {
     background: transparent;
     color: #F0F0F0;
+}
+
+QLabel:disabled {
+    color: #7A7A7A;
 }
 
 QSplitter::handle {
@@ -259,15 +681,51 @@ QScrollBar:vertical {
 }
 
 QScrollBar::handle:vertical {
-    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #4A4A4A, stop:1 #3A3A3A);
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #3A3A3A, stop:0.5 #4A4A4A, stop:1 #2A2A2A);
     border: 1px solid #5A5A5A;
-    border-radius: 3px;
+    border-radius: 4px;
     min-height: 24px;
 }
 
-QTabWidget#mainTabs::pane {
-    border-top: none;
-    top: 0px;
+QScrollBar::handle:vertical:hover {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #1F3049, stop:0.5 #29384A, stop:1 #142235);
+    border: 1px solid #3F88ED;
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    height: 0px;
+    background: none;
+}
+
+QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+    background: none;
+}
+
+QScrollBar:horizontal {
+    background: #1F1F1F;
+    height: 16px;
+    border: 1px solid #3A3A3A;
+}
+
+QScrollBar::handle:horizontal {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #3A3A3A, stop:0.5 #4A4A4A, stop:1 #2A2A2A);
+    border: 1px solid #5A5A5A;
+    border-radius: 4px;
+    min-width: 24px;
+}
+
+QScrollBar::handle:horizontal:hover {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #1F3049, stop:0.5 #29384A, stop:1 #142235);
+    border: 1px solid #3F88ED;
+}
+
+QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
+    width: 0px;
+    background: none;
+}
+
+QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
+    background: none;
 }
 
 QSizeGrip {

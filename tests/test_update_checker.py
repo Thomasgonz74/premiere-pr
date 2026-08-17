@@ -81,13 +81,15 @@ def test_emits_update_available_for_a_newer_release(qapp):
     checker.update_available.connect(lambda v, u: received.append((v, u)))
 
     with patch(
-        "torrent2000.engine.update_checker.urllib.request.urlopen",
-        return_value=_fake_response({"tag_name": "v99.0.0", "html_url": "https://example.com/releases/v99.0.0"}),
+        "torrent2000.engine.url_fetch.urllib.request.urlopen",
+        return_value=_fake_response(
+            {"tag_name": "v99.0.0", "html_url": "https://github.com/Thomasgonz74/premiere-pr/releases/v99.0.0"}
+        ),
     ):
         checker.check_now()
         _run_check_and_wait(qapp, checker, until=lambda: received)
 
-    assert received == [("v99.0.0", "https://example.com/releases/v99.0.0")]
+    assert received == [("v99.0.0", "https://github.com/Thomasgonz74/premiere-pr/releases/v99.0.0")]
 
 
 def test_does_not_emit_when_already_up_to_date(qapp):
@@ -97,7 +99,7 @@ def test_does_not_emit_when_already_up_to_date(qapp):
     checker.update_available.connect(lambda v, u: received.append((v, u)))
 
     with patch(
-        "torrent2000.engine.update_checker.urllib.request.urlopen",
+        "torrent2000.engine.url_fetch.urllib.request.urlopen",
         return_value=_fake_response({"tag_name": f"v{APP_VERSION}", "html_url": "https://example.com"}),
     ):
         checker.check_now()
@@ -114,7 +116,7 @@ def test_does_not_emit_for_an_already_dismissed_version(qapp):
     checker.update_available.connect(lambda v, u: received.append((v, u)))
 
     with patch(
-        "torrent2000.engine.update_checker.urllib.request.urlopen",
+        "torrent2000.engine.url_fetch.urllib.request.urlopen",
         return_value=_fake_response({"tag_name": "v99.0.0", "html_url": "https://example.com"}),
     ):
         checker.check_now()
@@ -128,7 +130,7 @@ def test_skips_the_network_call_entirely_when_disabled(qapp):
     settings.check_for_updates = False
     checker = UpdateChecker(settings)
 
-    with patch("torrent2000.engine.update_checker.urllib.request.urlopen") as mock_urlopen:
+    with patch("torrent2000.engine.url_fetch.urllib.request.urlopen") as mock_urlopen:
         checker.check_now()
         _run_check_and_wait(qapp, checker, timeout_s=0.5)
         mock_urlopen.assert_not_called()
@@ -141,7 +143,7 @@ def test_network_failure_does_not_raise_or_emit(qapp):
     checker.update_available.connect(lambda v, u: received.append((v, u)))
 
     with patch(
-        "torrent2000.engine.update_checker.urllib.request.urlopen",
+        "torrent2000.engine.url_fetch.urllib.request.urlopen",
         side_effect=urllib.error.URLError("no internet"),
     ):
         checker.check_now()  # must not raise
@@ -157,10 +159,59 @@ def test_malformed_response_does_not_raise_or_emit(qapp):
     checker.update_available.connect(lambda v, u: received.append((v, u)))
 
     with patch(
-        "torrent2000.engine.update_checker.urllib.request.urlopen",
+        "torrent2000.engine.url_fetch.urllib.request.urlopen",
         return_value=_fake_response({"unexpected": "shape"}),
     ):
         checker.check_now()
         _run_check_and_wait(qapp, checker)
 
     assert received == []
+
+
+def test_non_github_html_url_is_treated_as_malformed(qapp):
+    # A html_url that doesn't point at github.com is either a bug or a
+    # spoofed/compromised response trying to get the app to later open an
+    # attacker-controlled page in a browser -- must be rejected exactly like
+    # a missing tag_name/html_url, not passed through to update_available.
+    settings = Settings()
+    checker = UpdateChecker(settings)
+    received = []
+    checker.update_available.connect(lambda v, u: received.append((v, u)))
+
+    with patch(
+        "torrent2000.engine.url_fetch.urllib.request.urlopen",
+        return_value=_fake_response({"tag_name": "v99.0.0", "html_url": "https://evil.example.com/releases/v99.0.0"}),
+    ):
+        checker.check_now()
+        _run_check_and_wait(qapp, checker)
+
+    assert received == []
+
+
+# ------------------------------------------------------------------ proxy passthrough
+
+
+def test_check_now_passes_settings_proxy_to_fetch_url(qapp):
+    settings = Settings()
+    settings.proxy.enabled = True
+    settings.proxy.proxy_type = "http"
+    settings.proxy.host = "proxy.example.com"
+    settings.proxy.port = 8080
+    checker = UpdateChecker(settings)
+    received = []
+    checker.update_available.connect(lambda v, u: received.append((v, u)))
+
+    captured_proxies = []
+
+    def fake_fetch_url(url, user_agent, timeout_seconds, extra_headers=None, proxy=None):
+        captured_proxies.append(proxy)
+        return json.dumps({"tag_name": "v99.0.0", "html_url": "https://github.com/x/y/releases/v99.0.0"}).encode(
+            "utf-8"
+        )
+
+    with patch("torrent2000.engine.update_checker.fetch_url", fake_fetch_url):
+        checker.check_now()
+        _run_check_and_wait(qapp, checker, until=lambda: received)
+
+    assert captured_proxies == [settings.proxy]
+    assert received == [("v99.0.0", "https://github.com/x/y/releases/v99.0.0")]

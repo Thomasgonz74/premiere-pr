@@ -5,10 +5,11 @@ normal limits the rest of the time.
 
 from datetime import datetime
 
-from PySide6.QtCore import QObject, QTimer
+from PySide6.QtCore import QObject
 
 from torrent2000.config.settings import BandwidthSchedule, Settings
 from torrent2000.engine.session_manager import SessionManager
+from torrent2000.utils.qt_timers import start_periodic_timer
 
 CHECK_INTERVAL_MS = 30_000  # checking every 30s is plenty for hour-granularity windows
 
@@ -29,34 +30,42 @@ class BandwidthScheduler(QObject):
         self._session_manager = session_manager
         self._settings = settings
         self._currently_throttled: bool | None = None  # None = not yet evaluated
+        # Session-only, deliberately not part of Settings -- see
+        # set_turtle_mode.
+        self._turtle_mode_enabled = False
 
-        self._timer = QTimer(self)
-        self._timer.timeout.connect(self.evaluate_now)
-        self._timer.start(CHECK_INTERVAL_MS)
+        self._timer = start_periodic_timer(self, CHECK_INTERVAL_MS, self.evaluate_now)
         self.evaluate_now()
 
     def evaluate_now(self) -> None:
         schedule = self._settings.bandwidth_schedule
-        if not schedule.enabled:
-            if self._currently_throttled:
-                self._apply_normal_limits()
-            self._currently_throttled = False
-            return
-
-        should_throttle = is_within_window(datetime.now().hour, schedule.start_hour, schedule.end_hour)
+        should_throttle = schedule.enabled and is_within_window(
+            datetime.now().hour, schedule.start_hour, schedule.end_hour
+        )
         if should_throttle == self._currently_throttled:
             return  # no state change, avoid redundant apply_settings calls every tick
-
-        if should_throttle:
-            self._session_manager.set_rate_limits(schedule.limited_download_kbps, schedule.limited_upload_kbps)
-        else:
-            self._apply_normal_limits()
         self._currently_throttled = should_throttle
+        if self._turtle_mode_enabled:
+            # Turtle mode overrides whatever the schedule would otherwise
+            # apply -- _currently_throttled above still gets tracked so
+            # set_turtle_mode(enabled=False) later restores the right value.
+            return
+        self._apply_current_limits()
 
-    def _apply_normal_limits(self) -> None:
-        self._session_manager.set_rate_limits(
-            self._settings.download_rate_limit_kbps, self._settings.upload_rate_limit_kbps
-        )
+    def _apply_current_limits(self) -> None:
+        download_kbps, upload_kbps = self._current_limits()
+        self._session_manager.set_rate_limits(download_kbps, upload_kbps)
+
+    def _current_limits(self) -> tuple[int, int]:
+        """What the schedule/base settings say the rate limit should be
+        right now, ignoring turtle mode -- the single "what should the rate
+        be" decision shared by evaluate_now's periodic re-checks and by
+        set_turtle_mode(enabled=False), which restores exactly this instead
+        of duplicating the schedule-vs-base logic."""
+        if self._currently_throttled:
+            schedule = self._settings.bandwidth_schedule
+            return schedule.limited_download_kbps, schedule.limited_upload_kbps
+        return self._settings.download_rate_limit_kbps, self._settings.upload_rate_limit_kbps
 
     def settings_changed(self) -> None:
         """Call after the user edits schedule/rate-limit settings so a
@@ -64,3 +73,16 @@ class BandwidthScheduler(QObject):
         immediately instead of waiting for the next timer tick."""
         self._currently_throttled = None
         self.evaluate_now()
+
+    def set_turtle_mode(self, enabled: bool, turtle_download_kbps: int = 50, turtle_upload_kbps: int = 20) -> None:
+        """Quick, transient rate-limit override for a "slow down right now"
+        toggle -- while enabled, forces the turtle values regardless of the
+        schedule; disabling restores whatever _current_limits() says should
+        be active at that moment. Kept as a plain instance attribute rather
+        than a Settings field: this is a session toggle, not a saved
+        preference."""
+        self._turtle_mode_enabled = enabled
+        if enabled:
+            self._session_manager.set_rate_limits(turtle_download_kbps, turtle_upload_kbps)
+        else:
+            self._apply_current_limits()

@@ -1,0 +1,574 @@
+/* Torrent 2000 -- "Windows 95" skin, HIGH-CONTRAST DARK variant.
+
+   Matches the real Windows "High Contrast Black" accessibility theme's
+   color contract: pure black background, pure white text/borders, a single
+   universal yellow for every focus/selection/hover accent, and NO shading
+   at all -- while still tracing this theme's identity through its sharp
+   square corners and its bitmap font.
+
+   Token palette:
+     bg            #000000   window / dialog / menu / button face
+     bg-secondary  #000000   editable surfaces (fields, lists, tables,
+                             dropdowns) -- deliberately the SAME as bg;
+                             true high-contrast mode separates regions with
+                             a crisp white rule, never with a second shade,
+                             so there is no softer "card" tone to reach for
+     border        #FFFFFF   every frame, rule and divider in the theme
+     text          #FFFFFF   window text
+     text-muted    #7F7F7F   disabled text/border -- the one permitted gray
+     accent        #FFFF00   universal focus / selection / hover yellow
+                             (project-wide dark_hc convention, matches the
+                             custom title bar's own high-contrast accent)
+     accent-hover  #FFFF00   same swatch as accent: real HC themes don't
+                             get a second hue for hover, they get a second
+                             TREATMENT -- hover is an outline in this yellow,
+                             selection/press is a solid yellow fill. The
+                             state stays unmistakable without adding a color.
+     danger        #FF3B30   red, destructive-action accent, unchanged
+                             across every appearance mode in this project
+
+   No bevels anywhere -- not even on QMenu/QListWidget/QDialog. Every other
+   appearance of this theme builds its 3D look from a highlight/shadow gray
+   ramp, but that ramp is exactly the kind of low-contrast mid-tone shading
+   a high-contrast mode exists to eliminate, so here every control is a
+   single flat white (or yellow) rule on black instead.
+
+   The title bar is NOT drawn by this stylesheet -- see
+   src/torrent2000/ui/widgets/app_title_bar.py.
+*/
+
+* {
+    font-family: "MS Sans Serif", "Tahoma", sans-serif;
+    font-size: 9pt;
+}
+
+QMainWindow, QWidget#centralWidget {
+    background-color: #000000;
+}
+
+QWidget {
+    background-color: #000000;
+    color: #FFFFFF;
+}
+
+/* ---------------------------------------------------------------------
+   Tabs
+   --------------------------------------------------------------------- */
+
+QTabWidget::pane {
+    border: 2px solid #FFFFFF;
+    background-color: #000000;
+    top: -1px;
+}
+
+QTabWidget#mainTabs::pane {
+    border-top: none;
+    top: 0px;
+}
+
+QTabBar::tab {
+    background-color: #000000;
+    border: 2px solid #FFFFFF;
+    border-bottom: none;
+    border-radius: 0px;
+    padding: 4px 14px;
+    margin-right: 0px;
+    color: #FFFFFF;
+}
+
+QTabBar::tab:selected {
+    background-color: #000000;
+    border-color: #FFFF00;
+    border-bottom: 2px solid #000000;
+    margin-top: 0px;
+    color: #FFFF00;
+}
+
+QTabBar::tab:!selected {
+    margin-top: 2px;
+}
+
+QTabBar::tab:hover:!selected {
+    border-top-color: #FFFF00;
+    color: #FFFF00;
+}
+
+QTabBar::tab:disabled {
+    color: #7F7F7F;
+    border-color: #7F7F7F;
+}
+
+QTabBar::tab:focus {
+    outline: 2px solid #FFFF00;
+    outline-offset: 1px;
+}
+
+/* ---------------------------------------------------------------------
+   Group boxes
+   --------------------------------------------------------------------- */
+
+QGroupBox {
+    border: 2px solid #FFFFFF;
+    border-radius: 0px;
+    margin-top: 10px;
+    padding-top: 6px;
+    background-color: #000000;
+    font-weight: bold;
+    color: #FFFFFF;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 4px;
+    color: #FFFFFF;
+}
+
+/* ---------------------------------------------------------------------
+   Buttons
+   --------------------------------------------------------------------- */
+
+QPushButton {
+    background-color: #000000;
+    border: 2px solid #FFFFFF;
+    border-radius: 0px;
+    padding: 4px 12px;
+    min-height: 18px;
+    color: #FFFFFF;
+}
+
+QPushButton:hover:!pressed {
+    border: 2px solid #FFFF00;
+    color: #FFFF00;
+}
+
+QPushButton:focus {
+    outline: 2px solid #FFFF00;
+    outline-offset: 2px;
+}
+
+QPushButton:pressed {
+    background-color: #FFFF00;
+    border: 2px solid #FFFF00;
+    color: #000000;
+    padding: 5px 11px 3px 13px;
+}
+
+QPushButton:default {
+    border-width: 3px;
+}
+
+QPushButton:disabled {
+    background-color: #000000;
+    border: 2px solid #7F7F7F;
+    color: #7F7F7F;
+}
+
+QPushButton#dangerButton {
+    background-color: #000000;
+    border: 2px solid #FF3B30;
+    border-radius: 0px;
+    padding: 2px 10px;
+    min-height: 16px;
+    color: #FF3B30;
+}
+
+QPushButton#dangerButton:hover:!pressed {
+    border: 2px solid #FFFF00;
+    color: #FFFF00;
+}
+
+QPushButton#dangerButton:focus {
+    outline: 2px solid #FFFF00;
+    outline-offset: 2px;
+}
+
+QPushButton#dangerButton:pressed {
+    background-color: #FF3B30;
+    border: 2px solid #FF3B30;
+    color: #000000;
+    padding: 3px 9px 1px 11px;
+}
+
+QPushButton#dangerButton:disabled {
+    background-color: #000000;
+    border: 2px solid #7F7F7F;
+    color: #7F7F7F;
+}
+
+/* ---------------------------------------------------------------------
+   Text fields / spin boxes
+   --------------------------------------------------------------------- */
+
+QLineEdit, QSpinBox, QAbstractSpinBox {
+    background-color: #000000;
+    border: 2px solid #FFFFFF;
+    padding: 2px 4px;
+    color: #FFFFFF;
+    selection-background-color: #FFFF00;
+    selection-color: #000000;
+}
+
+QLineEdit:hover, QSpinBox:hover, QAbstractSpinBox:hover {
+    border: 2px solid #FFFF00;
+}
+
+QLineEdit:focus, QSpinBox:focus, QAbstractSpinBox:focus {
+    outline: 2px solid #FFFF00;
+    outline-offset: 1px;
+}
+
+QLineEdit:disabled, QSpinBox:disabled, QAbstractSpinBox:disabled {
+    background-color: #000000;
+    border: 2px solid #7F7F7F;
+    color: #7F7F7F;
+}
+
+QAbstractSpinBox::up-button, QAbstractSpinBox::down-button {
+    subcontrol-origin: border;
+    width: 15px;
+    background-color: #000000;
+    border-left: 2px solid #FFFFFF;
+}
+
+QAbstractSpinBox::up-button {
+    subcontrol-position: top right;
+    border-bottom: 1px solid #FFFFFF;
+}
+
+QAbstractSpinBox::down-button {
+    subcontrol-position: bottom right;
+}
+
+QAbstractSpinBox::up-button:hover, QAbstractSpinBox::down-button:hover {
+    border-color: #FFFF00;
+}
+
+QAbstractSpinBox::up-button:pressed, QAbstractSpinBox::down-button:pressed {
+    background-color: #FFFF00;
+}
+
+QAbstractSpinBox::up-arrow {
+    image: none;
+    width: 0px;
+    height: 0px;
+    border-left: 3px solid transparent;
+    border-right: 3px solid transparent;
+    border-bottom: 4px solid #FFFFFF;
+}
+
+QAbstractSpinBox::down-arrow {
+    image: none;
+    width: 0px;
+    height: 0px;
+    border-left: 3px solid transparent;
+    border-right: 3px solid transparent;
+    border-top: 4px solid #FFFFFF;
+}
+
+QAbstractSpinBox::up-arrow:disabled, QAbstractSpinBox::down-arrow:disabled {
+    border-bottom-color: #7F7F7F;
+    border-top-color: #7F7F7F;
+}
+
+/* ---------------------------------------------------------------------
+   Combo boxes
+   --------------------------------------------------------------------- */
+
+QComboBox {
+    background-color: #000000;
+    border: 2px solid #FFFFFF;
+    padding: 2px 4px;
+    color: #FFFFFF;
+    /* Also required on QComboBox itself, not just on the popup's
+       QAbstractItemView below -- without this, the popup's currently
+       selected row opens with no visible highlight at all (confirmed by
+       rendering the popup offscreen; harmonization pass, matches the
+       win7 family's own documented fix for the same Qt behavior). */
+    selection-background-color: #FFFF00;
+    selection-color: #000000;
+}
+
+QComboBox:hover {
+    border: 2px solid #FFFF00;
+}
+
+QComboBox:focus {
+    outline: 2px solid #FFFF00;
+    outline-offset: 1px;
+}
+
+QComboBox:disabled {
+    border: 2px solid #7F7F7F;
+    color: #7F7F7F;
+}
+
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: right;
+    width: 18px;
+    background-color: #000000;
+    border-left: 2px solid #FFFFFF;
+}
+
+QComboBox::drop-down:hover {
+    border-left-color: #FFFF00;
+}
+
+QComboBox::down-arrow {
+    width: 8px;
+    height: 8px;
+    image: none;
+    border-left: 3px solid transparent;
+    border-right: 3px solid transparent;
+    border-top: 4px solid #FFFFFF;
+}
+
+QComboBox::down-arrow:disabled {
+    border-top-color: #7F7F7F;
+}
+
+/* Popup list -- explicitly gives every item, including the CURRENTLY
+   SELECTED one, its own text color via item:selected so it can never
+   land on the same color as its background (the known Windows 7 v1 bug
+   this rebuild must not repeat). */
+QComboBox QAbstractItemView {
+    background-color: #000000;
+    color: #FFFFFF;
+    border: 2px solid #FFFFFF;
+    border-radius: 0px;
+    padding: 1px;
+    outline: none;
+    selection-background-color: #FFFF00;
+    selection-color: #000000;
+}
+
+QComboBox QAbstractItemView::item {
+    color: #FFFFFF;
+    background-color: #000000;
+}
+
+QComboBox QAbstractItemView::item:selected {
+    background-color: #FFFF00;
+    color: #000000;
+}
+
+/* ---------------------------------------------------------------------
+   Checkboxes
+   --------------------------------------------------------------------- */
+
+QCheckBox::indicator {
+    width: 12px;
+    height: 12px;
+    background-color: #000000;
+    border: 2px solid #FFFFFF;
+}
+
+QCheckBox::indicator:hover {
+    border: 2px solid #FFFF00;
+}
+
+QCheckBox::indicator:checked {
+    background-color: #FFFF00;
+    border: 2px solid #FFFF00;
+    image: url(theme:checkmark.png);
+}
+
+QCheckBox::indicator:focus {
+    outline: 2px solid #FFFF00;
+    outline-offset: 1px;
+}
+
+QCheckBox::indicator:disabled {
+    border: 2px solid #7F7F7F;
+}
+
+QCheckBox:disabled {
+    color: #7F7F7F;
+}
+
+/* ---------------------------------------------------------------------
+   Sliders
+   --------------------------------------------------------------------- */
+
+QSlider::groove:horizontal {
+    height: 4px;
+    background-color: #FFFFFF;
+    border: none;
+}
+
+QSlider::handle:horizontal {
+    width: 14px;
+    margin: -7px 0;
+    background-color: #FFFF00;
+    border: 2px solid #FFFF00;
+}
+
+QSlider::handle:horizontal:focus {
+    outline: 2px solid #FFFF00;
+    outline-offset: 2px;
+}
+
+QSlider::handle:horizontal:disabled {
+    background-color: #7F7F7F;
+    border: 2px solid #7F7F7F;
+}
+
+/* ---------------------------------------------------------------------
+   Tables / trees / lists
+   --------------------------------------------------------------------- */
+
+QTableWidget, QTreeWidget, QListWidget {
+    background-color: #000000;
+    alternate-background-color: #1A1A1A;
+    gridline-color: #7F7F7F;
+    border: 2px solid #FFFFFF;
+    color: #FFFFFF;
+    selection-background-color: #FFFF00;
+    selection-color: #000000;
+    outline: none;
+}
+
+QListWidget::item {
+    padding: 2px 4px;
+    border: 1px solid transparent;
+}
+
+QListWidget::item:selected {
+    background-color: #FFFF00;
+    color: #000000;
+    border: 1px solid #FFFF00;
+}
+
+QListWidget::item:hover:!selected {
+    border: 1px solid #FFFF00;
+    color: #FFFF00;
+}
+
+QHeaderView::section {
+    background-color: #000000;
+    border: 2px solid #FFFFFF;
+    padding: 3px;
+    font-weight: bold;
+    color: #FFFFFF;
+}
+
+/* ---------------------------------------------------------------------
+   Menus -- flat, like every other control in this HC theme; a beveled
+   popup would reintroduce mid-tone shading and undermine the pure
+   black/white/yellow contrast this appearance mode exists to guarantee.
+   --------------------------------------------------------------------- */
+
+QMenu {
+    background-color: #000000;
+    border: 2px solid #FFFFFF;
+    border-radius: 0px;
+    padding: 2px;
+    color: #FFFFFF;
+}
+
+QMenu::item {
+    background-color: transparent;
+    padding: 4px 22px 4px 20px;
+    border: 1px solid transparent;
+}
+
+QMenu::item:selected {
+    background-color: #FFFF00;
+    color: #000000;
+    border: 1px solid #FFFF00;
+}
+
+QMenu::item:disabled {
+    color: #7F7F7F;
+}
+
+QMenu::separator {
+    height: 2px;
+    margin: 4px 2px;
+    background-color: #FFFFFF;
+}
+
+/* ---------------------------------------------------------------------
+   Dialogs -- must be styled explicitly: top-level QDialog windows do not
+   inherit the generic QWidget background at the OS paint layer, so
+   without this rule every dialog falls back to native/white chrome and
+   breaks high-contrast compliance entirely.
+   --------------------------------------------------------------------- */
+
+QDialog {
+    background-color: #000000;
+    color: #FFFFFF;
+}
+
+/* ---------------------------------------------------------------------
+   Misc: progress bar, labels, splitter, scrollbars, size grip, tooltip
+   --------------------------------------------------------------------- */
+
+QProgressBar {
+    border: 2px solid #FFFFFF;
+    background-color: #000000;
+    text-align: center;
+    color: #FFFFFF;
+}
+
+QProgressBar::chunk {
+    background-color: #FFFF00;
+    margin: 1px;
+}
+
+QLabel {
+    background: transparent;
+    color: #FFFFFF;
+}
+
+QLabel:disabled {
+    color: #7F7F7F;
+}
+
+QSplitter::handle {
+    background-color: #000000;
+}
+
+QScrollBar:vertical {
+    background: #000000;
+    width: 16px;
+    border: 2px solid #FFFFFF;
+}
+
+QScrollBar::handle:vertical {
+    background-color: #FFFFFF;
+    min-height: 24px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background-color: #FFFF00;
+}
+
+QScrollBar:horizontal {
+    background: #000000;
+    height: 16px;
+    border: 2px solid #FFFFFF;
+}
+
+QScrollBar::handle:horizontal {
+    background-color: #FFFFFF;
+    min-width: 24px;
+}
+
+QScrollBar::handle:horizontal:hover {
+    background-color: #FFFF00;
+}
+
+QSizeGrip {
+    background-color: #000000;
+    width: 16px;
+    height: 16px;
+}
+
+QToolTip {
+    background-color: #000000;
+    border: 2px solid #FFFFFF;
+    color: #FFFFFF;
+    padding: 3px 6px;
+}

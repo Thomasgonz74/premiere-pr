@@ -10,6 +10,17 @@ def qapp():
     return QApplication.instance() or QApplication([])
 
 
+@pytest.fixture(autouse=True)
+def isolated_data_dir(tmp_path_factory, monkeypatch):
+    # WatchFolderService now also owns a RoutingRuleStore (see
+    # engine/routing_rules.py) which reads/writes under the app-data
+    # directory -- isolate it so these tests never touch (or create) the
+    # real %APPDATA%/Torrent2000 folder on the machine running them. A
+    # dedicated tmp dir (not the per-test `tmp_path` already used below for
+    # the watch folder itself) keeps the two concerns clearly separate.
+    monkeypatch.setenv("TORRENT2000_DATA_DIR", str(tmp_path_factory.mktemp("data_dir")))
+
+
 class FakeSessionManager:
     def __init__(self):
         self.added: list[tuple[str, str]] = []
@@ -73,3 +84,33 @@ def test_missing_folder_is_a_no_op(tmp_path):
     service.scan_now()  # must not raise
 
     assert fake_sm.added == []
+
+
+class FailingSessionManager:
+    """Mirrors what the real SessionManager does on a duplicate info-hash or
+    a corrupt/unparsable .torrent: add_torrent_from_file() raises. The plain
+    FakeSessionManager above never raises, so it can't exercise this path."""
+
+    def __init__(self):
+        self.add_calls = 0
+
+    def add_torrent_from_file(self, path: str, save_path: str | None = None, excluded_indices=None) -> str:
+        self.add_calls += 1
+        raise RuntimeError("torrent already exists in session")
+
+
+def test_permanently_failing_torrent_is_quarantined_not_retried_forever(tmp_path):
+    torrent_file = tmp_path / "dup.torrent"
+    torrent_file.write_bytes(b"fake torrent data")
+    settings = _settings(str(tmp_path))
+    failing_sm = FailingSessionManager()
+    service = WatchFolderService(failing_sm, settings)
+
+    service.scan_now()
+    service.scan_now()
+    service.scan_now()
+
+    # Retried once, then quarantined -- not retried on every subsequent scan.
+    assert failing_sm.add_calls == 1
+    assert not torrent_file.exists()
+    assert (tmp_path / "failed" / "dup.torrent").exists()

@@ -1,6 +1,6 @@
 import re
 from dataclasses import dataclass
-from typing import Optional, Protocol
+from typing import Protocol
 
 from torrent2000.danger_scanner.models import FileEntry
 
@@ -12,6 +12,15 @@ EXECUTABLE_EXTENSIONS = {
 MEDIA_EXTENSIONS = {
     "mp4", "mkv", "avi", "mov", "wmv", "flv", "webm", "mp3", "flac", "wav",
     "aac", "ogg", "m4a", "srt", "sub", "idx", "nfo",
+}
+
+# Mounting one of these sidesteps Windows SmartScreen's "mark of the web"
+# check, since the executable run from inside the mounted volume never
+# itself carries the web-origin flag a directly-downloaded .exe would.
+DISK_IMAGE_EXTENSIONS = {"iso", "img", "vhd", "vhdx"}
+
+MACRO_DOCUMENT_EXTENSIONS = {
+    "docm", "xlsm", "pptm", "dotm", "xltm", "potm", "xlam", "ppam",
 }
 
 SUSPICIOUS_NAME_PATTERNS = [
@@ -49,27 +58,57 @@ class ScanContext:
 
 
 class Rule(Protocol):
-    def evaluate(self, file: FileEntry, context: ScanContext) -> Optional[RuleHit]:
+    def evaluate(self, file: FileEntry, context: ScanContext) -> RuleHit | None:
         ...
 
 
 class DoubleExtensionRule:
-    def evaluate(self, file: FileEntry, context: ScanContext) -> Optional[RuleHit]:
+    def evaluate(self, file: FileEntry, context: ScanContext) -> RuleHit | None:
         if DOUBLE_EXTENSION_RE.search(file.path):
             return RuleHit(60, "Double extension masque un exécutable (ex: .pdf.exe)")
         return None
 
 
 class ExecutableExtensionRule:
-    def evaluate(self, file: FileEntry, context: ScanContext) -> Optional[RuleHit]:
+    def evaluate(self, file: FileEntry, context: ScanContext) -> RuleHit | None:
         ext = _extension(file.path)
         if ext in EXECUTABLE_EXTENSIONS:
             return RuleHit(25, f"Extension exécutable ({ext})")
         return None
 
 
+class DiskImageExtensionRule:
+    def evaluate(self, file: FileEntry, context: ScanContext) -> RuleHit | None:
+        ext = _extension(file.path)
+        if ext in DISK_IMAGE_EXTENSIONS:
+            return RuleHit(
+                25,
+                f"Image disque montable ({ext}) : contourne l'avertissement SmartScreen du téléchargement direct",
+            )
+        return None
+
+
+class MacroDocumentExtensionRule:
+    def evaluate(self, file: FileEntry, context: ScanContext) -> RuleHit | None:
+        ext = _extension(file.path)
+        if ext in MACRO_DOCUMENT_EXTENSIONS:
+            return RuleHit(20, f"Document bureautique avec macros ({ext})")
+        return None
+
+
+class ExecutableFlagRule:
+    def evaluate(self, file: FileEntry, context: ScanContext) -> RuleHit | None:
+        ext = _extension(file.path)
+        if file.executable_flag and ext not in EXECUTABLE_EXTENSIONS:
+            return RuleHit(
+                30,
+                "Marqué exécutable au niveau du fichier/torrent (bit exécutable), sans extension exécutable reconnaissable",
+            )
+        return None
+
+
 class MediaTorrentExecutableMismatchRule:
-    def evaluate(self, file: FileEntry, context: ScanContext) -> Optional[RuleHit]:
+    def evaluate(self, file: FileEntry, context: ScanContext) -> RuleHit | None:
         ext = _extension(file.path)
         if ext in EXECUTABLE_EXTENSIONS and context.media_ratio >= 0.5:
             return RuleHit(20, "Exécutable inattendu dans un torrent principalement média")
@@ -77,7 +116,7 @@ class MediaTorrentExecutableMismatchRule:
 
 
 class SuspiciousNameRule:
-    def evaluate(self, file: FileEntry, context: ScanContext) -> Optional[RuleHit]:
+    def evaluate(self, file: FileEntry, context: ScanContext) -> RuleHit | None:
         if RTL_OVERRIDE in file.path:
             return RuleHit(70, "Caractère RTL-override détecté (extension probablement falsifiée)")
         for pattern in SUSPICIOUS_NAME_PATTERNS:
@@ -87,7 +126,7 @@ class SuspiciousNameRule:
 
 
 class SizeAnomalyRule:
-    def evaluate(self, file: FileEntry, context: ScanContext) -> Optional[RuleHit]:
+    def evaluate(self, file: FileEntry, context: ScanContext) -> RuleHit | None:
         ext = _extension(file.path)
         if ext in EXECUTABLE_EXTENSIONS and 0 < file.size < TINY_EXECUTABLE_SIZE_BYTES:
             return RuleHit(15, "Exécutable anormalement petit pour son type (possible dropper)")
@@ -95,7 +134,7 @@ class SizeAnomalyRule:
 
 
 class HiddenOrSuspiciousPathRule:
-    def evaluate(self, file: FileEntry, context: ScanContext) -> Optional[RuleHit]:
+    def evaluate(self, file: FileEntry, context: ScanContext) -> RuleHit | None:
         if file.hidden:
             return RuleHit(20, "Fichier marqué caché dans le torrent")
         return None
@@ -104,6 +143,9 @@ class HiddenOrSuspiciousPathRule:
 DEFAULT_RULES: list[Rule] = [
     DoubleExtensionRule(),
     ExecutableExtensionRule(),
+    DiskImageExtensionRule(),
+    MacroDocumentExtensionRule(),
+    ExecutableFlagRule(),
     MediaTorrentExecutableMismatchRule(),
     SuspiciousNameRule(),
     SizeAnomalyRule(),

@@ -13,9 +13,9 @@ Progress bookkeeping still works exactly like before, though:
 
 * `set_progress(fraction)` only ever updates a *target* cell count. It never
   mutates the grid and never animates synchronously.
-* A separate `step()`, driven every animation tick by
-  `TetrisProgressWidget`'s QTimer, is the only thing that ever advances the
-  simulation (spawns/falls/locks pieces).
+* A separate `step()`, driven every animation tick by the QTimer shared
+  across every live `TetrisProgressWidget`, is the only thing that ever
+  advances the simulation (spawns/falls/locks pieces).
 * `filled_count` (settled/locked cells) never exceeds `target_filled_count`.
 * Random placement can still leave gaps no standard tetromino fits into
   (e.g. an isolated single-cell hole), so the model switches to a guaranteed
@@ -32,12 +32,14 @@ painting/animation layer on top of it.
 """
 
 import random
+import weakref
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple
 
 from PySide6.QtCore import QSize, QTimer
-from PySide6.QtGui import QColor, QPainter
+from PySide6.QtGui import QAccessible, QAccessibleEvent, QColor, QPainter
 from PySide6.QtWidgets import QWidget
+
+from torrent2000.i18n.translator import tr
 
 BOARD_ROWS = 8
 BOARD_COLS = 18
@@ -74,13 +76,13 @@ SPAWN_ATTEMPTS = 12
 # is reached with zero remaining holes exactly at 100% progress.
 FINISH_TAIL_CELLS = 12
 
-Cells = Tuple[Tuple[int, int], ...]
+Cells = tuple[tuple[int, int], ...]
 
 # The seven standard tetrominoes, expressed as (row, col) offsets from their
 # own bounding-box origin, one tuple per rotation state. This does not need
 # full SRS wall-kick correctness -- it is a decorative cosmetic drop, not a
 # playable game -- just enough rotation variety to look genuinely varied.
-TETROMINOES: Dict[str, Tuple[Cells, ...]] = {
+TETROMINOES: dict[str, tuple[Cells, ...]] = {
     "I": (
         ((0, 0), (0, 1), (0, 2), (0, 3)),
         ((0, 0), (1, 0), (2, 0), (3, 0)),
@@ -113,7 +115,7 @@ TETROMINOES: Dict[str, Tuple[Cells, ...]] = {
         ((0, 0), (0, 1), (1, 1), (2, 1)),
     ),
 }
-TETROMINO_NAMES: Tuple[str, ...] = tuple(TETROMINOES.keys())
+TETROMINO_NAMES: tuple[str, ...] = tuple(TETROMINOES.keys())
 
 
 @dataclass
@@ -124,7 +126,7 @@ class FallingPiece:
     row: int  # current on-screen row of the piece's bounding-box origin
     target_row: int  # row at which it collides/settles and gets locked
 
-    def cells_on_board(self) -> List[Tuple[int, int]]:
+    def cells_on_board(self) -> list[tuple[int, int]]:
         return [(self.row + dr, self.col + dc) for dr, dc in self.cells]
 
 
@@ -137,10 +139,10 @@ class TetrisBoardModel:
     def __init__(self, rows: int = BOARD_ROWS, cols: int = BOARD_COLS) -> None:
         self.rows = rows
         self.cols = cols
-        self.grid: List[List[bool]] = [[False] * cols for _ in range(rows)]
+        self.grid: list[list[bool]] = [[False] * cols for _ in range(rows)]
         self.filled_count = 0
         self.target_filled_count = 0
-        self.current_piece: Optional[FallingPiece] = None
+        self.current_piece: FallingPiece | None = None
         # See FINISH_TAIL_CELLS -- scaled down for small boards so tiny test
         # boards don't spend their *entire* life in finishing mode.
         self._finish_tail = min(FINISH_TAIL_CELLS, max(CELLS_PER_PIECE, self.total_cells // 3))
@@ -167,7 +169,7 @@ class TetrisBoardModel:
                 return False
         return True
 
-    def _find_placement(self) -> Optional[Tuple[str, Cells, int, int]]:
+    def _find_placement(self) -> tuple[str, Cells, int, int] | None:
         """Return (shape_name, cells, col, row) for a placement chosen
         uniformly at random among *every currently valid position on the
         board* -- pieces are no longer dropped via gravity onto the top of
@@ -213,7 +215,7 @@ class TetrisBoardModel:
 
     # -- locking helpers ----------------------------------------------------
 
-    def _lock_cells(self, cells: List[Tuple[int, int]]) -> int:
+    def _lock_cells(self, cells: list[tuple[int, int]]) -> int:
         """Mark up to `target_filled_count - filled_count` of `cells`
         occupied. Never locks more than the remaining target allows, which is
         what guarantees filled_count never exceeds target_filled_count."""
@@ -231,7 +233,7 @@ class TetrisBoardModel:
     def _lock_piece(self, piece: FallingPiece) -> None:
         self._lock_cells(piece.cells_on_board())
 
-    def _collect_empty_cells(self, limit: int) -> List[Tuple[int, int]]:
+    def _collect_empty_cells(self, limit: int) -> list[tuple[int, int]]:
         """A uniformly random sample of up to `limit` still-empty cells (not
         a fixed top-to-bottom/left-to-right scan), so the finishing/fallback
         fill stays random too, consistent with normal piece placement."""
@@ -331,27 +333,78 @@ DEFAULT_CELL_PX = 8
 
 class TetrisProgressWidget(QWidget):
     """Per-torrent horizontal Tetris progress indicator. `set_progress()`
-    only updates the target; a QTimer drives the actual falling/settling
-    animation independently, so animation ticks are decoupled from progress
-    updates (one piece does not correspond to a fixed percentage). A small
-    numeric readout of the real (non-animated) progress percentage is drawn
-    in the corner."""
+    only updates the target; a single timer shared by every live instance
+    (see `_shared_timer` / `_instances` below) drives the actual
+    falling/settling animation independently, so animation ticks are
+    decoupled from progress updates (one piece does not correspond to a
+    fixed percentage). A small numeric readout of the real (non-animated)
+    progress percentage is drawn in the corner."""
+
+    # One QTimer drives every currently-alive widget's animation tick,
+    # instead of each widget owning its own 150ms QTimer -- N download rows
+    # then cost one timer, not N. `_instances` is a WeakSet so a widget
+    # removed from its table row and garbage-collected drops out on its own,
+    # without needing an explicit unregister call.
+    _instances: "weakref.WeakSet[TetrisProgressWidget]" = weakref.WeakSet()
+    _shared_timer: QTimer | None = None
 
     def __init__(self, rows: int = BOARD_ROWS, cols: int = BOARD_COLS, parent=None) -> None:
         super().__init__(parent)
         self.model = TetrisBoardModel(rows=rows, cols=cols)
         self._progress_fraction = 0.0
-        self._timer = QTimer(self)
-        self._timer.timeout.connect(self._on_tick)
-        self._timer.start(ANIMATION_INTERVAL_MS)
+        self._update_accessible_info()
+        type(self)._register_instance(self)
+
+    @classmethod
+    def _register_instance(cls, widget: "TetrisProgressWidget") -> None:
+        cls._instances.add(widget)
+        if cls._shared_timer is None:
+            cls._shared_timer = QTimer()
+            cls._shared_timer.timeout.connect(cls._on_shared_tick)
+            cls._shared_timer.start(ANIMATION_INTERVAL_MS)
+
+    @classmethod
+    def _on_shared_tick(cls) -> None:
+        # Snapshot into a list first: stepping a widget's model never
+        # mutates `_instances`, but iterating a WeakSet directly while
+        # entries can be GC'd out from under it is fragile, so copy first.
+        for widget in list(cls._instances):
+            try:
+                if widget.model.step():
+                    widget.update()
+            except RuntimeError:
+                # The underlying Qt C++ object was already deleted (e.g. its
+                # table row was removed) but the Python wrapper had not been
+                # garbage-collected yet -- drop it explicitly rather than
+                # waiting for GC to prune the WeakSet.
+                cls._instances.discard(widget)
+
+        if not cls._instances and cls._shared_timer is not None:
+            cls._shared_timer.stop()
+            cls._shared_timer.deleteLater()
+            cls._shared_timer = None
+
+    def closeEvent(self, event) -> None:
+        type(self)._instances.discard(self)
+        super().closeEvent(event)
+
+    def __del__(self) -> None:
+        try:
+            TetrisProgressWidget._instances.discard(self)
+        except Exception:
+            pass
 
     def set_progress(self, fraction: float) -> None:
         self._progress_fraction = max(0.0, min(1.0, fraction))
         self.model.set_progress(fraction)
+        self._update_accessible_info()
 
-    def _on_tick(self) -> None:
-        if self.model.step():
-            self.update()
+    def _update_accessible_info(self) -> None:
+        self.setAccessibleName(tr("downloads_tab.column_progress"))
+        self.setAccessibleDescription(f"{round(self._progress_fraction * 100)}%")
+        # Fire a live update so screen readers announce the new percentage
+        # immediately, rather than only on their next incidental query.
+        QAccessible.updateAccessibility(QAccessibleEvent(self, QAccessible.Event.DescriptionChanged))
 
     def sizeHint(self) -> QSize:
         return QSize(self.model.cols * DEFAULT_CELL_PX, self.model.rows * DEFAULT_CELL_PX)

@@ -1,0 +1,569 @@
+/* Torrent 2000 -- "Windows 10" skin (Fluent Design), DARK variant.
+
+   Every token below comes from a real measurement or a first-party
+   Microsoft source (see the scratch style-guide for the full method) --
+   sampled from the official learn.microsoft.com "Color in Windows" dark
+   control gallery image (color_dark_controls_940.png), the same
+   first-party image used for the light variant:
+
+     bg              #202020   measured directly (page background). Also
+                                the value already fixed for this theme's
+                                dark title bar caption in theme_manager.py,
+                                and independently corroborated by a
+                                File-Explorer dark-mode color breakdown
+                                citing #202020 for the main content area
+     surface         #2B2B2B   measured directly (open combo/listbox
+                                background); independently corroborated by
+                                the same source citing #2B2B2B for the
+                                Explorer context-menu background
+     control-fill    #383838   measured directly (secondary/neutral button
+                                fill)
+     surface-sunken  #1F1F1F   measured directly (text input field fill --
+                                inputs sit one step darker than buttons)
+     border          #4A4A4A   derived -- midtone between bg and
+                                control-fill (1px hairlines were too fine
+                                to isolate cleanly from PNG edge blending)
+     border-light    #3A3A3A   derived hairline divider
+     text            #FFFFFF   measured directly (label/body text)
+     text-muted      #C5C5C5   documented Fluent dark-theme secondary-text
+                                convention
+     accent          #0078D4   measured directly -- identical hex found in
+                                BOTH the light and dark official images
+                                (Windows' accent color is one user setting
+                                shared across app themes, not auto-tinted)
+     accent-bright   #60CDFF   measured directly -- the lighter blue Fluent
+                                itself substitutes for small filled
+                                indicators (checkbox check, slider fill/
+                                handle) once they sit on a dark surface, for
+                                contrast/legibility
+     danger          #DC5E62   Microsoft FluentUI token (red.tint20),
+                                brightened from the light theme's #D13438
+                                for dark-surface contrast
+     danger-pressed  #D7494C   FluentUI red.tint10
+
+   Supporting tints derived from the palette above:
+     #18364D / #123852   accent-tinted hover / pressed "reveal" wash (dark
+                          equivalent of the light theme's #E4F0FB/#BFDDF4)
+     #7A7A7A              disabled text
+
+   Fully flat design -- zero gradients, zero 3D bevels, sharp square
+   corners, matching win10.qss. The title bar is NOT drawn by this
+   stylesheet -- see src/torrent2000/ui/widgets/app_title_bar.py.
+*/
+
+* {
+    font-family: "Segoe UI", "MS Shell Dlg 2", sans-serif;
+    font-size: 9pt;
+}
+
+QMainWindow, QWidget#centralWidget, QWidget {
+    background-color: #202020;
+    color: #FFFFFF;
+}
+
+QDialog {
+    background-color: #202020;
+    color: #FFFFFF;
+}
+
+QTabWidget::pane {
+    border: 1px solid #3A3A3A;
+    background-color: #202020;
+    top: -1px;
+}
+
+QTabWidget#mainTabs::pane {
+    border-top: none;
+    top: 0px;
+}
+
+QTabBar::tab {
+    background-color: #2B2B2B;
+    border: 1px solid #3A3A3A;
+    border-bottom: none;
+    padding: 7px 18px;
+    margin-right: 1px;
+    color: #C5C5C5;
+}
+
+QTabBar::tab:selected {
+    background-color: #202020;
+    border-color: #3A3A3A;
+    border-bottom: 2px solid #0078D4;
+    margin-top: 0px;
+    color: #FFFFFF;
+}
+
+QTabBar::tab:!selected {
+    margin-top: 2px;
+}
+
+QTabBar::tab:hover:!selected {
+    background-color: #18364D;
+    border-bottom: 2px solid #123852;
+    color: #FFFFFF;
+}
+
+QTabBar::tab:focus {
+    outline: 2px solid #0078D4;
+    outline-offset: -3px;
+}
+
+QGroupBox {
+    border: 1px solid #3A3A3A;
+    border-radius: 0px;
+    margin-top: 10px;
+    padding-top: 6px;
+    background-color: #202020;
+    font-weight: normal;
+    color: #FFFFFF;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 4px;
+    color: #FFFFFF;
+}
+
+QPushButton {
+    background-color: #383838;
+    border: 1px solid #4A4A4A;
+    border-radius: 0px;
+    padding: 4px 12px;
+    min-height: 18px;
+    color: #FFFFFF;
+}
+
+QPushButton:hover:!pressed {
+    background-color: #18364D;
+    border: 1px solid #0078D4;
+}
+
+QPushButton:pressed {
+    background-color: #123852;
+    border: 1px solid #60CDFF;
+}
+
+QPushButton:focus {
+    outline: 2px solid #0078D4;
+    outline-offset: 1px;
+}
+
+QPushButton:default {
+    background-color: #0078D4;
+    border: 1px solid #60CDFF;
+    color: #FFFFFF;
+}
+
+QPushButton:default:hover:!pressed {
+    background-color: #2E8FE0;
+    border: 1px solid #60CDFF;
+    color: #FFFFFF;
+}
+
+QPushButton:default:pressed {
+    background-color: #005FB8;
+    border: 1px solid #0078D4;
+    color: #FFFFFF;
+}
+
+QPushButton:disabled {
+    background-color: #262626;
+    border: 1px solid #3A3A3A;
+    color: #7A7A7A;
+}
+
+QPushButton#dangerButton {
+    background-color: #4A2426;
+    border: 1px solid #DC5E62;
+    border-radius: 0px;
+    padding: 2px 10px;
+    min-height: 16px;
+    color: #FFFFFF;
+}
+
+QPushButton#dangerButton:hover:!pressed {
+    background-color: #5A2E30;
+    border: 1px solid #0078D4;
+}
+
+QPushButton#dangerButton:pressed {
+    background-color: #3A1B1C;
+    border: 1px solid #D7494C;
+}
+
+QPushButton#dangerButton:disabled {
+    background-color: #262626;
+    border: 1px solid #3A3A3A;
+    color: #7A7A7A;
+}
+
+QPushButton#dangerButton:focus {
+    outline: 2px solid #0078D4;
+    outline-offset: 1px;
+}
+
+QLineEdit, QSpinBox, QAbstractSpinBox {
+    background-color: #1F1F1F;
+    border: 1px solid #4A4A4A;
+    border-radius: 0px;
+    padding: 2px 4px;
+    color: #FFFFFF;
+    selection-background-color: #0078D4;
+    selection-color: #FFFFFF;
+}
+
+QLineEdit:hover, QSpinBox:hover, QAbstractSpinBox:hover {
+    border: 1px solid #0078D4;
+}
+
+QLineEdit:focus, QSpinBox:focus, QAbstractSpinBox:focus {
+    border: 1px solid #0078D4;
+    outline: 2px solid #0078D4;
+    outline-offset: 1px;
+}
+
+QLineEdit:disabled, QSpinBox:disabled, QAbstractSpinBox:disabled {
+    background-color: #262626;
+    border: 1px solid #3A3A3A;
+    color: #7A7A7A;
+}
+
+QAbstractSpinBox::up-button, QAbstractSpinBox::down-button {
+    subcontrol-origin: border;
+    width: 16px;
+    background-color: #383838;
+    border-left: 1px solid #4A4A4A;
+}
+
+QAbstractSpinBox::up-button {
+    subcontrol-position: top right;
+    border-bottom: 1px solid #3A3A3A;
+}
+
+QAbstractSpinBox::down-button {
+    subcontrol-position: bottom right;
+}
+
+QAbstractSpinBox::up-button:hover, QAbstractSpinBox::down-button:hover {
+    background-color: #18364D;
+}
+
+QAbstractSpinBox::up-button:pressed, QAbstractSpinBox::down-button:pressed {
+    background-color: #123852;
+}
+
+QAbstractSpinBox::up-arrow {
+    width: 0px;
+    height: 0px;
+    border-left: 3px solid transparent;
+    border-right: 3px solid transparent;
+    border-bottom: 4px solid #FFFFFF;
+}
+
+QAbstractSpinBox::down-arrow {
+    width: 0px;
+    height: 0px;
+    border-left: 3px solid transparent;
+    border-right: 3px solid transparent;
+    border-top: 4px solid #FFFFFF;
+}
+
+QComboBox {
+    background-color: #1F1F1F;
+    border: 1px solid #4A4A4A;
+    border-radius: 0px;
+    padding: 2px 4px;
+    color: #FFFFFF;
+    /* Also required on QComboBox itself, not just on the popup's
+       QAbstractItemView below -- without this, the popup's currently
+       selected row opens with no visible highlight at all (confirmed by
+       rendering the popup offscreen; harmonization pass, matches the
+       win7 family's own documented fix for the same Qt behavior). */
+    selection-background-color: #0078D4;
+    selection-color: #FFFFFF;
+}
+
+QComboBox:hover {
+    border: 1px solid #0078D4;
+}
+
+QComboBox:focus {
+    border: 1px solid #0078D4;
+    outline: 2px solid #0078D4;
+    outline-offset: 1px;
+}
+
+QComboBox:disabled {
+    background-color: #262626;
+    border: 1px solid #3A3A3A;
+    color: #7A7A7A;
+}
+
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: right;
+    width: 22px;
+    background-color: #383838;
+    border-left: 1px solid #4A4A4A;
+}
+
+QComboBox::drop-down:hover {
+    background-color: #18364D;
+}
+
+QComboBox::down-arrow {
+    width: 8px;
+    height: 8px;
+    image: none;
+    border-left: 3px solid transparent;
+    border-right: 3px solid transparent;
+    border-top: 4px solid #FFFFFF;
+}
+
+/* Popup listbox for the open combo -- see win10.qss's comment for the
+   win7-v1 regression this must NOT reproduce. Selected fill is the accent
+   blue with white text -- opposite-luminance from the fill on every state,
+   so the currently-selected item can never render text-on-same-color. */
+QComboBox QAbstractItemView {
+    background-color: #2B2B2B;
+    color: #FFFFFF;
+    border: 1px solid #4A4A4A;
+    outline: none;
+    padding: 2px;
+    selection-background-color: #0078D4;
+    selection-color: #FFFFFF;
+}
+
+QComboBox QAbstractItemView::item {
+    padding: 4px 8px;
+    min-height: 20px;
+    color: #FFFFFF;
+}
+
+QComboBox QAbstractItemView::item:hover {
+    background-color: #18364D;
+    color: #FFFFFF;
+}
+
+QComboBox QAbstractItemView::item:selected {
+    background-color: #0078D4;
+    color: #FFFFFF;
+}
+
+QCheckBox::indicator {
+    width: 13px;
+    height: 13px;
+    background-color: #1F1F1F;
+    border: 1px solid #4A4A4A;
+    border-radius: 0px;
+}
+
+QCheckBox::indicator:hover {
+    border: 1px solid #0078D4;
+}
+
+QCheckBox::indicator:focus {
+    outline: 2px solid #0078D4;
+    outline-offset: 1px;
+}
+
+QCheckBox::indicator:disabled {
+    background-color: #262626;
+    border: 1px solid #3A3A3A;
+}
+
+QCheckBox::indicator:checked {
+    background-color: #60CDFF;
+    border: 1px solid #60CDFF;
+    image: url(theme:checkmark.png);
+}
+
+QCheckBox::indicator:checked:hover {
+    background-color: #8AD9FF;
+    border: 1px solid #8AD9FF;
+}
+
+QCheckBox::indicator:checked:disabled {
+    background-color: #4A4A4A;
+    border: 1px solid #4A4A4A;
+}
+
+QSlider::groove:horizontal {
+    height: 3px;
+    background-color: #4A4A4A;
+}
+
+QSlider::handle:horizontal {
+    width: 12px;
+    height: 12px;
+    margin: -5px 0;
+    background-color: #60CDFF;
+    border: 1px solid #0078D4;
+    border-radius: 6px;
+}
+
+QSlider::handle:horizontal:hover {
+    background-color: #8AD9FF;
+}
+
+QSlider::handle:horizontal:focus {
+    outline: 2px solid #0078D4;
+    outline-offset: 2px;
+}
+
+QSlider::handle:horizontal:disabled {
+    background-color: #4A4A4A;
+    border: 1px solid #3A3A3A;
+}
+
+QTableWidget, QTreeWidget {
+    background-color: #2B2B2B;
+    alternate-background-color: #262626;
+    gridline-color: #3A3A3A;
+    border: 1px solid #3A3A3A;
+    color: #FFFFFF;
+    selection-background-color: #0078D4;
+    selection-color: #FFFFFF;
+}
+
+QHeaderView::section {
+    background-color: #2B2B2B;
+    border: 1px solid #3A3A3A;
+    padding: 3px 6px;
+    font-weight: normal;
+    color: #FFFFFF;
+}
+
+QListWidget {
+    background-color: #2B2B2B;
+    border: 1px solid #3A3A3A;
+    outline: none;
+    color: #FFFFFF;
+    padding: 2px;
+}
+
+QListWidget::item {
+    padding: 4px 8px;
+}
+
+QListWidget::item:hover {
+    background-color: #18364D;
+}
+
+QListWidget::item:selected {
+    background-color: #0078D4;
+    color: #FFFFFF;
+}
+
+QListWidget::item:focus {
+    outline: 2px solid #0078D4;
+    outline-offset: -2px;
+}
+
+/* ---------------------------------------------------------------------
+   Context menus -- see win10.qss for rationale. Sharp corners, solid
+   accent selection, thin separator lines.
+   --------------------------------------------------------------------- */
+
+QMenu {
+    background-color: #2B2B2B;
+    border: 1px solid #4A4A4A;
+    padding: 2px;
+    color: #FFFFFF;
+}
+
+QMenu::item {
+    background-color: transparent;
+    padding: 6px 24px 6px 14px;
+    margin: 1px 2px;
+    color: #FFFFFF;
+}
+
+QMenu::item:selected {
+    background-color: #0078D4;
+    color: #FFFFFF;
+}
+
+QMenu::item:disabled {
+    color: #7A7A7A;
+}
+
+QMenu::separator {
+    height: 1px;
+    background-color: #3A3A3A;
+    margin: 4px 8px;
+}
+
+QMenu::indicator {
+    width: 13px;
+    height: 13px;
+    left: 4px;
+}
+
+QProgressBar {
+    border: 1px solid #3A3A3A;
+    background-color: #2B2B2B;
+    text-align: center;
+    color: #FFFFFF;
+}
+
+QProgressBar::chunk {
+    background-color: #0078D4;
+    margin: 0px;
+}
+
+QLabel {
+    background: transparent;
+    color: #FFFFFF;
+}
+
+QSplitter::handle {
+    background-color: #202020;
+}
+
+QScrollBar:vertical {
+    background: #202020;
+    width: 12px;
+    border: none;
+}
+
+QScrollBar::handle:vertical {
+    background-color: #4A4A4A;
+    border-radius: 0px;
+    min-height: 24px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background-color: #6A6A6A;
+}
+
+QScrollBar:horizontal {
+    background: #202020;
+    height: 12px;
+    border: none;
+}
+
+QScrollBar::handle:horizontal {
+    background-color: #4A4A4A;
+    border-radius: 0px;
+    min-width: 24px;
+}
+
+QScrollBar::handle:horizontal:hover {
+    background-color: #6A6A6A;
+}
+
+QToolTip {
+    background-color: #2B2B2B;
+    color: #FFFFFF;
+    border: 1px solid #4A4A4A;
+    padding: 4px 8px;
+}
+
+QSizeGrip {
+    background-color: #202020;
+    width: 16px;
+    height: 16px;
+}

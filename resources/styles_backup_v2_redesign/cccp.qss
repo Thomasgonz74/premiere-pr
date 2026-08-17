@@ -1,0 +1,728 @@
+/* =====================================================================
+   Torrent 2000 -- "CCCP" skin, NORMAL variant
+   Soviet-constructivist propaganda-poster aesthetic. Not a real OS, so the
+   reference here is real Soviet propaganda poster art (Rodchenko, El
+   Lissitzky, Civil-War-era recruitment posters), not a screenshot of a
+   dead operating system. Flat, high-contrast, silkscreened fields; thick
+   square-cut ink borders; bold sans type. No gradients, no soft shading.
+
+   PALETTE DERIVATION -- this is not an invented palette. Four real posters
+   (Wikimedia Commons, public domain / PD-old) were downloaded and pixel-
+   sampled with PIL: a red/black/cream clustering + per-cluster median over
+   a downsampled copy of each image (avoids anti-aliased-edge noise from a
+   single hand-picked coordinate). See scratchpad CHARTE_CCCP.md for the
+   full method, per-image measurements, and the two small scripts used.
+
+     measured poster red     -> #D84E2F  (avg of two posters' red clusters:
+                                 #D84F3B "Krasny Podarok" rocket, #D94E23
+                                 El Lissitzky's red wedge)
+     measured poster black   -> #202120  (avg of the same two posters'
+                                 black-ground clusters)
+     measured poster cream   -> #EAE0CA  (avg of three posters' aged-paper
+                                 clusters) -- within 8/255 per channel of
+                                 the title bar's ALREADY-FIXED caption text
+                                 color #F2E4C4 (theme_manager.py), so that
+                                 fixed value is reused here rather than
+                                 re-derived: measurement independently
+                                 confirms it belongs to the same parchment
+                                 family, it doesn't contradict it.
+
+   TOKENS (hex, named)
+   ------------------------------------------------------------------
+     bg               #161616   canvas the poster board sits on (darker
+                                 than the measured board itself -- the
+                                 canvas reads as the wall behind the
+                                 mounted poster, not the poster paper)
+     surface          #202120   panel / card -- the measured poster-black
+                                 value itself, used directly
+     border           #EAE0CA   parchment ink-line -- measured poster cream
+     text             #F2E4C4   parchment cream -- ALREADY FIXED (title bar
+                                 caption text, theme_manager.py); measured
+                                 poster cream (#EAE0CA) confirms the family
+     text-muted       #9F9889   dulled parchment -- measured cream, value
+                                 scaled down ~32% in HSV (keeps the same
+                                 hue/warmth, just dimmer, not a different
+                                 invented tone)
+     accent (red)     #D84E2F   primary interactive red -- measured poster
+                                 red, used directly
+     accent-hover     #D4AF37   gold -- ALREADY FIXED (title bar hover gold,
+                                 theme_manager.py). Every hover state here
+                                 resolves red-becomes-gold, same as hovering
+                                 the real caption buttons.
+     danger           #A31515   destructive-action red -- ALREADY FIXED
+                                 (title bar close/minmax button fill,
+                                 theme_manager.py) -- the one button allowed
+                                 to BE red instead of merely bordered by it
+                                 uses the exact red the window chrome itself
+                                 is built from.
+
+   Utility shades (not part of the named palette, purely structural, no
+   real-world poster referent -- a disabled control or a hover tint has no
+   equivalent in 1920s silkscreen art):
+     inset            #0D0D0D   recessed field background (carved-in look)
+     hover-surface    #2A2A2A   lightened surface, generic hover fill
+     alt-row          #1A1A1A   table alternating row
+     disabled-border  #3A3A3A   neutral (deliberately NOT warm -- a
+                                 disabled control should read "switched
+                                 off," not a dimmer parchment tone)
+     disabled-text    #6E6E6E
+
+   Corner radius: 0px everywhere, echoing window_corner_radius=0 for CCCP
+   in theme_manager.py (square window chrome -> square controls).
+
+   The title bar (solid red caption, hammer-and-sickle close button) is NOT
+   drawn by this stylesheet -- see ui/widgets/app_title_bar.py and
+   ui/theme/theme_manager.py. Two theme-specific mechanics live outside QSS
+   entirely: downloading is blocked while this theme is active
+   (engine/session_manager.py) and sharing counts for 3x toward the level
+   (stats/leveling.py).
+   ===================================================================== */
+
+* {
+    font-family: "Arial", "Segoe UI", sans-serif;
+    font-size: 9pt;
+}
+
+QMainWindow, QWidget#centralWidget, QDialog {
+    background-color: #161616;
+    color: #F2E4C4;
+}
+
+QWidget {
+    background-color: #161616;
+    color: #F2E4C4;
+}
+
+/* ---------------------------------------------------------------- Tabs */
+
+QTabWidget::pane {
+    border: 2px solid #EAE0CA;
+    background-color: #161616;
+    top: -1px;
+}
+
+QTabWidget#mainTabs::pane {
+    border-top: none;
+    top: 0px;
+}
+
+QTabBar::tab {
+    background-color: #202120;
+    border: 2px solid #EAE0CA;
+    border-bottom: none;
+    border-radius: 0px;
+    padding: 5px 16px;
+    margin-right: 1px;
+    color: #F2E4C4;
+    font-weight: bold;
+}
+
+QTabBar::tab:hover:!selected {
+    background-color: #2A2A2A;
+    color: #D4AF37;
+    border-color: #D4AF37;
+}
+
+QTabBar::tab:selected {
+    background-color: #161616;
+    border-color: #EAE0CA;
+    border-bottom: 3px solid #D84E2F;
+    margin-top: 0px;
+    color: #D84E2F;
+}
+
+QTabBar::tab:!selected {
+    margin-top: 2px;
+}
+
+QTabBar::tab:disabled {
+    color: #6E6E6E;
+    border-color: #3A3A3A;
+}
+
+QTabBar::tab:focus {
+    outline: 2px solid #D4AF37;
+    outline-offset: -3px;
+}
+
+/* ------------------------------------------------------------ GroupBox */
+
+QGroupBox {
+    border: 2px solid #EAE0CA;
+    border-top: 4px solid #D84E2F;
+    border-radius: 0px;
+    margin-top: 10px;
+    padding-top: 10px;
+    background-color: #202120;
+    font-weight: bold;
+    color: #D84E2F;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    top: -2px;
+    padding: 0 6px;
+    background-color: #202120;
+    color: #D84E2F;
+}
+
+/* ------------------------------------------------------------- Buttons */
+
+QPushButton {
+    background-color: #202120;
+    border: 2px solid #EAE0CA;
+    border-radius: 0px;
+    padding: 4px 12px;
+    min-height: 18px;
+    color: #F2E4C4;
+    font-weight: bold;
+}
+
+QPushButton:hover:!pressed {
+    background-color: #2A2A2A;
+    border: 2px solid #D4AF37;
+    color: #D4AF37;
+}
+
+QPushButton:pressed {
+    background-color: #0D0D0D;
+    border: 2px solid #D84E2F;
+    color: #D84E2F;
+}
+
+QPushButton:focus {
+    outline: 2px solid #D4AF37;
+    outline-offset: 2px;
+}
+
+QPushButton:default {
+    border-width: 3px;
+    border-color: #D84E2F;
+    color: #FFFFFF;
+}
+
+QPushButton:disabled {
+    background-color: #202120;
+    border: 2px solid #3A3A3A;
+    color: #6E6E6E;
+}
+
+/* The one button allowed to BE red instead of merely bordered by it --
+   removing a torrent is exactly the kind of decisive action this theme's
+   red accent is reserved for. Fill and hover match the real title bar's
+   close/minmax button colors exactly (see theme_manager.py). */
+QPushButton#dangerButton {
+    background-color: #A31515;
+    border: 2px solid #EAE0CA;
+    border-radius: 0px;
+    padding: 2px 10px;
+    min-height: 16px;
+    color: #F2E4C4;
+    font-weight: bold;
+}
+
+QPushButton#dangerButton:hover:!pressed {
+    background-color: #D4AF37;
+    border: 2px solid #F2E4C4;
+    color: #161616;
+}
+
+QPushButton#dangerButton:pressed {
+    background-color: #6E0E0E;
+    border: 2px solid #EAE0CA;
+    color: #F2E4C4;
+}
+
+QPushButton#dangerButton:focus {
+    outline: 2px solid #F2E4C4;
+    outline-offset: 2px;
+}
+
+QPushButton#dangerButton:disabled {
+    background-color: #3A1414;
+    border: 2px solid #3A3A3A;
+    color: #6E6E6E;
+}
+
+/* ---------------------------------------------------------- Text input */
+
+QLineEdit, QSpinBox, QAbstractSpinBox {
+    background-color: #0D0D0D;
+    border: 2px solid #3A3A3A;
+    border-radius: 0px;
+    padding: 2px 4px;
+    color: #F2E4C4;
+    selection-background-color: #D84E2F;
+    selection-color: #F2E4C4;
+}
+
+QLineEdit:hover, QSpinBox:hover, QAbstractSpinBox:hover {
+    border: 2px solid #D84E2F;
+}
+
+QLineEdit:focus, QSpinBox:focus, QAbstractSpinBox:focus {
+    border: 2px solid #D4AF37;
+    outline: 2px solid #D4AF37;
+    outline-offset: 1px;
+}
+
+QLineEdit:disabled, QSpinBox:disabled, QAbstractSpinBox:disabled {
+    background-color: #161616;
+    border: 2px solid #3A3A3A;
+    color: #6E6E6E;
+}
+
+QAbstractSpinBox::up-button, QAbstractSpinBox::down-button {
+    subcontrol-origin: border;
+    width: 16px;
+    background-color: #202120;
+    border-left: 2px solid #3A3A3A;
+}
+
+QAbstractSpinBox::up-button {
+    subcontrol-position: top right;
+    border-bottom: 1px solid #3A3A3A;
+}
+
+QAbstractSpinBox::up-button:hover, QAbstractSpinBox::down-button:hover {
+    background-color: #2A2A2A;
+}
+
+QAbstractSpinBox::down-button {
+    subcontrol-position: bottom right;
+}
+
+QAbstractSpinBox::up-arrow {
+    width: 0;
+    height: 0;
+    border-left: 3px solid transparent;
+    border-right: 3px solid transparent;
+    border-bottom: 4px solid #F2E4C4;
+}
+
+QAbstractSpinBox::down-arrow {
+    width: 0;
+    height: 0;
+    border-left: 3px solid transparent;
+    border-right: 3px solid transparent;
+    border-top: 4px solid #F2E4C4;
+}
+
+QAbstractSpinBox::up-arrow:disabled, QAbstractSpinBox::down-arrow:disabled {
+    border-bottom-color: #6E6E6E;
+    border-top-color: #6E6E6E;
+}
+
+/* -------------------------------------------------------------- Combo */
+
+QComboBox {
+    background-color: #0D0D0D;
+    border: 2px solid #3A3A3A;
+    border-radius: 0px;
+    padding: 2px 4px;
+    color: #F2E4C4;
+}
+
+QComboBox:hover {
+    border: 2px solid #D84E2F;
+}
+
+QComboBox:focus {
+    border: 2px solid #D4AF37;
+    outline: 2px solid #D4AF37;
+    outline-offset: 1px;
+}
+
+QComboBox:disabled {
+    background-color: #161616;
+    border: 2px solid #3A3A3A;
+    color: #6E6E6E;
+}
+
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: right;
+    width: 20px;
+    background-color: #202120;
+    border-left: 2px solid #3A3A3A;
+}
+
+QComboBox::drop-down:hover {
+    background-color: #2A2A2A;
+}
+
+QComboBox::down-arrow {
+    width: 8px;
+    height: 8px;
+    image: none;
+    border-left: 3px solid transparent;
+    border-right: 3px solid transparent;
+    border-top: 4px solid #F2E4C4;
+}
+
+QComboBox::down-arrow:disabled {
+    border-top: 4px solid #6E6E6E;
+}
+
+/* Popup list -- the currently-selected/current item must never end up
+   rendering with text the same color as its own background (the known
+   Windows-7-family bug this rebuild must not repeat). selection-background-
+   color/selection-color set the view's palette Highlight/HighlightedText
+   roles directly (verified by introspecting view.palette() after this
+   stylesheet is applied: Highlight resolves to #D84E2F, HighlightedText to
+   #F2E4C4) -- that is the primary, always-correct mechanism. The ::item
+   rules below are redundant belt-and-suspenders coverage for the native
+   Windows styles this offscreen test harness cannot exercise (verified:
+   in the offscreen/Fusion combination used for automated testing here, a
+   combo box popup's pre-highlighted current item doesn't repaint from
+   EITHER mechanism without a live compositor -- confirmed project-wide,
+   not specific to this file, by testing the already-rebuilt win95.qss
+   sibling with the same idiom). Either way, text and fill are never the
+   same color in any state below. */
+QComboBox QAbstractItemView {
+    background-color: #0D0D0D;
+    color: #F2E4C4;
+    border: 2px solid #D84E2F;
+    outline: none;
+    padding: 2px;
+    selection-background-color: #D84E2F;
+    selection-color: #F2E4C4;
+}
+
+QComboBox QAbstractItemView::item {
+    padding: 4px 8px;
+    min-height: 20px;
+    background-color: #0D0D0D;
+    color: #F2E4C4;
+    border: none;
+}
+
+QComboBox QAbstractItemView::item:hover {
+    background-color: #D84E2F;
+    color: #F2E4C4;
+}
+
+QComboBox QAbstractItemView::item:selected {
+    background-color: #D84E2F;
+    color: #F2E4C4;
+}
+
+/* ------------------------------------------------------------ Checkbox */
+
+QCheckBox {
+    color: #F2E4C4;
+    spacing: 6px;
+}
+
+QCheckBox:disabled {
+    color: #6E6E6E;
+}
+
+QCheckBox::indicator {
+    width: 13px;
+    height: 13px;
+    background-color: #0D0D0D;
+    border: 2px solid #3A3A3A;
+}
+
+QCheckBox::indicator:hover {
+    border: 2px solid #D4AF37;
+}
+
+QCheckBox::indicator:focus {
+    outline: 2px solid #D4AF37;
+    outline-offset: 1px;
+}
+
+QCheckBox::indicator:checked {
+    background-color: #D84E2F;
+    border: 2px solid #D84E2F;
+    image: url(theme:checkmark.png);
+}
+
+QCheckBox::indicator:checked:hover {
+    background-color: #D4AF37;
+    border: 2px solid #D4AF37;
+}
+
+QCheckBox::indicator:disabled {
+    background-color: #202120;
+    border: 2px solid #3A3A3A;
+}
+
+QCheckBox::indicator:checked:disabled {
+    background-color: #6E6E6E;
+    border: 2px solid #3A3A3A;
+}
+
+/* -------------------------------------------------------------- Slider */
+
+QSlider::groove:horizontal {
+    height: 4px;
+    background-color: #3A3A3A;
+    border: 2px solid #0D0D0D;
+}
+
+QSlider::groove:horizontal:disabled {
+    background-color: #2A2A2A;
+}
+
+QSlider::handle:horizontal {
+    width: 14px;
+    margin: -6px 0;
+    background-color: #D84E2F;
+    border: 2px solid #EAE0CA;
+}
+
+QSlider::handle:horizontal:hover {
+    background-color: #D4AF37;
+    border: 2px solid #F2E4C4;
+}
+
+QSlider::handle:horizontal:pressed {
+    background-color: #D4AF37;
+    border: 2px solid #FFFFFF;
+}
+
+QSlider::handle:horizontal:focus {
+    outline: 2px solid #D4AF37;
+    outline-offset: 1px;
+}
+
+QSlider::handle:horizontal:disabled {
+    background-color: #6E6E6E;
+    border: 2px solid #3A3A3A;
+}
+
+/* ---------------------------------------------------- Tables and trees */
+
+QTableWidget, QTreeWidget {
+    background-color: #0D0D0D;
+    alternate-background-color: #1A1A1A;
+    gridline-color: #3A3A3A;
+    border: 2px solid #3A3A3A;
+    color: #F2E4C4;
+    selection-background-color: #D84E2F;
+    selection-color: #F2E4C4;
+    outline: none;
+}
+
+QTableWidget::item, QTreeWidget::item {
+    padding: 2px;
+}
+
+QTableWidget::item:hover, QTreeWidget::item:hover {
+    background-color: #2A1414;
+}
+
+QTableWidget::item:selected, QTreeWidget::item:selected {
+    background-color: #D84E2F;
+    color: #F2E4C4;
+}
+
+QHeaderView::section {
+    background-color: #202120;
+    border: 2px solid #3A3A3A;
+    padding: 3px 6px;
+    font-weight: bold;
+    color: #D84E2F;
+}
+
+QHeaderView::section:hover {
+    color: #D4AF37;
+    border-color: #D4AF37;
+}
+
+/* ------------------------------------------------------------- ListBox */
+
+QListWidget {
+    background-color: #0D0D0D;
+    border: 2px solid #3A3A3A;
+    color: #F2E4C4;
+    outline: none;
+}
+
+QListWidget::item {
+    padding: 4px 6px;
+    border-left: 3px solid transparent;
+}
+
+QListWidget::item:hover {
+    background-color: #2A1414;
+    border-left: 3px solid #D4AF37;
+}
+
+QListWidget::item:selected {
+    background-color: #D84E2F;
+    color: #F2E4C4;
+    border-left: 3px solid #D4AF37;
+}
+
+QListWidget::item:selected:!active {
+    background-color: #6E0E0E;
+}
+
+/* ------------------------------------------------------------------ Menu */
+/* Context menus (right-click on the Downloads/Share tables) need to look
+   like part of the same poster, not fall back to native Windows chrome. */
+
+QMenu {
+    background-color: #202120;
+    border: 2px solid #EAE0CA;
+    color: #F2E4C4;
+    padding: 3px;
+}
+
+QMenu::item {
+    background-color: transparent;
+    padding: 5px 24px 5px 16px;
+    border-left: 3px solid transparent;
+}
+
+QMenu::item:selected {
+    background-color: #D84E2F;
+    color: #F2E4C4;
+    border-left: 3px solid #D4AF37;
+}
+
+QMenu::item:disabled {
+    color: #6E6E6E;
+}
+
+QMenu::separator {
+    height: 2px;
+    background-color: #D4AF37;
+    margin: 4px 8px;
+}
+
+QMenu::icon {
+    padding-left: 6px;
+}
+
+/* --------------------------------------------------------- ProgressBar */
+
+/* The "People's Progress" -- red filling on a dark groove. */
+QProgressBar {
+    border: 2px solid #3A3A3A;
+    background-color: #0D0D0D;
+    text-align: center;
+    color: #F2E4C4;
+    font-weight: bold;
+}
+
+QProgressBar::chunk {
+    background-color: #D84E2F;
+    margin: 1px;
+}
+
+/* ---------------------------------------------------------- Misc chrome */
+
+QLabel {
+    background: transparent;
+    color: #F2E4C4;
+}
+
+QLabel:disabled {
+    color: #6E6E6E;
+}
+
+QSplitter::handle {
+    background-color: #161616;
+}
+
+QSplitter::handle:hover {
+    background-color: #D4AF37;
+}
+
+QScrollBar:vertical {
+    background: #202120;
+    width: 16px;
+    border: 2px solid #3A3A3A;
+}
+
+QScrollBar::handle:vertical {
+    background-color: #3A3A3A;
+    border: 1px solid #0D0D0D;
+    min-height: 24px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background-color: #D84E2F;
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    height: 0px;
+    background: none;
+    border: none;
+}
+
+QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+    background: none;
+}
+
+QScrollBar:horizontal {
+    background: #202120;
+    height: 16px;
+    border: 2px solid #3A3A3A;
+}
+
+QScrollBar::handle:horizontal {
+    background-color: #3A3A3A;
+    border: 1px solid #0D0D0D;
+    min-width: 24px;
+}
+
+QScrollBar::handle:horizontal:hover {
+    background-color: #D84E2F;
+}
+
+QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
+    width: 0px;
+    background: none;
+    border: none;
+}
+
+QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
+    background: none;
+}
+
+QSizeGrip {
+    background-color: #161616;
+    width: 16px;
+    height: 16px;
+}
+
+QToolTip {
+    background-color: #202120;
+    color: #F2E4C4;
+    border: 2px solid #D84E2F;
+    border-radius: 0px;
+    padding: 4px 6px;
+}
+
+/* ---------------------------------------------------------------------
+   Propaganda side panel (src/torrent2000/ui/widgets/propaganda_panel.py)
+   -- the extra strip of window width shown only under this theme.
+   --------------------------------------------------------------------- */
+
+QWidget#cccpPropagandaPanel {
+    background-color: #0D0D0D;
+    border-left: 3px solid #D84E2F;
+}
+
+QLabel#propagandaHeader {
+    color: #D84E2F;
+    font-weight: bold;
+    font-size: 10pt;
+}
+
+QLabel#propagandaMessage {
+    color: #F2E4C4;
+    font-size: 9pt;
+}
+
+QFrame#propagandaDivider {
+    background-color: #D4AF37;
+    border: none;
+}

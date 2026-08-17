@@ -25,17 +25,17 @@ def _make_tab(check_for_updates: bool):
 
 def test_checkbox_initializes_from_settings_enabled():
     widget, _ = _make_tab(check_for_updates=True)
-    assert widget.check_for_updates_checkbox.isChecked() is True
+    assert widget.general_section.check_for_updates_checkbox.isChecked() is True
 
 
 def test_checkbox_initializes_from_settings_disabled():
     widget, _ = _make_tab(check_for_updates=False)
-    assert widget.check_for_updates_checkbox.isChecked() is False
+    assert widget.general_section.check_for_updates_checkbox.isChecked() is False
 
 
 def test_save_persists_the_checkbox_state():
     widget, settings = _make_tab(check_for_updates=True)
-    widget.check_for_updates_checkbox.setChecked(False)
+    widget.general_section.check_for_updates_checkbox.setChecked(False)
 
     widget._on_save_clicked()
 

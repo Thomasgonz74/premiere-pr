@@ -8,7 +8,8 @@ from PySide6.QtCore import QPoint, Qt
 from PySide6.QtWidgets import QApplication
 
 from torrent2000.config.settings import Settings
-from torrent2000.ui.main_window import RESIZE_MARGIN, MainWindow, _CURSOR_FOR_EDGE
+from torrent2000.ui.frameless_resize import RESIZE_MARGIN, _CURSOR_FOR_EDGE
+from torrent2000.ui.main_window import MainWindow
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -43,8 +44,8 @@ def _stale_check(win, global_point, expected_shape):
     # reported bug (cursor stuck showing a resize icon after leaving the
     # window through the left/right/top edge), then let the watchdog react.
     win._central.setCursor(_CURSOR_FOR_EDGE["left"])
-    with patch("torrent2000.ui.main_window.QCursor.pos", return_value=global_point):
-        win._check_cursor_watchdog()
+    with patch("torrent2000.ui.frameless_resize.QCursor.pos", return_value=global_point):
+        win._resize_controller._check_cursor_watchdog()
     assert win._central.cursor().shape() == expected_shape
 
 
@@ -60,7 +61,12 @@ def _stale_check(win, global_point, expected_shape):
 def test_cursor_resets_when_pointer_leaves_via_any_edge(window, offset):
     geo = window.geometry()
     dx, dy = offset
-    _stale_check(window, QPoint(geo.center().x() + dx, geo.center().y() + dy), Qt.ArrowCursor)
+    # Not hardcoded to Qt.ArrowCursor: MainWindow now sets a themed cursor
+    # (see theme_manager.cursor_for_theme) on the window itself, which
+    # central correctly inherits once its own stale resize cursor is
+    # cleared -- the invariant under test is "no longer stuck on a resize
+    # shape", not "specifically the OS arrow".
+    _stale_check(window, QPoint(geo.center().x() + dx, geo.center().y() + dy), window.cursor().shape())
 
 
 def test_edge_at_rejects_positions_outside_central_bounds(window):
@@ -68,10 +74,10 @@ def test_edge_at_rejects_positions_outside_central_bounds(window):
     # comparisons ("pos.x() >= w - m"), so a position far outside central's
     # own rect was still reported as an edge instead of "no edge".
     w, h = window._central.width(), window._central.height()
-    assert window._edge_at(QPoint(-500, h // 2)) is None
-    assert window._edge_at(QPoint(w + 500, h // 2)) is None
-    assert window._edge_at(QPoint(w // 2, -500)) is None
-    assert window._edge_at(QPoint(w // 2, h + 500)) is None
+    assert window._resize_controller._edge_at(QPoint(-500, h // 2)) is None
+    assert window._resize_controller._edge_at(QPoint(w + 500, h // 2)) is None
+    assert window._resize_controller._edge_at(QPoint(w // 2, -500)) is None
+    assert window._resize_controller._edge_at(QPoint(w // 2, h + 500)) is None
 
 
 @pytest.mark.parametrize(
@@ -96,10 +102,10 @@ def test_watchdog_still_shows_resize_cursor_on_genuine_margin_hover(window, marg
 
 
 def test_watchdog_does_not_fight_an_active_drag(window):
-    window._resize_edge = "left"
-    with patch("torrent2000.ui.main_window.QCursor.pos", return_value=QPoint(-500, 0)):
+    window._resize_controller._resize_edge = "left"
+    with patch("torrent2000.ui.frameless_resize.QCursor.pos", return_value=QPoint(-500, 0)):
         # Must be a no-op mid-drag -- the drag's own mouse-move handling
         # owns the cursor shape until the button is released.
         window._central.setCursor(_CURSOR_FOR_EDGE["left"])
-        window._check_cursor_watchdog()
+        window._resize_controller._check_cursor_watchdog()
     assert window._central.cursor().shape() == Qt.SizeHorCursor

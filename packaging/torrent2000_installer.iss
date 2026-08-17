@@ -3,9 +3,24 @@
 ;   ISCC.exe torrent2000_installer.iss
 ; Expects the PyInstaller build to already exist at ..\dist\Torrent2000.exe
 ; (run packaging\torrent2000.spec first).
+;
+; Silent / unattended installation:
+;   Torrent2000-Setup.exe /VERYSILENT /SUPPRESSMSGBOXES /NORESTART
+;
+; Without a /TASKS or /MERGETASKS argument, a (very)silent install still
+; selects all 3 tasks below (desktop icon + both file associations), since
+; none of them are marked "unchecked" -- this can surprise a scripted
+; deployment that doesn't want them all. To pick tasks explicitly, use one
+; of:
+;   /TASKS="desktopicon,associatetorrent,associatemagnet"
+;     A positive list: only the named tasks are selected, everything else
+;     is deselected.
+;   /MERGETASKS="!associatetorrent,!associatemagnet"
+;     Deselects the named tasks (the "!" prefix) while leaving any other
+;     task, e.g. desktopicon, at its default (selected).
 
 #define MyAppName "Torrent 2000"
-#define MyAppVersion "1.0.1"
+#define MyAppVersion "1.1.1"
 #define MyAppPublisher "Torrent 2000"
 #define MyAppExeName "Torrent2000.exe"
 

@@ -21,7 +21,6 @@ rescales the displayed level, it doesn't rewrite what was already earned.
 """
 
 import math
-from typing import Optional
 
 from torrent2000.stats.models import StatsSnapshot
 from torrent2000.theme_ids import CCCP_THEME_ID, MACOS_THEME_ID
@@ -42,7 +41,7 @@ _THEME_SCORE_FACTORS = {
 }
 
 
-def score_factors_for(theme_id: Optional[str]) -> tuple[float, float]:
+def score_factors_for(theme_id: str | None) -> tuple[float, float]:
     return _THEME_SCORE_FACTORS.get(theme_id, (1.0, UPLOAD_LEVEL_WEIGHT))
 
 

@@ -1,0 +1,581 @@
+/* Torrent 2000 -- "Windows 10" skin (Fluent Design).
+
+   Token palette (light):
+     bg              #FFFFFF   window / page background
+     surface         #F3F3F3   secondary surface -- tab strip track, table
+                                header row, menu/dialog chrome, disabled fill
+     border          #8A8A8A   control border, resting state (inputs, combo,
+                                checkbox); hairline dividers use a lighter
+                                tint of this (#E5E5E5 -- pane/table/splitter)
+     text            #1B1B1B   primary text (Fluent's near-black, not #000)
+     text-muted      #5F5F5F   secondary text / unselected tab label
+     accent          #0078D4   Windows blue -- the one unmistakable Fluent
+                                signature color
+     accent-hover    #106EBE   accent hover / "reveal" edge -- precise,
+                                one step darker, no blur or fade
+     danger          #C42B1C   destructive red (Fluent "critical" red)
+
+   Supporting tints derived from the palette above (not core identity
+   colors, just literal shades used for specific states):
+     #E5F1FB / #CCE4F7  accent-tinted hover / pressed wash (the light,
+                         instantly-recognizable Fluent "reveal highlight")
+     #005A9E             accent, pressed/darkened one step further
+     #A0A0A0 / #D6D6D6   disabled text / disabled border
+
+   Fully flat design -- zero gradients, zero 3D bevels, sharp square
+   corners everywhere (window_corner_radius = 0 in theme_manager.py).
+   Fluent's richness comes from precision, not ornament: every interactive
+   state (hover/focus/pressed/disabled/selected) gets an immediate, crisp,
+   unambiguous visual change -- never a 5% tint nobody notices. The 2px
+   focus rectangle is drawn at fixed, deliberate offsets so it never looks
+   like an accident. The title bar is NOT drawn by this stylesheet -- see
+   src/torrent2000/ui/widgets/app_title_bar.py.
+*/
+
+* {
+    font-family: "Segoe UI", "MS Shell Dlg 2", sans-serif;
+    font-size: 9pt;
+}
+
+QMainWindow, QWidget#centralWidget {
+    background-color: #FFFFFF;
+}
+
+QWidget {
+    background-color: #FFFFFF;
+    color: #1B1B1B;
+}
+
+QDialog {
+    background-color: #FFFFFF;
+    color: #1B1B1B;
+}
+
+/* ---------------------------------------------------------------------
+   Tabs -- flat, minimal; the selected tab is marked with a thin accent
+   underline rather than a raised 3D look, matching Fluent Design. Hover
+   uses the same light accent "reveal" wash as buttons for a consistent
+   interaction language across the whole theme.
+   --------------------------------------------------------------------- */
+
+QTabWidget::pane {
+    border: 1px solid #E5E5E5;
+    background-color: #FFFFFF;
+    top: -1px;
+}
+
+QTabBar::tab {
+    background-color: #F3F3F3;
+    border: 1px solid #E5E5E5;
+    border-bottom: none;
+    padding: 7px 18px;
+    margin-right: 1px;
+    color: #5F5F5F;
+}
+
+QTabBar::tab:selected {
+    background-color: #FFFFFF;
+    border-color: #E5E5E5;
+    border-bottom: 2px solid #0078D4;
+    margin-top: 0px;
+    color: #1B1B1B;
+}
+
+QTabBar::tab:!selected {
+    margin-top: 2px;
+}
+
+QTabBar::tab:hover:!selected {
+    background-color: #E5F1FB;
+    border-bottom: 2px solid #B8DAF3;
+    color: #1B1B1B;
+}
+
+QTabBar::tab:focus {
+    outline: 2px solid #0078D4;
+    outline-offset: -3px;
+}
+
+/* ---------------------------------------------------------------------
+   Group boxes -- thin flat border, plain title, no rounding.
+   --------------------------------------------------------------------- */
+
+QGroupBox {
+    border: 1px solid #E5E5E5;
+    border-radius: 0px;
+    margin-top: 10px;
+    padding-top: 6px;
+    background-color: #FFFFFF;
+    font-weight: normal;
+    color: #1B1B1B;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 4px;
+    color: #1B1B1B;
+}
+
+/* ---------------------------------------------------------------------
+   Buttons -- flat rectangle, thin border, immediate accent "reveal" wash
+   on hover. No gradients, no bevel, sharp corners. :default gets a solid
+   accent fill (the real Fluent "call to action" look for a dialog's
+   primary button), not just a thicker border.
+   --------------------------------------------------------------------- */
+
+QPushButton {
+    background-color: #FBFBFB;
+    border: 1px solid #ADADAD;
+    border-radius: 0px;
+    padding: 4px 12px;
+    min-height: 18px;
+    color: #1B1B1B;
+}
+
+QPushButton:hover:!pressed {
+    background-color: #E5F1FB;
+    border: 1px solid #0078D4;
+}
+
+QPushButton:pressed {
+    background-color: #CCE4F7;
+    border: 1px solid #005A9E;
+}
+
+QPushButton:focus {
+    outline: 2px solid #0078D4;
+    outline-offset: 1px;
+}
+
+QPushButton:default {
+    background-color: #0078D4;
+    border: 1px solid #005A9E;
+    color: #FFFFFF;
+}
+
+QPushButton:default:hover:!pressed {
+    background-color: #106EBE;
+    border: 1px solid #005A9E;
+    color: #FFFFFF;
+}
+
+QPushButton:default:pressed {
+    background-color: #005A9E;
+    border: 1px solid #004578;
+    color: #FFFFFF;
+}
+
+QPushButton:disabled {
+    background-color: #F3F3F3;
+    border: 1px solid #D6D6D6;
+    color: #A0A0A0;
+}
+
+/* Secondary destructive actions -- flat button, muted red tint, roughly
+   half the strength of the title bar's close-hover red. */
+QPushButton#dangerButton {
+    background-color: #F5C6C0;
+    border: 1px solid #C42B1C;
+    border-radius: 0px;
+    padding: 2px 10px;
+    min-height: 16px;
+    color: #1B1B1B;
+}
+
+QPushButton#dangerButton:hover:!pressed {
+    background-color: #F9DAD6;
+    border: 1px solid #0078D4;
+}
+
+QPushButton#dangerButton:pressed {
+    background-color: #E5A29B;
+    border: 1px solid #8A3A34;
+}
+
+QPushButton#dangerButton:focus {
+    outline: 2px solid #0078D4;
+    outline-offset: 1px;
+}
+
+/* ---------------------------------------------------------------------
+   Inputs -- flat white boxes, thin gray border, accent-blue on focus.
+   --------------------------------------------------------------------- */
+
+QLineEdit, QSpinBox, QAbstractSpinBox {
+    background-color: #FFFFFF;
+    border: 1px solid #8A8A8A;
+    border-radius: 0px;
+    padding: 2px 4px;
+    selection-background-color: #0078D4;
+    selection-color: #FFFFFF;
+}
+
+QLineEdit:hover, QSpinBox:hover, QAbstractSpinBox:hover {
+    border: 1px solid #0078D4;
+}
+
+QLineEdit:focus, QSpinBox:focus, QAbstractSpinBox:focus {
+    border: 1px solid #0078D4;
+    outline: 2px solid #0078D4;
+    outline-offset: 1px;
+}
+
+QLineEdit:disabled, QSpinBox:disabled, QAbstractSpinBox:disabled {
+    background-color: #F3F3F3;
+    border: 1px solid #D6D6D6;
+    color: #A0A0A0;
+}
+
+QAbstractSpinBox::up-button, QAbstractSpinBox::down-button {
+    subcontrol-origin: border;
+    width: 16px;
+    background-color: #FBFBFB;
+    border-left: 1px solid #8A8A8A;
+}
+
+QAbstractSpinBox::up-button {
+    subcontrol-position: top right;
+    border-bottom: 1px solid #E5E5E5;
+}
+
+QAbstractSpinBox::down-button {
+    subcontrol-position: bottom right;
+}
+
+QAbstractSpinBox::up-button:hover, QAbstractSpinBox::down-button:hover {
+    background-color: #E5F1FB;
+}
+
+QAbstractSpinBox::up-button:pressed, QAbstractSpinBox::down-button:pressed {
+    background-color: #CCE4F7;
+}
+
+QAbstractSpinBox::up-arrow {
+    width: 0px;
+    height: 0px;
+    border-left: 3px solid transparent;
+    border-right: 3px solid transparent;
+    border-bottom: 4px solid #1B1B1B;
+}
+
+QAbstractSpinBox::down-arrow {
+    width: 0px;
+    height: 0px;
+    border-left: 3px solid transparent;
+    border-right: 3px solid transparent;
+    border-top: 4px solid #1B1B1B;
+}
+
+QComboBox {
+    background-color: #FFFFFF;
+    border: 1px solid #8A8A8A;
+    border-radius: 0px;
+    padding: 2px 4px;
+    color: #1B1B1B;
+}
+
+QComboBox:hover {
+    border: 1px solid #0078D4;
+}
+
+QComboBox:focus {
+    border: 1px solid #0078D4;
+    outline: 2px solid #0078D4;
+    outline-offset: 1px;
+}
+
+QComboBox:disabled {
+    background-color: #F3F3F3;
+    border: 1px solid #D6D6D6;
+    color: #A0A0A0;
+}
+
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: right;
+    width: 22px;
+    background-color: #FBFBFB;
+    border-left: 1px solid #8A8A8A;
+}
+
+QComboBox::drop-down:hover {
+    background-color: #E5F1FB;
+}
+
+QComboBox::down-arrow {
+    width: 8px;
+    height: 8px;
+    image: none;
+    border-left: 3px solid transparent;
+    border-right: 3px solid transparent;
+    border-top: 4px solid #1B1B1B;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #FFFFFF;
+    border: 1px solid #8A8A8A;
+    outline: none;
+    padding: 2px;
+    selection-background-color: #0078D4;
+    selection-color: #FFFFFF;
+}
+
+QComboBox QAbstractItemView::item {
+    padding: 4px 8px;
+    min-height: 20px;
+}
+
+QComboBox QAbstractItemView::item:hover {
+    background-color: #E5F1FB;
+    color: #1B1B1B;
+}
+
+QComboBox QAbstractItemView::item:selected {
+    background-color: #0078D4;
+    color: #FFFFFF;
+}
+
+/* ---------------------------------------------------------------------
+   Checkboxes -- flat white box, accent-blue check, sharp corners.
+   --------------------------------------------------------------------- */
+
+QCheckBox::indicator {
+    width: 13px;
+    height: 13px;
+    background-color: #FFFFFF;
+    border: 1px solid #8A8A8A;
+    border-radius: 0px;
+}
+
+QCheckBox::indicator:hover {
+    border: 1px solid #0078D4;
+}
+
+QCheckBox::indicator:focus {
+    outline: 2px solid #0078D4;
+    outline-offset: 1px;
+}
+
+QCheckBox::indicator:disabled {
+    background-color: #F3F3F3;
+    border: 1px solid #D6D6D6;
+}
+
+QCheckBox::indicator:checked {
+    background-color: #0078D4;
+    border: 1px solid #0078D4;
+    image: url(theme:checkmark.png);
+}
+
+QCheckBox::indicator:checked:hover {
+    background-color: #106EBE;
+    border: 1px solid #106EBE;
+}
+
+QCheckBox::indicator:checked:disabled {
+    background-color: #C7C7C7;
+    border: 1px solid #C7C7C7;
+}
+
+/* ---------------------------------------------------------------------
+   Sliders -- thin flat groove, small round accent handle.
+   --------------------------------------------------------------------- */
+
+QSlider::groove:horizontal {
+    height: 3px;
+    background-color: #C7C7C7;
+}
+
+QSlider::handle:horizontal {
+    width: 12px;
+    height: 12px;
+    margin: -5px 0;
+    background-color: #0078D4;
+    border: 1px solid #005A9E;
+    border-radius: 6px;
+}
+
+QSlider::handle:horizontal:hover {
+    background-color: #106EBE;
+}
+
+QSlider::handle:horizontal:focus {
+    outline: 2px solid #0078D4;
+    outline-offset: 2px;
+}
+
+QSlider::handle:horizontal:disabled {
+    background-color: #D6D6D6;
+    border: 1px solid #ADADAD;
+}
+
+/* ---------------------------------------------------------------------
+   Tables / trees / lists -- flat white surface, solid accent selection.
+   --------------------------------------------------------------------- */
+
+QTableWidget, QTreeWidget {
+    background-color: #FFFFFF;
+    alternate-background-color: #F7F7F7;
+    gridline-color: #E5E5E5;
+    border: 1px solid #E5E5E5;
+    selection-background-color: #0078D4;
+    selection-color: #FFFFFF;
+}
+
+QHeaderView::section {
+    background-color: #F3F3F3;
+    border: 1px solid #E5E5E5;
+    padding: 3px 6px;
+    font-weight: normal;
+    color: #1B1B1B;
+}
+
+QListWidget {
+    background-color: #FFFFFF;
+    border: 1px solid #E5E5E5;
+    outline: none;
+    color: #1B1B1B;
+    padding: 2px;
+}
+
+QListWidget::item {
+    padding: 4px 8px;
+}
+
+QListWidget::item:hover {
+    background-color: #E5F1FB;
+}
+
+QListWidget::item:selected {
+    background-color: #0078D4;
+    color: #FFFFFF;
+}
+
+QListWidget::item:focus {
+    outline: 2px solid #0078D4;
+    outline-offset: -2px;
+}
+
+/* ---------------------------------------------------------------------
+   Context menus -- sharp square corners (authentic to Win10, unlike the
+   heavily-rounded Win11 flyout menus), solid accent selection bar, thin
+   separator lines. This was a visible gap in the previous theme: right-
+   click menus fell back to native Windows chrome and broke immersion.
+   --------------------------------------------------------------------- */
+
+QMenu {
+    background-color: #FFFFFF;
+    border: 1px solid #C8C8C8;
+    padding: 2px;
+    color: #1B1B1B;
+}
+
+QMenu::item {
+    background-color: transparent;
+    padding: 6px 24px 6px 14px;
+    margin: 1px 2px;
+    color: #1B1B1B;
+}
+
+QMenu::item:selected {
+    background-color: #0078D4;
+    color: #FFFFFF;
+}
+
+QMenu::item:disabled {
+    color: #A0A0A0;
+}
+
+QMenu::separator {
+    height: 1px;
+    background-color: #E5E5E5;
+    margin: 4px 8px;
+}
+
+QMenu::indicator {
+    width: 13px;
+    height: 13px;
+    left: 4px;
+}
+
+QProgressBar {
+    border: 1px solid #E5E5E5;
+    background-color: #E1E1E1;
+    text-align: center;
+    color: #1B1B1B;
+}
+
+QProgressBar::chunk {
+    background-color: #0078D4;
+    margin: 0px;
+}
+
+QLabel {
+    background: transparent;
+}
+
+QSplitter::handle {
+    background-color: #FFFFFF;
+}
+
+/* Thin, minimal, flat scrollbars -- Win10 modernized these away from the
+   chunky 3D look older Windows versions used. */
+QScrollBar:vertical {
+    background: #FFFFFF;
+    width: 12px;
+    border: none;
+}
+
+QScrollBar::handle:vertical {
+    background-color: #C1C1C1;
+    border-radius: 0px;
+    min-height: 24px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background-color: #A6A6A6;
+}
+
+QScrollBar:horizontal {
+    background: #FFFFFF;
+    height: 12px;
+    border: none;
+}
+
+QScrollBar::handle:horizontal {
+    background-color: #C1C1C1;
+    border-radius: 0px;
+    min-width: 24px;
+}
+
+QScrollBar::handle:horizontal:hover {
+    background-color: #A6A6A6;
+}
+
+/* ---------------------------------------------------------------------
+   Tooltip -- flat, matches the tab/panel neutral gray with a thin border.
+   --------------------------------------------------------------------- */
+
+QToolTip {
+    background-color: #F3F3F3;
+    color: #1B1B1B;
+    border: 1px solid #8A8A8A;
+    padding: 4px 8px;
+}
+
+/* ---------------------------------------------------------------------
+   Custom title bar sits directly above the tab widget in a frameless
+   window -- drop the pane's top border to avoid a double line/gap.
+   --------------------------------------------------------------------- */
+
+QTabWidget#mainTabs::pane {
+    border-top: none;
+    top: 0px;
+}
+
+QSizeGrip {
+    background-color: #FFFFFF;
+    width: 16px;
+    height: 16px;
+}

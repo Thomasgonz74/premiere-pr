@@ -1,15 +1,18 @@
+import collections
 import logging
 
 import libtorrent as lt
-from PySide6.QtCore import QObject, QTimer, Signal
+from PySide6.QtCore import QCoreApplication, QObject, Signal
 
 from torrent2000 import APP_VERSION
 from torrent2000.config.paths import get_default_download_dir
 from torrent2000.config.settings import Settings
 from torrent2000.engine import add_params, persistence, proxy, trackers as tracker_ops
 from torrent2000.engine.alerts import AlertDispatcher, status_to_record
-from torrent2000.engine.torrent_item import TorrentRecord, TorrentState, TrackerInfo
+from torrent2000.engine.torrent_categories import TorrentCategoryService
+from torrent2000.engine.torrent_item import PeerInfo, TorrentRecord, TorrentState, TrackerInfo
 from torrent2000.theme_ids import CCCP_THEME_ID
+from torrent2000.utils.qt_timers import start_periodic_timer
 
 logger = logging.getLogger(__name__)
 
@@ -118,6 +121,7 @@ class SessionManager(QObject):
     # Switching TO the CCCP theme paused this many still-downloading
     # torrents outright (see enforce_theme_download_policy).
     theme_downloads_paused = Signal(int)
+    storage_moved = Signal(str, str)  # str info_hash, str new_path
 
     def __init__(self, settings: Settings, parent=None) -> None:
         super().__init__(parent)
@@ -125,6 +129,19 @@ class SessionManager(QObject):
         self._session = lt.session(_build_session_settings(settings))
         self._records: dict[str, TorrentRecord] = {}
         self._handles: dict[str, "lt.torrent_handle"] = {}
+        self._private_flag_checked: set[str] = set()
+        # info_hashes restored from resume data that were *already* 100%
+        # complete (all wanted pieces present) before this process started --
+        # see _on_torrent_finished. libtorrent re-fires torrent_finished_alert
+        # for these while verifying their fast-resume data on every restart,
+        # even though nothing was actually (re)downloaded this session.
+        self._pending_restore_confirmation: set[str] = set()
+        self._categories = TorrentCategoryService()
+        # In-memory only (not persisted): ~60s of (download_rate, upload_rate)
+        # samples per torrent at this timer's 300ms tick, for the speed-over-
+        # time graph. maxlen=200 caps memory use per torrent and keeps the
+        # deque self-trimming -- oldest sample drops as a new one arrives.
+        self._speed_history: dict[str, collections.deque] = {}
 
         self._dispatcher = AlertDispatcher(
             on_state_update=self._on_state_update,
@@ -134,11 +151,10 @@ class SessionManager(QObject):
             on_save_resume_data=self._on_save_resume_data,
             on_torrent_removed=self._on_torrent_removed,
             on_torrent_added=self._on_torrent_added,
+            on_storage_moved=self._on_storage_moved,
         )
 
-        self._timer = QTimer(self)
-        self._timer.timeout.connect(self._on_tick)
-        self._timer.start(300)
+        self._timer = start_periodic_timer(self, 300, self._on_tick)
 
         # shutdown() (MainWindow.closeEvent) is the main save point, but
         # relying on it alone means an abnormal exit -- a crash, a killed
@@ -146,9 +162,7 @@ class SessionManager(QObject):
         # clean close. This periodic save is the same save_resume_data()/
         # save_resume_data_alert pipeline shutdown() already uses, just
         # triggered on a timer instead of only at exit.
-        self._resume_save_timer = QTimer(self)
-        self._resume_save_timer.timeout.connect(self._save_all_resume_data)
-        self._resume_save_timer.start(120_000)
+        self._resume_save_timer = start_periodic_timer(self, 120_000, self._save_all_resume_data)
 
         self._restore_previous_session()
 
@@ -178,6 +192,21 @@ class SessionManager(QObject):
             if record is None:
                 continue
             status_to_record(status, record)
+            history = self._speed_history.get(info_hash)
+            if history is None:
+                history = collections.deque(maxlen=200)
+                self._speed_history[info_hash] = history
+            history.append((record.download_rate, record.upload_rate))
+            if info_hash not in self._private_flag_checked:
+                # handle.torrent_file() returns None until metadata has
+                # actually arrived, so this can't be done once at add time --
+                # poll for it lazily here instead, and stop polling as soon
+                # as it's been resolved once (whatever the result).
+                handle = self._handles.get(info_hash)
+                ti = handle.torrent_file() if handle is not None and handle.is_valid() else None
+                if ti is not None:
+                    record.is_private = ti.priv()
+                    self._private_flag_checked.add(info_hash)
             self.torrent_status_updated.emit(info_hash, record)
 
     def _on_metadata_received(self, info_hash: str) -> None:
@@ -187,6 +216,14 @@ class SessionManager(QObject):
         self.metadata_received.emit(info_hash)
 
     def _on_torrent_finished(self, info_hash: str) -> None:
+        if info_hash in self._pending_restore_confirmation:
+            # Not a new completion -- libtorrent re-emits this alert while
+            # verifying a restored torrent's fast-resume data confirms it's
+            # still 100% present on disk. Swallow the one-shot reconfirmation
+            # so it doesn't reach NotificationService as a "download
+            # finished" toast on every relaunch.
+            self._pending_restore_confirmation.discard(info_hash)
+            return
         self.torrent_finished.emit(info_hash)
 
     def _on_tracker_error(self, info_hash: str, message: str) -> None:
@@ -198,11 +235,20 @@ class SessionManager(QObject):
     def _on_torrent_removed(self, info_hash: str) -> None:
         self._records.pop(info_hash, None)
         self._handles.pop(info_hash, None)
+        self._speed_history.pop(info_hash, None)
+        self._pending_restore_confirmation.discard(info_hash)
+        self._categories.remove(info_hash)
         persistence.delete_resume_file(info_hash)
         self.torrent_removed.emit(info_hash)
 
     def _on_torrent_added(self, handle) -> None:
         pass  # bookkeeping already done synchronously in add_torrent_from_*
+
+    def _on_storage_moved(self, info_hash: str, new_path: str) -> None:
+        record = self._records.get(info_hash)
+        if record is not None:
+            record.save_path = new_path
+        self.storage_moved.emit(info_hash, new_path)
 
     # ------------------------------------------------------------------- API
 
@@ -257,6 +303,26 @@ class SessionManager(QObject):
     def all_records(self) -> list[TorrentRecord]:
         return list(self._records.values())
 
+    def set_torrent_category(self, info_hash: str, category: str) -> None:
+        record = self._records.get(info_hash)
+        if record is not None:
+            record.category = category
+        self._categories.set(info_hash, category)
+
+    def list_categories(self) -> list[str]:
+        """Distinct non-empty categories currently used by at least one
+        known torrent, sorted -- not just everything ever persisted (a
+        category last used by a since-removed torrent shouldn't linger in
+        e.g. a filter dropdown)."""
+        used = {record.category for record in self._records.values() if record.category}
+        return sorted(used)
+
+    def get_speed_history(self, info_hash: str) -> list[tuple[int, int]]:
+        """Oldest -> newest (download_rate, upload_rate) samples collected
+        since the torrent was added (or since this process started, for a
+        torrent restored from a previous session)."""
+        return list(self._speed_history.get(info_hash, []))
+
     def get_torrent_files(self, info_hash: str):
         from torrent2000.engine.torrent_files import files_from_torrent_info
 
@@ -267,11 +333,6 @@ class SessionManager(QObject):
         if ti is None:
             return []
         return files_from_torrent_info(ti)
-
-    def set_file_priorities(self, info_hash: str, priorities: list[int]) -> None:
-        handle = self._handles.get(info_hash)
-        if handle is not None:
-            handle.prioritize_files(priorities)
 
     def exclude_files(self, info_hash: str, excluded_indices: set[int]) -> None:
         """Set priority 0 (excluded/"cleaned") for the given file indices,
@@ -285,6 +346,20 @@ class SessionManager(QObject):
         for idx in excluded_indices:
             if 0 <= idx < len(priorities):
                 priorities[idx] = FILE_PRIORITY_EXCLUDED
+        handle.prioritize_files(priorities)
+
+    def set_file_priorities(self, info_hash: str, excluded_indices: set[int]) -> None:
+        """Full replacement, unlike exclude_files: every file's priority is
+        set explicitly (excluded or default), so a file previously excluded
+        but no longer in excluded_indices is restored to normal priority.
+        Needed for a post-add file editor where the user can both check and
+        uncheck files, as opposed to exclude_files' one-way "clean" action."""
+        handle = self._handles.get(info_hash)
+        if handle is None:
+            return
+        priorities = handle.get_file_priorities()
+        for idx in range(len(priorities)):
+            priorities[idx] = FILE_PRIORITY_EXCLUDED if idx in excluded_indices else FILE_PRIORITY_DEFAULT
         handle.prioritize_files(priorities)
 
     def start_after_analysis(self, info_hash: str) -> None:
@@ -301,7 +376,13 @@ class SessionManager(QObject):
 
     def pause_torrent(self, info_hash: str) -> None:
         handle = self._handles.get(info_hash)
-        if handle is None:
+        # A ghost record (stale/invalid handle still sitting in _records
+        # between removal and the torrent_removed_alert that clears it) makes
+        # any real handle call raise RuntimeError("invalid torrent handle
+        # used") -- checked here rather than only at each caller so every
+        # pause path (manual pause, share-limit enforcement, battery pause,
+        # remote API, theme enforcement) is covered by one guard.
+        if handle is None or not handle.is_valid():
             return
         # A torrent left auto-managed gets silently un-paused again by
         # libtorrent's own queue manager within a couple of ticks (it decides
@@ -314,7 +395,7 @@ class SessionManager(QObject):
     def resume_torrent(self, info_hash: str) -> None:
         handle = self._handles.get(info_hash)
         record = self._records.get(info_hash)
-        if handle is None:
+        if handle is None or not handle.is_valid():
             return
         if record is not None and _is_download_start_blocked(self._settings.theme, record.progress):
             self.download_blocked_by_theme.emit(info_hash)
@@ -344,12 +425,6 @@ class SessionManager(QObject):
         if handle is not None:
             handle.set_sequential_download(enabled)
 
-    def get_queue_position(self, info_hash: str) -> int:
-        handle = self._handles.get(info_hash)
-        if handle is None:
-            return -1
-        return int(handle.queue_position())
-
     def move_queue_up(self, info_hash: str) -> None:
         handle = self._handles.get(info_hash)
         if handle is not None:
@@ -359,11 +434,6 @@ class SessionManager(QObject):
         handle = self._handles.get(info_hash)
         if handle is not None:
             handle.queue_position_down()
-
-    def move_queue_top(self, info_hash: str) -> None:
-        handle = self._handles.get(info_hash)
-        if handle is not None:
-            handle.queue_position_top()
 
     def remove_torrent(self, info_hash: str, delete_files: bool = False) -> None:
         handle = self._handles.get(info_hash)
@@ -377,6 +447,36 @@ class SessionManager(QObject):
         if handle is None:
             return []
         return tracker_ops.get_trackers(handle)
+
+    def get_peer_info(self, info_hash: str) -> list[PeerInfo]:
+        handle = self._handles.get(info_hash)
+        if handle is None or not handle.is_valid():
+            return []
+        peers = []
+        for p in handle.get_peer_info():
+            # lt.peer_info.ip is a (address, port) tuple in this build
+            # (2.0.13.0) -- verified via help(lt.peer_info)/get_peer_info.
+            ip, port = p.ip
+            peers.append(
+                PeerInfo(
+                    ip=f"{ip}:{port}",
+                    client=p.client,
+                    progress=p.progress,
+                    down_speed=p.payload_down_speed,
+                    up_speed=p.payload_up_speed,
+                )
+            )
+        return peers
+
+    def get_magnet_uri(self, info_hash: str) -> str | None:
+        handle = self._handles.get(info_hash)
+        if handle is None or not handle.is_valid():
+            return None
+        try:
+            return lt.make_magnet_uri(handle)
+        except Exception:
+            logger.exception("Failed to build magnet URI for %s", info_hash)
+            return None
 
     def add_tracker(self, info_hash: str, url: str, tier: int = 0) -> None:
         handle = self._handles.get(info_hash)
@@ -398,6 +498,16 @@ class SessionManager(QObject):
                 "enable_lsd": not enabled,
             }
         )
+
+    def recheck_torrent(self, info_hash: str) -> None:
+        handle = self._handles.get(info_hash)
+        if handle is not None:
+            handle.force_recheck()
+
+    def move_storage(self, info_hash: str, new_path: str) -> None:
+        handle = self._handles.get(info_hash)
+        if handle is not None:
+            handle.move_storage(new_path)
 
     def set_proxy(self, settings: Settings) -> None:
         self._session.apply_settings(proxy.build_settings_fragment(settings.proxy))
@@ -452,9 +562,12 @@ class SessionManager(QObject):
                 save_path=atp.save_path,
                 all_time_downloaded=getattr(atp, "total_downloaded", 0),
                 all_time_uploaded=getattr(atp, "total_uploaded", 0),
+                category=self._categories.get(info_hash),
             )
             self._records[info_hash] = record
             self._handles[info_hash] = handle
+            if add_params.resume_data_is_complete(atp):
+                self._pending_restore_confirmation.add(info_hash)
             self.torrent_added.emit(info_hash)
 
     def shutdown(self, timeout_ms: int = 3000) -> None:
@@ -476,6 +589,10 @@ class SessionManager(QObject):
 
         deadline = time.monotonic() + (timeout_ms / 1000)
         while pending > 0 and time.monotonic() < deadline:
+            # Keeps Qt's event loop pumping window messages during this
+            # blocking wait so Windows doesn't mark the process "Not
+            # Responding" -- the wait/save logic itself is unchanged.
+            QCoreApplication.processEvents()
             alerts = self._session.pop_alerts()
             for alert in alerts:
                 if isinstance(alert, lt.save_resume_data_alert):

@@ -16,7 +16,11 @@ def qapp():
 
 
 @pytest.fixture
-def tab():
+def tab(monkeypatch):
+    # Selecting a .torrent file now triggers an automatic scan; these tests
+    # use fake paths that don't exist on disk and only care about the
+    # source-selection bookkeeping, so keep the (real) file reader out of it.
+    monkeypatch.setattr("torrent2000.ui.tabs.add_tab.files_from_torrent_path", lambda path: [])
     return AddTorrentTab(MagicMock(), Settings())
 
 

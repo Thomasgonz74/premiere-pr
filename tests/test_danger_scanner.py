@@ -1,4 +1,5 @@
 from torrent2000.danger_scanner.models import FileEntry, RiskLevel
+from torrent2000.danger_scanner.rules import RTL_OVERRIDE, ScanContext, SuspiciousNameRule
 from torrent2000.danger_scanner.scanner import scan_files
 
 
@@ -51,3 +52,54 @@ def test_hidden_file_adds_risk():
     result = scan_files(files)
     risk = result.risk_for_index(0)
     assert any("caché" in r for r in risk.reasons)
+
+
+def test_disk_image_file_is_flagged():
+    files = [FileEntry(index=0, path="Install/setup.iso", size=700_000_000)]
+    result = scan_files(files)
+    risk = result.risk_for_index(0)
+    assert risk.level >= RiskLevel.LOW
+    assert any("Image disque" in r for r in risk.reasons)
+
+
+def test_macro_document_is_flagged():
+    files = [FileEntry(index=0, path="Facture.docm", size=50_000)]
+    result = scan_files(files)
+    risk = result.risk_for_index(0)
+    assert risk.level >= RiskLevel.LOW
+    assert any("macros" in r for r in risk.reasons)
+
+
+def test_executable_flag_without_known_extension_is_flagged():
+    files = [FileEntry(index=0, path="payload", size=100_000, executable_flag=True)]
+    result = scan_files(files)
+    risk = result.risk_for_index(0)
+    assert risk.level >= RiskLevel.LOW
+    assert any("bit exécutable" in r for r in risk.reasons)
+
+
+def test_executable_flag_on_known_extension_is_not_double_scored():
+    flagged_exe = FileEntry(index=0, path="setup.exe", size=100_000, executable_flag=True)
+    unflagged_exe = FileEntry(index=1, path="setup2.exe", size=100_000, executable_flag=False)
+    result = scan_files([flagged_exe, unflagged_exe])
+    assert result.risk_for_index(0).score == result.risk_for_index(1).score
+    assert not any("bit exécutable" in r for r in result.risk_for_index(0).reasons)
+
+
+def test_suspicious_name_rule_flags_rtl_override_disguised_extension():
+    file = FileEntry(index=0, path=f"invoice{RTL_OVERRIDE}fdp.exe", size=100_000)
+    context = ScanContext(torrent_name="", media_ratio=0.0)
+    hit = SuspiciousNameRule().evaluate(file, context)
+    assert hit is not None
+    assert hit.score_delta == 70
+    assert "RTL-override" in hit.reason
+
+
+def test_suspicious_name_rule_falls_through_to_keygen_pattern_without_rtl_override():
+    file = FileEntry(index=0, path="Software/keygen.exe", size=100_000)
+    context = ScanContext(torrent_name="", media_ratio=0.0)
+    hit = SuspiciousNameRule().evaluate(file, context)
+    assert hit is not None
+    assert hit.score_delta == 30
+    assert "RTL-override" not in hit.reason
+    assert "crack/keygen/activator" in hit.reason

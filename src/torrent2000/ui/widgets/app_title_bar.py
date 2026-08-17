@@ -48,6 +48,14 @@ _MAC_MAXIMIZE_FILL = "#28C840"
 _MAC_MAXIMIZE_HOVER = "#1DAD34"
 _MAC_GLYPH_COLOR = "#4D0000"
 
+# Hand-painted buttons get no QSS :focus styling, so the keyboard focus
+# indicator is drawn here as two overlapping dashed rects, one black one
+# white, offset in dash phase -- "marching ants" that stay visible against
+# any fill color (XP blue, modern hover-gray, or any of the mac traffic-
+# light colors) without needing a per-variant color to be hand-picked.
+_FOCUS_RING_DARK = "#000000"
+_FOCUS_RING_LIGHT = "#FFFFFF"
+
 
 class _CaptionButton(QPushButton):
     """A caption button that paints its own glyph -- either the XP style
@@ -68,7 +76,10 @@ class _CaptionButton(QPushButton):
         self.setFixedSize(_BUTTON_SIZE, TITLE_BAR_HEIGHT - 11)
         self.setFlat(True)
         self.setCursor(Qt.ArrowCursor)
-        self.setFocusPolicy(Qt.NoFocus)
+        # TabFocus (not StrongFocus): reachable via Tab/setFocus() so a
+        # keyboard-only user can minimize/maximize/close, but mouse clicks
+        # still don't grab focus, leaving hover/click visuals unchanged.
+        self.setFocusPolicy(Qt.TabFocus)
         self.setStyleSheet("QPushButton { border: none; background: transparent; }")
 
     def set_glyph(self, glyph: str) -> None:
@@ -165,6 +176,21 @@ class _CaptionButton(QPushButton):
             else:
                 painter.drawLine(cx - 4, cy - 4, cx + 4, cy + 4)
                 painter.drawLine(cx - 4, cy + 4, cx + 4, cy - 4)
+
+        if self.hasFocus():
+            painter.setRenderHint(QPainter.Antialiasing, False)
+            focus_rect = rect.adjusted(2, 2, -2, -2)
+            pen = QPen(QColor(_FOCUS_RING_DARK))
+            pen.setStyle(Qt.DashLine)
+            pen.setWidth(1)
+            painter.setBrush(Qt.NoBrush)
+            painter.setPen(pen)
+            painter.drawRect(focus_rect)
+            pen.setColor(QColor(_FOCUS_RING_LIGHT))
+            pen.setDashOffset(3)
+            painter.setPen(pen)
+            painter.drawRect(focus_rect)
+
         painter.end()
 
 

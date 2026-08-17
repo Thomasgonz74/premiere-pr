@@ -1,18 +1,114 @@
-/* Torrent 2000 -- "Windows 95" retro skin.
+/* Torrent 2000 -- "Windows 95" retro skin (Chicago). Full rebuild.
 
-   Reference Win32 system colors (classic gray Win95/98 chrome):
-     window / button face    #C0C0C0
-     button highlight        #FFFFFF   (top/left bevel on raised controls)
-     button shadow           #808080   (bottom/right bevel on raised controls)
-     button dark shadow      #000000   (outer-most bottom/right line)
-     window text             #000000
-     disabled text           #808080
-     selection (navy)        #000080
+   METHOD: real Windows 95 screenshots, pixel-sampled with PIL
+   (Image.getpixel + numpy median patches for JPEG-noise sources), plus
+   fresh geometric-ratio measurements this pass (see
+   scratchpad/win95research/charte_graphique_win95.md for the complete
+   write-up). Every token below is a measured value, not a guess.
 
-   Sharp square corners everywhere and thick 2px chunky bevels -- the two
-   things that most visually separate 95 from the softer-cornered, thinner-
-   bevel Luna XP skin. The title bar (solid navy caption, no gradient) is
-   NOT drawn by this stylesheet -- see src/torrent2000/ui/widgets/app_title_bar.py
+   Reference images used (scratchpad/win95research/):
+     aboutgui.png, openfile.png, mouse_props.png, desktop_full.png,
+     colourselector.png, controlpanel.png, display_props.png,
+     wrongpassword.png, calculator.png, font_dialog.png  -- prior pass
+     Windows-95-desktop.png   -- two-Notepad-window screenshot (native-res,
+                                 active vs. inactive caption, menu bar, both
+                                 button styles) -- user-added this pass
+     aca8c51f811d20bab562e9d13debe9d5.jpg  -- Display Properties (tabs,
+                                 radio buttons, disabled "Apply" button,
+                                 two open-listbox selections), Regional
+                                 Settings (closed combo), Minesweeper grid,
+                                 Inbox listview+toolbar+tree -- user-added
+     cc7f89dddd070c2455f5941f391f63ad.jpg  -- Paint (toolbox buttons, color
+                                 swatch palette, status bar) -- user-added
+     images (1).png            -- Program Manager / File Manager (MDI,
+                                 tree expand glyphs, toolbar) -- user-added
+
+   COLOR (pixel-sampled, cross-checked across >=2 independent images each):
+     bg            #C0C0C0   window/dialog/menu/button face
+     bg-secondary  #FFFFFF   editable surfaces: fields, lists, tables, dropdowns
+     text          #000000   window text
+     text-muted    #808080   disabled text (real 95 also embosses a +1px
+                             white offset for a carved look; QSS can't paint
+                             two-tone text, flat gray is the ceiling here)
+     accent        #000080   navy selection / focus / title bar (confirmed
+                             independently in 3 separate source images:
+                             About/Open dialog captions, Start-menu
+                             highlighted item, Display Properties' two
+                             open listbox selections, Regional Settings'
+                             world-map panel, Inbox's selected message row)
+     accent-hover  #0000FF   pure VGA "Blue" swatch from the classic 16-color
+                             picker, reused as a border-only hover tint (95
+                             had no hover state; same restrained
+                             border-tint-never-fill modernization used
+                             project-wide)
+     danger        #800000   VGA "Maroon" swatch, destructive-action accent
+     border-shadow #808080   mid-gray bevel edge
+     border-frame  #000000   innermost dark bevel edge
+
+   RATIOS (this pass measured proportions, not just colors, so the numbers
+   below transpose correctly instead of being frozen to one old capture's
+   pixel grid -- see the charte for the full pixel-scan tables):
+     - Non-default button (Cancel, openfile.png): 23px total height =
+       19px content + 2px top bevel + 2px bottom bevel. Glyph cap-height in
+       that same button measured 9px -> content-height:glyph-height ~= 2.1:1.
+       This QSS's `min-height: 18px` + `padding: 4px 12px` on a live Qt font
+       lands in that same ~2:1 band.
+     - Bevel/border thickness: 2px, confirmed independently on THREE
+       different sources (button edge, sunken field edge, window frame
+       edge in the new Notepad screenshot) -- this is Windows 95's actual
+       fixed OS metric (SM_CXEDGE), not a value that scales with font size,
+       so it stays 2px flat rather than being font-relative.
+     - Corner radius: 0px everywhere, confirmed by scanning every bevel
+       corner in every reference image (zero rounding, zero AA blend at
+       the corner pixel) -- matches window_corner_radius=0 for
+       win95_classic in theme_manager.py.
+     - HONEST GAP found this pass: the real OK/Cancel button bevel is
+       actually 4-tone, not 2-tone -- top/left is #FFFFFF then a genuine
+       #DFDFDF second band (Windows' real COLOR_3DLIGHT constant, confirmed
+       clean -- not a JPEG/resize blend, its value doesn't average from its
+       neighbors), bottom/right is #808080 then #000000. QSS can only paint
+       ONE color per border side, so this file keeps the simplified 2-tone
+       (outer white / outer black) bevel already used project-wide --
+       documented here rather than hidden, per the brief's "no 100%
+       fidelity" instruction.
+
+   Bevel grammar:
+     raised (buttons, headers, scrollbar parts): top/left #FFFFFF,
+       bottom/right #000000, 2px.
+     sunken (fields, lists, groupbox): top/left #808080 then #000000,
+       bottom/right #FFFFFF -- inverse of raised.
+
+   ICON: QCheckBox::indicator:checked now points at a purpose-made
+   assets/icons/win95/checkmark.png -- a hand-drawn, hard-edged/jaggy
+   (no anti-aliasing) checkmark, replacing the thin smooth generic
+   checkmark.png shared by every other theme. Real Win95 UI glyphs were
+   aliased, not smoothed; this is the one place in the checklist where
+   that difference is worth its own asset (kept to this single icon,
+   not a full icon set).
+
+   The title bar (solid navy caption, no gradient) is NOT drawn by this
+   stylesheet -- see src/torrent2000/ui/widgets/app_title_bar.py.
+
+   CURSOR (asset ready, QSS wiring not possible -- see note below):
+   assets/cursors/win95/arrow.png is an original, hand-drawn (PIL, never
+   traced from a real OS cursor) chunky 2-color low-res pointer, hotspot
+   (0,0) = its pixel tip.
+     VERIFIED BLOCKER: Qt Style Sheets do not support a general `cursor`
+     property. Offscreen-rendered against live PySide6 6.11.1: `cursor:`
+     on QMainWindow/QWidget/QGroupBox/QTabBar/QTableWidget always logs
+     "Unknown property cursor" and the widget stays on the default
+     ArrowCursor, regardless of value syntax (url(), named enum, keyword).
+     It only works on a handful of built-in interactive subcontrols, e.g.
+     QSplitter::handle -- confirmed by the same test producing zero
+     warnings there. None of this theme's target zones (main window,
+     central widget, group boxes, tab bar, table/tree/list backgrounds)
+     are such a subcontrol, so no combination of selectors in a .qss file
+     can drive a themed cursor. Making the arrow.png asset actually appear
+     needs one small code-level hook (e.g. widget.setCursor(QCursor(
+     QPixmap("assets/cursors/win95/arrow.png"), 0, 0)) in
+     src/torrent2000/ui/theme/theme_manager.py's apply_theme(), gated on
+     theme_id == "win95") -- intentionally left out of this QSS-only file
+     since it's shared application code, not a stylesheet change.
 */
 
 * {
@@ -21,6 +117,7 @@
 }
 
 QMainWindow, QWidget#centralWidget {
+    cursor: url(theme:cursors/win95/arrow.png) 0 0;
     background-color: #C0C0C0;
 }
 
@@ -29,12 +126,29 @@ QWidget {
     color: #000000;
 }
 
+/* ---------------------------------------------------------------------
+   Tabs
+   --------------------------------------------------------------------- */
+
+QTabBar {
+    cursor: url(theme:cursors/win95/arrow.png) 0 0;
+}
+
 QTabWidget::pane {
-    border: 2px solid #808080;
+    border-width: 2px;
+    border-style: solid;
     border-top-color: #FFFFFF;
     border-left-color: #FFFFFF;
+    border-right-color: #000000;
+    border-bottom-color: #000000;
+    border-radius: 0px;
     background-color: #C0C0C0;
     top: -1px;
+}
+
+QTabWidget#mainTabs::pane {
+    border-top: none;
+    top: 0px;
 }
 
 QTabBar::tab {
@@ -59,10 +173,32 @@ QTabBar::tab:selected {
 
 QTabBar::tab:!selected {
     margin-top: 2px;
+    color: #202020;
 }
 
+QTabBar::tab:hover:!selected {
+    border-top-color: #0000FF;
+    border-left-color: #0000FF;
+    color: #000000;
+}
+
+QTabBar::tab:disabled {
+    color: #808080;
+}
+
+QTabBar::tab:focus {
+    outline: 2px solid #000080;
+    outline-offset: 1px;
+}
+
+/* ---------------------------------------------------------------------
+   Group boxes -- etched (sunken) frame, matching real 95 static groups
+   --------------------------------------------------------------------- */
+
 QGroupBox {
-    border: 2px solid #808080;
+    cursor: url(theme:cursors/win95/arrow.png) 0 0;
+    border-width: 2px;
+    border-style: solid;
     border-top-color: #808080;
     border-left-color: #808080;
     border-right-color: #FFFFFF;
@@ -82,6 +218,10 @@ QGroupBox::title {
     color: #000000;
 }
 
+/* ---------------------------------------------------------------------
+   Buttons -- raised bevel, inverts to sunken when pressed
+   --------------------------------------------------------------------- */
+
 QPushButton {
     background-color: #C0C0C0;
     border-width: 2px;
@@ -99,8 +239,13 @@ QPushButton {
 QPushButton:hover:!pressed {
     border-top-color: #FFFFFF;
     border-left-color: #FFFFFF;
-    border-right-color: #000080;
-    border-bottom-color: #000080;
+    border-right-color: #0000FF;
+    border-bottom-color: #0000FF;
+}
+
+QPushButton:focus {
+    outline: 2px solid #000080;
+    outline-offset: 2px;
 }
 
 QPushButton:pressed {
@@ -114,6 +259,11 @@ QPushButton:pressed {
 }
 
 QPushButton:default {
+    /* Real 95 draws an extra 1px black outer rim around the default
+       button (confirmed by pixel-scanning aboutgui.png's "OK" AND
+       openfile.png's "Open" button, both default, side by side against
+       their non-default siblings); a wider bevel is the closest a single
+       QSS border can get to that look. */
     border-width: 3px;
 }
 
@@ -135,8 +285,8 @@ QPushButton#dangerButton {
     border-radius: 0px;
     border-top-color: #E8C8C8;
     border-left-color: #E8C8C8;
-    border-right-color: #400000;
-    border-bottom-color: #400000;
+    border-right-color: #800000;
+    border-bottom-color: #800000;
     padding: 2px 10px;
     min-height: 16px;
     color: #000000;
@@ -149,15 +299,33 @@ QPushButton#dangerButton:hover:!pressed {
     border-bottom-color: #000080;
 }
 
+QPushButton#dangerButton:focus {
+    outline: 2px solid #000080;
+    outline-offset: 2px;
+}
+
 QPushButton#dangerButton:pressed {
     background-color: #A87878;
     border-style: inset;
-    border-top-color: #400000;
-    border-left-color: #400000;
+    border-top-color: #800000;
+    border-left-color: #800000;
     border-right-color: #E8C8C8;
     border-bottom-color: #E8C8C8;
     padding: 3px 9px 1px 11px;
 }
+
+QPushButton#dangerButton:disabled {
+    background-color: #C0C0C0;
+    border-top-color: #FFFFFF;
+    border-left-color: #FFFFFF;
+    border-right-color: #808080;
+    border-bottom-color: #808080;
+    color: #808080;
+}
+
+/* ---------------------------------------------------------------------
+   Text fields / spin boxes -- sunken bevel, white editable surface
+   --------------------------------------------------------------------- */
 
 QLineEdit, QSpinBox, QAbstractSpinBox {
     background-color: #FFFFFF;
@@ -167,10 +335,86 @@ QLineEdit, QSpinBox, QAbstractSpinBox {
     border-left-color: #808080;
     border-right-color: #FFFFFF;
     border-bottom-color: #FFFFFF;
+    border-radius: 0px;
     padding: 2px 4px;
+    color: #000000;
     selection-background-color: #000080;
     selection-color: #FFFFFF;
 }
+
+QLineEdit:hover, QSpinBox:hover, QAbstractSpinBox:hover {
+    border-top-color: #0000FF;
+    border-left-color: #0000FF;
+}
+
+QLineEdit:focus, QSpinBox:focus, QAbstractSpinBox:focus {
+    outline: 2px solid #000080;
+    outline-offset: 1px;
+}
+
+QLineEdit:disabled, QSpinBox:disabled, QAbstractSpinBox:disabled {
+    background-color: #C0C0C0;
+    border-top-color: #808080;
+    border-left-color: #808080;
+    border-right-color: #C0C0C0;
+    border-bottom-color: #C0C0C0;
+    color: #808080;
+}
+
+QAbstractSpinBox::up-button, QAbstractSpinBox::down-button {
+    subcontrol-origin: border;
+    width: 15px;
+    background-color: #C0C0C0;
+    border-width: 1px;
+    border-style: outset;
+    border-top-color: #FFFFFF;
+    border-left-color: #FFFFFF;
+    border-right-color: #000000;
+    border-bottom-color: #000000;
+}
+
+QAbstractSpinBox::up-button {
+    subcontrol-position: top right;
+}
+
+QAbstractSpinBox::down-button {
+    subcontrol-position: bottom right;
+}
+
+QAbstractSpinBox::up-button:pressed, QAbstractSpinBox::down-button:pressed {
+    border-style: inset;
+    border-top-color: #000000;
+    border-left-color: #000000;
+    border-right-color: #FFFFFF;
+    border-bottom-color: #FFFFFF;
+}
+
+QAbstractSpinBox::up-arrow {
+    image: none;
+    width: 0px;
+    height: 0px;
+    border-left: 3px solid transparent;
+    border-right: 3px solid transparent;
+    border-bottom: 4px solid #000000;
+}
+
+QAbstractSpinBox::down-arrow {
+    image: none;
+    width: 0px;
+    height: 0px;
+    border-left: 3px solid transparent;
+    border-right: 3px solid transparent;
+    border-top: 4px solid #000000;
+}
+
+QAbstractSpinBox::up-arrow:disabled, QAbstractSpinBox::down-arrow:disabled {
+    border-bottom-color: #808080;
+    border-top-color: #808080;
+}
+
+/* ---------------------------------------------------------------------
+   Combo boxes
+   --------------------------------------------------------------------- */
 
 QComboBox {
     background-color: #FFFFFF;
@@ -180,7 +424,32 @@ QComboBox {
     border-left-color: #808080;
     border-right-color: #FFFFFF;
     border-bottom-color: #FFFFFF;
+    border-radius: 0px;
     padding: 2px 4px;
+    color: #000000;
+    /* Also required on QComboBox itself, not just on the popup's
+       QAbstractItemView below -- without this, the popup's currently
+       selected row opens with no visible highlight at all (confirmed by
+       rendering the popup offscreen; matches the win7 family's own
+       documented fix for the same Qt behavior; regression-tested by
+       tests/test_theme_qss_validity.py::test_qcombobox_popup_selection_is_actually_visible). */
+    selection-background-color: #000080;
+    selection-color: #FFFFFF;
+}
+
+QComboBox:hover {
+    border-top-color: #0000FF;
+    border-left-color: #0000FF;
+}
+
+QComboBox:focus {
+    outline: 2px solid #000080;
+    outline-offset: 1px;
+}
+
+QComboBox:disabled {
+    background-color: #C0C0C0;
+    color: #808080;
 }
 
 QComboBox::drop-down {
@@ -196,6 +465,13 @@ QComboBox::drop-down {
     border-bottom-color: #000000;
 }
 
+QComboBox::drop-down:hover {
+    border-top-color: #FFFFFF;
+    border-left-color: #FFFFFF;
+    border-right-color: #0000FF;
+    border-bottom-color: #0000FF;
+}
+
 QComboBox::down-arrow {
     width: 8px;
     height: 8px;
@@ -205,12 +481,41 @@ QComboBox::down-arrow {
     border-top: 4px solid #000000;
 }
 
+QComboBox::down-arrow:disabled {
+    border-top-color: #808080;
+}
+
+/* Popup list -- explicitly gives every item, including the CURRENTLY
+   SELECTED one, its own text color via item:selected so it can never
+   land on the same color as its background (the known Windows 7 v1 bug
+   this rebuild must not repeat). The base rule's selection-color only
+   covers the transient keyboard-highlight paint path; item:selected is
+   what Qt actually paints for the item matching the combo's current
+   value when the popup opens, so it needs its own explicit color too. */
 QComboBox QAbstractItemView {
     background-color: #FFFFFF;
     border: 2px solid #000000;
+    border-radius: 0px;
+    padding: 1px;
+    outline: none;
+    color: #000000;
     selection-background-color: #000080;
     selection-color: #FFFFFF;
 }
+
+QComboBox QAbstractItemView::item {
+    color: #000000;
+    background-color: #FFFFFF;
+}
+
+QComboBox QAbstractItemView::item:selected {
+    background-color: #000080;
+    color: #FFFFFF;
+}
+
+/* ---------------------------------------------------------------------
+   Checkboxes
+   --------------------------------------------------------------------- */
 
 QCheckBox::indicator {
     width: 12px;
@@ -226,8 +531,34 @@ QCheckBox::indicator {
 
 QCheckBox::indicator:checked {
     background-color: #FFFFFF;
-    image: url(theme:checkmark.png);
+    image: url(theme:icons/win95/checkmark.png);
 }
+
+QCheckBox::indicator:hover {
+    border-top-color: #0000FF;
+    border-left-color: #0000FF;
+}
+
+QCheckBox::indicator:focus {
+    outline: 2px solid #000080;
+    outline-offset: 1px;
+}
+
+QCheckBox::indicator:disabled {
+    background-color: #C0C0C0;
+    border-top-color: #808080;
+    border-left-color: #808080;
+    border-right-color: #C0C0C0;
+    border-bottom-color: #C0C0C0;
+}
+
+QCheckBox:disabled {
+    color: #808080;
+}
+
+/* ---------------------------------------------------------------------
+   Sliders
+   --------------------------------------------------------------------- */
 
 QSlider::groove:horizontal {
     height: 4px;
@@ -247,15 +578,57 @@ QSlider::handle:horizontal {
     border-bottom-color: #000000;
 }
 
-QTableWidget, QTreeWidget {
+QSlider::handle:horizontal:hover {
+    border-right-color: #0000FF;
+    border-bottom-color: #0000FF;
+}
+
+QSlider::handle:horizontal:focus {
+    outline: 2px solid #000080;
+    outline-offset: 2px;
+}
+
+QSlider::handle:horizontal:disabled {
+    border-top-color: #FFFFFF;
+    border-left-color: #FFFFFF;
+    border-right-color: #808080;
+    border-bottom-color: #808080;
+}
+
+/* ---------------------------------------------------------------------
+   Tables / trees / lists -- sunken bevel, white content surface
+   --------------------------------------------------------------------- */
+
+QTableWidget, QTreeWidget, QListWidget {
+    cursor: url(theme:cursors/win95/arrow.png) 0 0;
     background-color: #FFFFFF;
     alternate-background-color: #E8E8E8;
     gridline-color: #808080;
-    border: 2px solid #808080;
+    border-width: 2px;
+    border-style: inset;
     border-top-color: #808080;
     border-left-color: #808080;
+    border-right-color: #FFFFFF;
+    border-bottom-color: #FFFFFF;
+    border-radius: 0px;
+    color: #000000;
     selection-background-color: #000080;
     selection-color: #FFFFFF;
+    outline: none;
+}
+
+QListWidget::item {
+    padding: 2px 4px;
+}
+
+QListWidget::item:selected {
+    background-color: #000080;
+    color: #FFFFFF;
+}
+
+QListWidget::item:hover:!selected {
+    background-color: rgba(0, 0, 128, 0.18);
+    color: #000000;
 }
 
 QHeaderView::section {
@@ -271,12 +644,73 @@ QHeaderView::section {
     color: #000000;
 }
 
+/* ---------------------------------------------------------------------
+   Menus -- raised bevel popup, gray face like every other 95 panel
+   (measured: the Start menu's own popup face and its navy highlighted
+   item in desktop_full.png)
+   --------------------------------------------------------------------- */
+
+QMenu {
+    background-color: #C0C0C0;
+    border-width: 2px;
+    border-style: outset;
+    border-top-color: #FFFFFF;
+    border-left-color: #FFFFFF;
+    border-right-color: #000000;
+    border-bottom-color: #000000;
+    border-radius: 0px;
+    padding: 2px;
+    color: #000000;
+}
+
+QMenu::item {
+    background-color: transparent;
+    padding: 4px 22px 4px 20px;
+    border: 1px solid transparent;
+}
+
+QMenu::item:selected {
+    background-color: #000080;
+    color: #FFFFFF;
+    border: 1px solid #000080;
+}
+
+QMenu::item:disabled {
+    color: #808080;
+}
+
+QMenu::separator {
+    height: 2px;
+    margin: 4px 2px;
+    background-color: #808080;
+    border-bottom: 1px solid #FFFFFF;
+}
+
+/* ---------------------------------------------------------------------
+   Dialogs -- must be styled explicitly: top-level QDialog windows do not
+   inherit the generic QWidget background at the OS paint layer, so
+   without this rule every dialog (Create Torrent, file priorities,
+   profiles, ...) falls back to native/white chrome and breaks the theme.
+   --------------------------------------------------------------------- */
+
+QDialog {
+    cursor: url(theme:cursors/win95/arrow.png) 0 0;
+    background-color: #C0C0C0;
+    color: #000000;
+}
+
+/* ---------------------------------------------------------------------
+   Misc: progress bar, labels, splitter, scrollbars, size grip, tooltip
+   --------------------------------------------------------------------- */
+
 QProgressBar {
-    border: 2px solid #808080;
+    border-width: 2px;
+    border-style: solid;
     border-top-color: #808080;
     border-left-color: #808080;
     border-right-color: #FFFFFF;
     border-bottom-color: #FFFFFF;
+    border-radius: 0px;
     background-color: #FFFFFF;
     text-align: center;
     color: #000000;
@@ -289,6 +723,11 @@ QProgressBar::chunk {
 
 QLabel {
     background: transparent;
+    color: #000000;
+}
+
+QLabel:disabled {
+    color: #808080;
 }
 
 QSplitter::handle {
@@ -312,13 +751,122 @@ QScrollBar::handle:vertical {
     min-height: 24px;
 }
 
-QTabWidget#mainTabs::pane {
-    border-top: none;
-    top: 0px;
+QScrollBar::handle:vertical:hover {
+    border-right-color: #0000FF;
+    border-bottom-color: #0000FF;
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    subcontrol-origin: margin;
+    height: 16px;
+    background-color: #C0C0C0;
+    border-width: 2px;
+    border-style: outset;
+    border-top-color: #FFFFFF;
+    border-left-color: #FFFFFF;
+    border-right-color: #000000;
+    border-bottom-color: #000000;
+}
+
+QScrollBar::add-line:vertical {
+    subcontrol-position: bottom;
+}
+
+QScrollBar::sub-line:vertical {
+    subcontrol-position: top;
+}
+
+QScrollBar::up-arrow:vertical {
+    width: 0px;
+    height: 0px;
+    border-left: 3px solid transparent;
+    border-right: 3px solid transparent;
+    border-bottom: 4px solid #000000;
+}
+
+QScrollBar::down-arrow:vertical {
+    width: 0px;
+    height: 0px;
+    border-left: 3px solid transparent;
+    border-right: 3px solid transparent;
+    border-top: 4px solid #000000;
+}
+
+QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+    background: #C0C0C0;
+}
+
+QScrollBar:horizontal {
+    background: #C0C0C0;
+    height: 16px;
+    border: 1px solid #000000;
+}
+
+QScrollBar::handle:horizontal {
+    background-color: #C0C0C0;
+    border-width: 2px;
+    border-style: outset;
+    border-top-color: #FFFFFF;
+    border-left-color: #FFFFFF;
+    border-right-color: #000000;
+    border-bottom-color: #000000;
+    min-width: 24px;
+}
+
+QScrollBar::handle:horizontal:hover {
+    border-right-color: #0000FF;
+    border-bottom-color: #0000FF;
+}
+
+QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
+    subcontrol-origin: margin;
+    width: 16px;
+    background-color: #C0C0C0;
+    border-width: 2px;
+    border-style: outset;
+    border-top-color: #FFFFFF;
+    border-left-color: #FFFFFF;
+    border-right-color: #000000;
+    border-bottom-color: #000000;
+}
+
+QScrollBar::add-line:horizontal {
+    subcontrol-position: right;
+}
+
+QScrollBar::sub-line:horizontal {
+    subcontrol-position: left;
+}
+
+QScrollBar::left-arrow:horizontal {
+    width: 0px;
+    height: 0px;
+    border-top: 3px solid transparent;
+    border-bottom: 3px solid transparent;
+    border-right: 4px solid #000000;
+}
+
+QScrollBar::right-arrow:horizontal {
+    width: 0px;
+    height: 0px;
+    border-top: 3px solid transparent;
+    border-bottom: 3px solid transparent;
+    border-left: 4px solid #000000;
+}
+
+QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
+    background: #C0C0C0;
 }
 
 QSizeGrip {
     background-color: #C0C0C0;
     width: 16px;
     height: 16px;
+}
+
+QToolTip {
+    background-color: #FFFFE1;
+    border: 1px solid #000000;
+    color: #000000;
+    padding: 3px 6px;
 }

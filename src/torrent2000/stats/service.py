@@ -61,8 +61,18 @@ class StatsService(QObject):
         self._last_seen[info_hash] = (current_down, current_up)
 
     def flush(self) -> None:
+        total_delta_down = 0
+        total_delta_up = 0
+        torrent_counters: dict[str, tuple[int, int]] = {}
         for info_hash in list(self._current.keys()):
-            self._flush_one(info_hash)
+            current_down, current_up = self._current[info_hash]
+            last_down, last_up = self._last_seen_for(info_hash)
+            total_delta_down += max(0, current_down - last_down)
+            total_delta_up += max(0, current_up - last_up)
+            torrent_counters[info_hash] = (current_down, current_up)
+            self._last_seen[info_hash] = (current_down, current_up)
+        if torrent_counters:
+            self._store.apply_flush(total_delta_down, total_delta_up, torrent_counters)
         self.snapshot_updated.emit(self.current_snapshot())
 
     def current_snapshot(self) -> StatsSnapshot:

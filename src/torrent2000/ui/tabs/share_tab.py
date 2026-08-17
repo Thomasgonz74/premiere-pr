@@ -1,11 +1,13 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
+    QDoubleSpinBox,
     QFileDialog,
     QGroupBox,
     QHBoxLayout,
     QHeaderView,
     QLabel,
     QLineEdit,
+    QMenu,
     QMessageBox,
     QPushButton,
     QSpinBox,
@@ -21,6 +23,13 @@ from torrent2000.engine.share_limits import ShareLimitService
 from torrent2000.engine.torrent_item import TorrentRecord, TorrentState
 from torrent2000.i18n.translator import tr
 from torrent2000.ui.widgets.drop_zone import DropZoneWidget
+from torrent2000.ui.widgets.table_helpers import (
+    confirm_and_remove,
+    configure_no_stretch_table,
+    info_hash_at,
+    make_remove_button,
+    reindex_rows_by_info_hash,
+)
 from torrent2000.utils.formatting import human_eta, human_rate, human_size
 
 _STATE_LABEL_KEYS = {
@@ -31,7 +40,11 @@ _STATE_LABEL_KEYS = {
     TorrentState.ERROR: "share_tab.state_error",
 }
 
-_LIMIT_REASON_KEYS = {"time": "share_tab.limit_reason_time", "data": "share_tab.limit_reason_data"}
+_LIMIT_REASON_KEYS = {
+    "time": "share_tab.limit_reason_time",
+    "data": "share_tab.limit_reason_data",
+    "ratio": "share_tab.limit_reason_ratio",
+}
 
 
 def _columns() -> list[str]:
@@ -69,6 +82,7 @@ class ShareTab(QWidget):
         self._settings = settings
         self._torrent_path: str | None = None
         self._rows: dict[str, int] = {}
+        self._filter_text: str = ""
 
         layout = QVBoxLayout(self)
 
@@ -98,7 +112,12 @@ class ShareTab(QWidget):
         data_row = QHBoxLayout()
         self.data_dir_label = QLabel(tr("share_tab.data_dir_label"), self.source_box)
         data_row.addWidget(self.data_dir_label)
-        self.data_dir_input = QLineEdit(self.source_box)
+        # Pre-filled with the default download directory: torrents added
+        # normally (via the Add tab) land there, so a user who leaves them in
+        # place to seed doesn't have to retype this path every time -- they
+        # only need to change it for a torrent whose data actually lives
+        # somewhere else.
+        self.data_dir_input = QLineEdit(settings.default_download_dir, self.source_box)
         data_row.addWidget(self.data_dir_input, 1)
         self.data_browse_button = QPushButton(tr("common.browse"), self.source_box)
         self.data_browse_button.clicked.connect(self._on_browse_data_dir)
@@ -119,6 +138,15 @@ class ShareTab(QWidget):
         self.data_limit_spin.setRange(0, 1_000_000)
         self.data_limit_spin.setSuffix(tr("share_tab.data_limit_suffix"))
         limits_row.addWidget(self.data_limit_spin)
+        limits_row.addSpacing(16)
+        self.ratio_limit_label = QLabel(tr("share_tab.ratio_limit_label"), self.source_box)
+        limits_row.addWidget(self.ratio_limit_label)
+        self.ratio_limit_spin = QDoubleSpinBox(self.source_box)
+        self.ratio_limit_spin.setRange(0, 100)
+        self.ratio_limit_spin.setSingleStep(0.1)
+        self.ratio_limit_spin.setDecimals(1)
+        self.ratio_limit_spin.setSuffix(tr("share_tab.ratio_limit_suffix"))
+        limits_row.addWidget(self.ratio_limit_spin)
         limits_row.addStretch(1)
         source_layout.addLayout(limits_row)
 
@@ -131,16 +159,14 @@ class ShareTab(QWidget):
 
         layout.addWidget(self.source_box)
 
+        self.search_input = QLineEdit(self)
+        self.search_input.setPlaceholderText(tr("common.search_placeholder"))
+        self.search_input.textChanged.connect(self._on_filter_changed)
+        layout.addWidget(self.search_input)
+
         self.table = QTableWidget(0, 7, self)
         self.table.setHorizontalHeaderLabels(_columns())
-        # Deliberately NOT QHeaderView.Stretch: a Stretch column keeps total
-        # header width pinned to the viewport, so resizing any OTHER column
-        # silently shrinks/grows this one to compensate -- from the user's
-        # side, dragging a column border elsewhere makes THIS column's
-        # border move instead, while the one actually dragged snaps back
-        # to where it started. A fixed initial width with plain Interactive
-        # resizing (the default) makes every column resize independently.
-        self.table.setColumnWidth(0, 220)
+        configure_no_stretch_table(self.table, 220)
         # The Action column holds TWO buttons (Pause/Resume + Remove), unlike
         # every other table's single-button Action column -- left at the
         # default ~100px Interactive width, Qt forces both buttons to
@@ -148,7 +174,8 @@ class ShareTab(QWidget):
         # ResizeToContents re-measures from the cell widget's real sizeHint,
         # including after retranslate_ui() swaps in a longer/shorter locale.
         self.table.horizontalHeader().setSectionResizeMode(6, QHeaderView.ResizeToContents)
-        self.table.verticalHeader().setVisible(False)
+        self.table.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.table.customContextMenuRequested.connect(self._on_context_menu_requested)
         layout.addWidget(self.table, 1)
 
         self._session_manager.torrent_status_updated.connect(self._on_status_updated)
@@ -179,7 +206,10 @@ class ShareTab(QWidget):
         self.time_limit_spin.setSuffix(tr("share_tab.time_limit_suffix"))
         self.data_limit_label.setText(tr("share_tab.data_limit_label"))
         self.data_limit_spin.setSuffix(tr("share_tab.data_limit_suffix"))
+        self.ratio_limit_label.setText(tr("share_tab.ratio_limit_label"))
+        self.ratio_limit_spin.setSuffix(tr("share_tab.ratio_limit_suffix"))
         self.start_button.setText(tr("share_tab.start_button"))
+        self.search_input.setPlaceholderText(tr("common.search_placeholder"))
         self.table.setHorizontalHeaderLabels(_columns())
         for info_hash, row in self._rows.items():
             record = self._session_manager.get_record(info_hash)
@@ -213,6 +243,7 @@ class ShareTab(QWidget):
 
         time_limit = self.time_limit_spin.value() * 3600 or None
         data_limit = self.data_limit_spin.value() * 1024 * 1024 or None
+        ratio_limit = self.ratio_limit_spin.value() or None
 
         if self._torrent_path:
             info_hash = self._session_manager.add_torrent_from_file(self._torrent_path, data_dir)
@@ -224,16 +255,17 @@ class ShareTab(QWidget):
             info_hash = self._session_manager.add_torrent_from_magnet(magnet_uri, data_dir)
             self._session_manager.start_after_analysis(info_hash)
 
-        self._share_limit_service.track(info_hash, time_limit, data_limit)
+        self._share_limit_service.track(info_hash, time_limit, data_limit, ratio_limit=ratio_limit)
         self._reset_form()
 
     def _reset_form(self) -> None:
         self._torrent_path = None
         self.selected_file_label.setText("")
         self.magnet_input.clear()
-        self.data_dir_input.clear()
+        self.data_dir_input.setText(self._settings.default_download_dir)
         self.time_limit_spin.setValue(0)
         self.data_limit_spin.setValue(0)
+        self.ratio_limit_spin.setValue(0)
 
     # --------------------------------------------------------------- signals
 
@@ -252,6 +284,7 @@ class ShareTab(QWidget):
         if row is not None:
             self.table.removeRow(row)
             self._reindex_rows()
+            self._apply_filter()
 
     def _on_limit_reached(self, info_hash: str, reason: str) -> None:
         row = self._rows.get(info_hash)
@@ -266,6 +299,7 @@ class ShareTab(QWidget):
         self._rows[info_hash] = row
 
         self.table.setItem(row, 0, QTableWidgetItem(record.name or info_hash[:12]))
+        self.table.item(row, 0).setToolTip(record.name or info_hash[:12])
         for col in range(1, 6):
             self.table.setItem(row, col, QTableWidgetItem(""))
 
@@ -276,25 +310,36 @@ class ShareTab(QWidget):
         pause_button.setObjectName("pauseResumeButton")
         pause_button.clicked.connect(lambda checked=False, ih=info_hash: self._on_pause_resume_clicked(ih))
         actions_layout.addWidget(pause_button)
-        remove_button = QPushButton(tr("common.remove"), actions)
-        remove_button.setObjectName("dangerButton")
-        remove_button.clicked.connect(lambda checked=False, ih=info_hash: self._session_manager.remove_torrent(ih))
+        remove_button = make_remove_button(
+            actions,
+            lambda ih=info_hash: self._session_manager.remove_torrent(ih),
+            lambda ih=info_hash: self._session_manager.remove_torrent(ih, delete_files=True),
+        )
         actions_layout.addWidget(remove_button)
         self.table.setCellWidget(row, 6, actions)
 
+        self._apply_filter()
         return row
 
     def _reindex_rows(self) -> None:
-        self._rows.clear()
+        reindex_rows_by_info_hash(self.table, self._rows)
+
+    # ----------------------------------------------------------------- filter
+
+    def _on_filter_changed(self, text: str) -> None:
+        self._filter_text = text
+        self._apply_filter()
+
+    def _apply_filter(self) -> None:
+        needle = self._filter_text.strip().lower()
         for row in range(self.table.rowCount()):
             item = self.table.item(row, 0)
-            if item is not None:
-                info_hash = item.data(Qt.UserRole)
-                if info_hash:
-                    self._rows[info_hash] = row
+            name = item.text() if item is not None else ""
+            self.table.setRowHidden(row, bool(needle) and needle not in name.lower())
 
     def _update_row(self, row: int, info_hash: str, record: TorrentRecord) -> None:
         self.table.item(row, 0).setText(record.name or info_hash[:12])
+        self.table.item(row, 0).setToolTip(record.name or info_hash[:12])
         self.table.item(row, 0).setData(Qt.UserRole, info_hash)
         self.table.item(row, 1).setText(human_rate(record.upload_rate))
 
@@ -325,3 +370,41 @@ class ShareTab(QWidget):
             self._session_manager.resume_torrent(info_hash)
         else:
             self._session_manager.pause_torrent(info_hash)
+
+    # --------------------------------------------------------- context menu
+
+    def _on_context_menu_requested(self, pos) -> None:
+        info_hash = info_hash_at(self.table, pos)
+        if not info_hash:
+            return
+        menu = self._build_context_menu(info_hash)
+        menu.exec(self.table.viewport().mapToGlobal(pos))
+
+    def _build_context_menu(self, info_hash: str) -> QMenu:
+        record = self._session_manager.get_record(info_hash)
+        menu = QMenu(self.table)
+        if record is not None and record.state == TorrentState.PAUSED:
+            resume_action = menu.addAction(tr("common.resume"))
+            resume_action.triggered.connect(lambda: self._session_manager.resume_torrent(info_hash))
+        else:
+            pause_action = menu.addAction(tr("common.pause"))
+            pause_action.triggered.connect(lambda: self._session_manager.pause_torrent(info_hash))
+        recheck_action = menu.addAction(tr("common.context_recheck"))
+        recheck_action.triggered.connect(lambda: self._session_manager.recheck_torrent(info_hash))
+        move_action = menu.addAction(tr("common.context_move_storage"))
+        move_action.triggered.connect(lambda: self._on_move_storage_requested(info_hash))
+        menu.addSeparator()
+        remove_action = menu.addAction(tr("common.remove"))
+        remove_action.triggered.connect(
+            lambda: confirm_and_remove(
+                self.table,
+                lambda: self._session_manager.remove_torrent(info_hash),
+                lambda: self._session_manager.remove_torrent(info_hash, delete_files=True),
+            )
+        )
+        return menu
+
+    def _on_move_storage_requested(self, info_hash: str) -> None:
+        new_dir = QFileDialog.getExistingDirectory(self, tr("common.move_storage_dialog_title"))
+        if new_dir:
+            self._session_manager.move_storage(info_hash, new_dir)

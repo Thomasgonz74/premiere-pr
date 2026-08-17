@@ -18,7 +18,7 @@ def qapp():
 def _make_tab(registry_enabled: bool):
     settings = Settings()
     settings.save = MagicMock()
-    with patch("torrent2000.ui.tabs.profile_tab.startup_registration") as mock_sr:
+    with patch("torrent2000.ui.tabs.profile_sections.startup_registration") as mock_sr:
         mock_sr.is_launch_at_startup_enabled.return_value = registry_enabled
         widget = ProfileTab(MagicMock(), MagicMock(), MagicMock(), MagicMock(), settings, MagicMock())
     return widget, settings, mock_sr
@@ -30,19 +30,19 @@ def test_checkbox_reflects_real_registry_state_not_stale_settings():
     # checkbox must trust the registry, the actual ground truth.
     widget, settings, _ = _make_tab(registry_enabled=True)
     assert settings.launch_at_startup is False
-    assert widget.launch_at_startup_checkbox.isChecked() is True
+    assert widget.general_section.launch_at_startup_checkbox.isChecked() is True
 
 
 def test_checkbox_unchecked_when_registry_has_no_entry():
     widget, _, _ = _make_tab(registry_enabled=False)
-    assert widget.launch_at_startup_checkbox.isChecked() is False
+    assert widget.general_section.launch_at_startup_checkbox.isChecked() is False
 
 
 def test_save_writes_checkbox_state_to_registry_and_settings():
     widget, settings, _ = _make_tab(registry_enabled=False)
-    widget.launch_at_startup_checkbox.setChecked(True)
+    widget.general_section.launch_at_startup_checkbox.setChecked(True)
 
-    with patch("torrent2000.ui.tabs.profile_tab.startup_registration") as mock_sr_on_save:
+    with patch("torrent2000.ui.tabs.profile_sections.startup_registration") as mock_sr_on_save:
         widget._on_save_clicked()
 
     assert settings.launch_at_startup is True
@@ -51,9 +51,9 @@ def test_save_writes_checkbox_state_to_registry_and_settings():
 
 def test_save_unregisters_when_unchecked():
     widget, settings, _ = _make_tab(registry_enabled=True)
-    widget.launch_at_startup_checkbox.setChecked(False)
+    widget.general_section.launch_at_startup_checkbox.setChecked(False)
 
-    with patch("torrent2000.ui.tabs.profile_tab.startup_registration") as mock_sr_on_save:
+    with patch("torrent2000.ui.tabs.profile_sections.startup_registration") as mock_sr_on_save:
         widget._on_save_clicked()
 
     assert settings.launch_at_startup is False

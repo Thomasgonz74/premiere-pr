@@ -10,25 +10,17 @@ every 30 seconds while a disk stays full.
 import logging
 import shutil
 
-from PySide6.QtCore import QObject, QTimer, Signal
+from PySide6.QtCore import QObject, Signal
 
 from torrent2000.config.settings import Settings
 from torrent2000.engine.session_manager import SessionManager
-from torrent2000.engine.torrent_item import TorrentState
+from torrent2000.engine.torrent_item import ACTIVE_DOWNLOAD_STATES
 from torrent2000.i18n.translator import tr
+from torrent2000.utils.qt_timers import start_periodic_timer
 
 logger = logging.getLogger(__name__)
 
 CHECK_INTERVAL_MS = 30_000
-
-# "Actively downloading" here mirrors the definition used by
-# engine/auto_shutdown_service.py's idle check: still consuming disk space,
-# as opposed to paused/seeding/finished/errored torrents that no longer are.
-_ACTIVE_DOWNLOAD_STATES = {
-    TorrentState.DOWNLOADING,
-    TorrentState.QUEUED,
-    TorrentState.CHECKING_METADATA,
-}
 
 
 def free_space_mb(path: str) -> float | None:
@@ -51,9 +43,7 @@ class DiskSpaceMonitor(QObject):
         self._settings = settings
         self._warned_paths: set[str] = set()
 
-        self._timer = QTimer(self)
-        self._timer.timeout.connect(self.check_now)
-        self._timer.start(CHECK_INTERVAL_MS)
+        self._timer = start_periodic_timer(self, CHECK_INTERVAL_MS, self.check_now)
 
     def check_now(self) -> None:
         if not self._settings.disk_space_warning_enabled:
@@ -64,7 +54,7 @@ class DiskSpaceMonitor(QObject):
         active_paths = {
             record.save_path
             for record in self._session_manager.all_records()
-            if record.state in _ACTIVE_DOWNLOAD_STATES and record.save_path
+            if record.state in ACTIVE_DOWNLOAD_STATES and record.save_path
         }
 
         for path in active_paths:
