@@ -1,0 +1,717 @@
+/* ==========================================================================
+   LEO — tokens.css — v1.5 (spike port)
+   Style : "Mac OS X Leopard / Snow Leopard (métal unifié)"
+   Rôle  : SOURCE DE VÉRITÉ des variables. Ported from the charter's own
+   Lire  : resources/web/charters/Charte graphique/Mac OS X Leopard (métal
+           unifié)/{STYLE.md, tokens.css, components.html}
+   Le milieu du fil Apple : le gel d'Aqua assagi sur un chrome de
+   métal gris — gélules blanchies, bleus conservés aux postes clés.
+   This file adds the app's shared "extra" contract (section headers follow
+   the luna_xp/tokens.css reference structure) on top of the charter's own
+   native tokens, which are ported unmodified.
+   ========================================================================== */
+
+:root {
+
+  /* ========================================================
+     1. PRIMITIVES — palette Leopard
+     ======================================================== */
+  /* Métal et fonds */
+  --leo-body:  #ECECEC;
+  --leo-view:  #FFFFFF;
+  --leo-border:#9A9A9A;
+  --leo-frame: #6E6E6E;      /* contour de fenêtre */
+  --leo-line:  #C9C9C9;
+  --leo-ink:   #000000;
+  --leo-ink-soft: #6B6B6B;
+  --leo-ink-disabled: #A0A0A0;
+
+  /* Bleus Aqua assagis */
+  --leo-blue:    #5E96E8;
+  --leo-blue-dk: #2A5FCB;
+  --leo-select:  #3875D7;
+  --leo-focus:   rgba(96,158,245,.60);
+  --source-bg:   #DCE4EB;   /* la source list bleu-gris */
+
+  /* Billes (assagies : aplat + liseré + micro-gloss) */
+  --ball-close: #FF5F57; --ball-close-lo: #D8362C; --ball-close-glyph: #7A1512;
+  --ball-min:   #FEBC2E; --ball-min-lo:   #D89B00; --ball-min-glyph:   #8E5F00;
+  --ball-max:   #28C840; --ball-max-lo:   #0FA02A; --ball-max-glyph:   #0B5B1A;
+  --ball-off:   #C9C9C9; --ball-off-lo:   #A8A8A8;
+
+  --tooltip-bg: #FFFEC8;     /* la bulle jaune survit */
+  --tooltip-border: #B8B393;
+
+  /* ========================================================
+     2. SÉMANTIQUES & RECETTES
+     ======================================================== */
+  --surface-window: var(--leo-body);
+  --text-primary:   var(--leo-ink);
+  --text-soft:      var(--leo-ink-soft);
+  --text-disabled:  var(--leo-ink-disabled);
+  --selection-bg:   var(--leo-select);
+  --selection-text: #FFFFFF;
+
+  /* Generic aliases consumed by resources/web/spike/*.css -- ported from the
+     charter's own primitives so the shared CSS never hardcodes a hex. The
+     charter has no native "field/desktop/panel/tooltip surface" or
+     "title text" split (its own semantic section only distinguishes
+     surface-window + text tones), so these translate the charter's actual
+     component recipes (components.html) rather than inventing new colors:
+     fields/tab-panels live on --leo-view (its own "vues blanches"), the
+     desktop is a flat readout of its own --gradient-desktop aurora, the
+     tooltip surface is its own --tooltip-bg, and title text follows
+     components.html's .tb-title / .window.is-inactive .tb-title rule
+     (text-primary active, text-soft inactive). --text-inverse is a fixed
+     white per STYLE.md §4 "texte blanc ombré sur gélules bleues" -- not
+     derived from a primitive that itself flips in dark mode. */
+  --surface-field:    var(--leo-view);
+  --surface-desktop:  #4A3F8E;  /* flat readout of --gradient-desktop's mid stop (repli non-gradient) */
+  --surface-tooltip:  var(--tooltip-bg);
+  --surface-panel:    var(--leo-view);
+  --text-inverse:     #FFFFFF;
+  --title-active-text:   var(--text-primary);
+  --title-inactive-text: var(--text-soft);
+
+  /* Recettes (les seuls dégradés admis) */
+  --metal: linear-gradient(180deg, #E9E9E9, #CFCFCF 55%, #BCBCBC);
+  --gel-white: linear-gradient(180deg, #FFFFFF, #F1F1F1 46%, #E2E2E2 54%, #F0F0F0);
+  --gel-white-press: linear-gradient(180deg, #D6D6D6, #C6C6C6 46%, #B8B8B8 54%, #CCCCCC);
+  --gel-blue-soft: linear-gradient(180deg, #B5D3F7, #6FA0EA 46%, #3B74D8 56%, #6FA0EC);
+  --gel-blue-press: linear-gradient(180deg, #93BAEE, #5486DE 46%, #2C61C6 56%, #5384DC);
+  --gel-gloss: inset 0 1px 0 rgba(255,255,255,.8), inset 0 -1px 1px rgba(0,0,0,.08);
+  --menu-band: linear-gradient(180deg, #6EA0E8, #3B74D2);
+  --gel-track: linear-gradient(180deg, #E2E2E2, #F4F4F4 55%, #FFFFFF);
+  --gel-progress: linear-gradient(180deg, #A9CDFF, #5E93E8 48%, #3568D2 55%, #6E9DEC);
+  --gel-progress-gray: linear-gradient(180deg, #E2E2E2, #BFBFBF 48%, #A9A9A9 55%, #CFCFCF);
+  --barber: repeating-linear-gradient(-45deg, #7FA8EE 0 8px, #5B8EE4 8px 16px);
+  --scroll-track: linear-gradient(90deg, #E4E4E4, #F4F4F4 40%, #ECECEC);
+  --scroll-thumb: linear-gradient(90deg, #A8CBFA, #5E96E8 45%, #3B74D8 55%, #88AEF0);
+  --scroll-thumb-border: #3B6ACC;
+  --gradient-desktop: radial-gradient(115% 95% at 30% 22%,
+                      #8E7BC8, #4A3F8E 55%, #1B1740 95%);
+
+  /* ========================================================
+     3. LE MÉTAL UNIFIÉ — la signature du style.
+     Le GEL ASSAGI sur un chrome de MÉTAL : la barre de titre
+     devient un dégradé gris lisse (--metal) sans rayures, les
+     gélules BLANCHISSENT (--gel-white) — mais le bleu Aqua
+     survit à ses postes-clés : gélule par défaut, bande des
+     menus, pouce d'ascenseur, jauge, halo de focus. La source
+     list bleu-gris (--source-bg) porte les listes. Toujours
+     AUCUN survol (le survol n'arrivera chez Apple qu'avec le
+     verre) ; billes à gauche à glyphes révélés ; champs
+     CARRÉS à halo ; bulle jaune ; beachball.
+
+     --plastic-* / --gradient-title* / --gradient-titlebtn* /
+     --gradient-progress are the app's generic "structural extras" slot
+     names (see luna_xp/tokens.css §3) -- aliased 1:1 to this charter's own
+     recipes above rather than invented: raised/pressed controls are its
+     gel-white capsule (STYLE.md §7 "Repos"/"Pressé"), the titlebar is its
+     --metal, and the progress fill is its default blue gel (STYLE.md §9
+     "gel bleu / gris / barber FIGÉ"). The two titlebar-button colors use
+     the charter's own flat "aplat + liseré" ball recipe (STYLE.md §2 --
+     no radial gloss, that died with 2001 Aqua) as a same-color 2-stop
+     gradient per the app's required background-gradient value type: the
+     close ball for --gradient-titlebtn-close, and the minimize ball (the
+     one shared "other" traffic light next to close, since this app has
+     only two title-button color slots) for --gradient-titlebtn.
+     ======================================================== */
+  --plastic-raised:  var(--gel-white);
+  --plastic-pressed: var(--gel-white-press);
+  --gradient-title-active:   var(--metal);
+  --gradient-titlebtn:       linear-gradient(var(--ball-min), var(--ball-min));
+  --gradient-titlebtn-close: linear-gradient(var(--ball-close), var(--ball-close));
+  --gradient-progress: var(--gel-progress);
+
+  /* ========================================================
+     4. OMBRES
+     ======================================================== */
+  --shadow-window: 0 20px 44px rgba(0,0,0,.42), 0 2px 8px rgba(0,0,0,.28);
+  --shadow-window-inactive: 0 10px 22px rgba(0,0,0,.24);
+  --shadow-menu: 0 6px 18px rgba(0,0,0,.32);
+  --frame-shadow: var(--shadow-window);
+  /* STYLE.md interdit #2: "tout état survolé hors billes/menus -- le
+     survol n'existe pas avant Tahoe" -- so the required hover-glow slot
+     is authentically empty in this era. */
+  --glow-hover: none;
+
+  /* ========================================================
+     5. TYPOGRAPHIE
+     ======================================================== */
+  --font-ui: "Lucida Grande", "Lucida Sans Unicode", "Helvetica Neue",
+             Helvetica, "DejaVu Sans", sans-serif;
+  /* Not in the charter's own contract (no code sample surface in this
+     style) -- the standard Mac OS X 10.5/10.6 system monospace. */
+  --font-mono: Monaco, Menlo, Consolas, monospace;
+  --font-size-base: 13px;
+  --font-size-title: 13px;      /* CENTRÉ, regular, noir */
+  --line-height: 1.4;
+  /* components.html's .tb-title carries no text-shadow (unlike the button
+     labels on blue gel capsules) -- plain metal, no engraving. */
+  --font-title: var(--font-ui);
+  --title-text-shadow: none;
+
+  /* ========================================================
+     6. MÉTRIQUES & ESPACEMENT
+     ======================================================== */
+  --space-1: 2px; --space-2: 4px; --space-3: 6px;
+  --space-4: 8px; --space-5: 12px; --space-6: 16px;
+  --unit: 4px;
+  --pad-body: 12px;
+  --control-height: 22px;
+  --field-height: var(--control-height); /* no separate field height in this charter */
+  --button-min-width: 72px;
+  --titlebar-height: 22px;
+  --titlebar-btn: var(--ball-size);      /* 13px traffic-light diameter */
+  --ball-size: 13px;
+  --checkbox-size: 14px;
+  --toggle-w: 40px; --toggle-h: 18px;   /* adaptation, voir STYLE.md */
+  --scrollbar-size: 15px;
+  --icon-small: 16px;  --icon-large: 32px;
+  --radius-pill: 999px;
+  --radius-window: 5px;
+  --radius-field: 0;
+  /* Buttons/tabs/titlebar-buttons are all pill/circle in this charter
+     (STYLE.md §5 "Rayons : pilule (gélules)") -- --radius-control reuses
+     that same recipe, which also turns the square titlebar-btn box into
+     the authentic circular traffic light. --radius-group matches
+     components.html's fieldset/tab-panel rule (border-radius: 4px). */
+  --radius-control: var(--radius-pill);
+  --radius-group: 4px;
+
+  /* ========================================================
+     7. ÉTATS & MOUVEMENT
+     ======================================================== */
+  --transition-state: .15s ease;
+  --transition: var(--transition-state);
+  --focus-ring: 0 0 0 3px var(--leo-focus);
+  --cursor-interactive: var(--cursor-default);
+  /* STYLE.md interdit #8: "Focus autrement qu'en halo" -- this charter's
+     focus indicator is exclusively the --focus-ring box-shadow halo, never
+     an outline, so the generic outline slot is authentically unused. */
+  --focus-outline: none;
+
+  /* ========================================================
+     8. CURSEURS — mêmes 14 actions que toutes les chartes.
+     Matière macOS : corps NOIRS à liseré blanc, attente =
+     BEACHBALL (l'invariant), aide en bleu Aqua.
+     ======================================================== */
+  --cur-img-default: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.25' transform='translate(1.5,1.5)'%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%231A1A1A' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-link: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.25' transform='translate(1.5,1.5)'%3E%3Cpolygon points='10,2 13,2 13,9 16,9 19,11 19,15 16,20 9,20 5,14 5,12 7,11 10,14' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='10,2 13,2 13,9 16,9 19,11 19,15 16,20 9,20 5,14 5,12 7,11 10,14' fill='%231A1A1A' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpath d='M13.5 11v4M16 12v3' stroke='%23fff' stroke-width='.9' stroke-linecap='round'/%3E%3C/svg%3E");
+  --cur-img-text: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg fill='none' stroke='%23fff' stroke-width='4.2' stroke-linecap='round'%3E%3Cpath d='M8 3h6M11 3v18M8 21h6'/%3E%3C/g%3E%3Cg fill='none' stroke='%231A1A1A' stroke-width='1.6' stroke-linecap='round'%3E%3Cpath d='M8 3h6M11 3v18M8 21h6'/%3E%3C/g%3E%3C/svg%3E");
+  --cur-img-wait: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.25' transform='translate(1,1.5)'%3E%3Ccircle cx='12' cy='12' r='9' fill='%23000'/%3E%3C/g%3E%3Cg transform='translate(12 12)'%3E%3Cpath d='M0 0L0 -9A9 9 0 0 1 7.79 -4.50Z' fill='%234A90E2'/%3E%3Cpath d='M0 0L7.79 -4.50A9 9 0 0 1 7.79 4.50Z' fill='%237ED321'/%3E%3Cpath d='M0 0L7.79 4.50A9 9 0 0 1 0 9Z' fill='%23F8E71C'/%3E%3Cpath d='M0 0L0 9A9 9 0 0 1 -7.79 4.50Z' fill='%23F5A623'/%3E%3Cpath d='M0 0L-7.79 4.50A9 9 0 0 1 -7.79 -4.50Z' fill='%23E0533D'/%3E%3Cpath d='M0 0L-7.79 -4.50A9 9 0 0 1 0 -9Z' fill='%239013FE'/%3E%3C/g%3E%3Ccircle cx='12' cy='12' r='9' fill='none' stroke='%23fff' stroke-width='1.6'/%3E%3C/svg%3E");
+  --cur-img-progress: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.25' transform='translate(1.5,1.5)'%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23000' stroke='%23000' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/g%3E%3Cg opacity='.25' transform='translate(1.5,1.5)'%3E%3Ccircle cx='17.5' cy='17.5' r='5.2' fill='%23000'/%3E%3C/g%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%231A1A1A' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cg transform='translate(17.5 17.5)'%3E%3Cpath d='M0 0L0 -5.2A5.2 5.2 0 0 1 4.50 -2.60Z' fill='%234A90E2'/%3E%3Cpath d='M0 0L4.50 -2.60A5.2 5.2 0 0 1 4.50 2.60Z' fill='%237ED321'/%3E%3Cpath d='M0 0L4.50 2.60A5.2 5.2 0 0 1 0 5.2Z' fill='%23F8E71C'/%3E%3Cpath d='M0 0L0 5.2A5.2 5.2 0 0 1 -4.50 2.60Z' fill='%23F5A623'/%3E%3Cpath d='M0 0L-4.50 2.60A5.2 5.2 0 0 1 -4.50 -2.60Z' fill='%23E0533D'/%3E%3Cpath d='M0 0L-4.50 -2.60A5.2 5.2 0 0 1 0 -5.2Z' fill='%239013FE'/%3E%3C/g%3E%3Ccircle cx='17.5' cy='17.5' r='5.2' fill='none' stroke='%23fff' stroke-width='1.4'/%3E%3C/svg%3E");
+  --cur-img-help: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.25' transform='translate(1.5,1.5)'%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23000' stroke='%23000' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%231A1A1A' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpath d='M14.5 6c0-2.6 6.5-2.6 6.5 0c0 2.2-3.2 2-3.2 4.4' fill='none' stroke='%23fff' stroke-width='3.8' stroke-linecap='round'/%3E%3Cpath d='M14.5 6c0-2.6 6.5-2.6 6.5 0c0 2.2-3.2 2-3.2 4.4' fill='none' stroke='%232A5FCB' stroke-width='1.8' stroke-linecap='round'/%3E%3Ccircle cx='17.9' cy='13.8' r='1.7' fill='%23fff'/%3E%3Ccircle cx='17.9' cy='13.8' r='1.1' fill='%232A5FCB'/%3E%3C/svg%3E");
+  --cur-img-crosshair: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg fill='none' stroke='%23fff' stroke-width='4.2'%3E%3Cpath d='M12 3v18M3 12h18'/%3E%3C/g%3E%3Cg fill='none' stroke='%231A1A1A' stroke-width='1.6'%3E%3Cpath d='M12 3v18M3 12h18'/%3E%3C/g%3E%3C/svg%3E");
+  --cur-img-not-allowed: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg fill='none' stroke='%23fff' stroke-width='5.4'%3E%3Ccircle cx='12' cy='12' r='8'/%3E%3Cpath d='M6.5 6.5l11 11'/%3E%3C/g%3E%3Cg fill='none' stroke='%231A1A1A' stroke-width='2.4'%3E%3Ccircle cx='12' cy='12' r='8'/%3E%3Cpath d='M6.5 6.5l11 11'/%3E%3C/g%3E%3C/svg%3E");
+  --cur-img-resize-v: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.25' transform='translate(1.5,1.5)'%3E%3Cpolygon points='12,1 17,7 14,7 14,17 17,17 12,23 7,17 10,17 10,7 7,7' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='12,1 17,7 14,7 14,17 17,17 12,23 7,17 10,17 10,7 7,7' fill='%231A1A1A' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-resize-h: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.25' transform='translate(1.5,1.5)'%3E%3Cpolygon points='1,12 7,7 7,10 17,10 17,7 23,12 17,17 17,14 7,14 7,17' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='1,12 7,7 7,10 17,10 17,7 23,12 17,17 17,14 7,14 7,17' fill='%231A1A1A' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-resize-nwse: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.25' transform='translate(1.5,1.5)'%3E%3Cpath d='M7 7l10 10' stroke='%23000' stroke-width='4.6'/%3E%3Cpolygon points='4,4 12,4 4,12' fill='%23000'/%3E%3Cpolygon points='20,20 12,20 20,12' fill='%23000'/%3E%3C/g%3E%3Cpath d='M7 7l10 10' stroke='%23fff' stroke-width='4'/%3E%3Cpath d='M7 7l10 10' stroke='%231A1A1A' stroke-width='1.8'/%3E%3Cpolygon points='4,4 12,4 4,12' fill='%231A1A1A' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpolygon points='20,20 12,20 20,12' fill='%231A1A1A' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-resize-nesw: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.25' transform='translate(1.5,1.5)'%3E%3Cpath d='M17 7L7 17' stroke='%23000' stroke-width='4.6'/%3E%3Cpolygon points='20,4 12,4 20,12' fill='%23000'/%3E%3Cpolygon points='4,20 12,20 4,12' fill='%23000'/%3E%3C/g%3E%3Cpath d='M17 7L7 17' stroke='%23fff' stroke-width='4'/%3E%3Cpath d='M17 7L7 17' stroke='%231A1A1A' stroke-width='1.8'/%3E%3Cpolygon points='20,4 12,4 20,12' fill='%231A1A1A' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpolygon points='4,20 12,20 4,12' fill='%231A1A1A' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-move: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.25' transform='translate(1.5,1.5)'%3E%3Cpolygon points='12,1 15,5 13,5 13,19 15,19 12,23 9,19 11,19 11,5 9,5' fill='%23000'/%3E%3Cpolygon points='1,12 5,9 5,11 19,11 19,9 23,12 19,15 19,13 5,13 5,15' fill='%23000'/%3E%3C/g%3E%3Cg fill='%231A1A1A' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'%3E%3Cpolygon points='12,1 15,5 13,5 13,19 15,19 12,23 9,19 11,19 11,5 9,5'/%3E%3Cpolygon points='1,12 5,9 5,11 19,11 19,9 23,12 19,15 19,13 5,13 5,15'/%3E%3C/g%3E%3Cpolygon points='12,1 15,5 13,5 13,19 15,19 12,23 9,19 11,19 11,5 9,5' fill='%231A1A1A'/%3E%3Cpolygon points='1,12 5,9 5,11 19,11 19,9 23,12 19,15 19,13 5,13 5,15' fill='%231A1A1A'/%3E%3C/svg%3E");
+  --cur-img-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.25' transform='translate(1.5,1.5)'%3E%3Cpolygon points='12,2 18,9 14,9 14,20 10,20 10,9 6,9' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='12,2 18,9 14,9 14,20 10,20 10,9 6,9' fill='%231A1A1A' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cursor-default: var(--cur-img-default) 2 2, default;
+  --cursor-link: var(--cur-img-link) 11 3, pointer;
+  --cursor-text: var(--cur-img-text) 11 12, text;
+  --cursor-wait: var(--cur-img-wait) 12 12, wait;
+  --cursor-progress: var(--cur-img-progress) 2 2, progress;
+  --cursor-help: var(--cur-img-help) 2 2, help;
+  --cursor-crosshair: var(--cur-img-crosshair) 12 12, crosshair;
+  --cursor-not-allowed: var(--cur-img-not-allowed) 12 12, not-allowed;
+  --cursor-resize-v: var(--cur-img-resize-v) 12 12, ns-resize;
+  --cursor-resize-h: var(--cur-img-resize-h) 12 12, ew-resize;
+  --cursor-resize-nwse: var(--cur-img-resize-nwse) 12 12, nwse-resize;
+  --cursor-resize-nesw: var(--cur-img-resize-nesw) 12 12, nesw-resize;
+  --cursor-move: var(--cur-img-move) 12 12, move;
+  --cursor-up: var(--cur-img-up) 12 3, default;
+
+  /* P2TOK:BEGIN */
+  --p2-zebra: #F2F6FB;
+  --p2-hud-bg: rgba(28,28,30,.82); --p2-hud-fg: #F4F5F7;
+  --p2-hud-line: rgba(255,255,255,.18); --p2-hud-veil: rgba(255,255,255,.2);
+  --p2-hud-soft: rgba(255,255,255,.75); --p2-hud-err: #E5493B;
+  --p2-ok-fg: #0D2B52;   --p2-row-veil: rgba(255,255,255,.55);
+  --p2-shadow-thumb: 0 1px 2px rgba(0,0,0,.25); --p2-on-accent: #FFFFFF;
+  /* P2TOK:END */
+  --tooltip-fg: #000000;
+
+  /* ================================================== ICONS:BEGIN
+     9. ICÔNES — navigation & fichiers (14), tokenisées
+     comme les curseurs : SVG data-URI dessinés dans la
+     matière du style. À consommer en background-image :
+     background: var(--icon-folder) center/contain no-repeat;
+     Jamais d'image externe, jamais d'emoji.
+     ======================================================== */
+  --icon-folder: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cdefs%3E%3ClinearGradient id='fl' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%238FB0D2'/%3E%3Cstop offset='1' stop-color='%235D82A8'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M3 7.4Q3 6.2 4.2 6.2h4.9l1.8 2.2h9Q21 8.4 21 9.6v8.8q0 1.2-1.2 1.2H4.2Q3 19.6 3 18.4z' fill='url(%23fl)' stroke='%233A5A7A' stroke-width='1' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-folder-open: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cdefs%3E%3ClinearGradient id='flo' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%238FB0D2'/%3E%3Cstop offset='1' stop-color='%235D82A8'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M3 7.4Q3 6.2 4.2 6.2h4.9l1.8 2.2h9Q21 8.4 21 9.6v3H3z' fill='%235D82A8' stroke='%233A5A7A' stroke-width='1' stroke-linejoin='round'/%3E%3Cpath d='M4.9 11.4h16.2q1 0 .7 1l-1.8 6.4q-.3 1-1.3 1H3.5q-1 0-.7-1l1.8-6.4q.3-1 1.3-1z' fill='url(%23flo)' stroke='%233A5A7A' stroke-width='1' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-file: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M6 2.5h8l4.5 4.5v14.5H6z' fill='%23FFFFFF' stroke='%239AA4AE' stroke-width='1' stroke-linejoin='round'/%3E%3Cpath d='M14 2.5v4.5h4.5z' fill='%23E0E4E8' stroke='%239AA4AE' stroke-width='0.9' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-file-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M6 2.5h8l4.5 4.5v14.5H6z' fill='%23FFFFFF' stroke='%239AA4AE' stroke-width='1' stroke-linejoin='round'/%3E%3Cpath d='M14 2.5v4.5h4.5z' fill='%23E0E4E8' stroke='%239AA4AE' stroke-width='0.9' stroke-linejoin='round'/%3E%3Ccircle cx='10.2' cy='11.2' r='1.5' fill='%23E8B84A'/%3E%3Cpolygon points='8,18.4 10.8,14.6 12.6,16.9 14,15.1 16.4,18.4' fill='%235E8EA8'/%3E%3C/svg%3E");
+  --icon-drive: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Crect x='3' y='8.6' width='18' height='7' fill='%23D9DCDF' rx='2' stroke='%238A9298' stroke-width='1'/%3E%3Ccircle cx='17.6' cy='12.1' r='1.2' fill='%235D82A8'/%3E%3Cpath d='M5.6 12.1h6.4' fill='none' stroke='%238A9298' stroke-width='1.1' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3C/svg%3E");
+  --icon-home: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='3.6,11.6 12,4.4 20.4,11.6' fill='%235D82A8' stroke='%235A6A7A' stroke-width='1.1' stroke-linejoin='round'/%3E%3Crect x='5.8' y='11.6' width='12.4' height='7.8' fill='%23DCE2E8' stroke='%235A6A7A' stroke-width='1.1'/%3E%3Crect x='10.4' y='14.4' width='3.2' height='5' fill='%235D82A8' stroke='%235A6A7A' stroke-width='0.8800000000000001'/%3E%3C/svg%3E");
+  --icon-computer: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cdefs%3E%3ClinearGradient id='glm' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%230F2238'/%3E%3Cstop offset='1' stop-color='%233A5E88'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x='3.6' y='3.8' width='16.8' height='12' fill='%23C9CDD1' rx='1.8' stroke='%238A9298' stroke-width='1.1'/%3E%3Crect x='5.2' y='5.2' width='13.6' height='8.6' fill='url(%23glm)'/%3E%3Cpolygon points='10,15.8 14,15.8 15.2,19.4 8.8,19.4' fill='%23C9CDD1' stroke='%238A9298' stroke-width='1' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-network: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='8' fill='%23EAF0F6' stroke='%237A92AC' stroke-width='1.2'/%3E%3Cpath d='M4 12h16M12 4v16M6.2 7q5.8 2.8 11.6 0M6.2 17q5.8-2.8 11.6 0' fill='none' stroke='%237A92AC' stroke-width='0.9' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-trash: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M6.8 6.2h10.4l-1 13.4H7.8z' fill='%23CDD2D7' stroke='%23848C94' stroke-width='1.2' stroke-linejoin='round'/%3E%3Cpath d='M8.8 7.6l0.35 10.6' fill='none' stroke='%23848C94' stroke-width='0.7' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3Cpath d='M10.6 7.6l0.18 10.6' fill='none' stroke='%23848C94' stroke-width='0.7' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3Cpath d='M12.4 7.6l0 10.6' fill='none' stroke='%23848C94' stroke-width='0.7' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3Cpath d='M14.2 7.6l-0.18 10.6' fill='none' stroke='%23848C94' stroke-width='0.7' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3Cpath d='M16 7.6l-0.35 10.6' fill='none' stroke='%23848C94' stroke-width='0.7' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3Crect x='7.6' y='4.4' width='8.8' height='1.6' fill='%23CDD2D7' stroke='%23848C94' stroke-width='1.1'/%3E%3C/svg%3E");
+  --icon-search: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='10.4' cy='10.4' r='4.9' fill='none' stroke='%234A4A4A' stroke-width='2.1'/%3E%3Cpath d='M14.2 14.2l5.2 5.2' fill='none' stroke='%234A4A4A' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-back: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='16.5,5 7,12 16.5,19 16.5,14.4 21,14.4 21,9.6 16.5,9.6' fill='%234A4A4A'/%3E%3C/svg%3E");
+  --icon-forward: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='7.5,5 17,12 7.5,19 7.5,14.4 3,14.4 3,9.6 7.5,9.6' fill='%234A4A4A'/%3E%3C/svg%3E");
+  --icon-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='5,11.5 12,4.5 19,11.5 14.6,11.5 14.6,20 9.4,20 9.4,11.5' fill='%234A4A4A'/%3E%3C/svg%3E");
+  --icon-refresh: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M19.9 4.4v5.4l-5.2-1.2z' fill='%234A4A4A'/%3E%3Cpath d='M18.6 8.2A7.6 7.6 0 1 0 19.6 14' fill='none' stroke='%234A4A4A' stroke-width='2.6' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3C/svg%3E");
+  /* ICONS:END */
+
+  /* Generic aliases consumed by resources/web/spike/*.css (see luna_xp
+     tokens.css §2) -- border/legend colors under this charter's own
+     names, matching what components.html actually draws: every control
+     border in this style resolves to the flat --leo-border, group boxes
+     use the slightly lighter --leo-line (see components.html's
+     `fieldset{border:1px solid var(--leo-line)}`), and legend text carries
+     no accent tint of its own (components.html's `legend{font-weight:700}`
+     has no color rule) -- so it inherits --text-primary, same choice the
+     Mac OS X 10.0 Aqua sibling theme made. */
+  --border-control:  var(--leo-border);
+  --border-field:    var(--leo-border);
+  --border-group:    var(--leo-line);
+  --border-progress: var(--leo-border);
+  --border-tab:      var(--leo-border);
+  --text-legend:     var(--text-primary);
+}
+/* DARK:BEGIN — thème sombre (phase 3) */
+[data-theme="dark"] {
+  --leo-body: #2A2A2E;
+  --leo-view: #1E1E22;
+  --leo-border: #17171A;
+  --leo-frame: #0E0E11;
+  --leo-line: #3E3E45;
+  --leo-ink: #F2F3F5;
+  --leo-ink-soft: #B2B5BB;
+  --leo-ink-disabled: #6C6F76;
+  --leo-blue: #6FA8E8;
+  --leo-blue-dk: #4E88CC;
+  --source-bg: #2C3038;
+  --metal: linear-gradient(180deg,#3E3E44,#2E2E33 55%,#26262B);
+  --gel-white: linear-gradient(180deg,#4C4C54,#3E3E46 46%,#34343B 54%,#44444C);
+  --gel-white-press: linear-gradient(180deg,#2E2E35,#3A3A42);
+  --gel-track: linear-gradient(180deg,#232327,#2C2C31 55%,#333338);
+  --surface-window: #2A2A2E;
+  --tooltip-bg: #3A3A40; --tooltip-border: #55555E; --tooltip-fg: #F2F3F5;
+  --gradient-desktop: linear-gradient(160deg,#16181E,#0B0D12);
+  --surface-desktop: #101319;  /* flat readout of the dark --gradient-desktop */
+  --shadow-window: 0 14px 40px rgba(0,0,0,.7);
+  --p2-zebra: #26262B;
+  --p2-row-veil: rgba(255,255,255,.08);
+  --p2-shadow-thumb: 0 1px 2px rgba(0,0,0,.6);
+  /* icônes surchargées pour le fond sombre */
+  --icon-back: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='16.5,5 7,12 16.5,19 16.5,14.4 21,14.4 21,9.6 16.5,9.6' fill='%23D8DADE'/%3E%3C/svg%3E");
+  --icon-forward: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='7.5,5 17,12 7.5,19 7.5,14.4 3,14.4 3,9.6 7.5,9.6' fill='%23D8DADE'/%3E%3C/svg%3E");
+  --icon-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='5,11.5 12,4.5 19,11.5 14.6,11.5 14.6,20 9.4,20 9.4,11.5' fill='%23D8DADE'/%3E%3C/svg%3E");
+  --icon-refresh: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M19.9 4.4v5.4l-5.2-1.2z' fill='%23D8DADE'/%3E%3Cpath d='M18.6 8.2A7.6 7.6 0 1 0 19.6 14' fill='none' stroke='%23D8DADE' stroke-width='2.6' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3C/svg%3E");
+  --icon-search: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='10.4' cy='10.4' r='4.9' fill='none' stroke='%23D8DADE' stroke-width='2.1'/%3E%3Cpath d='M14.2 14.2l5.2 5.2' fill='none' stroke='%23D8DADE' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+/* DARK:END */
+
+/* HC:BEGIN — contraste élevé (phase 4) */
+[data-theme="hc"] {
+  --leo-body: #FFFFFF;
+  --leo-view: #FFFFFF;
+  --leo-border: #000000;
+  --leo-frame: #000000;
+  --leo-line: #000000;
+  --leo-ink: #000000;
+  --leo-ink-soft: #333333;
+  --leo-ink-disabled: #767676;
+  --leo-blue: #1E4FA8;
+  --leo-blue-dk: #163C80;
+  --leo-select: #1E4FA8;
+  --source-bg: #F0F0F0;
+  --metal: linear-gradient(#F5F5F5,#E8E8E8);
+  --gel-white: linear-gradient(#FFFFFF,#FFFFFF);
+  --gel-white-press: linear-gradient(#D8D8D8,#D8D8D8);
+  --gel-blue-soft: linear-gradient(#1E4FA8,#1E4FA8);
+  --gel-track: linear-gradient(#EDEDED,#EDEDED);
+  --selection-text: #FFFFFF;
+  --surface-window: #FFFFFF;
+  --tooltip-bg: #FFFFE1; --tooltip-border: #8A8250; --tooltip-fg: #000000;
+  --gradient-desktop: linear-gradient(#E8E8E8,#E8E8E8);
+  --surface-desktop: #E8E8E8;  /* flat readout of the hc --gradient-desktop */
+  --shadow-window: 0 0 0 2px #000000;
+  --p2-zebra: #F2F2F2;
+  --p2-row-veil: rgba(0,0,0,.06);
+  --p2-shadow-thumb: 0 0 0 1.5px #000000;
+}
+/* HC:END */
+
+
+
+/* --- Base recommandée (à copier dans l'app) ------------------------------ */
+/*
+body {
+  margin: 0;
+  background: var(--gradient-desktop);
+  color: var(--text-primary);
+  font: 400 var(--font-size-base)/var(--line-height) var(--font-ui);
+  cursor: var(--cursor-default);
+}
+::selection { background: var(--selection-bg); color: var(--selection-text); }
+a { color: var(--leo-blue-dk); cursor: var(--cursor-link); }
+input[type=text], textarea { cursor: var(--cursor-text); }
+*/
+
+/* ==========================================================================
+   STRUCTURAL COMPOSITION -- Leopard's real component shapes, ported from
+   this folder's own components.html (not a color reskin of style.css's
+   generic grid). Loaded last in index.html's link order, so plain selectors
+   here beat style.css's same-specificity rules by cascade order alone -- no
+   !important anywhere below. Where a style.css rule has HIGHER specificity
+   (an ID, e.g. "#downloadsList .row.selected"), that exact selector is
+   repeated here so the override actually lands.
+   Interdit #2 governs almost every rule below: "tout état survolé hors
+   billes/menus -- le survol n'existe pas avant Tahoe." Every hover effect
+   style.css bolted onto generic controls (brightness filters, glow
+   box-shadows) gets neutralized to its resting value; the only two hovers
+   that survive are the traffic-light glyph reveal and the context-menu
+   highlight, both explicitly sanctioned by STYLE.md §7/§9.
+   ========================================================================== */
+
+/* ---------- Cadre de fenêtre : coins arrondis aux QUATRE coins (interdit
+   #5 -- "coins de fenêtre vifs" est prohibé, 5 px partout, "les coins bas
+   s'arrondissent enfin" par rapport aux gels Aqua/Win qui gardent le bas
+   carré). style.css ne posait le radius que sur les DEUX coins hauts
+   (héritage du gabarit générique) -- ici on l'étend aux quatre. ---------- */
+body {
+  border-radius: var(--radius-window);
+}
+
+/* ---------- Window chrome : métal, billes à GAUCHE, glyphes révélés au
+   survol du GROUPE (pas bouton par bouton) ---------- */
+.titlebar {
+  border-radius: var(--radius-window) var(--radius-window) 0 0;
+  border-bottom: 1px solid var(--leo-border);
+  backdrop-filter: none;               /* interdit #1 : jamais de verre flou */
+  -webkit-backdrop-filter: none;
+}
+.titlebar-drag { justify-content: center; }
+.titlebar-title {
+  flex: 1; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  text-align: center;                  /* STYLE.md §4 : titre CENTRÉ */
+  font-weight: 400;                    /* regular, jamais gras (hors alertes) */
+  padding-left: 0;
+}
+.titlebar-buttons { order: -1; gap: 7px; }   /* .traffic : billes à gauche */
+.cap-btn {
+  border-radius: 50%;
+  border-color: var(--ball-min-lo);    /* aplat + liseré : couleur propre à chaque bille */
+  background: var(--ball-min);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.55);
+}
+.cap-btn:hover { filter: none; }       /* pas de survol par bouton */
+.cap-max { background: var(--ball-max); border-color: var(--ball-max-lo); }
+.cap-close { background: var(--ball-close); border-color: var(--ball-close-lo); margin-left: 0; }
+/* Ordre visuel authentique Aqua : Fermer-Réduire-Agrandir (rouge-jaune-vert)
+   de gauche à droite -- components.html §traffic a ce même ordre en DOM,
+   mais index.html (partagé par les 34 thèmes) est câblé Réduire-Agrandir-
+   Fermer. Réordonné ici via flex order plutôt que dans le DOM partagé. */
+.cap-close { order: -1; }
+.cap-min { order: 0; }
+.cap-max { order: 1; }
+/* Les glyphes sont des caractères typographiques (×, –, +), pas des barres
+   géométriques -- masqués au repos, révélés seulement quand la souris
+   survole tout le groupe .titlebar-buttons (le "traffic" du spécimen).
+   Centrage sur le span PARENT (flex), pas sur le ::before lui-même : un
+   ::before position:absolute avec inset:0 immédiatement annulé par des
+   left/right/top/bottom:auto n'est ni positionné ni dimensionné par
+   inset (les auto gagnent), donc "display:grid;place-items:center" n'avait
+   rien à centrer dans -- le glyphe retombait à sa position statique en
+   haut du bouton au lieu du centre de la bille. Même patron que
+   macos_modern, qui centre correctement de cette façon. */
+.cap-min span, .cap-max span, .cap-close span {
+  display: flex; align-items: center; justify-content: center;
+}
+.cap-min span::before, .cap-max span::before, .cap-close span::before {
+  position: static;
+  background: none;
+  /* The shared style.css rules draw generic geometric glyphs (bars/squares)
+     for non-macOS themes -- border (max's hollow square) and height (min's
+     and close's 2px bar) both leak through onto our typographic characters
+     unless explicitly reset here, distorting/misplacing the glyph box. */
+  border: none;
+  height: auto;
+  width: auto;
+  font: 700 9px/1 var(--font-ui);
+  opacity: 0;
+  transition: opacity var(--transition-state);
+}
+.cap-min span::before { content: "\2013"; color: var(--ball-min-glyph); }
+.cap-max span::before { content: "+"; color: var(--ball-max-glyph); }
+/* transform: none is required, not just omitted -- the shared style.css
+   rule for the generic two-bar geometric "X" (used by non-macOS themes)
+   sets transform: translateY(-50%) rotate(45deg) on this same selector;
+   without an explicit reset it keeps cascading onto our single typographic
+   "×" character too, and a × rotated 45° reads visually as a "+". */
+.cap-close span::before { content: "\00D7"; color: var(--ball-close-glyph); transform: none; }
+.cap-close span::after { content: none; }
+.titlebar-buttons:hover .cap-min span::before,
+.titlebar-buttons:hover .cap-max span::before,
+.titlebar-buttons:hover .cap-close span::before {
+  opacity: 1;
+}
+
+/* ---------- Onglets : segmenté de gélules blanches soudées, pas de radius
+   individuel sauf aux extrémités (pilule), actif = gel bleu assagi ---------- */
+.tabbar {
+  gap: 0;
+  border-bottom: none;
+  justify-content: center;
+}
+.tab-btn {
+  min-width: auto; height: var(--control-height);
+  padding: 0 16px;
+  background: var(--gel-white);
+  border: 1px solid var(--leo-border);
+  border-left-width: 0;                /* segments soudés */
+  border-radius: 0;
+  box-shadow: var(--gel-gloss);
+}
+.tab-btn:first-child { border-left-width: 1px; border-radius: var(--radius-pill) 0 0 var(--radius-pill); }
+.tab-btn:last-child { border-radius: 0 var(--radius-pill) var(--radius-pill) 0; }
+.tab-btn.active {
+  background: var(--gel-blue-soft);
+  border-color: var(--leo-blue-dk);
+  color: #fff;
+  font-weight: 400;                    /* le bleu distingue l'actif, pas le gras */
+  text-shadow: 0 1px 1px rgba(0,0,0,.3);
+}
+.tab-btn:hover:not(.active) { filter: none; }   /* aucun survol avant Tahoe */
+
+/* ---------- Boutons : gélules blanchies (pilule + gloss), défaut = gel bleu
+   assagi, AUCUN survol -- ces règles sont la première mise en forme réelle
+   de <button> (auparavant le chrome natif du navigateur) ---------- */
+button {
+  min-width: var(--button-min-width);
+  height: var(--control-height);
+  padding: 0 14px;
+  border: 1px solid var(--leo-border);
+  border-radius: var(--radius-pill);
+  background: var(--gel-white);
+  box-shadow: var(--gel-gloss);
+  font: inherit;
+  color: var(--text-primary);
+  cursor: var(--cursor-default);
+  user-select: none;
+}
+button:not(:disabled):hover { box-shadow: var(--gel-gloss); }   /* = repos, aucun changement */
+button:not(:disabled):active { background: var(--gel-white-press); box-shadow: none; }
+button:focus-visible { outline: none; box-shadow: var(--gel-gloss), var(--focus-ring); }
+button:disabled { opacity: .5; color: var(--text-disabled); background: var(--gel-white); border-color: var(--leo-border); }
+
+.start-btn {
+  height: var(--control-height);
+  padding: 0 20px;
+  border: 1px solid var(--leo-blue-dk);
+  border-radius: var(--radius-pill);
+  background: var(--gel-blue-soft);    /* le défaut : UN gel bleu par vue (STYLE.md §7) */
+  box-shadow: var(--gel-gloss);
+  color: #fff;
+  text-shadow: 0 1px 1px rgba(0,0,0,.3);
+  font-weight: 400;
+}
+.start-btn:hover { box-shadow: var(--gel-gloss); }
+.start-btn:active { background: var(--gel-blue-press); box-shadow: none; }
+
+.row-actions button {
+  min-width: 0; height: auto;
+  padding: 2px 10px;
+  border: 1px solid var(--leo-border);
+  border-radius: var(--radius-pill);
+  background: var(--gel-white);
+  box-shadow: var(--gel-gloss);
+  font-size: .9em;
+}
+.row-actions button:not(:disabled):hover { box-shadow: var(--gel-gloss); }
+.row-actions button:not(:disabled):active { background: var(--gel-white-press); box-shadow: none; }
+
+/* ---------- Champs : blancs, CARRÉS, ombre interne, halo au focus
+   (interdit #5 -- les champs restent carrés même si les boutons sont
+   pilule). Le <select> n'est PAS un champ : STYLE.md §7 le documente comme
+   une "gélule blanche à embout bleu assagi frappé de chevrons blancs" --
+   donc pilule, avec le second dégradé (embout) porté par components.html. ---------- */
+input[type="text"], input[type="number"], textarea, .search-input {
+  background: var(--leo-view);
+  border: 1px solid var(--leo-border);
+  border-radius: var(--radius-field);
+  box-shadow: inset 0 1px 2px rgba(0,0,0,.16);
+  height: var(--control-height);
+  padding: 0 6px;
+  font: inherit;
+  color: var(--text-primary);
+}
+.form-grid input[type="text"], .form-grid input[type="number"] {
+  background: var(--leo-view);
+  border: 1px solid var(--leo-border);
+  border-radius: var(--radius-field);
+  box-shadow: inset 0 1px 2px rgba(0,0,0,.16);
+  height: var(--control-height);
+  padding: 0 6px;
+}
+textarea { height: auto; min-height: 58px; padding: 3px 6px; resize: none; }
+input[type="text"]:not(:disabled), textarea:not(:disabled) { cursor: var(--cursor-text); }
+input[type="text"]:focus, textarea:focus, .search-input:focus {
+  border-color: #6F9FE8;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,.16), var(--focus-ring);
+  outline: none;
+}
+input:disabled, textarea:disabled { opacity: .5; background: var(--leo-view); }
+select {
+  appearance: none; -webkit-appearance: none;
+  height: var(--control-height);
+  padding: 0 30px 0 12px;
+  border: 1px solid var(--leo-border);
+  border-radius: var(--radius-pill);
+  color: var(--text-primary);
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='11'%3E%3Cpath d='M4.5 0L8 4H1Z' fill='%23fff'/%3E%3Cpath d='M4.5 11L1 7H8Z' fill='%23fff'/%3E%3C/svg%3E") right 7px center/9px 11px no-repeat,
+    var(--gel-blue-soft) right/22px 100% no-repeat,
+    var(--gel-white);
+  box-shadow: var(--gel-gloss);
+}
+select:focus { outline: none; box-shadow: var(--gel-gloss), var(--focus-ring); }
+select:disabled { opacity: .5; }
+
+/* ---------- Cases à cocher : gel blanc -> gel bleu assagi coché, coche
+   blanche, halo au focus (jamais de survol) ---------- */
+input[type="checkbox"] {
+  appearance: none; -webkit-appearance: none;
+  margin: 0; vertical-align: middle;
+  width: var(--checkbox-size); height: var(--checkbox-size);
+  border: 1px solid var(--leo-border);
+  border-radius: 3px;
+  background: var(--gel-white);
+  box-shadow: var(--gel-gloss);
+  display: inline-grid; place-content: center;
+}
+input[type="checkbox"]:not(:disabled):hover { box-shadow: var(--gel-gloss); }
+input[type="checkbox"]:checked {
+  background: var(--gel-blue-soft);
+  border-color: var(--leo-blue-dk);
+}
+input[type="checkbox"]:checked::after {
+  content: "";
+  width: 10px; height: 10px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10'%3E%3Cpath d='M1.5 5.5l2.6 2.6L8.5 2' fill='none' stroke='%23fff' stroke-width='2'/%3E%3C/svg%3E") no-repeat center;
+}
+input[type="checkbox"]:focus-visible { outline: none; box-shadow: var(--gel-gloss), var(--focus-ring); }
+input[type="checkbox"]:disabled { opacity: .5; }
+input[type="checkbox"]:disabled:checked::after { filter: grayscale(1) opacity(.6); }
+
+/* ---------- Listes : source list bleu-gris (#DCE4EB), sélection en bande
+   dégradée --menu-band pleine largeur (STYLE.md §7), survol = léger voile
+   blanc -- le seul hover hors billes/menus admis, car documenté comme
+   composant étendu (arbre/table) sur la MÊME surface source-list. ---------- */
+.listbox { background: var(--source-bg); border-radius: 0; padding: 0; }
+.row:hover:not(.selected) { background: var(--p2-row-veil); }
+.row.selected, #downloadsList .row.selected {
+  background: var(--menu-band);
+  color: var(--selection-text);
+}
+#downloadsList .row[data-health="critical"].selected,
+#downloadsList .row[data-health="warning"].selected,
+#downloadsList .row[data-health="healthy"].selected {
+  background: var(--menu-band);
+  color: var(--selection-text);
+}
+.row-name { font-weight: 400; color: var(--text-primary); }
+.row-state, .row-rate, .row-eta, .row-category, .row-peers { color: var(--text-soft); }
+.downloads-row-header {
+  background: var(--metal);            /* en-têtes en MÉTAL unifié (STYLE.md, composants étendus) */
+  border-bottom: 1px solid var(--leo-frame);
+  font-weight: 400;
+}
+.scan-row:nth-child(even) { background: var(--p2-zebra); }
+.scan-row:hover { background: var(--source-bg); }
+.scan-path, .scan-size { color: var(--text-soft); }
+
+/* ---------- Group box : fieldset doctrinal -- trait --leo-line, légende
+   grasse sans teinte propre (components.html: legend{font-weight:700}) ---------- */
+.profile-group, .details-group {
+  background: transparent;
+  border: 1px solid var(--leo-line);
+  border-radius: var(--radius-group);
+}
+.profile-group h3, .details-group h3 {
+  font-weight: 700;
+  color: var(--text-legend);
+}
+
+/* ---------- Menu contextuel : blanc (vue), radius 5, surlignage en bande
+   --menu-band -- le second hover admis (STYLE.md §9 "Menus") ---------- */
+.context-menu {
+  background: var(--leo-view);
+  border: 1px solid var(--leo-border);
+  border-radius: 5px;
+}
+.context-menu-item:hover {
+  background: var(--menu-band);
+  color: var(--selection-text);
+}
+.context-menu-separator {
+  height: 1px;
+  background: var(--leo-line);
+  margin: 4px 0;
+}
+
+/* ---------- Dialogue : plaque au métal (5 px sur les QUATRE coins --
+   interdit #5, "les coins bas s'arrondissent enfin"), bandeau de titre
+   centré en --metal (pas de billes -- STYLE.md §9) ---------- */
+.modal-overlay { background: rgba(0,0,0,.28); }
+.modal-box {
+  background: var(--surface-window);
+  border: 1px solid var(--leo-frame);
+  border-radius: var(--radius-window);
+  box-shadow: var(--shadow-window);
+  padding: 0 var(--space-5) var(--space-5);
+  gap: var(--space-3);
+}
+.modal-box h3 {
+  margin: 0 calc(-1 * var(--space-5)) 0;
+  padding: 0 var(--space-5);
+  height: var(--titlebar-height);
+  line-height: var(--titlebar-height);
+  background: var(--metal);
+  border-bottom: 1px solid var(--leo-border);
+  border-radius: var(--radius-window) var(--radius-window) 0 0;
+  text-align: center;
+  font-weight: 400;
+  color: var(--text-primary);
+}
+
+/* ---------- Défilement : piste --scroll-track, pouce gel bleu en pilule,
+   boutons à chevrons -- port direct de components.html (jusqu'à Snow
+   Leopard, l'ascenseur garde ses flèches) ---------- */
+::-webkit-scrollbar { width: var(--scrollbar-size); height: var(--scrollbar-size); }
+::-webkit-scrollbar-track { background: var(--scroll-track); box-shadow: inset 1px 0 0 var(--leo-line); }
+::-webkit-scrollbar-thumb {
+  background: var(--scroll-thumb);
+  border: 1px solid var(--scroll-thumb-border);
+  border-radius: 15px;
+}
+::-webkit-scrollbar-button { background: var(--scroll-track); height: 14px; width: 15px; }
+::-webkit-scrollbar-button:vertical:decrement {
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='6'%3E%3Cpath d='M4.5 0L9 6H0Z' fill='%23333'/%3E%3C/svg%3E") center/9px 6px no-repeat,
+    var(--scroll-track);
+}
+::-webkit-scrollbar-button:vertical:increment {
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='6'%3E%3Cpath d='M4.5 6L0 0H9Z' fill='%23333'/%3E%3C/svg%3E") center/9px 6px no-repeat,
+    var(--scroll-track);
+}
+::-webkit-scrollbar-corner { background: var(--scroll-track); }
+
+/* ---------- Jauge de progression (cadre autour du canvas Tetris) : piste-
+   gélule EN CREUX (STYLE.md §9), pilule, pas le vert Game Boy générique ---------- */
+canvas.tetris {
+  border: 1px solid var(--leo-border);
+  border-radius: var(--radius-pill);
+  background: var(--gel-track);
+  box-shadow: inset 0 1px 2px rgba(0,0,0,.16);
+}

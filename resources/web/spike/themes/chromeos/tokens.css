@@ -1,0 +1,754 @@
+/* ==========================================================================
+   CHROMEOS — tokens.css — v1.0 (port)
+   Style : "ChromeOS (Material / Google, thème clair)"
+   Rôle  : SOURCE DE VÉRITÉ des variables. À importer tel quel.
+   Lire  : STYLE.md (règles & interdits) · components.html (référence visuelle)
+   Port du fichier natif de la charte (resources/web/charters/Charte graphique/
+   ChromeOS (Material Google)/tokens.css) vers le contrat structurel de
+   resources/web/spike/themes/luna_xp/tokens.css (la référence de travail) :
+   toutes les valeurs propres à la charte sont reprises telles quelles ;
+   les quelques propriétés "extra" attendues par le CSS partagé de l'app
+   (--border-*, --text-legend, --radius-control/-group/-window,
+   --plastic-*, --gradient-title-active/-titlebtn* /-progress, --frame-shadow,
+   --glow-hover, --title-text-shadow, --font-title, --font-size-title,
+   --titlebar-btn) sont dérivées ici du langage visuel Material/Google — un
+   style plat, sans biseau ni dégradé (hors --gradient-desktop), donc traduit
+   en aplats ("linear-gradient(#C,#C)") et ombres discrètes plutôt qu'inventé.
+   ========================================================================== */
+
+:root {
+
+  /* ========================================================
+     1. PRIMITIVES — palette Google (tons officiels)
+     ======================================================== */
+  /* Bleus (l'accent et ses tons) */
+  --g-blue-50:  #E8F0FE;
+  --g-blue-300: #8AB4F8;
+  --g-blue-600: #1A73E8;   /* Google Blue — l'accent */
+  --g-blue-700: #1967D2;
+  --g-blue-800: #185ABC;
+  --g-blue-900: #174EA6;
+
+  /* Gris (toute la structure) */
+  --g-grey-50:  #F8F9FA;
+  --g-grey-100: #F1F3F4;
+  --g-grey-200: #E8EAED;
+  --g-grey-300: #DADCE0;
+  --g-grey-400: #BDC1C6;
+  --g-grey-500: #9AA0A6;
+  --g-grey-700: #5F6368;
+  --g-grey-900: #202124;
+
+  /* Rôles */
+  --g-red-600:    #D93025;
+  --g-red-700:    #C5221F;
+  --g-red-800:    #B31412;
+  --g-green-600:  #1E8E3E;
+  --g-yellow-600: #F9AB00;
+
+  /* ========================================================
+     2. SÉMANTIQUES
+     ======================================================== */
+  --surface-window: #FFFFFF;          /* fenêtre, barre de titre, corps */
+  --surface-field:  var(--g-grey-100);
+  --surface-hover:  var(--g-grey-100); /* survol des CONTENEURS (items) */
+  --surface-press:  var(--g-grey-200);
+  --window-outline: var(--g-grey-300);
+  --hairline:       var(--g-grey-200);
+
+  --text-primary:  var(--g-grey-900);
+  --text-soft:     var(--g-grey-700);
+  --text-disabled: var(--g-grey-500);
+
+  --accent:         var(--g-blue-600);
+  --accent-hover:   var(--g-blue-700);  /* le plein ASSOMBRIT (Material) */
+  --accent-pressed: var(--g-blue-800);
+  --accent-ring:    var(--g-blue-600);  /* anneau de focus 2 px, plein */
+
+  /* Teintes d'ACTION (survol/appui des pilules bordées & texte) */
+  --action-tint-hover: rgba(26,115,232,.04);
+  --action-tint-press: rgba(26,115,232,.10);
+  --danger-tint-hover: rgba(217,48,37,.05);
+  --danger-tint-press: rgba(217,48,37,.12);
+
+  /* Sélection TONALE (ni voile gris, ni plein saturé) */
+  --tonal-bg:   var(--g-blue-50);
+  --tonal-text: var(--g-blue-700);
+
+  --destructive:         var(--g-red-600);
+  --destructive-hover:   var(--g-red-700);
+  --destructive-pressed: var(--g-red-800);
+
+  --success: var(--g-green-600);
+  --warning: var(--g-yellow-600);   /* jauge en pause */
+
+  /* Boutons de fenêtre : glyphes nus, disque gris au survol seulement */
+  --wm-glyph:   var(--g-grey-700);
+  --wm-hover:   var(--g-grey-100);
+  --wm-pressed: var(--g-grey-200);
+
+  /* Jauge Material : fine, piste TEINTÉE bleu pâle */
+  --progress-track: var(--g-blue-50);
+
+  /* Défilement en surimpression */
+  --scroll-thumb:       var(--g-grey-400);
+  --scroll-thumb-hover: var(--g-grey-500);
+
+  /* Infobulle */
+  --tooltip-bg: rgba(32,33,36,.90);   /* Grey 900 */
+  --tooltip-fg: #FFFFFF;
+
+  --selection-bg:   var(--accent);
+  --selection-text: #FFFFFF;
+
+  /* Bureau (bleus Google, du ciel à la nuit) */
+  --gradient-desktop: radial-gradient(115% 95% at 30% 20%,
+                      #8AB4F8, #1967D2 55%, #174EA6 95%);
+
+  /* Generic aliases consumed by resources/web/spike/*.css -- every theme
+     must define these (any other theme's own equivalent border/legend
+     colors). ChromeOS a une seule doctrine de bordure ("Grey 300" partout :
+     boutons standard, cartes, group box -- cf. STYLE.md §7/§9) : les quatre
+     rôles convergent donc sur le même ton officiel, ce qui EST le choix
+     authentique d'un style plat qui n'invente pas de hiérarchie de biseaux.
+     --border-progress reste un cran plus sombre (Grey 400), comme dans les
+     chartes aînées. --text-legend suit STYLE.md/components.html : la légende
+     Google Sans n'est jamais bleue, seulement grasse -- donc encre normale. */
+  --border-control:  var(--g-grey-300);
+  --border-field:    var(--g-grey-300);
+  --border-group:    var(--g-grey-300);
+  --border-progress: var(--g-grey-400);
+  --border-tab:      var(--hairline);
+  --text-legend:     var(--text-primary);
+
+  /* ========================================================
+     3. LA PILULE TONALE — la signature du style.
+     Deux règles engendrent tout :
+       · Toute ACTION est une pilule à rayon complet :
+         pleine bleue (le primaire — un par vue), bordée
+         Grey 300 à TEXTE BLEU (le standard), ou texte nu
+         (les dialogues). Le plein s'assombrit par tons
+         officiels (600 → 700 → 800) ; les autres se teintent
+         bleu (--action-tint-*).
+       · Les états ne saturent ni ne grisent : ils TEINTENT.
+         Sélection = --tonal-bg + --tonal-text (Blue 50 / 700),
+         jauge sur piste Blue 50, focus = anneau bleu plein.
+         Les CONTENEURS (items de liste, menus), eux, survolent
+         en Grey 100.
+     Toute couleur est un ton officiel de la palette Google.
+     ======================================================== */
+  --radius-pill:    999px;   /* boutons */
+  --radius-surface: 12px;    /* fenêtres, dialogues */
+  --radius-card:    8px;     /* cartes, champs, menus, listes */
+
+  /* Rayons génériques attendus par le CSS partagé -- repris tels quels des
+     trois valeurs ci-dessus (aucun coin vif : interdit #1 du style). */
+  --radius-control: var(--radius-pill);
+  --radius-group:   var(--radius-card);
+  --radius-window:  var(--radius-surface);
+
+  /* "Le plastique" : cette charte l'interdit explicitement (interdit #9 :
+     biseaux/plastique/verre proscrits, aucun dégradé hors --gradient-desktop,
+     aucune ombre sur les contrôles). Les deux propriétés --plastic-* du
+     contrat partagé, qui attendent un "background" pour les boutons, sont
+     donc de vrais APLATS (dégradé à 2 arrêts de même couleur) : blanc au
+     repos ("fond blanc" des pilules bordées), teinte tonale bleue à l'appui
+     (la doctrine "les états teintent" appliquée au seul répertoire dispo). */
+  --plastic-raised:  linear-gradient(var(--surface-window),var(--surface-window));
+  --plastic-pressed: linear-gradient(var(--tonal-bg),var(--tonal-bg));
+
+  /* Barre de titre : "blanche et nue" (STYLE.md §6) -- aplat, pas de dégradé
+     de chrome comme les aînées. Les boutons de fenêtre sont des glyphes nus
+     au repos (disque gris réservé au survol, hors de portée de ce token) ;
+     Fermer ne rougit JAMAIS (interdit #4) donc partage le même aplat nu. */
+  --gradient-title-active:   linear-gradient(var(--surface-window),var(--surface-window));
+  --gradient-titlebtn:       linear-gradient(var(--surface-window),var(--surface-window));
+  --gradient-titlebtn-close: linear-gradient(var(--surface-window),var(--surface-window));
+
+  /* Jauge Material : remplissage plat --accent sur piste teintée (§9). */
+  --gradient-progress: linear-gradient(var(--accent),var(--accent));
+
+  /* ========================================================
+     4. OMBRES — élévations Google (douces, bleutées de gris)
+     ======================================================== */
+  --shadow-window: 0 12px 32px rgba(60,64,67,.28), 0 2px 8px rgba(60,64,67,.16);
+  --shadow-window-inactive: 0 6px 16px rgba(60,64,67,.16);
+  --shadow-menu: 0 2px 6px rgba(60,64,67,.15), 0 8px 24px rgba(60,64,67,.15);
+
+  /* Cadre de fenêtre du CSS partagé : ChromeOS n'a pas de "cadre" bleu
+     emboîté façon Luna -- son relief de fenêtre EST l'élévation Material. */
+  --frame-shadow: var(--shadow-window);
+
+  /* Survol de contrôle : interdit #9 proscrit toute ombre décorative sur les
+     contrôles. Traduit ici en un box-shadow inset qui REMPLIT le contrôle de
+     --action-tint-hover -- fonctionnellement une teinte plate (doctrine du
+     §2 : "les états teintent"), exprimée dans le seul emplacement CSS que ce
+     token occupe (box-shadow), pas un glow/biseau décoratif. */
+  --glow-hover: inset 0 0 0 999px var(--action-tint-hover);
+
+  /* Titre de fenêtre discret, jamais gras ni ombré (STYLE.md §4/§6). */
+  --title-text-shadow: none;
+
+  /* ========================================================
+     5. TYPOGRAPHIE — Roboto pour l'UI, Google Sans pour les titres
+     ======================================================== */
+  --font-ui: Roboto, "Google Sans Text", "Noto Sans", "Segoe UI",
+             "DejaVu Sans", sans-serif;
+  --font-display: "Google Sans", "Product Sans", Roboto, sans-serif;
+  --font-mono: "Roboto Mono", "Noto Sans Mono", monospace;
+  --font-size-base: 14px;
+  --font-size-title: 13px;        /* titre de fenêtre : à GAUCHE, discret */
+  --font-size-dialog-title: 16px; /* Google Sans, 500 */
+  --line-height: 1.45;
+
+  /* Titre de barre de fenêtre : STYLE.md ne réserve Google Sans qu'aux
+     titres de DIALOGUE et aux légendes -- le titre de fenêtre reste en
+     --font-ui (Roboto), simplement discret en --text-soft. */
+  --font-title: var(--font-ui);
+
+  /* ========================================================
+     6. MÉTRIQUES & ESPACEMENT
+     ======================================================== */
+  --unit: 4px;
+  --space-1: 4px;  --space-2: 8px;  --space-3: 8px;
+  --space-4: 12px; --space-5: 16px; --space-6: 24px;
+
+  --control-height: 36px;        /* pilules et champs (36 dp Material) */
+  --button-min-width: 64px;
+  --titlebar-height: 32px;
+  --wm-size: 28px;               /* zone des boutons de fenêtre */
+  --scrollbar-size: 12px;
+  --checkbox-size: 18px;
+  --toggle-track-w: 34px;  --toggle-track-h: 14px;  /* piste FINE */
+  --toggle-knob: 20px;                              /* bouton DÉBORDANT */
+  --icon-small: 16px;  --icon-large: 32px;
+
+  /* Le contrat partagé distingue champ et bouton (Luna : 21 vs 23 px) ;
+     Material les unifie explicitement : "Pilules et champs : 36 px"
+     (STYLE.md §5) -- donc la même hauteur pour les deux, sans invention. */
+  --field-height: var(--control-height);
+
+  /* Taille carrée des boutons de barre de titre -- reprend --wm-size. */
+  --titlebar-btn: var(--wm-size);
+
+  /* ========================================================
+     7. ÉTATS & MOUVEMENT — fondu 150 ms, focus en anneau bleu plein
+     Propriétés permises : background, border-color, color,
+     box-shadow (anneaux), opacity. JAMAIS position, taille,
+     transform — le « ripple » Material n'est pas animé ici :
+     l'appui est un voile statique.
+     ======================================================== */
+  --transition-state: .15s ease;
+  --focus-ring: 2px solid var(--accent-ring);   /* offset 2 px */
+  --cursor-interactive: var(--cursor-default);
+
+  /* Alias génériques attendus par le CSS partagé. */
+  --focus-outline: var(--focus-ring);
+  --transition: var(--transition-state);
+
+  /* ========================================================
+     8. CURSEURS — mêmes 14 actions que les huit aînées,
+     matière ChromeOS : corps NOIRS à liseré blanc, anneau
+     d'attente BLEU Google (le throbber Chrome).
+     ======================================================== */
+  --cur-img-default: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.22' transform='translate(1.5,1.5)'%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23000' stroke='%23000' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%231A1A1A' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-link: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.22' transform='translate(1.5,1.5)'%3E%3Cpolygon points='10,2 13,2 13,9 16,9 19,11 19,15 16,20 9,20 5,14 5,12 7,11 10,14' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='10,2 13,2 13,9 16,9 19,11 19,15 16,20 9,20 5,14 5,12 7,11 10,14' fill='%231A1A1A' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpath d='M13.5 11v4M16 12v3' stroke='%23fff' stroke-width='.9' stroke-linecap='round'/%3E%3C/svg%3E");
+  --cur-img-text: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg fill='none' stroke='%23fff' stroke-width='4.2' stroke-linecap='round'%3E%3Cpath d='M8 3h6M11 3v18M8 21h6'/%3E%3C/g%3E%3Cg fill='none' stroke='%231A1A1A' stroke-width='1.6' stroke-linecap='round'%3E%3Cpath d='M8 3h6M11 3v18M8 21h6'/%3E%3C/g%3E%3C/svg%3E");
+  --cur-img-wait: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.22' transform='translate(1.5,1.5)'%3E%3Ccircle cx='12' cy='12' r='7.5' fill='none' stroke='%23000' stroke-width='5'/%3E%3C/g%3E%3Ccircle cx='12' cy='12' r='7.5' fill='none' stroke='%23fff' stroke-width='5.6'/%3E%3Ccircle cx='12' cy='12' r='7.5' fill='none' stroke='%231A73E8' stroke-width='4'/%3E%3Cpath d='M12 4.5A7.5 7.5 0 0 1 19.5 12' fill='none' stroke='%238AB4F8' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E");
+  --cur-img-progress: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.22' transform='translate(1.5,1.5)'%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23000' stroke='%23000' stroke-width='2.4' stroke-linejoin='round'/%3E%3Ccircle cx='17.5' cy='17.5' r='4.6' fill='none' stroke='%23000' stroke-width='3.4'/%3E%3C/g%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%231A1A1A' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'/%3E%3Ccircle cx='17.5' cy='17.5' r='4.6' fill='none' stroke='%23fff' stroke-width='4.2'/%3E%3Ccircle cx='17.5' cy='17.5' r='4.6' fill='none' stroke='%231A73E8' stroke-width='3'/%3E%3Cpath d='M17.5 12.9A4.6 4.6 0 0 1 22.1 17.5' fill='none' stroke='%238AB4F8' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E");
+  --cur-img-help: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.22' transform='translate(1.5,1.5)'%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23000' stroke='%23000' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%231A1A1A' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpath d='M14.5 6c0-2.6 6.5-2.6 6.5 0c0 2.2-3.2 2-3.2 4.4' fill='none' stroke='%23fff' stroke-width='3.8' stroke-linecap='round'/%3E%3Cpath d='M14.5 6c0-2.6 6.5-2.6 6.5 0c0 2.2-3.2 2-3.2 4.4' fill='none' stroke='%231967D2' stroke-width='1.8' stroke-linecap='round'/%3E%3Ccircle cx='17.9' cy='13.8' r='1.7' fill='%23fff'/%3E%3Ccircle cx='17.9' cy='13.8' r='1.1' fill='%231967D2'/%3E%3C/svg%3E");
+  --cur-img-crosshair: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg fill='none' stroke='%23fff' stroke-width='4.2'%3E%3Cpath d='M12 3v18M3 12h18'/%3E%3C/g%3E%3Cg fill='none' stroke='%231A1A1A' stroke-width='1.6'%3E%3Cpath d='M12 3v18M3 12h18'/%3E%3C/g%3E%3C/svg%3E");
+  --cur-img-not-allowed: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg fill='none' stroke='%23fff' stroke-width='5.4'%3E%3Ccircle cx='12' cy='12' r='8'/%3E%3Cpath d='M6.5 6.5l11 11'/%3E%3C/g%3E%3Cg fill='none' stroke='%231A1A1A' stroke-width='2.4'%3E%3Ccircle cx='12' cy='12' r='8'/%3E%3Cpath d='M6.5 6.5l11 11'/%3E%3C/g%3E%3C/svg%3E");
+  --cur-img-resize-v: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.22' transform='translate(1.5,1.5)'%3E%3Cpolygon points='12,1 17,7 14,7 14,17 17,17 12,23 7,17 10,17 10,7 7,7' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='12,1 17,7 14,7 14,17 17,17 12,23 7,17 10,17 10,7 7,7' fill='%231A1A1A' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-resize-h: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.22' transform='translate(1.5,1.5)'%3E%3Cpolygon points='1,12 7,7 7,10 17,10 17,7 23,12 17,17 17,14 7,14 7,17' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='1,12 7,7 7,10 17,10 17,7 23,12 17,17 17,14 7,14 7,17' fill='%231A1A1A' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-resize-nwse: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.22' transform='translate(1.5,1.5)'%3E%3Cpath d='M6 6l12 12' stroke='%23000' stroke-width='4.6'/%3E%3Cpolygon points='4,4 12,4 4,12' fill='%23000'/%3E%3Cpolygon points='20,20 12,20 20,12' fill='%23000'/%3E%3C/g%3E%3Cpath d='M7 7l10 10' stroke='%23fff' stroke-width='4'/%3E%3Cpath d='M7 7l10 10' stroke='%231A1A1A' stroke-width='1.8'/%3E%3Cpolygon points='4,4 12,4 4,12' fill='%231A1A1A' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpolygon points='20,20 12,20 20,12' fill='%231A1A1A' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-resize-nesw: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.22' transform='translate(1.5,1.5)'%3E%3Cpath d='M18 6L6 18' stroke='%23000' stroke-width='4.6'/%3E%3Cpolygon points='20,4 12,4 20,12' fill='%23000'/%3E%3Cpolygon points='4,20 12,20 4,12' fill='%23000'/%3E%3C/g%3E%3Cpath d='M17 7L7 17' stroke='%23fff' stroke-width='4'/%3E%3Cpath d='M17 7L7 17' stroke='%231A1A1A' stroke-width='1.8'/%3E%3Cpolygon points='20,4 12,4 20,12' fill='%231A1A1A' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpolygon points='4,20 12,20 4,12' fill='%231A1A1A' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-move: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.22' transform='translate(1.5,1.5)' fill='%23000'%3E%3Cpolygon points='12,1 15,5 13,5 13,19 15,19 12,23 9,19 11,19 11,5 9,5'/%3E%3Cpolygon points='1,12 5,9 5,11 19,11 19,9 23,12 19,15 19,13 5,13 5,15'/%3E%3C/g%3E%3Cg fill='%231A1A1A' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'%3E%3Cpolygon points='12,1 15,5 13,5 13,19 15,19 12,23 9,19 11,19 11,5 9,5'/%3E%3Cpolygon points='1,12 5,9 5,11 19,11 19,9 23,12 19,15 19,13 5,13 5,15'/%3E%3C/g%3E%3Cpolygon points='12,1 15,5 13,5 13,19 15,19 12,23 9,19 11,19 11,5 9,5' fill='%231A1A1A'/%3E%3Cpolygon points='1,12 5,9 5,11 19,11 19,9 23,12 19,15 19,13 5,13 5,15' fill='%231A1A1A'/%3E%3C/svg%3E");
+  --cur-img-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.22' transform='translate(1.5,1.5)'%3E%3Cpolygon points='12,2 18,9 14,9 14,20 10,20 10,9 6,9' fill='%23000' stroke='%23000' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='12,2 18,9 14,9 14,20 10,20 10,9 6,9' fill='%231A1A1A' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+
+  /* Curseurs composés : image + point chaud + secours système */
+  --cursor-default:     var(--cur-img-default) 2 2, default;
+  --cursor-link:        var(--cur-img-link) 11 3, pointer;      /* hyperliens UNIQUEMENT */
+  --cursor-text:        var(--cur-img-text) 11 12, text;
+  --cursor-wait:        var(--cur-img-wait) 12 12, wait;        /* throbber bleu */
+  --cursor-progress:    var(--cur-img-progress) 2 2, progress;
+  --cursor-help:        var(--cur-img-help) 2 2, help;
+  --cursor-crosshair:   var(--cur-img-crosshair) 12 12, crosshair;
+  --cursor-not-allowed: var(--cur-img-not-allowed) 12 12, not-allowed;
+  --cursor-resize-v:    var(--cur-img-resize-v) 12 12, ns-resize;
+  --cursor-resize-h:    var(--cur-img-resize-h) 12 12, ew-resize;
+  --cursor-resize-nwse: var(--cur-img-resize-nwse) 12 12, nwse-resize;
+  --cursor-resize-nesw: var(--cur-img-resize-nesw) 12 12, nesw-resize;
+  --cursor-move:        var(--cur-img-move) 12 12, move;
+  --cursor-up:          var(--cur-img-up) 12 3, default;
+
+  /* P2TOK:BEGIN */
+  --p2-ok-bg: #E6F4EA;   --p2-ok-fg: #137333;
+  --p2-warn-bg: #FEF7E0; --p2-warn-fg: #B06000;
+  --p2-on-accent: #FFFFFF;
+  /* P2TOK:END */
+
+  /* Texte "sur accent" (pilule pleine bleue) -- attendu générique du
+     contrat partagé, réutilise le token natif ci-dessus qui s'inverse déjà
+     lui-même correctement en dark/hc (noir puis blanc). */
+  --text-inverse: var(--p2-on-accent);
+
+  --title-active-text:   var(--text-soft);      /* STYLE.md §6 : discret, jamais gras/centré */
+  --title-inactive-text: var(--text-disabled);  /* STYLE.md §6 : fenêtre inactive */
+
+  /* Bureau du CSS partagé (composants.html de la charte n'utilise que ce
+     seul dégradé "hors fenêtres" -- cf. interdit #9). */
+  --surface-desktop: var(--gradient-desktop);
+  /* Pages d'onglets / panneaux internes : un cran plus tinté que le blanc
+     pur de la fenêtre, tiré directement de la palette Grey (Grey 50, un ton
+     officiel déjà déclaré en §1 mais inemployé ailleurs dans la charte). */
+  --surface-panel: var(--g-grey-50);
+  /* Infobulle : reprend directement le fond/texte d'infobulle natifs. */
+  --surface-tooltip: var(--tooltip-bg);
+
+  /* ================================================== ICONS:BEGIN
+     9. ICÔNES — navigation & fichiers (14), tokenisées
+     comme les curseurs : SVG data-URI dessinés dans la
+     matière du style. À consommer en background-image :
+     background: var(--icon-folder) center/contain no-repeat;
+     Jamais d'image externe, jamais d'emoji.
+     ======================================================== */
+  --icon-folder: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M2.6 6h6.3l1.9 2.4h10.6v11H2.6z' fill='%234285F4'/%3E%3Cpath d='M2.6 9.8h18.8v9.6H2.6z' fill='%23669DF6'/%3E%3C/svg%3E");
+  --icon-folder-open: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M2.6 6h6.3l1.9 2.4h10.6v11H2.6z' fill='%234285F4'/%3E%3Cpath d='M4.7 11h17l-2.3 8.4H2.6z' fill='%23669DF6'/%3E%3C/svg%3E");
+  --icon-file: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M6 2.5h8l4.5 4.5v14.5H6z' fill='%23FFFFFF' stroke='%23DADCE0' stroke-width='1.2' stroke-linejoin='round'/%3E%3Cpath d='M14 2.5v4.5h4.5z' fill='%23AECBFA' stroke='%23DADCE0' stroke-width='1.08' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-file-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M6 2.5h8l4.5 4.5v14.5H6z' fill='%23FFFFFF' stroke='%23DADCE0' stroke-width='1.2' stroke-linejoin='round'/%3E%3Cpath d='M14 2.5v4.5h4.5z' fill='%23AECBFA' stroke='%23DADCE0' stroke-width='1.08' stroke-linejoin='round'/%3E%3Ccircle cx='10.2' cy='11.2' r='1.5' fill='%23FBBC04'/%3E%3Cpolygon points='8,18.4 10.8,14.6 12.6,16.9 14,15.1 16.4,18.4' fill='%2334A853'/%3E%3C/svg%3E");
+  --icon-drive: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Crect x='3.2' y='8.8' width='17.6' height='6.6' fill='%23F1F3F4' rx='2' stroke='%23DADCE0' stroke-width='1.2'/%3E%3Ccircle cx='17.2' cy='12.1' r='1.4' fill='%231A73E8'/%3E%3C/svg%3E");
+  --icon-home: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M4.4 11.5L12 4.8l7.6 6.7M6.4 10v9h11.2v-9M10.4 19v-5h3.2v5' fill='none' stroke='%235F6368' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-computer: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Crect x='5' y='3.8' width='14' height='10.4' fill='%235F6368' rx='1.2'/%3E%3Crect x='6.4' y='5.2' width='11.2' height='7.6' fill='%23E8F0FE'/%3E%3Cpolygon points='3,16.6 21,16.6 22.8,19 1.2,19' fill='%23DADCE0' stroke='%235F6368' stroke-width='1' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-network: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M12 7.6L6.4 16M12 7.6l5.6 8.4M6.4 16h11.2' fill='none' stroke='%239AA0A6' stroke-width='1.5' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3Ccircle cx='12' cy='6.4' r='2.2' fill='%231A73E8'/%3E%3Ccircle cx='5.6' cy='17' r='2.2' fill='%231A73E8'/%3E%3Ccircle cx='18.4' cy='17' r='2.2' fill='%231A73E8'/%3E%3C/svg%3E");
+  --icon-trash: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M5.6 6.4h12.8' fill='none' stroke='%235F6368' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M9.6 6.4V4.6h4.8v1.8' fill='none' stroke='%235F6368' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M7 6.4l.9 13h8.2l.9-13' fill='none' stroke='%235F6368' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M10.2 9.6v6.6M13.8 9.6v6.6' fill='none' stroke='%235F6368' stroke-width='1.36' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-search: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='10.4' cy='10.4' r='4.9' fill='none' stroke='%235F6368' stroke-width='1.7'/%3E%3Cpath d='M14.2 14.2l5.2 5.2' fill='none' stroke='%235F6368' stroke-width='2.0' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-back: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M20 12H5.5M11.5 5.5L5 12l6.5 6.5' fill='none' stroke='%235F6368' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-forward: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M4 12h14.5M12.5 5.5L19 12l-6.5 6.5' fill='none' stroke='%235F6368' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M12 20V5.5M5.5 11.5L12 5l6.5 6.5' fill='none' stroke='%235F6368' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-refresh: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M18.6 8.2A7.6 7.6 0 1 0 19.6 14' fill='none' stroke='%235F6368' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpolygon points='19.9,4.4 19.9,9.8 14.7,8.6' fill='%235F6368'/%3E%3C/svg%3E");
+  /* ICONS:END */
+}
+/* DARK:BEGIN — thème sombre (phase 3) */
+[data-theme="dark"] {
+  --surface-window: #202124;
+  --surface-field: #303134;
+  --surface-hover: #35363A;
+  --surface-press: #3C3D41;
+  --window-outline: #000000;
+  --hairline: #3C4043;
+  --text-primary: #E8EAED;
+  --text-soft: #9AA0A6;
+  --text-disabled: #5F6368;
+  /* Glyphes des boutons de fenetre (--, [], x) : le :root ne les derive que
+     de --g-grey-700, jamais reecrit ici -- ils restaient donc a #5F6368
+     (~2.7:1) sur la barre de titre assombrie (--surface-window #202124),
+     illisibles au repos. Meme doctrine que les icones dark ci-dessous
+     (encre claire sur fond sombre) + les fonds de survol/appui suivent
+     --surface-hover/--surface-press pour rester coherents avec le disque
+     qui apparait derriere le glyphe. */
+  --wm-glyph: #E8EAED;
+  --wm-hover: #35363A;
+  --wm-pressed: #3C3D41;
+  --accent: #8AB4F8;              /* Blue 300 : l'accent s'inverse */
+  --accent-hover: #AECBFA;
+  --accent-pressed: #669DF6;
+  --accent-ring: rgba(138,180,248,.5);
+  --action-tint-hover: rgba(232,234,237,.08);
+  --action-tint-press: rgba(232,234,237,.12);
+  --danger-tint-hover: rgba(242,139,130,.12);
+  --danger-tint-press: rgba(242,139,130,.2);
+  --tonal-bg: rgba(138,180,248,.20);
+  --tonal-text: #AECBFA;
+  --destructive: #F28B82;
+  --destructive-hover: #F6AEA9;
+  --destructive-pressed: #EE675C;
+  --success: #81C995; --warning: #FDD663;
+  --progress-track: #3C4043;
+  --scroll-thumb: #5F6368; --scroll-thumb-hover: #80868B;
+  --selection-bg: rgba(138,180,248,.35); --selection-text: #E8EAED;
+  --tooltip-bg: #3C4043; --tooltip-fg: #E8EAED;
+  --gradient-desktop: linear-gradient(150deg,#17181B,#0D0E10);
+  --shadow-window: 0 12px 34px rgba(0,0,0,.6);
+  --p2-ok-bg: rgba(129,201,149,.18);  --p2-ok-fg: #81C995;
+  --p2-warn-bg: rgba(253,214,99,.16); --p2-warn-fg: #FDD663;
+  --p2-on-accent: #202124;
+  /* Panneau interne : Grey 50 (clair) n'a plus de sens sur fond sombre --
+     reprend le survol de conteneur, un cran plus clair que la fenêtre. */
+  --surface-panel: var(--surface-hover);
+  /* icônes surchargées pour le fond sombre */
+  --icon-back: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M20 12H5.5M11.5 5.5L5 12l6.5 6.5' fill='none' stroke='%23E8EAED' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-forward: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M4 12h14.5M12.5 5.5L19 12l-6.5 6.5' fill='none' stroke='%23E8EAED' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M12 20V5.5M5.5 11.5L12 5l6.5 6.5' fill='none' stroke='%23E8EAED' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-refresh: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M18.6 8.2A7.6 7.6 0 1 0 19.6 14' fill='none' stroke='%23E8EAED' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpolygon points='19.9,4.4 19.9,9.8 14.7,8.6' fill='%23E8EAED'/%3E%3C/svg%3E");
+  --icon-search: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='10.4' cy='10.4' r='4.9' fill='none' stroke='%23E8EAED' stroke-width='1.7'/%3E%3Cpath d='M14.2 14.2l5.2 5.2' fill='none' stroke='%23E8EAED' stroke-width='2.0' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-trash: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M5.6 6.4h12.8' fill='none' stroke='%23E8EAED' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M9.6 6.4V4.6h4.8v1.8' fill='none' stroke='%23E8EAED' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M7 6.4l.9 13h8.2l.9-13' fill='none' stroke='%23E8EAED' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M10.2 9.6v6.6M13.8 9.6v6.6' fill='none' stroke='%23E8EAED' stroke-width='1.36' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-home: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M4.4 11.5L12 4.8l7.6 6.7M6.4 10v9h11.2v-9M10.4 19v-5h3.2v5' fill='none' stroke='%23E8EAED' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-computer: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Crect x='5' y='3.8' width='14' height='10.4' fill='%239AA0A6' rx='1.2'/%3E%3Crect x='6.4' y='5.2' width='11.2' height='7.6' fill='%231A2A45'/%3E%3Cpolygon points='3,16.6 21,16.6 22.8,19 1.2,19' fill='%233C4043' stroke='%239AA0A6' stroke-width='1' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+/* DARK:END */
+
+/* HC:BEGIN — contraste élevé (phase 4) */
+[data-theme="hc"] {
+  --surface-window: #FFFFFF;
+  --surface-field: #FFFFFF;
+  --surface-hover: #E8E8E8;
+  --surface-press: #D5D5D5;
+  --window-outline: #000000;
+  --hairline: #000000;
+  --text-primary: #000000;
+  --text-soft: #333333;
+  --text-disabled: #767676;
+  --accent: #174EA6;
+  --accent-hover: #123F88;
+  --accent-pressed: #0E326C;
+  --accent-ring: #174EA6;
+  --action-tint-hover: rgba(0,0,0,.08);
+  --action-tint-press: rgba(0,0,0,.12);
+  --danger-tint-hover: rgba(142,0,0,.10);
+  --danger-tint-press: rgba(142,0,0,.16);
+  --tonal-bg: rgba(23,78,166,.14);
+  --tonal-text: #123E85;
+  --g-grey-700: #333333;
+  --destructive: #8E0000;
+  --destructive-hover: #760000;
+  --destructive-pressed: #600000;
+  --success: #146414; --warning: #E09000;
+  --selection-bg: rgba(23,78,166,.24);
+  --selection-text: #000000;
+  --progress-track: #D5D5D5;
+  --scroll-thumb: #555555; --scroll-thumb-hover: #333333;
+  --tooltip-bg: #1A1A1A; --tooltip-fg: #FFFFFF;
+  --gradient-desktop: linear-gradient(#E8E8E8,#E8E8E8);
+  --shadow-window: 0 0 0 2px #000000;
+  --p2-ok-bg: rgba(20,100,20,.14);  --p2-ok-fg: #146414;
+  --p2-warn-bg: rgba(224,144,0,.16); --p2-warn-fg: #5A4200;
+  --p2-on-accent: #FFFFFF;
+  /* "Bordures franches" (STYLE.md phase 4) : Grey 300/400 ne suffisent plus
+     au ratio AAA sur le blanc HC -- les quatre rôles de bordure basculent
+     sur le même contour noir net que la fenêtre elle-même. */
+  --border-control:  var(--window-outline);
+  --border-field:    var(--window-outline);
+  --border-group:    var(--window-outline);
+  --border-progress: var(--window-outline);
+}
+/* HC:END */
+
+
+/* --- Base recommandée (à copier dans l'app) ------------------------------ */
+/*
+body {
+  margin: 0;
+  background: var(--gradient-desktop);
+  color: var(--text-primary);
+  font: 400 var(--font-size-base)/var(--line-height) var(--font-ui);
+  cursor: var(--cursor-default);
+}
+::selection { background: var(--selection-bg); color: var(--selection-text); }
+a { color: var(--accent); cursor: var(--cursor-link); }
+input[type=text], textarea { cursor: var(--cursor-text); }
+*/
+
+
+/* ==========================================================================
+   STRUCTURE — la pilule tonale appliquee au gabarit partage.
+   Ceci n'est plus une simple substitution de couleurs : chaque selecteur
+   ci-dessous reprend la vraie recette structurelle de components.html
+   (STYLE.md paragraphe 6 a 9) au lieu du biseau/rayon generique de
+   style.css. Charge en dernier dans index.html -> ces regles gagnent la
+   cascade a specificite egale ou superieure, sans !important.
+   ========================================================================== */
+
+/* ---------- Chrome de fenetre : barre blanche nue, glyphes nus ---------- */
+.titlebar {
+  border-bottom: 1px solid var(--hairline);
+}
+.titlebar-drag { min-width: 0; }
+.titlebar-title {
+  font-weight: 400;
+  letter-spacing: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.titlebar-buttons { gap: 2px; align-items: center; }
+.cap-btn {
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: none;
+  transition: background var(--transition-state);
+}
+.cap-btn:hover { background: var(--wm-hover); filter: none; }
+.cap-btn:active { background: var(--wm-pressed); filter: none; }
+.cap-close { background: transparent; margin-left: 2px; }
+.cap-close:hover { background: var(--wm-hover); }
+.cap-close:active { background: var(--wm-pressed); }
+
+/* Glyphes nus (gris, jamais blancs) -- Fermer reste le meme gris que
+   Reduire/Agrandir : STYLE.md interdit #4, "Fermer en rouge". */
+.cap-min span::before {
+  left: 9px; right: 9px; bottom: 13px; height: 1.5px;
+  background: var(--wm-glyph);
+}
+.cap-max span::before {
+  left: 9px; right: 9px; top: 9px; bottom: 9px;
+  border: 1.5px solid var(--wm-glyph);
+  border-radius: 1.5px;
+  background: transparent;
+}
+.cap-close span::before, .cap-close span::after {
+  left: 9px; right: 9px; top: 50%; height: 1.5px;
+  background: var(--wm-glyph);
+}
+
+/* ---------- Onglets Material : texte + barre bleue 3 px ---------- */
+.tabbar {
+  padding: 0 var(--space-3);
+  gap: 4px;
+}
+.tab-btn {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 10px 16px;
+  color: var(--text-soft);
+  font-weight: 500;
+  position: relative;
+}
+.tab-btn:hover:not(.active) { filter: none; color: var(--text-primary); background: transparent; }
+.tab-btn.active {
+  background: transparent;
+  font-weight: 500;
+  color: var(--accent);
+}
+.tab-btn.active::after {
+  content: "";
+  position: absolute;
+  left: 8px; right: 8px; bottom: -1px;
+  height: 3px;
+  border-radius: 3px 3px 0 0;
+  background: var(--accent);
+}
+
+/* ---------- Boutons : de vraies PILULES (bordee a texte bleu) ---------- */
+button {
+  min-width: var(--button-min-width);
+  height: var(--control-height);
+  padding: 0 20px;
+  border: 1px solid var(--g-grey-300);
+  border-radius: var(--radius-pill);
+  background: var(--surface-window);
+  color: var(--accent);
+  font: 500 var(--font-size-base)/1 var(--font-ui);
+  box-shadow: none;
+  transition: background var(--transition-state), border-color var(--transition-state), color var(--transition-state);
+}
+button:not(:disabled):hover { background: var(--action-tint-hover); box-shadow: none; }
+button:not(:disabled):active { background: var(--action-tint-press); }
+button:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
+button:disabled { background: var(--g-grey-100); border-color: var(--g-grey-200); color: var(--text-disabled); }
+
+/* Le PRIMAIRE plein -- un par vue (STYLE.md paragraphe 2) : Demarrer /
+   Demarrer le partage. Assombrit par tons 600 -> 700 -> 800, jamais
+   d'eclaircissement (interdit #8, meme logique que le "pas de bouton plein
+   en dialogue"). */
+.start-btn {
+  height: var(--control-height);
+  min-width: var(--button-min-width);
+  padding: 0 22px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  color: var(--p2-on-accent);
+  font-weight: 500;
+  box-shadow: none;
+}
+.start-btn:hover { background: var(--accent-hover); box-shadow: none; }
+.start-btn:active { background: var(--accent-pressed); }
+
+/* Actions de ligne (pause/suppression) : meme pilule, gabarit reduit --
+   la ligne compte son espace, pas de largeur minimale imposee. */
+.row-actions button {
+  min-width: 0;
+  height: 24px;
+  padding: 0 12px;
+  font-size: 12.5px;
+  box-shadow: none;
+}
+.row-actions button:hover { background: var(--action-tint-hover); box-shadow: none; }
+.row-actions button:active { background: var(--action-tint-press); }
+
+/* ---------- Champs : aplat Grey 100, JAMAIS de bordure (interdit #7) ---- */
+input[type="text"], input[type="number"], select, textarea, .search-input,
+.form-grid input[type="text"], .form-grid input[type="number"] {
+  height: var(--control-height);
+  padding: 0 14px;
+  background: var(--surface-field);
+  border: 0;
+  border-radius: var(--radius-card);
+  color: var(--text-primary);
+  font: 400 var(--font-size-base)/1 var(--font-ui);
+  box-shadow: none;
+  transition: background var(--transition-state), box-shadow var(--transition-state);
+}
+textarea { height: auto; min-height: 76px; padding: 8px 14px; resize: none; }
+input[type="text"]:not(:disabled):hover, input[type="number"]:not(:disabled):hover,
+textarea:not(:disabled):hover, select:not(:disabled):hover, .search-input:not(:disabled):hover {
+  background: var(--surface-press);
+}
+input[type="text"]:focus, input[type="number"]:focus, textarea:focus,
+select:focus, .search-input:focus {
+  background: var(--surface-window);
+  box-shadow: 0 0 0 2px var(--accent-ring);
+  outline: none;
+}
+input:disabled, textarea:disabled, select:disabled { background: var(--g-grey-50); color: var(--text-disabled); }
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 34px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Cpath d='M4 6.5l4 4 4-4' fill='none' stroke='%235F6368' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px 16px;
+}
+
+/* ---------- Cases : carre 18 px, coche blanche sur plein bleu ---------- */
+input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  margin: 0;
+  width: var(--checkbox-size);
+  height: var(--checkbox-size);
+  border: 2px solid var(--g-grey-700);
+  border-radius: 2px;
+  background: var(--surface-window);
+  display: inline-grid;
+  place-content: center;
+  transition: border-color var(--transition-state), background var(--transition-state);
+}
+input[type="checkbox"]:not(:disabled):hover { border-color: var(--text-primary); }
+input[type="checkbox"]:checked { background: var(--accent); border-color: var(--accent); }
+input[type="checkbox"]:checked::after {
+  content: "";
+  width: 12px; height: 12px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12'%3E%3Cpath d='M2 6.5l3 3 5-7' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat center;
+}
+input[type="checkbox"]:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
+input[type="checkbox"]:disabled { border-color: var(--g-grey-400); }
+input[type="checkbox"]:disabled:checked { background: var(--g-grey-400); border-color: var(--g-grey-400); }
+
+/* ---------- Listes : carte blanche, selection TONALE (jamais pleine) --- */
+.listbox {
+  background: var(--surface-window);
+  padding: 4px 0;
+}
+.row, .share-row, .downloads-row, .scan-row {
+  border-bottom: 1px solid var(--hairline);
+}
+.row:hover, .scan-row:hover { background: var(--surface-hover); }
+.row-name { font-weight: 500; color: var(--text-primary); }
+.row-rate { color: var(--text-primary); font-weight: 500; }
+.row-state, .row-eta, .row-peers, .row-category { color: var(--text-soft); }
+.scan-path { color: var(--text-primary); }
+.scan-size { color: var(--text-soft); }
+
+.downloads-row-header {
+  font-weight: 500;
+  color: var(--text-soft);
+  background: transparent;
+  border-bottom: 1px solid var(--hairline);
+}
+
+/* Selection tonale (Blue 50 / Blue 700) -- jamais le plein accent que le
+   gabarit generique applique par defaut (interdit #2). Meme selecteur que
+   style.css pour egaler sa specificite (#id + 2 classes) : charge apres,
+   donc gagne sans !important. */
+#downloadsList .row.selected {
+  background: var(--tonal-bg);
+  color: var(--tonal-text);
+}
+#downloadsList .row[data-health="critical"].selected,
+#downloadsList .row[data-health="warning"].selected,
+#downloadsList .row[data-health="healthy"].selected {
+  background: var(--tonal-bg);
+  color: var(--tonal-text);
+}
+
+/* ---------- Group box : carte blanche bordee Grey 300, legende Sans --- */
+.profile-group, .details-group {
+  background: var(--surface-window);
+}
+.profile-group h3, .details-group h3 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+/* ---------- Menu du kebab : blanc, SANS bordure -- l'ombre suffit ------ */
+.context-menu {
+  border: 0;
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-menu);
+  padding: 6px 0;
+}
+.context-menu-item {
+  padding: 8px 16px;
+  font-size: var(--font-size-base);
+}
+.context-menu-item:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+.context-menu-separator { background: var(--hairline); margin: 6px 0; }
+
+/* ---------- Dialogue Material : carte ombree, actions en TEXT BUTTONS -- */
+.modal-overlay { background: rgba(32,33,36,.5); }
+.modal-box {
+  border: 0;
+  border-radius: var(--radius-surface);
+  box-shadow: var(--shadow-window);
+}
+.modal-box h3 {
+  font-family: var(--font-display);
+  font-size: var(--font-size-dialog-title);
+  font-weight: 500;
+  text-align: left;
+}
+/* Interdit #8 : jamais de bouton plein en dialogue -- les actions restent
+   du texte nu qui se teinte bleu aux etats. */
+.modal-box button {
+  min-width: 64px;
+  height: var(--control-height);
+  padding: 0 16px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--accent);
+  box-shadow: none;
+}
+.modal-box button:hover { background: var(--action-tint-hover); }
+.modal-box button:active { background: var(--action-tint-press); }
+
+/* ---------- Defilement en surimpression, sans fleches ------------------ */
+::-webkit-scrollbar { width: var(--scrollbar-size); height: var(--scrollbar-size); }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background-color: var(--scroll-thumb);
+  border: 4px solid transparent;
+  background-clip: padding-box;
+  border-radius: 12px;
+}
+::-webkit-scrollbar-thumb:hover { background-color: var(--scroll-thumb-hover); border-width: 3px; }
+::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+::-webkit-scrollbar-corner { background: transparent; }
+
+/* ---------- Cadre de la jauge Tetris : carte plate, pas d'ombre -------- */
+canvas.tetris {
+  border: 1px solid var(--g-grey-300);
+  border-radius: var(--radius-card);
+  box-shadow: none;
+}

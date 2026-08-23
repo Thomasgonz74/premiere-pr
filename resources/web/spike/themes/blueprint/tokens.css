@@ -1,0 +1,555 @@
+/* ==========================================================================
+   BLUEPRINT — tokens.css — spike port v1.0
+   Style : "Blueprint (cyanotype)"
+   Rôle  : SOURCE DE VÉRITÉ des variables pour le port web (QWebEngineView).
+   Port de resources/web/charters/Charte graphique/Blueprint (cyanotype)/tokens.css
+   vers le contrat structurel de resources/web/spike/themes/luna_xp/tokens.css.
+   Le tirage cyanotype du dessin d'ingenieur : traits blancs sur bleu de
+   Prusse, papier millimetre, cartouche, cotes flechees, hachures de coupe —
+   et le rouge du crayon de verification. L'etat se dit par le STYLE DE TRAIT,
+   jamais par un aplat de couleur ni une ombre.
+   ========================================================================== */
+
+:root {
+
+  /* ========================================================
+     1. PRIMITIVES — palette Blueprint
+     ======================================================== */
+  /* Les bleus du tirage */
+  --bp-prussian: #16324F;    /* la feuille (fenetre) */
+  --bp-deep:     #0F2438;    /* champs, pistes */
+  --bp-panel:    #1C3D5F;    /* panneaux, cartouches */
+
+  /* Les traits (quatre graisses d'un blanc bleute) */
+  --bp-line:      #E8F0F8;   /* trait fort, textes */
+  --bp-line-soft: #9FB8CC;   /* trait courant, textes doux */
+  --bp-line-dim:  #4A6B8A;   /* trait de construction, filets */
+  --bp-disabled:  #3D5A75;
+
+  /* Le crayon de verification */
+  --bp-red: #E8604C;         /* corrections : danger, echec */
+
+  --bp-desktop: #0C1D2E;
+  --tooltip-bg: var(--bp-panel);
+  --tooltip-fg: var(--bp-line);
+
+  /* ========================================================
+     2. SÉMANTIQUES
+     ======================================================== */
+  --surface-desktop:  var(--bp-desktop);
+  --surface-window:   var(--bp-prussian);
+  --surface-field:    var(--bp-deep);       /* "Champs : --bp-deep" (STYLE.md §7) */
+  --surface-panel:    var(--bp-panel);
+  --surface-tooltip:  var(--tooltip-bg);
+
+  --text-primary:     var(--bp-line);
+  --text-soft:        var(--bp-line-soft);
+  --text-disabled:    var(--bp-disabled);
+  --text-inverse:     var(--bp-prussian);   /* encre sur calque detoure (clair) */
+
+  --title-active-text:   var(--bp-line);       /* cartouche actif : trait fort */
+  --title-inactive-text: var(--bp-line-dim);   /* fenetre inactive : retombe a la construction */
+  --selection-bg:     var(--bp-line);          /* le calque detoure */
+  --selection-text:   var(--bp-prussian);
+
+  /* Generic aliases consumed by resources/web/spike/*.css -- every theme
+     must define these. Blueprint n'a qu'UNE graisse de bordure au repos :
+     le trait de construction (--bp-line-dim) gouverne boutons, champs,
+     groupes, jauge et onglets (STYLE.md §7 : "l'etat est le STYLE DE TRAIT").
+     Défini une seule fois ici (pas répété dans [data-theme="hc"] plus bas)
+     puisque var() se re-résout en direct contre --bp-line-dim actif. */
+  --border-control:  var(--bp-line-dim);
+  --border-field:    var(--bp-line-dim);
+  --border-group:    var(--bp-line-dim);
+  --border-progress: var(--bp-line-dim);
+  --border-tab:      var(--bp-line-dim);
+  --text-legend:     var(--bp-line);        /* CAPITALES de cartouche : trait fort */
+
+  /* ========================================================
+     3. LE PLASTIQUE — ici, LA COTATION.
+     Pas de relief : la matière est le TRAIT et la HACHURE.
+     Aucun dégradé arbitraire, aucun biseau, aucun aplat coloré.
+     ======================================================== */
+  --grid: repeating-linear-gradient(0deg, rgba(159,184,204,.10) 0 1px, transparent 1px 14px),
+          repeating-linear-gradient(90deg, rgba(159,184,204,.10) 0 1px, transparent 1px 14px);
+  --hatch: repeating-linear-gradient(45deg, rgba(232,240,248,.5) 0 1px, transparent 1px 6px);
+  --hatch-red: repeating-linear-gradient(45deg, var(--bp-red) 0 1px, transparent 1px 6px);
+
+  /* Repos = fond nu (le trait seul porte l'état, "le fond ne change jamais") */
+  --plastic-raised:  linear-gradient(var(--bp-prussian),var(--bp-prussian));
+  /* Pressé = "hachure de coupe sous le libellé" (STYLE.md §7) : le --hatch
+     EST déjà un gradient CSS valide, donc la traduction la plus fidèle. */
+  --plastic-pressed: var(--hatch);
+
+  /* Cartouche (barre de titre) : même feuille de panneau, fond plat */
+  --gradient-title-active: linear-gradient(var(--bp-panel),var(--bp-panel));
+
+  /* Gadgets de titre "au trait" : aucun remplissage, seul le trait dessine */
+  --gradient-titlebtn:       linear-gradient(transparent,transparent);
+  --gradient-titlebtn-close: linear-gradient(transparent,transparent);
+
+  /* Jauge : "AVANCEMENT DU TRAIT" — remplissage en hachures blanches */
+  --gradient-progress: var(--hatch);
+
+  /* ========================================================
+     4. OMBRES & LUEURS — le tirage est plat : rien ne porte ombre.
+     ======================================================== */
+  --shadow-window: none;              /* le papier n'a pas d'ombre */
+  --shadow-window-inactive: none;
+  --shadow-menu: none;
+  --frame-shadow: none;
+  --glow-hover: none;                 /* l'état se dit par le trait, pas par un halo */
+  --title-text-shadow: none;
+
+  /* ========================================================
+     5. TYPOGRAPHIE
+     ======================================================== */
+  --font-ui: "Arial Narrow", "Liberation Sans Narrow", "Helvetica Neue",
+             Arial, sans-serif;
+  --font-title: var(--font-ui);       /* mêmes lettres, capitales espacées seulement */
+  --font-mono: "Consolas", "Courier New", monospace;
+  --font-size-base: 13.5px;
+  --font-size-title: 12.5px;          /* CAPITALES de cartouche */
+  --line-height: 1.5;
+  --track-cap: .1em;
+
+  /* ========================================================
+     6. MÉTRIQUES & ESPACEMENT & RAYONS
+     ======================================================== */
+  --unit: 4px;
+  --space-1: 2px; --space-2: 4px; --space-3: 8px;
+  --space-4: 12px; --space-5: 16px; --space-6: 24px;
+  --pad-body: 16px;
+
+  --control-height: 30px;
+  --field-height: 28px;
+  --button-min-width: 104px;
+  --titlebar-height: 36px;
+  --titlebar-btn: var(--wm-size);
+  --wm-size: 20px;
+  --checkbox-size: 16px;
+  --icon-small: 16px;  --icon-large: 32px;
+  --toggle-w: 46px; --toggle-h: 20px;
+  --scrollbar-size: 11px;
+
+  --radius-window: 0px;               /* "Rayons : 0 partout" (STYLE.md §5) */
+  --radius-control: 0px;
+  --radius-field: 0px;
+  --radius-group: 0px;
+
+  /* ========================================================
+     7. ÉTATS & MOUVEMENT
+     ======================================================== */
+  --transition-state: .12s ease;
+  --transition: var(--transition-state);
+  --focus-ring: 1.5px dashed var(--bp-line);   /* le trait d'axe, offset 3 */
+  --focus-outline: var(--focus-ring);
+  --cursor-interactive: var(--cursor-default);
+
+  /* ========================================================
+     8. CURSEURS — mêmes 14 actions que toutes les chartes.
+     Pointeur au TRAIT blanc sur contour de Prusse ; l'attente
+     est l'anneau blanc sur trait de construction ; « ? » blanc.
+     --cur-img-* = image seule · --cursor-* = image + point chaud + secours
+     ======================================================== */
+  --cur-img-default: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.4' transform='translate(1.5,1.5)'%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23E8F0F8' stroke='%230F2438' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-link: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.4' transform='translate(1.5,1.5)'%3E%3Cpolygon points='10,2 13,2 13,9 16,9 19,11 19,15 16,20 9,20 5,14 5,12 7,11 10,14' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='10,2 13,2 13,9 16,9 19,11 19,15 16,20 9,20 5,14 5,12 7,11 10,14' fill='%23E8F0F8' stroke='%230F2438' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpath d='M13.5 11v4M16 12v3' stroke='%230F2438' stroke-width='.9' stroke-linecap='round'/%3E%3C/svg%3E");
+  --cur-img-text: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg fill='none' stroke='%23fff' stroke-width='4.2' stroke-linecap='round'%3E%3Cpath d='M8 3h6M11 3v18M8 21h6'/%3E%3C/g%3E%3Cg fill='none' stroke='%230F2438' stroke-width='1.6' stroke-linecap='round'%3E%3Cpath d='M8 3h6M11 3v18M8 21h6'/%3E%3C/g%3E%3C/svg%3E");
+  --cur-img-wait: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.4' transform='translate(1.5,1.5)'%3E%3Ccircle cx='12' cy='12' r='7.5' fill='none' stroke='%23000' stroke-width='5'/%3E%3C/g%3E%3Ccircle cx='12' cy='12' r='7.5' fill='none' stroke='%23fff' stroke-width='5.6'/%3E%3Ccircle cx='12' cy='12' r='7.5' fill='none' stroke='%23E8F0F8' stroke-width='4'/%3E%3Cpath d='M12 4.5A7.5 7.5 0 0 1 19.5 12' fill='none' stroke='%234A6B8A' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E");
+  --cur-img-progress: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.4' transform='translate(1.5,1.5)'%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23000' stroke='%23000' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/g%3E%3Cg opacity='.4' transform='translate(1.5,1.5)'%3E%3Ccircle cx='17.5' cy='17.5' r='4.6' fill='none' stroke='%23000' stroke-width='3.4'/%3E%3C/g%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23E8F0F8' stroke='%230F2438' stroke-width='1.6' stroke-linejoin='round'/%3E%3Ccircle cx='17.5' cy='17.5' r='4.6' fill='none' stroke='%23fff' stroke-width='4.6'/%3E%3Ccircle cx='17.5' cy='17.5' r='4.6' fill='none' stroke='%23E8F0F8' stroke-width='3'/%3E%3Cpath d='M17.5 12.9A4.6 4.6 0 0 1 22.1 17.5' fill='none' stroke='%234A6B8A' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E");
+  --cur-img-help: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.4' transform='translate(1.5,1.5)'%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23000' stroke='%23000' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23E8F0F8' stroke='%230F2438' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpath d='M14.5 6c0-2.6 6.5-2.6 6.5 0c0 2.2-3.2 2-3.2 4.4' fill='none' stroke='%23fff' stroke-width='3.8' stroke-linecap='round'/%3E%3Cpath d='M14.5 6c0-2.6 6.5-2.6 6.5 0c0 2.2-3.2 2-3.2 4.4' fill='none' stroke='%23E8F0F8' stroke-width='1.8' stroke-linecap='round'/%3E%3Ccircle cx='17.9' cy='13.8' r='1.7' fill='%23fff'/%3E%3Ccircle cx='17.9' cy='13.8' r='1.1' fill='%23E8F0F8'/%3E%3C/svg%3E");
+  --cur-img-crosshair: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg fill='none' stroke='%23fff' stroke-width='4.2'%3E%3Cpath d='M12 3v18M3 12h18'/%3E%3C/g%3E%3Cg fill='none' stroke='%230F2438' stroke-width='1.6'%3E%3Cpath d='M12 3v18M3 12h18'/%3E%3C/g%3E%3C/svg%3E");
+  --cur-img-not-allowed: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg fill='none' stroke='%23fff' stroke-width='5.4'%3E%3Ccircle cx='12' cy='12' r='8'/%3E%3Cpath d='M6.5 6.5l11 11'/%3E%3C/g%3E%3Cg fill='none' stroke='%230F2438' stroke-width='2.4'%3E%3Ccircle cx='12' cy='12' r='8'/%3E%3Cpath d='M6.5 6.5l11 11'/%3E%3C/g%3E%3C/svg%3E");
+  --cur-img-resize-v: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.4' transform='translate(1.5,1.5)'%3E%3Cpolygon points='12,1 17,7 14,7 14,17 17,17 12,23 7,17 10,17 10,7 7,7' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='12,1 17,7 14,7 14,17 17,17 12,23 7,17 10,17 10,7 7,7' fill='%23E8F0F8' stroke='%230F2438' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-resize-h: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.4' transform='translate(1.5,1.5)'%3E%3Cpolygon points='1,12 7,7 7,10 17,10 17,7 23,12 17,17 17,14 7,14 7,17' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='1,12 7,7 7,10 17,10 17,7 23,12 17,17 17,14 7,14 7,17' fill='%23E8F0F8' stroke='%230F2438' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-resize-nwse: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.4' transform='translate(1.5,1.5)'%3E%3Cpath d='M7 7l10 10' stroke='%23000' stroke-width='4.6'/%3E%3Cpolygon points='4,4 12,4 4,12' fill='%23000'/%3E%3Cpolygon points='20,20 12,20 20,12' fill='%23000'/%3E%3C/g%3E%3Cpath d='M7 7l10 10' stroke='%23fff' stroke-width='4'/%3E%3Cpath d='M7 7l10 10' stroke='%230F2438' stroke-width='1.8'/%3E%3Cpolygon points='4,4 12,4 4,12' fill='%23E8F0F8' stroke='%230F2438' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpolygon points='20,20 12,20 20,12' fill='%23E8F0F8' stroke='%230F2438' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-resize-nesw: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.4' transform='translate(1.5,1.5)'%3E%3Cpath d='M17 7L7 17' stroke='%23000' stroke-width='4.6'/%3E%3Cpolygon points='20,4 12,4 20,12' fill='%23000'/%3E%3Cpolygon points='4,20 12,20 4,12' fill='%23000'/%3E%3C/g%3E%3Cpath d='M17 7L7 17' stroke='%23fff' stroke-width='4'/%3E%3Cpath d='M17 7L7 17' stroke='%230F2438' stroke-width='1.8'/%3E%3Cpolygon points='20,4 12,4 20,12' fill='%23E8F0F8' stroke='%230F2438' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpolygon points='4,20 12,20 4,12' fill='%23E8F0F8' stroke='%230F2438' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-move: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.4' transform='translate(1.5,1.5)'%3E%3Cpolygon points='12,1 15,5 13,5 13,19 15,19 12,23 9,19 11,19 11,5 9,5' fill='%23000'/%3E%3Cpolygon points='1,12 5,9 5,11 19,11 19,9 23,12 19,15 19,13 5,13 5,15' fill='%23000'/%3E%3C/g%3E%3Cg fill='%23E8F0F8' stroke='%230F2438' stroke-width='1.6' stroke-linejoin='round'%3E%3Cpolygon points='12,1 15,5 13,5 13,19 15,19 12,23 9,19 11,19 11,5 9,5'/%3E%3Cpolygon points='1,12 5,9 5,11 19,11 19,9 23,12 19,15 19,13 5,13 5,15'/%3E%3C/g%3E%3Cpolygon points='12,1 15,5 13,5 13,19 15,19 12,23 9,19 11,19 11,5 9,5' fill='%23E8F0F8'/%3E%3Cpolygon points='1,12 5,9 5,11 19,11 19,9 23,12 19,15 19,13 5,13 5,15' fill='%23E8F0F8'/%3E%3C/svg%3E");
+  --cur-img-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.4' transform='translate(1.5,1.5)'%3E%3Cpolygon points='12,2 18,9 14,9 14,20 10,20 10,9 6,9' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='12,2 18,9 14,9 14,20 10,20 10,9 6,9' fill='%23E8F0F8' stroke='%230F2438' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+
+  /* Curseurs composés : image + point chaud + secours système */
+  --cursor-default: var(--cur-img-default) 2 2, default;
+  --cursor-link: var(--cur-img-link) 11 3, pointer;
+  --cursor-text: var(--cur-img-text) 11 12, text;
+  --cursor-wait: var(--cur-img-wait) 12 12, wait;
+  --cursor-progress: var(--cur-img-progress) 2 2, progress;
+  --cursor-help: var(--cur-img-help) 2 2, help;
+  --cursor-crosshair: var(--cur-img-crosshair) 12 12, crosshair;
+  --cursor-not-allowed: var(--cur-img-not-allowed) 12 12, not-allowed;
+  --cursor-resize-v: var(--cur-img-resize-v) 12 12, ns-resize;
+  --cursor-resize-h: var(--cur-img-resize-h) 12 12, ew-resize;
+  --cursor-resize-nwse: var(--cur-img-resize-nwse) 12 12, nwse-resize;
+  --cursor-resize-nesw: var(--cur-img-resize-nesw) 12 12, nesw-resize;
+  --cursor-move: var(--cur-img-move) 12 12, move;
+  --cursor-up: var(--cur-img-up) 12 3, default;
+
+  /* ================================================== ICONS:BEGIN
+     9. ICÔNES — navigation & fichiers (14), tokenisées comme les
+     curseurs : SVG data-URI dessinés dans la matière du style. À
+     consommer en background-image :
+     background: var(--icon-folder) center/contain no-repeat;
+     Jamais d'image externe, jamais d'emoji.
+     ======================================================== */
+  --icon-folder: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M2.5 6h6.5l2 2.5h10.5v11h-19z' fill='%231C3D5F' stroke='%23E8F0F8' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M2.5 6h6.5l2 2.5h-9z' fill='%2316324F' stroke='%23E8F0F8' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-folder-open: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M2.5 6h6.5l2 2.5h9.5v3h-18z' fill='%2316324F' stroke='%23E8F0F8' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M4.8 11.5h16.7l-2.6 8H2.5z' fill='%231C3D5F' stroke='%23E8F0F8' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-file: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M6 2.5h8l4.5 4.5v14.5h-12.5z' fill='%230F2438' stroke='%23E8F0F8' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M14 2.5v4.5h4.5z' fill='%239FB8CC' stroke='%23E8F0F8' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-file-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M6 2.5h8l4.5 4.5v14.5h-12.5z' fill='%230F2438' stroke='%23E8F0F8' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M14 2.5v4.5h4.5z' fill='%239FB8CC' stroke='%23E8F0F8' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Ccircle cx='10' cy='11' r='1.5' fill='%2316324F'/%3E%3Cpath d='M8 18l2.7-3.6 1.9 2.3 1.5-1.9 2.4 3.2z' fill='%2316324F'/%3E%3C/svg%3E");
+  --icon-drive: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M3 9h18v6.5H3z' fill='%230F2438' stroke='%23E8F0F8' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Ccircle cx='17.3' cy='12.2' r='1.2' fill='%2316324F'/%3E%3Cpath d='M6 12.2h6' fill='none' stroke='%23E8F0F8' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-home: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M5.5 11.5h13v8.5h-13z' fill='%230F2438' stroke='%23E8F0F8' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M12 3.2L21.2 11H2.8z' fill='%2316324F' stroke='%23E8F0F8' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M10.3 20v-4.8h3.4V20z' fill='%239FB8CC'/%3E%3C/svg%3E");
+  --icon-computer: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M3.5 4.5h17v11h-17z' fill='%230F2438' stroke='%23E8F0F8' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M5.5 6.5h13v7h-13z' fill='%2316324F'/%3E%3Cpath d='M12 15.5v3M8.5 19.5h7' fill='none' stroke='%23E8F0F8' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-network: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M4 3.5h6v5H4z' fill='%230F2438' stroke='%23E8F0F8' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M14 3.5h6v5H14z' fill='%230F2438' stroke='%23E8F0F8' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M9 15.5h6v5H9z' fill='%2316324F' stroke='%23E8F0F8' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M7 8.5v3.5h10V8.5M12 12v3.5' fill='none' stroke='%23E8F0F8' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-trash: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M6.7 8.5h10.6l-1 12h-8.6z' fill='%230F2438' stroke='%23E8F0F8' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M4.8 6h14.4v2.5H4.8z' fill='%2316324F' stroke='%23E8F0F8' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M9.4 6V3.8h5.2V6z' fill='%230F2438' stroke='%23E8F0F8' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M10.3 11v6.5M13.7 11v6.5' fill='none' stroke='%23E8F0F8' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-search: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Ccircle cx='10.4' cy='10.4' r='5.6' fill='none' stroke='%23E8F0F8' stroke-width='1.4'/%3E%3Cpath d='M14.7 14.7L20 20' fill='none' stroke='%23E8F0F8' stroke-width='1.7' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-back: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M14.5 5.5L8 12l6.5 6.5' fill='none' stroke='%23E8F0F8' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-forward: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M9.5 5.5L16 12l-6.5 6.5' fill='none' stroke='%23E8F0F8' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M12 19.5V6M6.5 11.5L12 6l5.5 5.5' fill='none' stroke='%23E8F0F8' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M5.5 21h13' fill='none' stroke='%23E8F0F8' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-refresh: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M18.9 13a7 7 0 1 1-1.8-6.3' fill='none' stroke='%23E8F0F8' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M19.4 3.6v4.9h-4.9' fill='none' stroke='%23E8F0F8' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  /* ICONS:END */
+}
+
+/* HC:BEGIN — contraste élevé (phase 4)
+   Cible AAA (≥7:1) : les quatre graisses montent d'un cran, le crayon du
+   vérificateur s'éclaircit. Bordures, légende, plastique et dégradés se
+   re-résolvent tout seuls via les alias var() ci-dessus -- rien d'autre
+   à répéter ici (même technique que luna_xp). */
+[data-theme="hc"] {
+  --bp-line-soft: #C4D6E4;   /* 8.7 sur Prusse */
+  --bp-line-dim:  #9FB8CC;   /* les traits de construction montent d'une graisse */
+  --bp-disabled:  #8FA6BC;
+  --bp-red:       #FFC9BE;   /* le crayon s'eclaircit : 7.2 */
+  --text-soft:    #C4D6E4;
+  --text-disabled:#8FA6BC;
+}
+/* HC:END */
+
+/* --- Base recommandée (à copier dans l'app) ------------------------------ */
+/*
+body {
+  margin: 0;
+  background: var(--surface-desktop);
+  color: var(--text-primary);
+  font: 400 var(--font-size-base)/var(--line-height) var(--font-ui);
+  cursor: var(--cursor-default);
+}
+::selection { background: var(--selection-bg); color: var(--selection-text); }
+a { color: var(--bp-line); cursor: var(--cursor-link); }
+input[type=text], textarea { cursor: var(--cursor-text); }
+*/
+
+/* ==========================================================================
+   STRUCTURE — composition doctrinale (pas seulement les couleurs)
+   Loaded LAST (see index.html) so plain selectors below win the cascade
+   over style.css's generic rules at equal specificity, source order only.
+   No !important anywhere. Ported from components.html's own CSS patterns
+   (not reinterpreted) : trait de construction au repos, le trait s'appuie
+   au survol, hachure de coupe au pressé, trait d'axe au focus, calque
+   detoure a la selection, radius 0 partout, capitales de cartouche.
+   ========================================================================== */
+
+/* ---------- Cartouche (barre de titre) + gadgets au trait ---------- */
+.titlebar {
+  background: var(--surface-panel);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-radius: 0;
+  border-bottom: 1px solid var(--bp-line);
+  box-shadow: 0 2px 0 -1px var(--bp-line-dim);
+  padding: 0 var(--space-4);
+}
+.titlebar-title {
+  text-transform: uppercase;
+  letter-spacing: var(--track-cap);
+  font-weight: 700;
+  font-size: var(--font-size-title);
+  text-shadow: none;
+  padding-left: 0;
+}
+.titlebar-buttons { gap: 8px; }
+
+.cap-btn {
+  width: var(--wm-size);
+  height: var(--wm-size);
+  border-radius: 0;
+  border: 1px solid var(--bp-line-dim);
+  background: none;
+  box-shadow: none;
+  color: var(--bp-line);
+  transition: border-color var(--transition-state);
+}
+.cap-btn:hover { border-color: var(--bp-line); border-width: 2px; filter: none; }
+.cap-btn:active { background: var(--hatch); filter: none; }
+.cap-close { background: none; margin-left: 0; }
+.cap-close:hover { border-color: var(--bp-red); color: var(--bp-red); }
+
+/* Gadgets dessines au trait : le span porte le glyphe (pas de fond) */
+.cap-min span, .cap-max span, .cap-close span { position: absolute; inset: 0; }
+.cap-min span::before {
+  content: "";
+  position: absolute; inset: 0;
+  background:
+    linear-gradient(currentColor, currentColor) left center / 1px 6px no-repeat,
+    linear-gradient(currentColor, currentColor) right center / 1px 6px no-repeat,
+    linear-gradient(currentColor, currentColor) center / 8px 1px no-repeat;
+}
+.cap-max span::before {
+  content: "";
+  position: absolute; inset: 4px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  background:
+    linear-gradient(currentColor, currentColor) center / 1px 100% no-repeat,
+    linear-gradient(currentColor, currentColor) center / 100% 1px no-repeat;
+}
+.cap-close span::before, .cap-close span::after {
+  content: "";
+  position: absolute; left: 5px; right: 5px; top: 50%; height: 1px;
+  background: currentColor;
+}
+.cap-close span::before { transform: translateY(-50%) rotate(45deg); }
+.cap-close span::after { transform: translateY(-50%) rotate(-45deg); }
+
+/* ---------- Calques (onglets) : soudes au trait, l'actif s'appuie ---------- */
+.tabbar {
+  gap: 0;
+  padding: 0 var(--space-4);
+  background: var(--surface-window);
+  border-bottom: 1px solid var(--bp-line-dim);
+}
+.tab-btn {
+  background: none;
+  border: 1px solid var(--bp-line-dim);
+  border-bottom: none;
+  border-right: none;
+  border-radius: 0;
+  padding: 6px 14px;
+  text-transform: uppercase;
+  letter-spacing: var(--track-cap);
+  font-size: 11.5px;
+  font-weight: 400;
+  color: var(--bp-line-soft);
+  cursor: var(--cursor-interactive);
+}
+.tab-btn:last-child { border-right: 1px solid var(--bp-line-dim); }
+.tab-btn:hover:not(.active) {
+  color: var(--bp-line);
+  box-shadow: inset 0 0 0 1px var(--bp-line);
+  filter: none;
+}
+.tab-btn.active {
+  background: var(--surface-window);
+  border-color: var(--bp-line);
+  color: var(--bp-line);
+  font-weight: 700;
+  box-shadow: inset 0 0 0 1px var(--bp-line);
+}
+
+/* ---------- Boutons : le trait de construction s'appuie ---------- */
+button {
+  min-width: var(--button-min-width);
+  height: var(--control-height);
+  padding: 0 16px;
+  background: none;
+  border: 1px solid var(--bp-line-dim);
+  border-radius: 0;
+  color: var(--text-primary);
+  font: 600 12px var(--font-ui);
+  text-transform: uppercase;
+  letter-spacing: var(--track-cap);
+  cursor: var(--cursor-interactive);
+  transition: border-color var(--transition-state);
+}
+button:not(:disabled):hover {
+  border-color: var(--bp-line);
+  box-shadow: inset 0 0 0 1px var(--bp-line);
+  filter: none;
+}
+button:not(:disabled):active { background: var(--hatch); }
+button:focus-visible { outline: var(--focus-ring); outline-offset: 3px; }
+button:disabled { border-color: var(--bp-disabled); color: var(--text-disabled); cursor: var(--cursor-default); }
+
+/* Le defaut porte ses fleches de cote — un seul par vue (Demarrer) */
+.start-btn {
+  height: var(--control-height);
+  padding: 0 16px;
+  background: none;
+  border: 2px solid var(--bp-line);
+  border-radius: 0;
+}
+.start-btn::before { content: "\2039 "; color: var(--bp-line); }
+.start-btn::after { content: " \203A"; color: var(--bp-line); }
+.start-btn:hover { border-color: var(--bp-line); box-shadow: inset 0 0 0 1px var(--bp-line); filter: none; }
+.start-btn:active { background: var(--hatch); }
+
+/* Boutons de ligne (pause/retrait) : memes regles, gabarit compact */
+.row-actions button {
+  min-width: 0;
+  height: 22px;
+  padding: 0 8px;
+  background: none;
+  border: 1px solid var(--bp-line-dim);
+  border-radius: 0;
+  font: 500 10.5px var(--font-ui);
+  text-transform: uppercase;
+  letter-spacing: var(--track-cap);
+}
+.row-actions button:hover {
+  border-color: var(--bp-line);
+  box-shadow: inset 0 0 0 1px var(--bp-line);
+  filter: none;
+}
+.row-actions button:active { background: var(--hatch); }
+
+/* ---------- Champs : trait de construction, carres, focus a l'axe ---------- */
+input[type="text"], input[type="number"], select, textarea, .search-input {
+  height: var(--control-height);
+  padding: 0 10px;
+  background: var(--bp-deep);
+  border: 1px solid var(--bp-line-dim);
+  border-radius: 0;
+  color: var(--text-primary);
+  font: 400 13.5px var(--font-ui);
+  caret-color: var(--bp-line);
+}
+textarea { height: auto; padding: 8px 10px; resize: vertical; }
+input[type="text"]:not(:disabled):hover,
+input[type="number"]:not(:disabled):hover,
+textarea:not(:disabled):hover,
+select:not(:disabled):hover,
+.search-input:not(:disabled):hover { border-color: var(--bp-line-soft); }
+input[type="text"]:focus,
+input[type="number"]:focus,
+textarea:focus,
+select:focus,
+.search-input:focus {
+  outline: var(--focus-ring);
+  outline-offset: 3px;
+  border-color: var(--bp-line);
+}
+input:disabled, textarea:disabled, select:disabled { border-color: var(--bp-disabled); color: var(--text-disabled); }
+input::placeholder, textarea::placeholder { color: var(--bp-line-dim); }
+select {
+  cursor: var(--cursor-interactive);
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23E8F0F8' stroke-width='1.4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 28px;
+}
+
+/* ---------- Cases (croix de reperage) et radios (point de centre) ---------- */
+input[type="checkbox"], input[type="radio"] {
+  appearance: none;
+  width: var(--checkbox-size);
+  height: var(--checkbox-size);
+  background: var(--bp-deep);
+  border: 1px solid var(--bp-line-dim);
+  margin: 0 6px 0 0;
+  position: relative;
+  vertical-align: middle;
+  cursor: var(--cursor-interactive);
+}
+input[type="radio"] { border-radius: 50%; }
+input[type="checkbox"]:not(:disabled):hover,
+input[type="radio"]:not(:disabled):hover { border-color: var(--bp-line); border-width: 2px; }
+input[type="checkbox"]:checked::after {
+  content: "";
+  position: absolute; inset: 2px;
+  background:
+    linear-gradient(45deg, transparent calc(50% - .8px), var(--bp-line) calc(50% - .8px) calc(50% + .8px), transparent calc(50% + .8px)),
+    linear-gradient(-45deg, transparent calc(50% - .8px), var(--bp-line) calc(50% - .8px) calc(50% + .8px), transparent calc(50% + .8px));
+}
+input[type="radio"]:checked::after {
+  content: "";
+  position: absolute; inset: 5px;
+  border-radius: 50%;
+  background: var(--bp-line);
+}
+input[type="checkbox"]:focus-visible, input[type="radio"]:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
+input[type="checkbox"]:disabled, input[type="radio"]:disabled { border-color: var(--bp-disabled); }
+
+/* ---------- Nomenclature (listes/rangees) : le calque detoure ---------- */
+.listbox { background: var(--bp-deep); border: 1px solid var(--bp-line-dim); border-radius: 0; }
+.row, .share-row, .downloads-row, .scan-row { border-bottom: 1px solid var(--bp-line-dim); }
+.row:hover, .share-row:hover, .downloads-row:hover, .scan-row:hover {
+  box-shadow: inset 0 0 0 1px var(--bp-line);
+}
+.row-name { font-weight: 700; color: var(--text-primary); }
+.row-state, .row-rate, .row-eta, .row-category, .row-peers { color: var(--text-soft); }
+.downloads-row-header {
+  text-transform: uppercase;
+  letter-spacing: var(--track-cap);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--bp-line-soft);
+  border-bottom: 1px solid var(--bp-line);
+}
+.scan-path { color: var(--text-primary); }
+.scan-size { color: var(--text-soft); }
+
+/* ---------- Cartouches internes (group box) : capitales + filet dessous ---------- */
+.profile-group, .details-group {
+  background: var(--surface-panel);
+  border: 1px solid var(--bp-line-dim);
+  border-radius: 0;
+}
+.profile-group h3, .details-group h3 {
+  text-transform: uppercase;
+  letter-spacing: var(--track-cap);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--bp-line-soft);
+  padding-bottom: var(--space-2);
+  margin-bottom: var(--space-3);
+  border-bottom: 1px solid var(--bp-line-dim);
+}
+
+/* ---------- Menu contextuel : cartouche borde, l'item au pointeur detoure ---------- */
+.context-menu {
+  background: var(--bp-panel);
+  border: 1px solid var(--bp-line);
+  box-shadow: inset 0 0 0 2px var(--bp-panel), inset 0 0 0 3px var(--bp-line-dim);
+  border-radius: 0;
+  padding: 5px 0;
+}
+.context-menu-item {
+  padding: 5px 14px;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: var(--track-cap);
+  font-size: 11.5px;
+}
+.context-menu-item:hover { background: var(--bp-line); color: var(--bp-prussian); }
+.context-menu-separator { background: var(--bp-line-dim); margin: 5px 10px; }
+
+/* ---------- Avis de modification (dialogues) : double filet, capitales ---------- */
+.modal-overlay { background: rgba(12, 29, 46, .55); }
+.modal-box {
+  background: var(--surface-window);
+  border: 1px solid var(--bp-line);
+  box-shadow: inset 0 0 0 3px var(--bp-prussian), inset 0 0 0 4px var(--bp-line-dim);
+  border-radius: 0;
+  padding: var(--space-5);
+}
+.modal-box h3 {
+  text-transform: uppercase;
+  letter-spacing: var(--track-cap);
+  font-weight: 700;
+  font-size: var(--font-size-title);
+  color: var(--text-primary);
+}
+
+/* ---------- Defilement : pouce trait de construction, s'appuie, sans fleches ---------- */
+::-webkit-scrollbar { width: var(--scrollbar-size); height: var(--scrollbar-size); }
+::-webkit-scrollbar-track { background: var(--bp-deep); }
+::-webkit-scrollbar-thumb { background: transparent; border: 1px solid var(--bp-line-dim); background-clip: padding-box; }
+::-webkit-scrollbar-thumb:hover { border-color: var(--bp-line); border-width: 2px; }
+::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+::-webkit-scrollbar-corner { background: transparent; }
+
+/* ---------- Jauge (cadre) : AVANCEMENT DU TRAIT ---------- */
+canvas.tetris {
+  border: 1px solid var(--bp-line-dim);
+  border-radius: 0;
+  background: var(--bp-deep);
+  box-shadow: none;
+}

@@ -1,8 +1,8 @@
 ; Inno Setup script for Torrent 2000.
 ; Requires Inno Setup 6 (https://jrsoftware.org/isdl.php) to compile:
 ;   ISCC.exe torrent2000_installer.iss
-; Expects the PyInstaller build to already exist at ..\dist\Torrent2000.exe
-; (run packaging\torrent2000.spec first).
+; Expects the PyInstaller build to already exist at ..\dist\Torrent2000\
+; (run packaging\torrent2000.spec first) -- a --onedir tree, not a single exe.
 ;
 ; Silent / unattended installation:
 ;   Torrent2000-Setup.exe /VERYSILENT /SUPPRESSMSGBOXES /NORESTART
@@ -55,7 +55,10 @@ Name: "associatetorrent"; Description: "Associer les fichiers .torrent à {#MyAp
 Name: "associatemagnet"; Description: "Associer les liens magnet: à {#MyAppName}"; GroupDescription: "Associations de fichiers :"
 
 [Files]
-Source: "..\dist\Torrent2000.exe"; DestDir: "{app}"; Flags: ignoreversion
+; --onedir build: the whole dist\Torrent2000\ tree (Torrent2000.exe plus
+; _internal\ with QtWebEngineProcess.exe, PySide6\, resources\, assets\,
+; locales, etc.), not a single onefile exe.
+Source: "..\dist\Torrent2000\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"

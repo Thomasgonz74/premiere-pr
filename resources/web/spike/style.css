@@ -1,0 +1,498 @@
+/* Spike Phase 0 layout -- consumes luna-tokens.css tokens only, per the
+   charte's own rule ("le code n'utilise que les tokens, jamais les hex").
+   Window anatomy follows STYLE.md section 6: blue 3px frame with rounded
+   top corners, 28px gradient title bar, cream body. */
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  font: 400 var(--font-size-base) / var(--line-height) var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+  cursor: var(--cursor-default);
+}
+
+/* spike_window.py now uses real per-pixel window translucency
+   (WA_TranslucentBackground + a transparent QWebEnginePage background),
+   not an OS region mask -- so html/body must actually BE transparent for
+   the rounded top corners (and any glass chrome) to show the real desktop
+   behind the window, not a solid fallback color. Only the content area
+   (.body below) and the tab bar get an explicit opaque fill -- the charter
+   rule is glass is reserved for "cadre + barre de titre + boutons de titre,
+   jamais le contenu". */
+html {
+  background: transparent;
+}
+
+/* The charter's frame is drawn as inset box-shadow bevels directly on this
+   element's own edge (--frame-shadow: "3 px de bleus emboîtés") -- it needs
+   no separate margin/border layer around it, which was duplicating the
+   frame and is what read as "too many borders" around the window. Left
+   transparent (no background) on purpose: the title bar paints its own
+   background directly on top of this, and for a glass-chrome theme that
+   background is itself semi-transparent -- if body underneath it were
+   opaque, the glass would just tint body's own color instead of showing
+   the real desktop through it. */
+body {
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius-window) var(--radius-window) 0 0;
+  box-shadow: var(--frame-shadow);
+  height: 100%;
+  position: relative;
+}
+
+/* ---------- Title bar ---------- */
+.titlebar {
+  height: var(--titlebar-height);
+  min-height: var(--titlebar-height);
+  background: var(--gradient-title-active);
+  backdrop-filter: var(--glass-blur, none);
+  -webkit-backdrop-filter: var(--glass-blur, none);
+  border-radius: calc(var(--radius-window) - 3px) calc(var(--radius-window) - 3px) 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px;
+  user-select: none;
+}
+
+.titlebar-drag {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  -webkit-app-region: drag; /* no-op in QtWebEngine, kept as a documented intent marker */
+}
+
+.titlebar-title {
+  color: var(--title-active-text);
+  font-family: var(--font-title);
+  font-weight: bold;
+  font-size: var(--font-size-title);
+  text-shadow: var(--title-text-shadow);
+  padding-left: 8px;
+}
+
+.titlebar-buttons {
+  display: flex;
+  gap: 2px;
+}
+
+.cap-btn {
+  width: var(--titlebar-btn);
+  height: var(--titlebar-btn);
+  /* Each theme's own structural CSS (loaded last) now defines a generic
+     "button { min-width: var(--button-min-width) }" rule for ordinary
+     action buttons -- .cap-btn is a <button> too, and never overrode
+     min-width itself, so that floor (often 60-75px) silently won the
+     cascade over this rule's own width and stretched every titlebar
+     button into an oval once border-radius:50% themes (macOS-style
+     traffic lights) applied it. Reset explicitly so this rule's own
+     width is the real, final width, no matter what any theme adds. */
+  min-width: 0;
+  border-radius: var(--radius-control);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  background: var(--gradient-titlebtn);
+  cursor: var(--cursor-default);
+  padding: 0;
+  position: relative;
+}
+
+.cap-btn:hover { filter: brightness(1.12); }
+.cap-btn:active { filter: brightness(0.9); }
+.cap-close { background: var(--gradient-titlebtn-close); margin-left: 2px; }
+
+.cap-min span, .cap-max span, .cap-close span {
+  position: absolute;
+  inset: 0;
+}
+.cap-min span::before {
+  content: "";
+  position: absolute; left: 6px; right: 6px; bottom: 6px; height: 2px;
+  background: #fff;
+}
+.cap-max span::before {
+  content: "";
+  position: absolute; left: 6px; right: 6px; top: 6px; bottom: 6px;
+  border: 2px solid #fff;
+}
+.cap-close span::before, .cap-close span::after {
+  content: "";
+  position: absolute; left: 6px; right: 6px; top: 50%; height: 2px;
+  background: #fff;
+}
+.cap-close span::before { transform: translateY(-50%) rotate(45deg); }
+.cap-close span::after { transform: translateY(-50%) rotate(-45deg); }
+
+/* ---------- Body / downloads list ---------- */
+.body {
+  flex: 1;
+  padding: var(--space-5);
+  overflow: hidden;
+  display: flex;
+  min-height: 0;
+  /* Content stays opaque even when the chrome (frame/title bar) above it is
+     glass -- the charter reserves transparency for "cadre + barre de titre +
+     boutons de titre, jamais le contenu". */
+  background: var(--surface-window);
+}
+
+/* Wraps <main class="body"> + the CCCP propaganda panel side by side --
+   mirrors the native MainWindow's content_row (QTabWidget + panel in a
+   QHBoxLayout). Only ever has one child when the panel is hidden, so this
+   adds no visible structure for the other 33 themes. */
+.content-row {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.cccp-propaganda-panel {
+  width: 220px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 18px 14px;
+  gap: 10px;
+  background: var(--surface-window);
+  border-left: 1px solid var(--border-group);
+  overflow: hidden;
+}
+
+/* The [hidden] UA rule is user-agent-origin, so this class's own author-
+   origin `display: flex` above always wins the cascade regardless of
+   specificity -- setting the `hidden` property/attribute alone never
+   actually hides this element without this explicit override. */
+.cccp-propaganda-panel[hidden] {
+  display: none;
+}
+
+.propaganda-header {
+  margin: 0;
+  font-size: var(--font-size-base);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-align: center;
+  color: var(--su-red, #CC1B1B);
+}
+
+.propaganda-divider {
+  width: 100%;
+  height: 2px;
+  flex: none;
+  background: var(--su-red, #CC1B1B);
+}
+
+.propaganda-icon {
+  width: 72px;
+  height: 72px;
+  flex: none;
+  background-color: var(--su-red, #CC1B1B);
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain;
+}
+
+.propaganda-message {
+  margin: 0;
+  text-align: center;
+  font-size: var(--font-size-small, 12px);
+  line-height: 1.4;
+  color: var(--text-primary);
+}
+
+.listbox {
+  flex: 1;
+  background: var(--surface-field);
+  border: 1px solid var(--border-field);
+  border-radius: var(--radius-group);
+  padding: var(--space-2);
+  overflow: auto;
+}
+
+.empty-note {
+  color: var(--text-disabled);
+  margin: var(--space-4);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr 160px 90px 90px 70px;
+  gap: var(--space-4);
+  align-items: center;
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--border-group);
+}
+.row:last-child { border-bottom: none; }
+
+.row-name { font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row-state { color: var(--text-primary); }
+.row-rate { font-variant-numeric: tabular-nums; text-align: right; }
+
+.row-actions { display: flex; gap: var(--space-2); }
+.row-actions button {
+  background: var(--plastic-raised);
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-control);
+  padding: 2px 8px;
+  cursor: var(--cursor-default);
+}
+.row-actions button:hover { box-shadow: var(--glow-hover); }
+.row-actions button:active { background: var(--plastic-pressed); }
+
+canvas.tetris {
+  image-rendering: pixelated;
+  border: 1px solid var(--border-progress);
+  border-radius: 2px;
+  background: #0F380F;
+}
+
+/* ---------- Tab bar ---------- */
+.tabbar {
+  display: flex;
+  gap: 2px;
+  padding: var(--space-2) var(--space-3) 0;
+  background: var(--surface-window);
+  border-bottom: 1px solid var(--border-group);
+}
+.tab-btn {
+  background: var(--plastic-raised);
+  border: 1px solid var(--border-control);
+  border-bottom: none;
+  border-radius: var(--radius-control) var(--radius-control) 0 0;
+  padding: 6px 16px;
+  cursor: var(--cursor-default);
+  font: inherit;
+  color: var(--text-primary);
+}
+.tab-btn.active { background: var(--surface-field); font-weight: bold; }
+.tab-btn:hover:not(.active) { filter: brightness(1.05); }
+
+/* ---------- Pages (Add / Share) ---------- */
+.page { display: none; flex-direction: column; gap: var(--space-3); flex: 1; min-height: 0; }
+.page.active { display: flex; }
+
+.form-grid { display: flex; flex-direction: column; gap: var(--space-2); }
+.field-label { font-size: var(--font-size-base); color: var(--text-primary); }
+.field-label.inline { margin: 0; }
+.form-grid input[type="text"],
+.form-grid input[type="number"] {
+  background: var(--surface-field);
+  border: 1px solid var(--border-field);
+  border-radius: var(--radius-control);
+  padding: 4px 6px;
+  font: inherit;
+}
+.field-row { display: flex; gap: var(--space-2); align-items: center; }
+.field-row input[type="text"] { flex: 1; }
+.limits-row { flex-wrap: wrap; }
+.field-note { color: var(--text-disabled); font-size: 0.9em; }
+.status-line { min-height: 1.2em; color: var(--text-disabled); font-size: 0.9em; }
+
+.drop-zone {
+  border: 2px dashed var(--border-field);
+  border-radius: var(--radius-group);
+  padding: var(--space-4);
+  text-align: center;
+  color: var(--text-disabled);
+  background: var(--surface-field);
+}
+.drop-zone.dragover { border-style: solid; filter: brightness(0.97); }
+
+.start-btn {
+  align-self: flex-start;
+  background: var(--plastic-raised);
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-control);
+  padding: 6px 20px;
+  cursor: var(--cursor-default);
+  font: inherit;
+  font-weight: bold;
+}
+.start-btn:hover { box-shadow: var(--glow-hover); }
+.start-btn:active { background: var(--plastic-pressed); }
+
+.search-input {
+  background: var(--surface-field);
+  border: 1px solid var(--border-field);
+  border-radius: var(--radius-control);
+  padding: 4px 8px;
+  font: inherit;
+}
+
+/* ---------- Danger-scan results (Add page) ---------- */
+.scan-toolbar { display: flex; gap: var(--space-2); }
+.scan-list { flex: 1; min-height: 0; }
+.scan-row {
+  display: grid;
+  grid-template-columns: 24px 1fr 90px 90px 1fr;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--border-group);
+}
+.scan-row:last-child { border-bottom: none; }
+.scan-path { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.scan-size { font-variant-numeric: tabular-nums; text-align: right; }
+.scan-reasons { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-disabled); font-size: 0.9em; }
+
+.risk-badge { padding: 1px 6px; border-radius: var(--radius-control); font-size: 0.85em; text-align: center; }
+.risk-safe { background: #DFF3DF; color: #1F7A1F; }
+.risk-low { background: #EAF2C8; color: #5C6B12; }
+.risk-medium { background: #FCE8B4; color: #8A5A00; }
+.risk-high { background: #FBD2C4; color: #A33B12; }
+.risk-critical { background: #F6BEBE; color: #8C1010; }
+
+/* ---------- Share page rows (extra columns vs. Downloads' .row) ---------- */
+.share-row { grid-template-columns: 1fr 90px 120px 90px 130px 70px; }
+
+/* ---------- Profile page (17 sections, grouped into 6 bridges) ---------- */
+/* Each group's own JS injects its markup into a matching #profile*Container
+   div (see spike_window.py bridge registrations) -- this just lays out the
+   scroll container and gives each group a consistent card-like separation,
+   individual groups reuse .form-grid/.field-row/.start-btn etc. inside. */
+.profile-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+.profile-group {
+  background: var(--surface-field);
+  border: 1px solid var(--border-field);
+  border-radius: var(--radius-group);
+  padding: var(--space-4);
+}
+.profile-group:empty { display: none; }
+.profile-group h3 {
+  margin: 0 0 var(--space-3);
+  font-size: var(--font-size-base);
+  font-weight: bold;
+  color: var(--text-primary);
+}
+
+/* ---------- Resize hit zones ---------- */
+.resize-edge, .resize-corner { position: fixed; z-index: 1000; }
+.resize-top { top: 0; left: 8px; right: 8px; height: 5px; cursor: var(--cursor-resize-v); }
+.resize-bottom { bottom: 0; left: 8px; right: 8px; height: 5px; cursor: var(--cursor-resize-v); }
+.resize-left { left: 0; top: 8px; bottom: 8px; width: 5px; cursor: var(--cursor-resize-h); }
+.resize-right { right: 0; top: 8px; bottom: 8px; width: 5px; cursor: var(--cursor-resize-h); }
+.resize-tl { top: 0; left: 0; width: 8px; height: 8px; cursor: var(--cursor-resize-nwse); }
+.resize-br { bottom: 0; right: 0; width: 8px; height: 8px; cursor: var(--cursor-resize-nwse); }
+.resize-tr { top: 0; right: 0; width: 8px; height: 8px; cursor: var(--cursor-resize-nesw); }
+.resize-bl { bottom: 0; left: 0; width: 8px; height: 8px; cursor: var(--cursor-resize-nesw); }
+
+/* ---------- Right-click context menu + shared modal overlay ----------
+   Used by the Downloads/Share row context menu and the file-priority/
+   peer-list/speed-graph/create-torrent dialogs. */
+.context-menu {
+  position: fixed;
+  z-index: 2100;
+  background: var(--surface-window);
+  border: 1px solid var(--border-field);
+  border-radius: var(--radius-group);
+  box-shadow: var(--shadow-menu);
+  padding: var(--space-1) 0;
+  min-width: 180px;
+}
+.context-menu-item {
+  padding: var(--space-2) var(--space-4);
+  cursor: pointer;
+  font-size: var(--font-size-base);
+  color: var(--text-primary);
+}
+.context-menu-item:hover {
+  background: var(--selection-bg);
+  color: var(--selection-text);
+}
+.context-menu-separator {
+  height: 1px;
+  background: var(--border-field);
+  margin: var(--space-1) 0;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+.modal-overlay.active { display: flex; }
+.modal-box {
+  background: var(--surface-window);
+  border: 1px solid var(--border-field);
+  border-radius: var(--radius-group);
+  box-shadow: var(--shadow-menu);
+  padding: var(--space-5);
+  max-width: 90%;
+  max-height: 85%;
+  overflow: auto;
+  min-width: 340px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.modal-box h3 { margin: 0; font-size: var(--font-size-title); }
+.modal-close-row { display: flex; justify-content: flex-end; gap: var(--space-2); margin-top: var(--space-2); }
+
+/* Downloads row selection -- click-to-select target for the Delete/Space
+   keyboard shortcuts (keydown.js), mirrors the native table's row selection. */
+#downloadsList .row.selected {
+  background: var(--selection-bg);
+  color: var(--selection-text);
+}
+
+/* ---------- Downloads page: full 9-column layout + details panel ----------
+   Overrides .row's base 5-column grid (same pattern as .share-row) to match
+   DownloadsTab's real column set: Name/Progress/ETA/DL/UL/Peers/State/
+   Category/Action. */
+.downloads-row {
+  grid-template-columns: 1fr 140px 70px 80px 80px 90px 110px 90px 70px;
+}
+.downloads-row-header {
+  font-weight: bold;
+  color: var(--text-primary);
+  border-bottom: 2px solid var(--border-field);
+  padding: var(--space-2) var(--space-3);
+}
+.downloads-row-header span { text-align: left; }
+
+.row-eta, .row-peers, .row-category { font-variant-numeric: tabular-nums; }
+
+/* Health background -- mirrors downloads_tab.py's _HEALTH_COLORS. */
+#downloadsList .row[data-health="critical"] { background: #ffcdcd; }
+#downloadsList .row[data-health="warning"] { background: #fff4b4; }
+#downloadsList .row[data-health="healthy"] { background: #cdf5cd; }
+#downloadsList .row[data-health="critical"].selected,
+#downloadsList .row[data-health="warning"].selected,
+#downloadsList .row[data-health="healthy"].selected {
+  background: var(--selection-bg);
+  color: var(--selection-text);
+}
+
+.details-group {
+  background: var(--surface-field);
+  border: 1px solid var(--border-field);
+  border-radius: var(--radius-group);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-height: 45%;
+  overflow: auto;
+  flex-shrink: 0;
+}
+.details-group h3 { margin: 0; font-size: var(--font-size-base); font-weight: bold; }
+.details-group:empty { display: none; }

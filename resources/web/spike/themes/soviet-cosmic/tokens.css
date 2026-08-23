@@ -1,0 +1,632 @@
+/* ==========================================================================
+   SOVIET-COSMIC — tokens.css — v1.0 (port pour resources/web/spike)
+   Style  : "Soviétique cosmique (Rétrofuturisme)" — charte source « KOSMOS »
+   Rôle   : porter la charte "KOSMOS" sur le contrat structurel partagé illustré
+            par resources/web/spike/themes/luna_xp/tokens.css (référence de travail).
+   Source : resources/web/charters/Charte graphique/
+            Soviétique cosmique (Rétrofuturisme)/{STYLE.md, tokens.css}
+   Lire   : STYLE.md (règles & interdits) · components.html (référence visuelle)
+   Le contenu propre à la charte (palette, curseurs, icônes) est repris tel
+   quel depuis sa source ; seules les quelques propriétés "extra" exigées par
+   le CSS/JS partagé de l'app (annotées "EXTRA") sont synthétisées ici à
+   partir du vocabulaire et des règles CSS réelles de components.html (le
+   pupitre : plaque/panneau/champ en aplats, jamais de biseau — l'état est le
+   VOYANT, pas le fond ; bord unique --z-steel partout ; titre CAPITALES).
+   ========================================================================== */
+
+:root {
+
+  /* ========================================================
+     1. PRIMITIVES — palette KOSMOS : nuits pétrole, crème
+     d'affiche, aciers de fusée, UN rouge (voyant)
+     (copié tel quel depuis tokens.css de la charte source)
+     ======================================================== */
+  /* Les nuits petrole de l'affiche */
+  --z-void:  #0A0E17;    /* le vide (bas du ciel) */
+  --z-plate: #14202F;    /* la plaque de console (fenetre) */
+  --z-panel: #1B2A3E;    /* panneaux, boutons, menus */
+  --z-panel-hi: #22334A; /* survol discret des conteneurs */
+  --z-field: #0F1826;    /* champs, registres, pistes */
+
+  /* Les aciers de fusee */
+  --z-steel:    #33465E; /* filets de structure */
+  --z-steel-hi: #4E6480; /* filets eveilles, sillons */
+  --z-metal:    #8FA1B3; /* glyphes, graduations */
+
+  /* Le creme d'affiche (papier des placards, touches de pupitre) */
+  --z-cream:      #EAE3CF;
+  --z-cream-soft: #A9A695;
+  --z-cream-dim:  #5F6673;
+  --z-cream-dk:   #C9BFA4;   /* bord des touches creme */
+
+  /* LE rouge sovietique et son voyant */
+  --z-red:       #C8241E;    /* etoile, insignes, danger */
+  --z-red-press: #A11C15;
+  --z-lamp:      #E8392B;    /* le VOYANT allume */
+  --z-lamp-glow: rgba(232,57,43,.55);
+  --z-lamp-off:  #3A4A5E;    /* le voyant eteint */
+
+  --tooltip-bg: var(--z-panel);
+  --tooltip-fg: var(--z-cream);
+
+  /* ========================================================
+     2. SÉMANTIQUES & alias exigés par le contrat partagé entre
+     toutes les chartes. La charte source ne nommait pas tous ces
+     alias explicitement : ils sont dérivés ici de ses propres
+     tokens et des règles CSS réelles de components.html (bouton,
+     champ, fieldset, onglet, wm — tous bordés --z-steel), donc ils
+     se re-résolvent seuls sous [data-theme="hc"] sans répétition.
+     ======================================================== */
+  --surface-window:  var(--z-plate);
+  --surface-field:   var(--z-field);
+  --surface-desktop: var(--z-void);        /* EXTRA : aplat de secours (voir --gradient-desktop, la vraie recette de la charte, pour l'usage réel) */
+  --surface-tooltip: var(--tooltip-bg);
+  --surface-panel:   var(--z-panel);
+
+  --text-primary:   var(--z-cream);
+  --text-soft:      var(--z-cream-soft);
+  --text-disabled:  var(--z-cream-dim);
+  --text-inverse:   var(--z-plate);        /* EXTRA : encre de nuit sur touche crème pleine */
+
+  --selection-bg:   var(--z-cream);        /* le bandeau d'etiquette */
+  --selection-text: var(--z-plate);
+  --title-active-text:   var(--z-cream);   /* EXTRA : .tb-title (components.html) */
+  --title-inactive-text: var(--text-soft); /* EXTRA : .window.is-inactive .tb-title */
+
+  /* Alias génériques consommés par le CSS partagé (EXTRA) : la charte n'a
+     qu'UNE couleur de bordure fonctionnelle — l'acier --z-steel — appliquée
+     partout (bouton, champ, fieldset, onglet, jauge, gadget de fenêtre :
+     voir components.html lignes 240/251/269/278/292/295/313) ; c'est le
+     choix authentique de ce style, pas une omission. La distinction de
+     lecture (légende, titres) vient de la crème + capitales, pas d'une
+     2e couleur de bord. */
+  --border-control:  var(--z-steel);
+  --border-field:    var(--z-steel);
+  --border-group:    var(--z-steel);
+  --border-progress: var(--z-steel);
+  --border-tab:      var(--z-steel);
+  --text-legend:     var(--z-cream);       /* EXTRA : couleur du <legend> (components.html l.293) */
+
+  /* Recettes tokenisees (les seules) */
+  --gradient-desktop: linear-gradient(180deg, #182B42, #0A0E17 72%);
+  --seg-cream: repeating-linear-gradient(90deg, var(--z-cream) 0 6px, transparent 6px 9px);
+  --seg-steel: repeating-linear-gradient(90deg, var(--z-steel-hi) 0 6px, transparent 6px 9px);
+  --seg-red:   repeating-linear-gradient(90deg, var(--z-lamp) 0 6px, transparent 6px 9px);
+  --groove: inset 0 0 0 3px var(--z-plate), inset 0 0 0 4px rgba(78,100,128,.5);
+
+  /* ========================================================
+     3. LE PUPITRE (EXTRA, équivalent structurel de "le plastique")
+     — cette charte n'a NI biseau NI relief plastique (interdit #3
+     de STYLE.md : "l'état est le VOYANT ; seul l'appui enfonce le
+     fond") : ses seuls "arrière-plans" de contrôle sont des aplats
+     — panneau au repos, champ enfoncé à l'appui. On respecte donc
+     le type CSS exigé par le site d'usage (background: gradient)
+     avec des dégradés 2 arrêts de même couleur = un aplat pur,
+     conforme aux valeurs réelles de components.html.
+     ======================================================== */
+  --plastic-raised:  linear-gradient(var(--z-panel),var(--z-panel));   /* bouton au repos */
+  --plastic-pressed: linear-gradient(var(--z-field),var(--z-field));   /* appui : ENFONCÉ */
+
+  --gradient-title-active:   linear-gradient(var(--z-plate),var(--z-plate));   /* même plaque que le corps ; la barre se distingue par la trajectoire pointillée sous elle, pas par la couleur */
+  --gradient-titlebtn:       linear-gradient(var(--z-field),var(--z-field));   /* gadget .wm au repos (components.html l.240) */
+  --gradient-titlebtn-close: linear-gradient(var(--z-field),var(--z-field));   /* Fermer : IDENTIQUE au repos — "s'embrase en rouge au survol" (STYLE.md §6) uniquement, jamais plein */
+  --gradient-progress:       var(--seg-cream);                                /* LA MISE EN ORBITE : remplissage par SEGMENTS, jamais un plein */
+
+  /* ========================================================
+     4. OMBRES
+     ======================================================== */
+  --shadow-window: 0 22px 54px rgba(0,0,0,.62), 0 2px 10px rgba(0,0,0,.4);
+  --shadow-window-inactive: 0 12px 30px rgba(0,0,0,.45);
+  --shadow-menu: 0 14px 36px rgba(0,0,0,.55);
+  --lamp-halo: 0 0 6px var(--z-lamp-glow);   /* le seul halo admis */
+
+  --frame-shadow: var(--shadow-window);      /* EXTRA : alias du cadre de fenêtre */
+  --glow-hover: none;                        /* EXTRA : pas de lueur de contrôle — interdit #4 réserve le halo (6px) au voyant lui-même, jamais au bouton entier */
+  --title-text-shadow: none;                 /* EXTRA : capitales à plat, aucun flou (interdit #8) */
+
+  /* ========================================================
+     5. TYPOGRAPHIE
+     ======================================================== */
+  --font-ui: Futura, "Century Gothic", "URW Gothic", Jost, Montserrat,
+             "Trebuchet MS", "DejaVu Sans", sans-serif;
+  --font-title: var(--font-ui);              /* EXTRA : même géométrique, en CAPITALES espacées centrées */
+  --font-mono:  "Consolas", "Courier New", monospace;   /* EXTRA : registre de télémétrie du pupitre */
+  --font-size-base: 13.5px;
+  --font-size-title: 12.5px;    /* CAPITALES ESPACEES, centrees */
+  --line-height: 1.5;
+  --track-wide: .14em;
+  --track-soft: .08em;
+
+  /* ========================================================
+     6. MÉTRIQUES & ESPACEMENT
+     ======================================================== */
+  --unit: 2px;                /* EXTRA : plus petit pas de l'échelle {2,4,8,12,14,22} */
+  --space-1: 2px; --space-2: 4px; --space-3: 8px;
+  --space-4: 12px; --space-5: 14px; --space-6: 22px;
+  --pad-body: 16px;
+  --control-height: 30px;
+  --field-height: var(--control-height);   /* EXTRA : la charte ne distingue pas champ/bouton (components.html l.269) */
+  --button-min-width: 108px;
+  --titlebar-height: 34px;
+  --wm-size: 20px;              /* touches carrees de pupitre */
+  --titlebar-btn: var(--wm-size);   /* EXTRA : alias des gadgets de fenêtre 20×20 */
+  --lamp-size: 7px;             /* le voyant */
+  --checkbox-size: 17px;
+  --toggle-w: 46px; --toggle-h: 22px;   /* la bascule */
+  --scrollbar-size: 11px;
+  --icon-small: 16px; --icon-large: 32px;   /* EXTRA : tailles génériques d'icône */
+  --radius-window: 10px;
+  --radius-control: 5px;
+  --radius-field: 4px;
+  --radius-group: 8px;          /* EXTRA : rayon du fieldset (components.html l.292) */
+
+  /* ========================================================
+     7. ÉTATS & MOUVEMENT
+     ======================================================== */
+  --transition-state: .14s ease;
+  --transition: var(--transition-state);     /* EXTRA : alias */
+  --focus-ring: 1.5px dashed var(--z-cream);   /* la trajectoire (outline, offset 3) */
+  --focus-outline: var(--focus-ring);        /* EXTRA : alias */
+  --cursor-interactive: var(--cursor-default);
+
+  /* ========================================================
+     8. CURSEURS — mêmes 14 actions que toutes les chartes.
+     Matiere d'affiche : corps CREME a contour de nuit ;
+     l'attente est le SATELLITE en orbite autour d'une planete
+     ROUGE cerclee d'acier ; l'aide est rouge.
+     (copié tel quel depuis tokens.css de la charte source)
+     ======================================================== */
+  --cur-img-default: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.4' transform='translate(1.5,1.5)'%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23EAE3CF' stroke='%230A0E17' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-link: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.4' transform='translate(1.5,1.5)'%3E%3Cpolygon points='10,2 13,2 13,9 16,9 19,11 19,15 16,20 9,20 5,14 5,12 7,11 10,14' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='10,2 13,2 13,9 16,9 19,11 19,15 16,20 9,20 5,14 5,12 7,11 10,14' fill='%23EAE3CF' stroke='%230A0E17' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpath d='M13.5 11v4M16 12v3' stroke='%230A0E17' stroke-width='.9' stroke-linecap='round'/%3E%3C/svg%3E");
+  --cur-img-text: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg fill='none' stroke='%23fff' stroke-width='4.2' stroke-linecap='round'%3E%3Cpath d='M8 3h6M11 3v18M8 21h6'/%3E%3C/g%3E%3Cg fill='none' stroke='%230A0E17' stroke-width='1.6' stroke-linecap='round'%3E%3Cpath d='M8 3h6M11 3v18M8 21h6'/%3E%3C/g%3E%3C/svg%3E");
+  --cur-img-wait: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.4' transform='translate(1.5,1.5)'%3E%3Ccircle cx='12' cy='12' r='10.5' fill='%23000'/%3E%3C/g%3E%3Ccircle cx='12' cy='12' r='4.32' fill='%23C8241E' stroke='%23EAE3CF' stroke-width='1.2'/%3E%3Cellipse cx='12' cy='12' rx='9.4' ry='4.14' fill='none' stroke='%23EAE3CF' stroke-width='3' opacity='.9' transform='rotate(-24 12 12)'/%3E%3Cellipse cx='12' cy='12' rx='9.4' ry='4.14' fill='none' stroke='%238FA1B3' stroke-width='1.6' transform='rotate(-24 12 12)'/%3E%3Ccircle cx='20.65' cy='9.65' r='2' fill='%23EAE3CF' stroke='%238FA1B3' stroke-width='1'/%3E%3C/svg%3E");
+  --cur-img-progress: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.4' transform='translate(1.5,1.5)'%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23000' stroke='%23000' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/g%3E%3Cg opacity='.4' transform='translate(1.5,1.5)'%3E%3Ccircle cx='17.3' cy='17.5' r='6.4' fill='%23000'/%3E%3C/g%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23EAE3CF' stroke='%230A0E17' stroke-width='1.6' stroke-linejoin='round'/%3E%3Ccircle cx='17.3' cy='17.5' r='2.58' fill='%23C8241E' stroke='%23EAE3CF' stroke-width='1.2'/%3E%3Cellipse cx='17.3' cy='17.5' rx='5.6' ry='2.46' fill='none' stroke='%23EAE3CF' stroke-width='3' opacity='.9' transform='rotate(-24 17.3 17.5)'/%3E%3Cellipse cx='17.3' cy='17.5' rx='5.6' ry='2.46' fill='none' stroke='%238FA1B3' stroke-width='1.6' transform='rotate(-24 17.3 17.5)'/%3E%3Ccircle cx='22.45' cy='16.10' r='2' fill='%23EAE3CF' stroke='%238FA1B3' stroke-width='1'/%3E%3C/svg%3E");
+  --cur-img-help: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.4' transform='translate(1.5,1.5)'%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23000' stroke='%23000' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23EAE3CF' stroke='%230A0E17' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpath d='M14.5 6c0-2.6 6.5-2.6 6.5 0c0 2.2-3.2 2-3.2 4.4' fill='none' stroke='%23fff' stroke-width='3.8' stroke-linecap='round'/%3E%3Cpath d='M14.5 6c0-2.6 6.5-2.6 6.5 0c0 2.2-3.2 2-3.2 4.4' fill='none' stroke='%23C8241E' stroke-width='1.8' stroke-linecap='round'/%3E%3Ccircle cx='17.9' cy='13.8' r='1.7' fill='%23fff'/%3E%3Ccircle cx='17.9' cy='13.8' r='1.1' fill='%23C8241E'/%3E%3C/svg%3E");
+  --cur-img-crosshair: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg fill='none' stroke='%23fff' stroke-width='4.2'%3E%3Cpath d='M12 3v18M3 12h18'/%3E%3C/g%3E%3Cg fill='none' stroke='%230A0E17' stroke-width='1.6'%3E%3Cpath d='M12 3v18M3 12h18'/%3E%3C/g%3E%3C/svg%3E");
+  --cur-img-not-allowed: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg fill='none' stroke='%23fff' stroke-width='5.4'%3E%3Ccircle cx='12' cy='12' r='8'/%3E%3Cpath d='M6.5 6.5l11 11'/%3E%3C/g%3E%3Cg fill='none' stroke='%230A0E17' stroke-width='2.4'%3E%3Ccircle cx='12' cy='12' r='8'/%3E%3Cpath d='M6.5 6.5l11 11'/%3E%3C/g%3E%3C/svg%3E");
+  --cur-img-resize-v: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.4' transform='translate(1.5,1.5)'%3E%3Cpolygon points='12,1 17,7 14,7 14,17 17,17 12,23 7,17 10,17 10,7 7,7' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='12,1 17,7 14,7 14,17 17,17 12,23 7,17 10,17 10,7 7,7' fill='%23EAE3CF' stroke='%230A0E17' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-resize-h: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.4' transform='translate(1.5,1.5)'%3E%3Cpolygon points='1,12 7,7 7,10 17,10 17,7 23,12 17,17 17,14 7,14 7,17' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='1,12 7,7 7,10 17,10 17,7 23,12 17,17 17,14 7,14 7,17' fill='%23EAE3CF' stroke='%230A0E17' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-resize-nwse: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.4' transform='translate(1.5,1.5)'%3E%3Cpath d='M7 7l10 10' stroke='%23000' stroke-width='4.6'/%3E%3Cpolygon points='4,4 12,4 4,12' fill='%23000'/%3E%3Cpolygon points='20,20 12,20 20,12' fill='%23000'/%3E%3C/g%3E%3Cpath d='M7 7l10 10' stroke='%23fff' stroke-width='4'/%3E%3Cpath d='M7 7l10 10' stroke='%230A0E17' stroke-width='1.8'/%3E%3Cpolygon points='4,4 12,4 4,12' fill='%23EAE3CF' stroke='%230A0E17' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpolygon points='20,20 12,20 20,12' fill='%23EAE3CF' stroke='%230A0E17' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-resize-nesw: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.4' transform='translate(1.5,1.5)'%3E%3Cpath d='M17 7L7 17' stroke='%23000' stroke-width='4.6'/%3E%3Cpolygon points='20,4 12,4 20,12' fill='%23000'/%3E%3Cpolygon points='4,20 12,20 4,12' fill='%23000'/%3E%3C/g%3E%3Cpath d='M17 7L7 17' stroke='%23fff' stroke-width='4'/%3E%3Cpath d='M17 7L7 17' stroke='%230A0E17' stroke-width='1.8'/%3E%3Cpolygon points='20,4 12,4 20,12' fill='%23EAE3CF' stroke='%230A0E17' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpolygon points='4,20 12,20 4,12' fill='%23EAE3CF' stroke='%230A0E17' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-move: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.4' transform='translate(1.5,1.5)'%3E%3Cpolygon points='12,1 15,5 13,5 13,19 15,19 12,23 9,19 11,19 11,5 9,5' fill='%23000'/%3E%3Cpolygon points='1,12 5,9 5,11 19,11 19,9 23,12 19,15 19,13 5,13 5,15' fill='%23000'/%3E%3C/g%3E%3Cg fill='%23EAE3CF' stroke='%230A0E17' stroke-width='1.6' stroke-linejoin='round'%3E%3Cpolygon points='12,1 15,5 13,5 13,19 15,19 12,23 9,19 11,19 11,5 9,5'/%3E%3Cpolygon points='1,12 5,9 5,11 19,11 19,9 23,12 19,15 19,13 5,13 5,15'/%3E%3C/g%3E%3Cpolygon points='12,1 15,5 13,5 13,19 15,19 12,23 9,19 11,19 11,5 9,5' fill='%23EAE3CF'/%3E%3Cpolygon points='1,12 5,9 5,11 19,11 19,9 23,12 19,15 19,13 5,13 5,15' fill='%23EAE3CF'/%3E%3C/svg%3E");
+  --cur-img-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.4' transform='translate(1.5,1.5)'%3E%3Cpolygon points='12,2 18,9 14,9 14,20 10,20 10,9 6,9' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='12,2 18,9 14,9 14,20 10,20 10,9 6,9' fill='%23EAE3CF' stroke='%230A0E17' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cursor-default: var(--cur-img-default) 2 2, default;
+  --cursor-link: var(--cur-img-link) 11 3, pointer;
+  --cursor-text: var(--cur-img-text) 11 12, text;
+  --cursor-wait: var(--cur-img-wait) 12 12, wait;
+  --cursor-progress: var(--cur-img-progress) 2 2, progress;
+  --cursor-help: var(--cur-img-help) 2 2, help;
+  --cursor-crosshair: var(--cur-img-crosshair) 12 12, crosshair;
+  --cursor-not-allowed: var(--cur-img-not-allowed) 12 12, not-allowed;
+  --cursor-resize-v: var(--cur-img-resize-v) 12 12, ns-resize;
+  --cursor-resize-h: var(--cur-img-resize-h) 12 12, ew-resize;
+  --cursor-resize-nwse: var(--cur-img-resize-nwse) 12 12, nwse-resize;
+  --cursor-resize-nesw: var(--cur-img-resize-nesw) 12 12, nesw-resize;
+  --cursor-move: var(--cur-img-move) 12 12, move;
+  --cursor-up: var(--cur-img-up) 12 3, default;
+
+  /* ================================================== ICONS:BEGIN
+     9. ICÔNES — navigation & fichiers (14), tokenisées
+     comme les curseurs : SVG data-URI dessinés dans la
+     matière du style. À consommer en background-image :
+     background: var(--icon-folder) center/contain no-repeat;
+     Jamais d'image externe, jamais d'emoji.
+     (copié tel quel depuis tokens.css de la charte source)
+     ======================================================== */
+  --icon-folder: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M2.8 6.2h6l1.6 2.2h10.8v10.4H2.8z' fill='%234E6480' stroke='%23D9D2BC' stroke-width='1' stroke-linejoin='round'/%3E%3Crect x='2.8' y='8.4' width='18.4' height='1.4' fill='%2333465E'/%3E%3Ccircle cx='18.6' cy='12.8' r='2' fill='%233A4A5E' stroke='%230F1826' stroke-width='0.8'/%3E%3C/svg%3E");
+  --icon-folder-open: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M2.8 6.2h6l1.6 2.2h10.8v10.4H2.8z' fill='%234E6480' stroke='%23D9D2BC' stroke-width='1' stroke-linejoin='round'/%3E%3Crect x='2.8' y='8.4' width='18.4' height='1.4' fill='%2333465E'/%3E%3Ccircle cx='18.6' cy='12.8' r='3.8' fill='%23E8392B' fill-opacity='.3'/%3E%3Ccircle cx='18.6' cy='12.8' r='2' fill='%23E8392B' stroke='%230F1826' stroke-width='0.8'/%3E%3C/svg%3E");
+  --icon-file: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Crect x='6.2' y='2.8' width='12' height='18.2' fill='%230F1826' rx='1' stroke='%238FA1B3' stroke-width='1.2'/%3E%3Cpath d='M8.6 7h7.2M8.6 10h7.2M8.6 13h4.8' fill='none' stroke='%23D9D2BC' stroke-width='1.1' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3Ccircle cx='16.4' cy='17.6' r='1.4' fill='%233A4A5E' stroke='%238FA1B3' stroke-width='0.8'/%3E%3C/svg%3E");
+  --icon-file-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Crect x='6.2' y='2.8' width='12' height='18.2' fill='%230F1826' rx='1' stroke='%238FA1B3' stroke-width='1.2'/%3E%3Ccircle cx='12.1' cy='9.4' r='2.6' fill='%23EAE3CF'/%3E%3Cpolygon points='8.6,17.4 11.2,13.8 12.9,15.9 14.2,14.3 15.8,17.4' fill='%238FA1B3'/%3E%3C/svg%3E");
+  --icon-drive: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Crect x='3.4' y='8.6' width='17.2' height='7' fill='%2333465E' rx='1.5' stroke='%238FA1B3' stroke-width='1.1'/%3E%3Ccircle cx='17.4' cy='12.1' r='1.6' fill='%23E8392B'/%3E%3Ccircle cx='17.4' cy='12.1' r='2.8' fill='%23E8392B' fill-opacity='.3'/%3E%3Cpath d='M5.8 12.1h6' fill='none' stroke='%23D9D2BC' stroke-width='1.1' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3C/svg%3E");
+  --icon-home: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M4.4 12.8a7.6 6.4 0 0 1 15.2 0z' fill='%2333465E' stroke='%23D9D2BC' stroke-width='1.1' stroke-linejoin='round'/%3E%3Crect x='3.6' y='12.8' width='16.8' height='6.6' fill='%234E6480' rx='1' stroke='%23D9D2BC' stroke-width='1.1'/%3E%3Ccircle cx='12' cy='9.4' r='1.8' fill='%231B2A3E' stroke='%238FA1B3' stroke-width='0.9'/%3E%3C/svg%3E");
+  --icon-computer: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Crect x='3.4' y='3.8' width='17.2' height='14.4' fill='%2333465E' rx='2' stroke='%23D9D2BC' stroke-width='1'/%3E%3Ccircle cx='12' cy='11' r='5.6' fill='%230F1826' stroke='%238FA1B3' stroke-width='1'/%3E%3Cpath d='M12 11L15.8 8.2' fill='none' stroke='%23EAE3CF' stroke-width='1.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='9.6' cy='13' r='0.9' fill='%23EAE3CF'/%3E%3Ccircle cx='14.4' cy='12.8' r='0.7' fill='%238FA1B3'/%3E%3Crect x='8.8' y='18.2' width='6.4' height='1.8' fill='%234E6480' stroke='%23D9D2BC' stroke-width='0.8'/%3E%3C/svg%3E");
+  --icon-network: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M6.4 16.4L12 6.6l5.6 9.8' fill='none' stroke='%238FA1B3' stroke-width='1' stroke-dasharray='2 2.2' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3Cpath d='M6.4 16.4h11.2' fill='none' stroke='%238FA1B3' stroke-width='1' stroke-dasharray='2 2.2' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3Ccircle cx='12' cy='5.8' r='2' fill='%23EAE3CF'/%3E%3Ccircle cx='5.6' cy='17.2' r='2' fill='%23C8241E'/%3E%3Ccircle cx='18.4' cy='17.2' r='2' fill='%23EAE3CF'/%3E%3C/svg%3E");
+  --icon-trash: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Crect x='6.4' y='6.2' width='11.2' height='13.2' fill='%2333465E' rx='1' stroke='%23D9D2BC' stroke-width='1'/%3E%3Cpolygon points='6.4,10.4 9.4,6.2 12.4,6.2 6.4,14.6' fill='%23C8241E'/%3E%3Cpolygon points='10.4,19.4 17.6,9.4 17.6,13.6 13.4,19.4' fill='%23C8241E'/%3E%3Crect x='5.4' y='4.2' width='13.2' height='2' fill='%234E6480' stroke='%23D9D2BC' stroke-width='1'/%3E%3C/svg%3E");
+  --icon-search: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='10.4' cy='10.4' r='4.9' fill='none' stroke='%23D9D2BC' stroke-width='1.8'/%3E%3Cpath d='M14.2 14.2l5.2 5.2' fill='none' stroke='%23D9D2BC' stroke-width='2.1' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-back: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M20 12H5.5M11.5 5.5L5 12l6.5 6.5' fill='none' stroke='%23D9D2BC' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-forward: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M4 12h14.5M12.5 5.5L19 12l-6.5 6.5' fill='none' stroke='%23D9D2BC' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M12 20V5.5M5.5 11.5L12 5l6.5 6.5' fill='none' stroke='%23D9D2BC' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-refresh: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='7.4' fill='none' stroke='%238FA1B3' stroke-width='1.3' stroke-dasharray='2.4 2.6'/%3E%3Ccircle cx='12' cy='12' r='2.2' fill='%23EAE3CF'/%3E%3Ccircle cx='18.6' cy='8.4' r='1.7' fill='%23C8241E'/%3E%3C/svg%3E");
+  /* ICONS:END */
+}
+
+/* Pas de bloc [data-theme="dark"] : la charte source n'en définit aucun —
+   ses "nuits pétrole" SONT déjà un thème sombre par construction (aucune
+   variante claire dans STYLE.md/tokens.css d'origine). Reproduit fidèlement
+   cette absence plutôt que d'inventer un second mode que la charte ne
+   prévoit pas. */
+
+/* HC:BEGIN — contraste élevé (phase 4)
+   Copié tel quel depuis la charte source. Tous les alias EXTRA ajoutés
+   ci-dessus (surface-*, border-*, plastic-*, gradient-title-active/
+   titlebtn*, frame-shadow, text-legend, etc.) référencent --z-*, --tooltip-bg,
+   --shadow-window, --seg-cream, donc se re-résolvent seuls ici sans qu'il
+   soit nécessaire de rien répéter. */
+[data-theme="hc"] {
+  --z-void: #000000;
+  --z-plate: #000000;
+  --z-panel: #000000;
+  --z-panel-hi: #16161C;
+  --z-field: #000000;
+  --z-steel: #FFFFFF;              /* la structure devient blanche */
+  --z-steel-hi: #FFFFFF;
+  --z-metal: #E8E8E8;
+  --z-cream: #FFFFFF;
+  --z-cream-soft: #E8E8E8;
+  --z-cream-dim: #C8C8C8;
+  --z-cream-dk: #FFFFFF;
+  --z-red: #B31A10;
+  --z-red-press: #8E140C;
+  --z-lamp: #FF6A60;
+  --z-lamp-glow: rgba(255,106,96,.55);
+  --z-lamp-off: #5A5A66;
+  --selection-bg: #FFFFFF;
+  --selection-text: #000000;
+  --seg-cream: #FFFFFF;
+  --seg-steel: #808080;
+  --seg-red: #FF3B2E;
+  --groove: inset 0 0 0 1.5px #FFFFFF;
+  --surface-window: #000000;
+  --tooltip-bg: #000000; --tooltip-fg: #FFFFFF;
+  --gradient-desktop: linear-gradient(#000000,#000000);
+  --shadow-window: 0 0 0 2px #FFFFFF;
+  /* icônes en contraste élevé */
+  --icon-back: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M20 12H5.5M11.5 5.5L5 12l6.5 6.5' fill='none' stroke='%23FFFFFF' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-forward: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M4 12h14.5M12.5 5.5L19 12l-6.5 6.5' fill='none' stroke='%23FFFFFF' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M12 20V5.5M5.5 11.5L12 5l6.5 6.5' fill='none' stroke='%23FFFFFF' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-refresh: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M18.6 8.2A7.6 7.6 0 1 0 19.6 14' fill='none' stroke='%23FFFFFF' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpolygon points='19.9,4.4 19.9,9.8 14.7,8.6' fill='%23FFFFFF'/%3E%3C/svg%3E");
+  --icon-search: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='10.4' cy='10.4' r='4.9' fill='none' stroke='%23FFFFFF' stroke-width='1.9'/%3E%3Cpath d='M14.2 14.2l5.2 5.2' fill='none' stroke='%23FFFFFF' stroke-width='2.1999999999999997' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+/* HC:END */
+
+
+/* --- Base recommandée (à copier dans l'app, pour référence) --------------- */
+/*
+body {
+  margin: 0;
+  background: var(--gradient-desktop);
+  color: var(--text-primary);
+  font: 400 var(--font-size-base)/var(--line-height) var(--font-ui);
+  cursor: var(--cursor-default);
+}
+::selection { background: var(--selection-bg); color: var(--selection-text); }
+a { color: var(--z-cream); cursor: var(--cursor-link); }
+input[type=text], textarea { cursor: var(--cursor-text); }
+*/
+
+/* ==========================================================================
+   STRUCTURAL COMPOSITION -- KOSMOS's real pupitre shapes, ported from this
+   folder's own components.html (le voyant / la trajectoire / la plaque),
+   not a color reskin of style.css's generic grid. Loaded last in index.html's
+   link order, so plain selectors here beat style.css's same-specificity
+   rules by cascade order alone -- no !important anywhere below. Where a
+   style.css rule has HIGHER specificity (an extra class), that exact
+   selector is repeated here so the override actually lands.
+   ========================================================================== */
+
+/* ---------- Window chrome : plaque, etoile rouge, trajectoire pointillee,
+   touches carrees de pupitre (Reduire / SPOUTNIK / Fermer qui s'embrase) --------- */
+.titlebar {
+  gap: var(--space-3);
+  padding: 0 10px;
+  border-bottom: 1px dashed rgba(234, 227, 207, .55);
+}
+.window.is-inactive .titlebar,
+body.is-inactive .titlebar {
+  border-bottom: 1px solid var(--z-steel);
+}
+.titlebar-drag { justify-content: center; }
+.titlebar-title {
+  padding-left: 0;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: var(--track-wide);
+  font-weight: 500;
+}
+.titlebar-title::before { content: "\2605 "; color: var(--z-red); }
+.titlebar-buttons { gap: 5px; }
+
+.cap-btn {
+  min-width: 0;
+  border: 1px solid var(--z-steel);
+  border-radius: 3px;
+  background: var(--z-field);
+  color: var(--z-metal);
+  box-shadow: none;
+}
+.cap-btn:hover { border-color: var(--z-steel-hi); color: var(--z-cream); filter: none; }
+.cap-btn:active { background: #0A121D; filter: none; }
+.cap-close { background: var(--z-field); }
+.cap-close:not(:disabled):hover {
+  background: var(--z-red);
+  border-color: var(--z-red);
+  color: var(--z-cream);
+  filter: none;
+}
+
+/* Reduire : simple trait, bas du pupitre (components.html l.467 : rect y=7
+   sur viewBox 10 -- le trait est bas dans la touche, pas au centre) */
+.cap-min span::before {
+  left: 50%; right: auto; bottom: auto; top: 50%;
+  width: 9px; height: 1.5px;
+  background: currentColor;
+  transform: translate(-50%, 3px);
+}
+/* Agrandir : SPOUTNIK -- sphere a quatre antennes, dessinee dans la matiere
+   du style (memes tracés que components.html), couleur = currentColor n'est
+   pas fiable dans une image SVG en data-URI : deux variantes figees
+   (metal au repos, creme au survol) reprennent donc les hex reels de la
+   charte plutot qu'un token de plus. */
+.cap-max span::before { content: none; }
+.cap-max span {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 14 14'%3E%3Ccircle cx='5' cy='5' r='3' fill='%238FA1B3'/%3E%3Cpath d='M7.4 5.6l5.4 1.8M7.2 6.8l4.6 4M6 7.6l2.6 5M4.6 7.9l.6 5.3' stroke='%238FA1B3' stroke-width='1' fill='none'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 12px 12px;
+}
+.cap-btn:hover .cap-max span {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 14 14'%3E%3Ccircle cx='5' cy='5' r='3' fill='%23EAE3CF'/%3E%3Cpath d='M7.4 5.6l5.4 1.8M7.2 6.8l4.6 4M6 7.6l2.6 5M4.6 7.9l.6 5.3' stroke='%23EAE3CF' stroke-width='1' fill='none'/%3E%3C/svg%3E");
+}
+/* Fermer : croix, s'embrase en rouge au survol (glyphe recolore via currentColor) */
+.cap-close span::before, .cap-close span::after {
+  left: 50%; right: auto; top: 50%;
+  width: 9px; height: 1.4px;
+  background: currentColor;
+}
+.cap-close span::before { transform: translate(-50%, -50%) rotate(45deg); }
+.cap-close span::after { transform: translate(-50%, -50%) rotate(-45deg); }
+
+/* ---------- Postes (onglets) : chacun porte son voyant -- l'actif l'allume --------- */
+.tabbar {
+  gap: 5px;
+  padding: 0 10px;
+  margin-bottom: -1px;
+  background: transparent;
+  border-bottom: none;
+}
+.tab-btn {
+  min-width: auto;
+  height: auto;
+  padding: 7px 14px 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--z-plate);
+  border: 1px solid var(--z-steel);
+  border-bottom: none;
+  border-radius: var(--radius-control) var(--radius-control) 0 0;
+  font: 600 11px/1 var(--font-ui);
+  text-transform: uppercase;
+  letter-spacing: var(--track-soft);
+  color: var(--text-soft);
+}
+.tab-btn::before {
+  content: "";
+  flex: none;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--z-lamp-off);
+  transition: background var(--transition-state), box-shadow var(--transition-state);
+}
+.tab-btn:hover:not(.active) { filter: none; color: var(--z-cream); }
+.tab-btn:hover:not(.active)::before { background: var(--z-lamp); box-shadow: var(--lamp-halo); }
+.tab-btn.active {
+  background: var(--z-panel-hi);
+  color: var(--z-cream);
+  font-weight: 400;
+}
+.tab-btn.active::before { background: var(--z-lamp); box-shadow: var(--lamp-halo); }
+
+/* ---------- Boutons a voyant : l'etat n'eclaire pas la commande, il allume
+   son temoin ; l'appui ENFONCE (interdit #3 : jamais de fond/voile/lueur de
+   survol sur la commande elle-meme) ---------- */
+button {
+  min-width: var(--button-min-width);
+  height: var(--control-height);
+  padding: 0 16px;
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-control);
+  background: var(--surface-panel);
+  font: 600 11.5px/1 var(--font-ui);
+  text-transform: uppercase;
+  letter-spacing: var(--track-soft);
+  color: var(--text-primary);
+  cursor: var(--cursor-default);
+  user-select: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  transition: border-color var(--transition-state), background var(--transition-state), box-shadow var(--transition-state);
+}
+button::before {
+  content: "";
+  flex: none;
+  width: var(--lamp-size); height: var(--lamp-size);
+  border-radius: 50%;
+  background: var(--z-lamp-off);
+  box-shadow: inset 0 0 0 1px rgba(10, 14, 23, .5);
+  transition: background var(--transition-state), box-shadow var(--transition-state);
+}
+button:not(:disabled):hover { border-color: var(--z-steel-hi); filter: none; }
+button:not(:disabled):hover::before { background: var(--z-lamp); box-shadow: var(--lamp-halo); }
+button:not(:disabled):active { background: var(--surface-field); box-shadow: inset 0 2px 4px rgba(0, 0, 0, .5); }
+button:focus-visible { outline: var(--focus-ring); outline-offset: 3px; }
+button:disabled { opacity: .4; }
+
+/* La touche crème : DÉFAUT unique, voyant rouge permanent (Démarrer / Démarrer le partage) */
+.start-btn {
+  min-width: var(--button-min-width);
+  height: var(--control-height);
+  padding: 0 20px;
+  border: 1px solid var(--z-cream-dk);
+  border-radius: var(--radius-control);
+  background: var(--z-cream);
+  color: var(--text-inverse);
+}
+.start-btn::before { background: var(--z-lamp); box-shadow: var(--lamp-halo); }
+.start-btn:not(:disabled):hover { background: #F4EEDC; border-color: var(--z-cream-dk); filter: none; }
+.start-btn:not(:disabled):active { background: var(--z-cream-dk); box-shadow: inset 0 2px 4px rgba(20, 32, 47, .35); }
+
+/* Actions de ligne (pause/retrait) : même pupitre, gabarit compact */
+.row-actions button {
+  min-width: 0;
+  height: auto;
+  padding: 3px 9px;
+  gap: 6px;
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-control);
+  background: var(--surface-panel);
+}
+.row-actions button::before { width: 5px; height: 5px; }
+.row-actions button:not(:disabled):hover { border-color: var(--z-steel-hi); box-shadow: none; }
+.row-actions button:not(:disabled):hover::before { background: var(--z-lamp); box-shadow: var(--lamp-halo); }
+.row-actions button:not(:disabled):active { background: var(--surface-field); box-shadow: inset 0 1px 3px rgba(0, 0, 0, .5); }
+
+/* ---------- Champs de console : focus = trajectoire pointillée ---------- */
+input[type="text"], input[type="number"], select, textarea, .search-input {
+  background: var(--surface-field);
+  border: 1px solid var(--border-field);
+  border-radius: var(--radius-field);
+  height: var(--field-height);
+  padding: 0 11px;
+  font: inherit;
+  color: var(--text-primary);
+}
+.form-grid input[type="text"], .form-grid input[type="number"] {
+  background: var(--surface-field);
+  border: 1px solid var(--border-field);
+  border-radius: var(--radius-field);
+  height: var(--field-height);
+  padding: 0 11px;
+}
+textarea { height: auto; min-height: 68px; padding: 7px 11px; resize: none; }
+input[type="text"]:not(:disabled), textarea:not(:disabled) { cursor: var(--cursor-text); }
+input[type="text"]:not(:disabled):hover, textarea:not(:disabled):hover, select:not(:disabled):hover {
+  border-color: var(--z-steel-hi);
+}
+input[type="text"]:focus, textarea:focus, select:focus {
+  outline: var(--focus-ring);
+  outline-offset: 3px;
+  border-color: var(--z-cream-dk);
+}
+input:disabled, textarea:disabled { opacity: .4; }
+input::placeholder, textarea::placeholder { color: var(--z-cream-dim); }
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M2 2l4 4 4-4' fill='none' stroke='%238FA1B3' stroke-width='1.6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 12px;
+  padding-right: 30px;
+}
+
+/* ---------- Cases : le voyant rouge tient lieu de coche ---------- */
+input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  margin: 0;
+  vertical-align: middle;
+  width: var(--checkbox-size);
+  height: var(--checkbox-size);
+  border: 1px solid var(--z-steel);
+  border-radius: 4px;
+  background: var(--z-field);
+  display: inline-grid;
+  place-content: center;
+}
+input[type="checkbox"]:not(:disabled):hover { border-color: var(--z-steel-hi); }
+input[type="checkbox"]:checked::after {
+  content: "";
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  background: var(--z-lamp);
+  box-shadow: var(--lamp-halo), inset 0 0 0 1px rgba(10, 14, 23, .4);
+}
+input[type="checkbox"]:focus-visible { outline: var(--focus-ring); outline-offset: 3px; }
+input[type="checkbox"]:disabled { opacity: .4; }
+
+/* ---------- Registre de mission : bandeau CRÈME à encre de nuit ---------- */
+.listbox { border-radius: var(--radius-field); padding: 0; }
+.row { border-bottom: 1px solid var(--z-panel-hi); }
+.row:hover:not(.selected) { background: var(--z-panel-hi); }
+.row-state, .row-category {
+  text-transform: uppercase;
+  letter-spacing: var(--track-soft);
+  font-size: .92em;
+  color: var(--z-metal);
+}
+.row-rate, .row-eta, .row-peers, .scan-size { color: var(--z-metal); }
+.scan-path { color: var(--text-primary); }
+.downloads-row-header {
+  color: var(--text-legend);
+  border-bottom: 2px solid var(--z-steel);
+  text-transform: uppercase;
+  letter-spacing: var(--track-soft);
+  font-size: 11px;
+}
+
+/* ---------- Groupes (plaque à sillon gravé) ---------- */
+.profile-group, .details-group {
+  background: var(--surface-panel);
+  border: 1px solid var(--border-group);
+  border-radius: var(--radius-group);
+  box-shadow: inset 0 0 0 3px var(--surface-panel), inset 0 0 0 4px rgba(78, 100, 128, .4);
+  padding: var(--space-5);
+}
+.profile-group h3, .details-group h3 {
+  font: 600 11.5px var(--font-ui);
+  text-transform: uppercase;
+  letter-spacing: var(--track-soft);
+  color: var(--text-legend);
+}
+
+/* ---------- Menu contextuel : plaque à sillon, item au pointeur = bandeau crème ---------- */
+.context-menu {
+  background: var(--surface-panel);
+  border: 1px solid var(--z-steel);
+  border-radius: var(--radius-group);
+  box-shadow: inset 0 0 0 3px var(--surface-panel), inset 0 0 0 4px rgba(78, 100, 128, .4), var(--shadow-menu);
+  padding: 6px 0;
+}
+.context-menu-item { padding: 6px 14px; letter-spacing: .03em; }
+.context-menu-separator { margin: 5px 10px; }
+
+/* ---------- Ordre de mission : plaque à sillon, étoile rouge + titre espacé ---------- */
+.modal-box {
+  background: var(--z-plate);
+  border: 1px solid var(--z-steel);
+  border-radius: var(--radius-window);
+  box-shadow: var(--groove), var(--shadow-menu);
+  padding: var(--space-5);
+  gap: var(--space-3);
+}
+.modal-box h3 {
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: var(--track-wide);
+  color: var(--z-cream);
+}
+.modal-box h3::before { content: "\2605 "; color: var(--z-red); }
+
+/* ---------- Défilement : pouce d'acier, crème au survol, sans flèches ---------- */
+::-webkit-scrollbar { width: var(--scrollbar-size); height: var(--scrollbar-size); }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background-color: var(--z-steel);
+  border: 3px solid transparent;
+  background-clip: padding-box;
+  border-radius: 6px;
+}
+::-webkit-scrollbar-thumb:hover { background-color: var(--z-cream); border-width: 2px; }
+::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+::-webkit-scrollbar-corner { background: transparent; }
+
+/* ---------- Mise en orbite : cadre du canevas Tetris ---------- */
+canvas.tetris {
+  border: 1px solid var(--border-progress);
+  border-radius: 3px;
+  background: var(--surface-field);
+  box-shadow: inset 0 0 0 2px var(--surface-field);
+}

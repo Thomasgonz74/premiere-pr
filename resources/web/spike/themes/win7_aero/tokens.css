@@ -1,0 +1,813 @@
+/* ==========================================================================
+   WIN7 AERO — tokens.css — v1.0 (spike port)
+   Style : "Windows 7 (Aero Glass)"
+   Rôle  : SOURCE DE VÉRITÉ des variables pour le port web. Structure alignée
+   sur resources/web/spike/themes/luna_xp/tokens.css (référence de travail)
+   -- section 11 ajoute les propriétés que l'app partagée (style.css) attend
+   sous ces noms précis mais qui n'existent pas nativement dans la charte
+   Aero ; leurs valeurs sont dérivées de la charte elle-même (voir
+   resources/web/charters/Charte graphique/Windows 7 (Aero)/STYLE.md et
+   tokens.css), jamais inventées hors contexte.
+   ========================================================================== */
+
+:root {
+
+  /* ========================================================
+     1. PRIMITIVES — palette Aero (gris froids + bleus)
+     ======================================================== */
+  /* Gris neutres (surfaces & faces) */
+  --a-face:        #F0F0F0;  /* fond client des fenêtres & dialogues */
+  --a-white:       #FFFFFF;  /* champs, pages d'onglets, contenu */
+  --a-btn-top:     #F2F2F2;  /* arrêts du dégradé two-tone des contrôles */
+  --a-btn-mid:     #EBEBEB;
+  --a-btn-bottom:  #CFCFCF;
+
+  /* Bordures fonctionnelles */
+  --a-border-control:  #8E8F8F;  /* contrôles au repos */
+  --a-border-field:    #ABADB3;  /* champs au repos */
+  --a-border-hover:    #3C7FB1;  /* contrôles survolés */
+  --a-border-field-h:  #5794BF;  /* champs survolés */
+  --a-border-field-f:  #3D7BAD;  /* champs en focus */
+  --a-border-pressed:  #6D91AB;
+  --a-border-disabled: #ADB2B5;
+  --a-border-tab:      #8C8E94;
+  --a-border-menu:     #979797;
+  --a-border-progress: #B2B2B2;
+  --a-border-group:    #D5DFE5;  /* group box (STYLE.md §9 "Group box") -- ajouté pour le contrat générique */
+
+  /* Bleus (l'accent interactif unique) */
+  --a-selection:     #3399FF;  /* sélection de texte, barre de menus */
+  --a-sel-border:    #7DA2CE;  /* liste : bord de l'élément sélectionné */
+  --a-hot-border:    #B8D6FB;  /* liste/menus : bord de l'élément survolé */
+  --a-instruction:   #003399;  /* "instruction principale" des dialogues */
+  --a-check:         #4A5F97;  /* coche des cases */
+
+  /* Verts & états de jauge (authentique Win7) */
+  --a-progress:        #0BD82C;
+  --a-progress-paused: #E6DF1B;
+  --a-progress-error:  #EF0000;
+
+  /* Rouge : bouton Fermer + critique uniquement */
+  --a-icon-red:      #D42B0F;
+
+  /* Textes */
+  --a-text:          #000000;
+  --a-text-soft:     #222222;
+  --a-text-disabled: #838383;
+
+  /* Bureau (dégradé bleu profond — le verre a besoin d'un fond) */
+  --gradient-desktop: radial-gradient(120% 100% at 50% 0%,
+                      #7EB3E8, #2E6BC0 55%, #17408F);
+  --a-desktop: #2E6BC0;  /* arrêt médian du dégradé ci-dessus, en aplat -- ajouté pour --surface-desktop */
+  --a-tooltip: #E4E5F0;  /* arrêt final du dégradé d'infobulle décrit en STYLE.md §9, en aplat -- ajouté pour --surface-tooltip */
+
+  /* ========================================================
+     2. SÉMANTIQUES
+     ======================================================== */
+  --surface-window:   var(--a-face);
+  --surface-field:    var(--a-white);
+  --surface-panel:    var(--a-white);
+  --surface-desktop:  var(--a-desktop);
+  --surface-tooltip:  var(--a-tooltip);
+
+  --text-primary:     var(--a-text);
+  --text-disabled:    var(--a-text-disabled);
+  --text-inverse:     var(--a-white);
+  --text-instruction: var(--a-instruction);
+
+  --selection-bg:     var(--a-selection);
+  --selection-text:   #FFFFFF;
+
+  --title-active-text:   var(--a-text);       /* titres Aero : noirs, jamais gras (STYLE.md §4) */
+  --title-inactive-text: var(--a-text-soft);  /* légèrement atténué, fenêtre inactive */
+
+  /* Generic aliases consumed by resources/web/spike/*.css -- reprennent les
+     couleurs de bordure propres à la charte Aero sous les noms génériques
+     partagés par tous les thèmes. --text-legend n'a pas d'équivalent bleu ici :
+     Aero écrit ses légendes de group box en noir gras (STYLE.md §9), donc on
+     réutilise --a-text tel quel plutôt que d'inventer un accent. */
+  --border-control:  var(--a-border-control);
+  --border-field:    var(--a-border-field);
+  --border-group:    var(--a-border-group);
+  --border-progress: var(--a-border-progress);
+  --border-tab:      var(--a-border-tab);
+  --text-legend:     var(--a-text);
+
+  /* ========================================================
+     3. LE VERRE — la signature du style.
+     Réservé au CHROME : cadre + barre de titre + boutons de titre.
+     Jamais sur le contenu. Toujours teinté ET flouté.
+     ======================================================== */
+  --glass-blur: blur(12px) saturate(1.6);
+  --glass-active: linear-gradient(180deg,
+    rgba(250,253,255,.80), rgba(196,219,242,.52) 38%,
+    rgba(146,184,218,.44) 62%, rgba(188,214,238,.58));
+  --glass-inactive: linear-gradient(180deg,
+    rgba(246,248,251,.82), rgba(216,224,233,.60) 40%,
+    rgba(196,205,216,.52) 62%, rgba(219,227,236,.62));
+  --glass-edge-outer: 0 0 0 1px rgba(15,35,65,.75);   /* trait externe sombre */
+  --glass-edge-inner: inset 0 0 0 1px rgba(255,255,255,.75); /* liseré interne */
+  --client-border: 1px solid rgba(40,60,90,.62);      /* creux de la zone client */
+
+  /* ========================================================
+     4. LES FACES — dégradé two-tone à ARRÊT DUR (45 %)
+     Aucun dégradé lisse sur les contrôles : la cassure fait le style.
+     ======================================================== */
+  --face-raised:  linear-gradient(180deg, #F2F2F2 45%, #EBEBEB 45%, #CFCFCF);
+  --face-hover:   linear-gradient(180deg, #EAF6FD 45%, #BEE6FD 45%, #A7D9F5);
+  --face-pressed: linear-gradient(180deg, #E5F4FC, #C4E5F6 30% 50%, #98D1EF 50%, #68B3DB);
+  --face-tab:     linear-gradient(180deg, #F4F4F4 45%, #EDEDED 45%, #E0E0E0);
+  --inner-line:   inset 0 0 0 1px rgba(255,255,255,.80); /* filet blanc interne */
+  --pressed-shadow: inset 1px 1px 0 rgba(0,0,0,.20), inset -1px 1px 0 rgba(0,0,0,.07);
+  --glow-default: 0 0 3px 1px rgba(72,160,220,.80);   /* bouton par défaut */
+
+  /* Cases & radios (teinte bleutée froide) */
+  --gradient-check:   linear-gradient(135deg, #DEE7EE, #FCFDFE);
+  --check-inner:      inset 1px 1px 2px rgba(110,145,180,.35);
+
+  /* Sélection en liste (dégradé bordé, texte NOIR — signature Win7) */
+  --sel-grad:  linear-gradient(180deg, #DCEBFC, #C1DBFC);
+  --hot-grad:  linear-gradient(180deg, #F8FCFF, #E6F0FA);
+  --sel-inner: inset 0 0 0 1px rgba(255,255,255,.65);
+
+  /* Boutons de titre (pastilles de verre) */
+  --gradient-caption-rest: linear-gradient(180deg,
+    rgba(255,255,255,.30), rgba(255,255,255,.08) 45%,
+    rgba(0,10,40,.08) 45%, rgba(255,255,255,.16));
+  --gradient-caption-hover: linear-gradient(180deg,
+    rgba(255,255,255,.85), rgba(178,219,250,.60) 45%,
+    rgba(88,158,219,.55) 45%, rgba(190,235,255,.80));
+  --gradient-caption-close: linear-gradient(180deg,
+    #FBB1A5, #ED6C57 45%, #D42B0F 45%, #F7B097);
+  /* Authentique Windows 7 : Fermer porte déjà une teinte rose/rouge discrète
+     au repos (pas seulement au survol, où elle s'intensifie avec le dégradé
+     ci-dessus) -- même dégradé atténué à 40% vers le blanc. */
+  --gradient-caption-close-idle: linear-gradient(180deg,
+    color-mix(in srgb, #FBB1A5 40%, white),
+    color-mix(in srgb, #ED6C57 40%, white) 45%,
+    color-mix(in srgb, #D42B0F 40%, white) 45%,
+    color-mix(in srgb, #F7B097 40%, white));
+
+  /* Jauge : lustre appliqué PAR-DESSUS la couleur d'état */
+  --progress-track: linear-gradient(180deg, #F3F3F3, #FCFCFC 3px, #DBDBDB 6px, #CACACA 6px, #D5D5D5);
+  --progress-gloss: linear-gradient(180deg,
+    rgba(255,255,255,.80), rgba(255,255,255,.35) 40%,
+    rgba(255,255,255,.06) 50%, rgba(255,255,255,0) 65%,
+    rgba(255,255,255,.35));
+
+  /* Défilement */
+  --gradient-scroll-track: linear-gradient(90deg, #ECECEC, #F5F5F5);
+  --gradient-scroll-btn:   var(--face-raised);
+  --a-scroll-arrow: #505050;
+
+  /* ========================================================
+     5. OMBRES — la fenêtre Aero PORTE une ombre (nouveauté)
+     ======================================================== */
+  --shadow-window: 3px 6px 18px rgba(0, 5, 30, .55);
+  --shadow-window-inactive: 2px 4px 10px rgba(0, 5, 30, .38);
+  --shadow-menu: 2px 3px 6px rgba(0, 0, 0, .35);
+
+  /* ========================================================
+     6. TYPOGRAPHIE — Segoe UI, titres en REGULAR + halo
+     ======================================================== */
+  --font-ui: "Segoe UI", "SegoeUI", "Noto Sans", Tahoma, sans-serif;
+  --font-title: var(--font-ui);   /* pas de police d'affichage dédiée : tout est Segoe UI (STYLE.md §4) */
+  --font-mono: Consolas, "Courier New", monospace;
+  --font-size-base: 12px;          /* 9 pt */
+  --font-size-title: 12px;         /* titres de fenêtres : poids 400, JAMAIS gras */
+  --font-size-instruction: 16px;   /* "instruction principale" bleue des dialogues */
+  --line-height: 1.3;
+  --title-halo: 0 0 2px #FFF, 0 0 6px #FFF, 0 0 10px rgba(255,255,255,.85);
+  --title-text-shadow: var(--title-halo);  /* c'est le halo, pas la graisse, qui fait le titre Aero */
+
+  /* ========================================================
+     7. MÉTRIQUES & ESPACEMENT
+     ======================================================== */
+  --unit: 4px;
+  --space-1: 2px;  --space-2: 4px;  --space-3: 6px;
+  --space-4: 8px;  --space-5: 12px; --space-6: 16px;
+
+  --control-height: 23px;       /* boutons ET champs (75×23 standard) */
+  --field-height: var(--control-height); /* STYLE.md §5 : "Boutons ET champs : 23 px" -- pas de valeur distincte dans cette charte */
+  --button-min-width: 75px;
+  --titlebar-height: 30px;
+  --frame-thickness: 8px;       /* épaisseur du verre (côtés + bas) */
+  --caption-btn-w: 29px;        /* Réduire / Agrandir */
+  --caption-close-w: 48px;      /* Fermer, plus large (authentique) */
+  --caption-btn-h: 20px;
+  --titlebar-btn: var(--caption-btn-h); /* .cap-btn partagé est carré ; on reprend la hauteur (20px), la charte n'a pas de bouton carré unique */
+  --scrollbar-size: 17px;
+  --checkbox-size: 13px;
+  --icon-small: 16px;  --icon-large: 32px;
+
+  --radius-control: 3px;        /* boutons, onglets, pouce, jauge */
+  --radius-window: 6px;         /* les 4 coins de fenêtre */
+  --radius-field: 2px;          /* champs (léger — ≠ Luna carrés) */
+  --radius-selection: 2px;      /* éléments de liste/menu */
+  --radius-group: 3px;          /* group box (STYLE.md §9 : même rayon que les contrôles) */
+
+  /* ========================================================
+     8. ÉTATS & MOUVEMENT
+     Aero introduit le fondu : UNE transition autorisée, bornée.
+     Propriétés permises : background, border-color, box-shadow,
+     filter, opacity. JAMAIS position, taille ou transform.
+     ======================================================== */
+  --transition-state: .15s ease;
+  --transition: var(--transition-state); /* nom générique attendu par l'app -- Aero autorise ce fondu unique, borné */
+  --focus-outline: 1px dotted #000;   /* offset -4px, en plus du bord bleu */
+  --cursor-interactive: var(--cursor-default);
+
+  /* ========================================================
+     9. CURSEURS — mêmes 14 actions que WIN95/LUNA, matière Aero :
+     tracés lissés, corps en dégradé blanc→bleu-gris, ombre douce ;
+     l'attente devient l'ANNEAU BLEU (fini le sablier).
+     ======================================================== */
+  --cur-img-default: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23fff'/%3E%3Cstop offset='1' stop-color='%23D9E4F0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cg opacity='.3' transform='translate(1.5,1.5)'%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23000' stroke='%23000' stroke-width='2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='url(%23g)' stroke='%23000' stroke-width='1.4' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-link: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23fff'/%3E%3Cstop offset='1' stop-color='%23D9E4F0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cg opacity='.3' transform='translate(1.5,1.5)'%3E%3Cpolygon points='10,2 13,2 13,9 16,9 19,11 19,15 16,20 9,20 5,14 5,12 7,11 10,14' fill='%23000' stroke='%23000' stroke-width='1.8' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='10,2 13,2 13,9 16,9 19,11 19,15 16,20 9,20 5,14 5,12 7,11 10,14' fill='url(%23g)' stroke='%23000' stroke-width='1.4' stroke-linejoin='round'/%3E%3Cpath d='M13.5 11v4M16 12v3' stroke='%23000' stroke-width='.9' stroke-linecap='round'/%3E%3C/svg%3E");
+  --cur-img-text: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg fill='none' stroke='%23fff' stroke-width='4.2' stroke-linecap='round'%3E%3Cpath d='M8 3h6M11 3v18M8 21h6'/%3E%3C/g%3E%3Cg fill='none' stroke='%23000' stroke-width='1.4' stroke-linecap='round'%3E%3Cpath d='M8 3h6M11 3v18M8 21h6'/%3E%3C/g%3E%3C/svg%3E");
+  --cur-img-wait: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cdefs%3E%3ClinearGradient id='r' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23125FB4'/%3E%3Cstop offset='.5' stop-color='%233FA0E8'/%3E%3Cstop offset='1' stop-color='%23BFE6FF'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cg opacity='.3' transform='translate(1.5,1.5)'%3E%3Ccircle cx='12' cy='12' r='7.5' fill='none' stroke='%23000' stroke-width='5'/%3E%3C/g%3E%3Ccircle cx='12' cy='12' r='7.5' fill='none' stroke='%23fff' stroke-width='5.6'/%3E%3Ccircle cx='12' cy='12' r='7.5' fill='none' stroke='url(%23r)' stroke-width='4'/%3E%3C/svg%3E");
+  --cur-img-progress: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23fff'/%3E%3Cstop offset='1' stop-color='%23D9E4F0'/%3E%3C/linearGradient%3E%3ClinearGradient id='r' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23125FB4'/%3E%3Cstop offset='.5' stop-color='%233FA0E8'/%3E%3Cstop offset='1' stop-color='%23BFE6FF'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cg opacity='.3' transform='translate(1.5,1.5)'%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23000' stroke='%23000' stroke-width='2' stroke-linejoin='round'/%3E%3Ccircle cx='17.5' cy='17.5' r='4.6' fill='none' stroke='%23000' stroke-width='3.4'/%3E%3C/g%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='url(%23g)' stroke='%23000' stroke-width='1.4' stroke-linejoin='round'/%3E%3Ccircle cx='17.5' cy='17.5' r='4.6' fill='none' stroke='%23fff' stroke-width='4.2'/%3E%3Ccircle cx='17.5' cy='17.5' r='4.6' fill='none' stroke='url(%23r)' stroke-width='3'/%3E%3C/svg%3E");
+  --cur-img-help: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23fff'/%3E%3Cstop offset='1' stop-color='%23D9E4F0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cg opacity='.3' transform='translate(1.5,1.5)'%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23000' stroke='%23000' stroke-width='2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='url(%23g)' stroke='%23000' stroke-width='1.4' stroke-linejoin='round'/%3E%3Cpath d='M14.5 6c0-2.6 6.5-2.6 6.5 0c0 2.2-3.2 2-3.2 4.4' fill='none' stroke='%23fff' stroke-width='3.8' stroke-linecap='round'/%3E%3Cpath d='M14.5 6c0-2.6 6.5-2.6 6.5 0c0 2.2-3.2 2-3.2 4.4' fill='none' stroke='%230B5CC4' stroke-width='1.8' stroke-linecap='round'/%3E%3Ccircle cx='17.9' cy='13.8' r='1.7' fill='%23fff'/%3E%3Ccircle cx='17.9' cy='13.8' r='1.1' fill='%230B5CC4'/%3E%3C/svg%3E");
+  --cur-img-crosshair: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg fill='none' stroke='%23fff' stroke-width='3.8'%3E%3Cpath d='M12 3v18M3 12h18'/%3E%3C/g%3E%3Cg fill='none' stroke='%23000' stroke-width='1.3'%3E%3Cpath d='M12 3v18M3 12h18'/%3E%3C/g%3E%3C/svg%3E");
+  --cur-img-not-allowed: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg fill='none' stroke='%23fff' stroke-width='5.2'%3E%3Ccircle cx='12' cy='12' r='8'/%3E%3Cpath d='M6.5 6.5l11 11'/%3E%3C/g%3E%3Cg fill='none' stroke='%23000' stroke-width='2.2'%3E%3Ccircle cx='12' cy='12' r='8'/%3E%3Cpath d='M6.5 6.5l11 11'/%3E%3C/g%3E%3C/svg%3E");
+  --cur-img-resize-v: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23fff'/%3E%3Cstop offset='1' stop-color='%23D9E4F0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cg opacity='.3' transform='translate(1.5,1.5)'%3E%3Cpolygon points='12,1 17,7 14,7 14,17 17,17 12,23 7,17 10,17 10,7 7,7' fill='%23000' stroke='%23000' stroke-width='1.8' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='12,1 17,7 14,7 14,17 17,17 12,23 7,17 10,17 10,7 7,7' fill='url(%23g)' stroke='%23000' stroke-width='1.4' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-resize-h: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23fff'/%3E%3Cstop offset='1' stop-color='%23D9E4F0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cg opacity='.3' transform='translate(1.5,1.5)'%3E%3Cpolygon points='1,12 7,7 7,10 17,10 17,7 23,12 17,17 17,14 7,14 7,17' fill='%23000' stroke='%23000' stroke-width='1.8' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='1,12 7,7 7,10 17,10 17,7 23,12 17,17 17,14 7,14 7,17' fill='url(%23g)' stroke='%23000' stroke-width='1.4' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-resize-nwse: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23fff'/%3E%3Cstop offset='1' stop-color='%23D9E4F0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cg opacity='.3' transform='translate(1.5,1.5)'%3E%3Cpath d='M6 6l12 12' stroke='%23000' stroke-width='4.2'/%3E%3Cpolygon points='4,4 12,4 4,12' fill='%23000'/%3E%3Cpolygon points='20,20 12,20 20,12' fill='%23000'/%3E%3C/g%3E%3Cpath d='M7 7l10 10' stroke='%23000' stroke-width='3.8'/%3E%3Cpath d='M7 7l10 10' stroke='%23fff' stroke-width='1.8'/%3E%3Cpolygon points='4,4 12,4 4,12' fill='url(%23g)' stroke='%23000' stroke-width='1.4' stroke-linejoin='round'/%3E%3Cpolygon points='20,20 12,20 20,12' fill='url(%23g)' stroke='%23000' stroke-width='1.4' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-resize-nesw: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23fff'/%3E%3Cstop offset='1' stop-color='%23D9E4F0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cg opacity='.3' transform='translate(1.5,1.5)'%3E%3Cpath d='M18 6L6 18' stroke='%23000' stroke-width='4.2'/%3E%3Cpolygon points='20,4 12,4 20,12' fill='%23000'/%3E%3Cpolygon points='4,20 12,20 4,12' fill='%23000'/%3E%3C/g%3E%3Cpath d='M17 7L7 17' stroke='%23000' stroke-width='3.8'/%3E%3Cpath d='M17 7L7 17' stroke='%23fff' stroke-width='1.8'/%3E%3Cpolygon points='20,4 12,4 20,12' fill='url(%23g)' stroke='%23000' stroke-width='1.4' stroke-linejoin='round'/%3E%3Cpolygon points='4,20 12,20 4,12' fill='url(%23g)' stroke='%23000' stroke-width='1.4' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-move: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23fff'/%3E%3Cstop offset='1' stop-color='%23D9E4F0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cg opacity='.3' transform='translate(1.5,1.5)' fill='%23000'%3E%3Cpolygon points='12,1 15,5 13,5 13,19 15,19 12,23 9,19 11,19 11,5 9,5'/%3E%3Cpolygon points='1,12 5,9 5,11 19,11 19,9 23,12 19,15 19,13 5,13 5,15'/%3E%3C/g%3E%3Cg fill='url(%23g)' stroke='%23000' stroke-width='1.4' stroke-linejoin='round'%3E%3Cpolygon points='12,1 15,5 13,5 13,19 15,19 12,23 9,19 11,19 11,5 9,5'/%3E%3Cpolygon points='1,12 5,9 5,11 19,11 19,9 23,12 19,15 19,13 5,13 5,15'/%3E%3C/g%3E%3Cpolygon points='12,1 15,5 13,5 13,19 15,19 12,23 9,19 11,19 11,5 9,5' fill='url(%23g)'/%3E%3Cpolygon points='1,12 5,9 5,11 19,11 19,9 23,12 19,15 19,13 5,13 5,15' fill='url(%23g)'/%3E%3C/svg%3E");
+  --cur-img-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23fff'/%3E%3Cstop offset='1' stop-color='%23D9E4F0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cg opacity='.3' transform='translate(1.5,1.5)'%3E%3Cpolygon points='12,2 18,9 14,9 14,20 10,20 10,9 6,9' fill='%23000' stroke='%23000' stroke-width='2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='12,2 18,9 14,9 14,20 10,20 10,9 6,9' fill='url(%23g)' stroke='%23000' stroke-width='1.4' stroke-linejoin='round'/%3E%3C/svg%3E");
+
+  /* Curseurs composés : image + point chaud + secours système */
+  --cursor-default:     var(--cur-img-default) 2 2, default;
+  --cursor-link:        var(--cur-img-link) 11 3, pointer;      /* hyperliens UNIQUEMENT */
+  --cursor-text:        var(--cur-img-text) 11 12, text;
+  --cursor-wait:        var(--cur-img-wait) 12 12, wait;        /* l'anneau bleu */
+  --cursor-progress:    var(--cur-img-progress) 2 2, progress;
+  --cursor-help:        var(--cur-img-help) 2 2, help;
+  --cursor-crosshair:   var(--cur-img-crosshair) 12 12, crosshair;
+  --cursor-not-allowed: var(--cur-img-not-allowed) 12 12, not-allowed;
+  --cursor-resize-v:    var(--cur-img-resize-v) 12 12, ns-resize;
+  --cursor-resize-h:    var(--cur-img-resize-h) 12 12, ew-resize;
+  --cursor-resize-nwse: var(--cur-img-resize-nwse) 12 12, nwse-resize;
+  --cursor-resize-nesw: var(--cur-img-resize-nesw) 12 12, nesw-resize;
+  --cursor-move:        var(--cur-img-move) 12 12, move;
+  --cursor-up:          var(--cur-img-up) 12 3, default;
+
+  /* P2TOK:BEGIN */
+  --p2-ok-fg: #1E7C1E;   --p2-warn-fg: #8A6D00;
+  /* P2TOK:END */
+
+  /* ================================================== ICONS:BEGIN
+     10. ICÔNES — navigation & fichiers (14), tokenisées
+     comme les curseurs : SVG data-URI dessinés dans la
+     matière du style. À consommer en background-image :
+     background: var(--icon-folder) center/contain no-repeat;
+     Jamais d'image externe, jamais d'emoji.
+     ======================================================== */
+  --icon-folder: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cdefs%3E%3ClinearGradient id='g7' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23FFEBB0'/%3E%3Cstop offset='1' stop-color='%23F3C75F'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M3.6 6.8h5.4l1.5 2h9.9v10H3.6z' fill='%23E2A63E' stroke='%23B07E23' stroke-width='1.1' stroke-linejoin='round'/%3E%3Crect x='6.5' y='4.6' width='7.4' height='9' fill='%23FFFFFF' stroke='%239AA7B8' stroke-width='1'/%3E%3Cg transform='rotate(7 16 9)'%3E%3Crect x='11.5' y='4.2' width='7.2' height='9' fill='%23FDFDFD' stroke='%239AA7B8' stroke-width='1'/%3E%3C/g%3E%3Cpath d='M2.8 10.2h18.4l-1.5 8.6H4.3z' fill='url(%23g7)' stroke='%23C89238' stroke-width='1.1' stroke-linejoin='round' fill-opacity='.95'/%3E%3C/svg%3E");
+  --icon-folder-open: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cdefs%3E%3ClinearGradient id='g7' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23FFEBB0'/%3E%3Cstop offset='1' stop-color='%23F3C75F'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M3.6 6.8h5.4l1.5 2h9.9v10H3.6z' fill='%23E2A63E' stroke='%23B07E23' stroke-width='1.1' stroke-linejoin='round'/%3E%3Crect x='6.5' y='4.6' width='7.4' height='9' fill='%23FFFFFF' stroke='%239AA7B8' stroke-width='1'/%3E%3Cg transform='rotate(7 16 9)'%3E%3Crect x='11.5' y='4.2' width='7.2' height='9' fill='%23FDFDFD' stroke='%239AA7B8' stroke-width='1'/%3E%3C/g%3E%3Cpath d='M2.4 10.8h19.2l-2 8H4.4z' fill='url(%23g7)' stroke='%23C89238' stroke-width='1.1' stroke-linejoin='round' fill-opacity='.95'/%3E%3C/svg%3E");
+  --icon-file: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M6 2.5h8l4.5 4.5v14.5H6z' fill='%23FFFFFF' stroke='%239AA7B8' stroke-width='1.1' stroke-linejoin='round'/%3E%3Cpath d='M14 2.5v4.5h4.5z' fill='%23D6DEE8' stroke='%239AA7B8' stroke-width='0.9900000000000001' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-file-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M6 2.5h8l4.5 4.5v14.5H6z' fill='%23FFFFFF' stroke='%239AA7B8' stroke-width='1.1' stroke-linejoin='round'/%3E%3Cpath d='M14 2.5v4.5h4.5z' fill='%23D6DEE8' stroke='%239AA7B8' stroke-width='0.9900000000000001' stroke-linejoin='round'/%3E%3Ccircle cx='10.2' cy='11.2' r='1.5' fill='%23F2C230'/%3E%3Cpolygon points='8,18.4 10.8,14.6 12.6,16.9 14,15.1 16.4,18.4' fill='%235E9E4E'/%3E%3C/svg%3E");
+  --icon-drive: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Crect x='3' y='8.6' width='18' height='7' fill='%23DDE4EC' rx='2' stroke='%238A97A8' stroke-width='1.1'/%3E%3Ccircle cx='17.6' cy='12.1' r='1.2' fill='%235FBB4E'/%3E%3Cpath d='M5.6 12.1h6.4' fill='none' stroke='%238A97A8' stroke-width='1.1' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3C/svg%3E");
+  --icon-home: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='3.6,11.6 12,4.4 20.4,11.6' fill='%23A85A48' stroke='%238A7A5A' stroke-width='1.1' stroke-linejoin='round'/%3E%3Crect x='5.8' y='11.6' width='12.4' height='7.8' fill='%23EFE6D2' stroke='%238A7A5A' stroke-width='1.1'/%3E%3Crect x='10.4' y='14.4' width='3.2' height='5' fill='%23A85A48' stroke='%238A7A5A' stroke-width='0.8800000000000001'/%3E%3C/svg%3E");
+  --icon-computer: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Crect x='3.4' y='4.4' width='17.2' height='11.6' fill='%232E3238' rx='1.6'/%3E%3Cdefs%3E%3ClinearGradient id='g7s' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%239CCBF0'/%3E%3Cstop offset='1' stop-color='%233E7CC0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x='4.9' y='5.9' width='14.2' height='8.6' fill='url(%23g7s)'/%3E%3Cpath d='M12 16v2.6' fill='none' stroke='%232E3238' stroke-width='1.8' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3Cpath d='M8 19.4h8' fill='none' stroke='%232E3238' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-network: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Crect x='2.6' y='3.4' width='8.4' height='6.6' fill='%23E4E9F0' stroke='%238A97A8' stroke-width='1.1'/%3E%3Crect x='4.0' y='4.7' width='5.6' height='4' fill='%238CC0EC'/%3E%3Crect x='5.4' y='10.0' width='2.8' height='1.2' fill='%23E4E9F0' stroke='%238A97A8' stroke-width='0.8800000000000001'/%3E%3Crect x='13' y='12.6' width='8.4' height='6.6' fill='%23E4E9F0' stroke='%238A97A8' stroke-width='1.1'/%3E%3Crect x='14.4' y='13.9' width='5.6' height='4' fill='%238CC0EC'/%3E%3Crect x='15.8' y='19.2' width='2.8' height='1.2' fill='%23E4E9F0' stroke='%238A97A8' stroke-width='0.8800000000000001'/%3E%3Cpath d='M10.6 8.4L14 14.2' fill='none' stroke='%238A97A8' stroke-width='1.4000000000000001' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3C/svg%3E");
+  --icon-trash: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M6.8 6.2h10.4l-1 13.4H7.8z' fill='%23E4EBF3' stroke='%237C8A9C' stroke-width='1.2' stroke-linejoin='round' fill-opacity='.82'/%3E%3Crect x='7.5' y='4.4' width='9' height='1.7' fill='%23D2DAE4' stroke='%237C8A9C' stroke-width='1.1'/%3E%3C/svg%3E");
+  --icon-search: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='10.4' cy='10.4' r='4.9' fill='none' stroke='%233E70B8' stroke-width='1.9'/%3E%3Cpath d='M14.2 14.2l5.2 5.2' fill='none' stroke='%233E70B8' stroke-width='2.1999999999999997' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-back: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cdefs%3E%3ClinearGradient id='gdb' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%238CC4EE'/%3E%3Cstop offset='1' stop-color='%232E6EB8'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='12' cy='12' r='9' fill='url(%23gdb)' stroke='%231E4E8C' stroke-width='1.3'/%3E%3Cpolygon points='16,7.4 9,12 16,16.6 16,13.6 17.8,13.6 17.8,10.4 16,10.4' fill='%23FFFFFF'/%3E%3C/svg%3E");
+  --icon-forward: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cdefs%3E%3ClinearGradient id='gdf' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%238CC4EE'/%3E%3Cstop offset='1' stop-color='%232E6EB8'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='12' cy='12' r='9' fill='url(%23gdf)' stroke='%231E4E8C' stroke-width='1.3'/%3E%3Cpolygon points='8,7.4 15,12 8,16.6 8,13.6 6.2,13.6 6.2,10.4 8,10.4' fill='%23FFFFFF'/%3E%3C/svg%3E");
+  --icon-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cdefs%3E%3ClinearGradient id='gdu' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%238CC4EE'/%3E%3Cstop offset='1' stop-color='%232E6EB8'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='12' cy='12' r='9' fill='url(%23gdu)' stroke='%231E4E8C' stroke-width='1.3'/%3E%3Cpolygon points='7.6,13.6 12,8.4 16.4,13.6 13.8,13.6 13.8,17 10.2,17 10.2,13.6' fill='%23FFFFFF'/%3E%3C/svg%3E");
+  --icon-refresh: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cdefs%3E%3ClinearGradient id='gdr' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%238CC4EE'/%3E%3Cstop offset='1' stop-color='%232E6EB8'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='12' cy='12' r='9' fill='url(%23gdr)' stroke='%231E4E8C' stroke-width='1.3'/%3E%3Cpath d='M16.2 9.6A5 5 0 1 0 16.8 13.4' fill='none' stroke='%23FFFFFF' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpolygon points='17.1,6.6 17.1,10.6 13.3,9.7' fill='%23FFFFFF'/%3E%3C/svg%3E");
+  /* ICONS:END */
+
+  /* ========================================================
+     11. CONTRAT PARTAGÉ — propriétés que resources/web/spike/*.css
+     consomme sous ces noms précis mais qui ne font pas partie du
+     vocabulaire natif de la charte Aero (ni de §1-10 ci-dessus, ni du
+     contrat sémantique universel de §2). Chacune est dérivée de la
+     matière Aero elle-même -- jamais une couleur/valeur inventée hors
+     charte -- voir le commentaire sur chaque ligne pour la source.
+     ======================================================== */
+  --plastic-raised:  var(--face-raised);           /* relief des contrôles = les faces two-tone Aero */
+  --plastic-pressed: var(--face-pressed);
+  --gradient-title-active: var(--glass-active);    /* le "titre" Aero EST le verre du chrome */
+  --gradient-titlebtn:       var(--gradient-caption-rest);  /* pastille de titre au repos */
+  --gradient-titlebtn-close: var(--gradient-caption-close); /* Fermer reste rouge, invariant par thème (comme dans la charte d'origine) */
+  --gradient-progress:                              /* lustre statique par-dessus la couleur d'état verte (STYLE.md §9 "Progression") */
+    var(--progress-gloss),
+    linear-gradient(var(--a-progress), var(--a-progress));
+  --frame-shadow:                                   /* recette verre STYLE.md §2 (moins le flou, impossible en box-shadow) : trait externe + liseré interne + ombre portée */
+    var(--glass-edge-outer),
+    var(--glass-edge-inner),
+    var(--shadow-window);
+  --glow-hover: var(--glow-default);                /* "Hover : bord + face BLEUS" (STYLE.md §7) -- même bleu que le halo de bouton par défaut */
+}
+
+/* DARK:BEGIN — thème sombre (phase 3) */
+[data-theme="dark"] {
+  --a-face: #262C34;
+  --a-white: #E9EEF4;
+  --a-text: #E9EEF4;
+  --a-text-soft: #9AA8B8;
+  --a-text-disabled: #5E6B7A;
+  --a-instruction: #7FB4E8;
+  --a-border-control: #46525F;
+  --a-border-field: #3A4552;
+  --a-border-hover: #4E7CA8;
+  --a-border-field-h: #4E7CA8;
+  --a-border-field-f: #5E96C8;
+  --a-border-pressed: #35566E;
+  --a-border-disabled: #333C46;
+  --a-border-tab: #3A4552;
+  --a-border-menu: #3E4854;
+  --a-border-progress: #3A4552;
+  --a-border-group: #3A4552;
+  --a-selection: #1E3C5C;
+  --a-sel-border: #35608C;
+  --a-hot-border: #2E4A66;
+  --a-desktop: #0E1A28;   /* même arrêt que --gradient-desktop ci-dessous, en aplat */
+  --a-tooltip: #303844;
+  --surface-window: #262C34;
+  --surface-field: #1B2129;
+  --surface-panel: #21272F;
+  --glass-active: linear-gradient(180deg,rgba(40,58,80,.85),rgba(24,38,56,.6) 38%,rgba(16,28,44,.55) 62%,rgba(30,46,66,.7));
+  --glass-inactive: linear-gradient(180deg,rgba(38,44,52,.8),rgba(26,32,40,.6));
+  --glass-edge-outer: 0 0 0 1px rgba(0,0,0,.85);
+  --glass-edge-inner: inset 0 0 0 1px rgba(255,255,255,.22);
+  --face-raised: linear-gradient(180deg,#323A44 45%,#2B333C 45%,#20262E);
+  --face-hover: linear-gradient(180deg,#26445E 45%,#1C3A55 45%,#173049);
+  --face-pressed: linear-gradient(180deg,#16283A,#1A344C 30% 50%,#12283E 50%,#0C1C2E);
+  --sel-grad: linear-gradient(180deg,#1E3B59,#16304C);
+  --hot-grad: linear-gradient(180deg,#22303E,#1B2836);
+  --sel-inner: inset 0 0 0 1px rgba(120,170,220,.35);
+  --inner-line: inset 0 0 0 1px rgba(255,255,255,.14);
+  --gradient-caption-rest: linear-gradient(180deg,rgba(60,74,90,.5),rgba(30,40,52,.4));
+  --progress-track: linear-gradient(180deg,#1B2129,#232A33 3px,#181E25 6px,#141A20 6px,#181E25);
+  --gradient-scroll-track: linear-gradient(90deg,#1B2129,#21272F);
+  --gradient-desktop: linear-gradient(160deg,#0E1A28,#060C14);
+  --shadow-window: 0 12px 34px rgba(0,0,0,.7);
+  --shadow-menu: 0 6px 16px rgba(0,0,0,.6);
+  --title-text-shadow: 0 0 3px rgba(0,0,0,.7), 0 0 6px rgba(0,0,0,.5); /* texte de titre clair sur verre sombre : halo sombre plutôt que blanc */
+  /* icônes surchargées pour le fond sombre */
+  --icon-search: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='10.4' cy='10.4' r='4.9' fill='none' stroke='%239FC4EC' stroke-width='1.9'/%3E%3Cpath d='M14.2 14.2l5.2 5.2' fill='none' stroke='%239FC4EC' stroke-width='2.1999999999999997' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+/* DARK:END */
+
+/* HC:BEGIN — contraste élevé (phase 4) */
+[data-theme="hc"] {
+  --a-face: #000000;
+  --a-white: #FFFFFF;
+  --a-text: #FFFFFF;
+  --a-text-soft: #B8B8B8;
+  --a-text-disabled: #808080;
+  --a-instruction: #9D9DFF;
+  --surface-window: #000000;
+  --surface-field: #000000;
+  --surface-panel: #000000;
+  --a-border-control: #FFEE32;
+  --a-border-field: #FFEE32;
+  --a-border-field-h: #FFEE32;
+  --a-border-field-f: #FFFFFF;
+  --a-border-hover: #FFEE32;
+  --a-border-pressed: #C8B400;
+  --a-border-disabled: #808080;
+  --a-border-tab: #FFEE32;
+  --a-border-menu: #FFEE32;
+  --a-border-progress: #FFEE32;
+  --a-border-group: #FFEE32;
+  --a-selection: #D5B4FD;
+  --selection-text: #000000;
+  --a-sel-border: #000000;
+  --a-hot-border: #FFEE32;
+  --a-desktop: #000000;
+  --a-tooltip: #000000;
+  --glass-active: linear-gradient(#000000,#000000);
+  --glass-inactive: linear-gradient(#000000,#000000);
+  --glass-edge-outer: 0 0 0 2px #FFEE32;
+  --glass-edge-inner: inset 0 0 0 1px #000000;
+  --face-raised: linear-gradient(#000000,#000000);
+  --face-hover: linear-gradient(#333333,#333333);
+  --face-pressed: linear-gradient(#1A1A1A,#1A1A1A);
+  --sel-grad: linear-gradient(#D5B4FD,#D5B4FD);
+  --sel-inner: inset 0 0 0 1px #000000;
+  --hot-grad: linear-gradient(#333333,#333333);
+  --inner-line: inset 0 0 0 1px #FFEE32;
+  --p2-ok-fg: #4EDC4E;
+  --p2-warn-fg: #E0B000;
+  --a-progress-error: #FF7070;
+  --a-check: #164FA8;
+  --gradient-caption-rest: linear-gradient(#000000,#000000);
+  --progress-track: linear-gradient(#1A1A1A,#1A1A1A);
+  --gradient-scroll-track: linear-gradient(#000000,#000000);
+  --gradient-desktop: linear-gradient(#000000,#000000);
+  --shadow-window: 0 0 0 2px #FFEE32;
+  --shadow-menu: 0 0 0 2px #FFEE32;
+  --title-text-shadow: none;                        /* matières décoratives neutralisées en HC (STYLE.md phase 4) */
+  --glow-hover: 0 0 0 2px #FFEE32;                   /* le bleu d'accent devient le jaune HC, comme toutes les bordures */
+  /* icônes en contraste élevé */
+  --icon-search: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='10.4' cy='10.4' r='4.9' fill='none' stroke='%23FFFFFF' stroke-width='1.9'/%3E%3Cpath d='M14.2 14.2l5.2 5.2' fill='none' stroke='%23FFFFFF' stroke-width='2.1999999999999997' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+/* HC:END */
+
+
+/* --- Base recommandée (à copier dans l'app) ------------------------------ */
+/*
+body {
+  margin: 0;
+  background: var(--gradient-desktop);
+  color: var(--text-primary);
+  font: 400 var(--font-size-base)/var(--line-height) var(--font-ui);
+  cursor: var(--cursor-default);
+}
+::selection { background: var(--selection-bg); color: var(--selection-text); }
+a { cursor: var(--cursor-link); }
+input[type=text], textarea { cursor: var(--cursor-text); }
+*/
+
+/* ==========================================================================
+   STRUCTURE — port du gabarit de resources/web/spike/style.css vers la
+   vraie anatomie AERO (voir STYLE.md + components.html, sections 1 à 9).
+   Ce fichier se charge après style.css : mêmes sélecteurs, spécificité égale
+   ou explicitement égalée, dernier gagne -- aucun !important.
+   ========================================================================== */
+
+/* ---------- 1. Chrome de fenêtre : la plaque de verre ---------- */
+.titlebar-title {
+  font-weight: 400;               /* interdit §10.6 : jamais gras -- le halo fait le titre */
+}
+
+/* .titlebar-buttons EST la pastille de verre des boutons de légende (pas de
+   wrapper .captions séparé dans le markup partagé) : bord sombre, coins bas
+   arrondis, fond dégradé caption-rest, liseré blanc interne -- exactement la
+   recette §6.2 de STYLE.md. */
+.titlebar-buttons {
+  gap: 0;
+  align-self: flex-start;
+  margin-right: -2px;
+  border: 1px solid rgba(15, 35, 65, .72);
+  border-top: 0;
+  border-radius: 0 0 5px 5px;
+  overflow: hidden;
+  background: var(--gradient-titlebtn);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .5), 0 1px 2px rgba(0, 10, 40, .35);
+}
+.cap-btn {
+  /* Largeurs asymétriques authentiques (§5) : Fermer 48 px, Réduire/Agrandir
+     29 px -- la grille générique précédente les rendait tous carrés 20×20. */
+  width: var(--caption-btn-w);
+  height: var(--caption-btn-h);
+  min-width: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  transition: background var(--transition-state);
+}
+.cap-btn + .cap-btn { border-left: 1px solid rgba(15, 35, 65, .5); }
+/* :not(:disabled) porte la spécificité à (0,2,1)+, nécessaire pour battre la
+   règle générique button:not(:disabled):hover (elle-même (0,2,1)) -- sans ça,
+   ces boutons repassent silencieusement à la couleur de survol générique des
+   boutons (--face-hover, bleu) au lieu de leur propre dégradé Aero (même bug
+   que celui déjà corrigé sur cccp_soviet lors de l'audit des boutons de titre). */
+.cap-btn:not(:disabled):hover { background: var(--gradient-caption-hover); filter: none; }
+.cap-btn:not(:disabled):active { background: var(--gradient-caption-hover); filter: brightness(.82); }
+.cap-close { width: var(--caption-close-w); margin-left: 0; background: var(--gradient-caption-close-idle); }
+.cap-close:not(:disabled):hover, .cap-close:not(:disabled):active { background: var(--gradient-titlebtn-close); }
+
+/* Glyphes recentrés et resserrés (les pastilles Aero sont étroites, pas des
+   traits pleine-largeur comme dans la grille générique). */
+.cap-min span::before {
+  left: 50%; right: auto; bottom: 50%;
+  width: 9px; height: 2px; margin-left: -4.5px;
+  background: #fff;
+  box-shadow: 0 1px 1px rgba(0, 10, 40, .75);
+}
+.cap-max span::before {
+  left: 50%; top: 50%; right: auto; bottom: auto;
+  width: 9px; height: 8px; margin-left: -4.5px; margin-top: -4px;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 1px rgba(0, 10, 40, .75), inset 0 1px 1px rgba(0, 10, 40, .5);
+}
+.cap-close span::before, .cap-close span::after {
+  left: 50%; right: auto; top: 50%;
+  width: 10px; height: 2px; margin-left: -5px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 10, 40, .85);
+}
+
+/* ---------- 2. Onglets : l'actif se détache, ne se peint pas ---------- */
+.tabbar {
+  gap: 0;
+  padding: var(--space-2) var(--space-4) 0;
+  border-bottom: 1px solid var(--border-tab);
+}
+.tab-btn {
+  position: relative;
+  top: 2px;
+  margin-right: -1px;
+  padding: 3px 11px;
+  height: auto;
+  background: var(--face-tab);
+  border: 1px solid var(--border-tab);
+  border-bottom: none;
+  border-radius: 2px 2px 0 0;
+  font-weight: 400;               /* le gras reste rare (§4) -- l'onglet actif se distingue par l'offset, pas la graisse */
+  transition: background var(--transition-state);
+}
+.tab-btn:hover:not(.active) {
+  /* était un dégradé clair figé (copié du STYLE.md, jamais assombri) : le
+     texte de l'onglet (var(--text-primary)) devient presque blanc en dark
+     mode et se lisait blanc-sur-blanc sur ce fond resté clair -- --face-hover
+     porte déjà la même famille de bleu ET flip correctement par thème. */
+  background: var(--face-hover);
+  filter: none;
+}
+.tab-btn.active {
+  top: 0;
+  margin: 0 -3px -1px;
+  padding: 5px 13px;
+  z-index: 2;
+  font-weight: 400;
+  /* Fusionne avec la page qu'il coiffe : dans cette appli la page (.body)
+     reste --surface-window (gris), pas blanche comme un dialogue Aero --
+     donc l'onglet actif reprend ce même token pour un vrai raccord sans
+     couture, plutôt que d'imposer un blanc qui ne collerait à rien. */
+  background: var(--surface-window);
+  border-bottom-color: var(--surface-window);
+}
+
+/* ---------- 3. Boutons : two-tone à arrêt dur, survol BLEU ---------- */
+button {
+  min-width: var(--button-min-width);
+  height: var(--control-height);
+  padding: 0 12px;
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-control);
+  background: var(--face-raised);
+  box-shadow: var(--inner-line);
+  transition: border-color var(--transition-state), background var(--transition-state), box-shadow var(--transition-state);
+}
+button:not(:disabled):hover {
+  border-color: var(--a-border-hover);
+  background: var(--face-hover);
+}
+button:not(:disabled):active {
+  border-color: var(--a-border-pressed);
+  background: var(--face-pressed);
+  box-shadow: var(--pressed-shadow);
+}
+button:focus-visible {
+  border-color: var(--a-border-hover);
+  outline: var(--focus-outline);
+  outline-offset: -4px;
+}
+button:disabled {
+  background: #F4F4F4;
+  border-color: var(--a-border-disabled);
+  color: var(--text-disabled);
+  box-shadow: none;
+}
+
+/* Démarrer / Démarrer le partage = LE bouton par défaut du dialogue (§7,
+   un seul halo bleu autorisé) -- plus de gras : la lueur fait la hiérarchie. */
+.start-btn {
+  height: var(--control-height);
+  padding: 0 20px;
+  font-weight: 400;
+  border: 1px solid var(--a-border-hover);
+  border-radius: var(--radius-control);
+  background: var(--face-raised);
+  box-shadow: var(--inner-line), var(--glow-default);
+  transition: background var(--transition-state), box-shadow var(--transition-state);
+}
+.start-btn:hover { background: var(--face-hover); }
+.start-btn:active { background: var(--face-pressed); box-shadow: var(--pressed-shadow), var(--glow-default); }
+
+/* Boutons de ligne (pause/suppression) : même recette, gabarit compact. */
+.row-actions button {
+  min-width: 0;
+  height: 20px;
+  padding: 0 8px;
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-control);
+  background: var(--face-raised);
+  box-shadow: var(--inner-line);
+  transition: border-color var(--transition-state), background var(--transition-state);
+}
+.row-actions button:hover {
+  border-color: var(--a-border-hover);
+  background: var(--face-hover);
+  box-shadow: var(--inner-line);
+}
+.row-actions button:active {
+  border-color: var(--a-border-pressed);
+  background: var(--face-pressed);
+  box-shadow: var(--pressed-shadow);
+}
+
+/* ---------- 4. Champs : carrés-légers, bord bleui au survol/focus ---------- */
+input[type="text"], input[type="number"], select, textarea, .search-input,
+.form-grid input[type="text"], .form-grid input[type="number"] {
+  height: var(--control-height);
+  padding: 2px 6px;
+  background: var(--surface-field);
+  border: 1px solid var(--border-field);
+  border-radius: var(--radius-field);
+  transition: border-color var(--transition-state);
+}
+textarea { height: auto; min-height: 58px; resize: none; }
+input[type="text"]:not(:disabled), input[type="number"]:not(:disabled),
+textarea:not(:disabled), .search-input:not(:disabled) { cursor: var(--cursor-text); }
+input[type="text"]:not(:disabled):hover, input[type="number"]:not(:disabled):hover,
+select:not(:disabled):hover, textarea:not(:disabled):hover, .search-input:not(:disabled):hover {
+  border-color: var(--a-border-field-h);
+}
+input[type="text"]:focus, input[type="number"]:focus, select:focus, textarea:focus, .search-input:focus {
+  border-color: var(--a-border-field-f);
+  outline: none;
+}
+input:disabled, textarea:disabled, select:disabled {
+  background: #F4F4F4;
+  color: var(--text-disabled);
+  border-color: var(--a-border-disabled);
+}
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 26px;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Cpath d='M4.5 6.5h7L8 10z' fill='%23505050'/%3E%3C/svg%3E"),
+    var(--face-raised);
+    /* était le même dégradé clair figé en dur (identique à --face-raised en
+       clair, mais jamais assombri) : opaque, il recouvre le
+       background:var(--surface-field) hérité de la règle input/select
+       commune -- le texte de l'option sélectionnée (var(--text-primary))
+       devenait presque blanc sur ce fond resté clair en dark mode. */
+  background-repeat: no-repeat, no-repeat;
+  background-position: right 2px center, right 1px center;
+  background-size: 16px 16px, 19px calc(100% - 2px);
+}
+
+/* ---------- 5. Cases à cocher : coche bleu-gris #4A5F97 ---------- */
+input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  margin: 0;
+  flex: none;
+  width: var(--checkbox-size);
+  height: var(--checkbox-size);
+  vertical-align: middle;
+  border: 1px solid var(--border-control);
+  border-radius: 2px;
+  background: var(--gradient-check);
+  box-shadow: var(--check-inner);
+  display: inline-grid;
+  place-content: center;
+  transition: border-color var(--transition-state);
+}
+input[type="checkbox"]:not(:disabled):hover { border-color: var(--a-border-field-h); }
+input[type="checkbox"]:checked::after {
+  content: "";
+  width: 11px; height: 11px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11'%3E%3Cpath d='M2 5.5l2.6 2.8L9 2.6' fill='none' stroke='%234A5F97' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat center;
+}
+input[type="checkbox"]:disabled {
+  border-color: var(--a-border-disabled);
+  background: #F4F4F4;
+  box-shadow: none;
+}
+input[type="checkbox"]:disabled:checked::after { filter: grayscale(1) opacity(.55); }
+
+/* ---------- 6. Listes / lignes : sélection en dégradé bordé, texte NOIR ---------- */
+/* .share-row / .downloads-row / .scan-row portent toujours .row dans le
+   markup partagé (ex. class="row downloads-row") : les états ci-dessous
+   s'appliquent donc déjà à elles -- seules leurs grid-template-columns
+   restent celles de style.css, qui ne sont pas de la présentation. */
+.listbox {
+  background: var(--surface-field);
+  border: 1px solid var(--border-field);
+  border-radius: 0;               /* le cadre de liste Aero est carré ; seules les lignes ont un rayon */
+  padding: 2px;
+}
+.row {
+  border-bottom: none;            /* Aero ne réglette pas ses lignes -- seul l'état (survol/sélection) les sépare */
+  border-radius: var(--radius-selection);
+  margin: 1px 0;
+}
+.row:hover:not(.selected) {
+  background: var(--hot-grad);
+  box-shadow: inset 0 0 0 1px var(--a-hot-border);
+}
+#downloadsList .row.selected,
+#downloadsList .row[data-health="critical"].selected,
+#downloadsList .row[data-health="warning"].selected,
+#downloadsList .row[data-health="healthy"].selected {
+  /* interdit §10.9 : jamais de texte blanc sur une sélection de liste */
+  background: var(--sel-grad);
+  color: var(--a-text);
+  box-shadow: var(--sel-inner);
+}
+.downloads-row-header {
+  font-weight: 400;                /* en-tête de colonne Explorer : jamais gras, teinté bleu instruction */
+  color: var(--a-instruction);
+  background: var(--face-raised);
+  border-bottom: 1px solid var(--border-tab);
+}
+.row-name { font-weight: 400; }
+.row-eta, .row-peers, .row-category, .scan-size { color: var(--a-text-soft); }
+
+/* ---------- 7. Groupes : cadre seul, jamais de remplissage ---------- */
+.profile-group, .details-group {
+  background: transparent;        /* un fieldset Aero n'a pas de fond propre (components.html) */
+  border: 1px solid var(--border-group);
+  border-radius: var(--radius-group);
+}
+.profile-group h3, .details-group h3 {
+  font-weight: 700;                /* seule légitimité du gras dans Aero : la légende de groupe (§9) */
+  color: var(--text-legend);
+  padding: 0 2px;
+}
+
+/* ---------- 8. Menu contextuel : gouttière + survol pâle ---------- */
+.context-menu {
+  border-radius: 0;
+  border: 1px solid var(--a-border-menu);
+  background: var(--surface-field);
+  background-image: linear-gradient(90deg, var(--a-face) 0 26px, #E2E3E3 26px 27px, transparent 27px);
+  padding: 2px;
+}
+.context-menu-item {
+  margin: 0 2px;
+  padding: 4px 18px 4px 34px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-selection);
+}
+.context-menu-item:hover {
+  /* interdit §10.9/§7 : le survol de menu est un dégradé pâle bordé, jamais un aplat de sélection avec texte blanc */
+  background: var(--hot-grad);
+  border-color: var(--a-hot-border);
+  color: var(--text-primary);
+}
+.context-menu-separator {
+  height: 0;
+  border-top: 1px solid #E0E0E0;
+  background: none;
+  margin: 3px 2px 3px 32px;
+}
+
+/* ---------- 9. Dialogues : contenu blanc, instruction bleue ---------- */
+.modal-overlay { background: rgba(10, 22, 44, .45); }
+.modal-box {
+  background: var(--surface-panel);
+  border: 1px solid rgba(15, 35, 65, .72);
+  border-radius: var(--radius-window);
+  box-shadow: var(--glass-edge-outer), var(--glass-edge-inner), var(--shadow-window);
+}
+.modal-box h3 {
+  font-weight: 400;
+  font-size: var(--font-size-instruction);
+  color: var(--text-instruction);
+}
+
+/* ---------- 10. Défilement : faces two-tone + flèches sombres ---------- */
+::-webkit-scrollbar { width: var(--scrollbar-size); height: var(--scrollbar-size); }
+::-webkit-scrollbar-track { background: var(--gradient-scroll-track); }
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(90deg, #F2F2F2 45%, #EBEBEB 45%, #CFCFCF);
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-control);
+  box-shadow: var(--inner-line);
+}
+::-webkit-scrollbar-thumb:vertical { background: var(--face-raised); }
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(90deg, #EAF6FD 45%, #BEE6FD 45%, #A7D9F5);
+  border-color: var(--a-border-hover);
+}
+::-webkit-scrollbar-button:single-button {
+  width: var(--scrollbar-size); height: var(--scrollbar-size);
+  background-color: #EBEBEB;
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-control);
+  background-repeat: no-repeat;
+  background-position: center;
+}
+::-webkit-scrollbar-button:single-button:vertical:decrement {
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='17' height='17'%3E%3Cpath d='M5 10.5h7L8.5 6.5z' fill='%23505050'/%3E%3C/svg%3E"),
+    linear-gradient(180deg, #F2F2F2 45%, #EBEBEB 45%, #CFCFCF);
+}
+::-webkit-scrollbar-button:single-button:vertical:increment {
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='17' height='17'%3E%3Cpath d='M5 6.5h7L8.5 10.5z' fill='%23505050'/%3E%3C/svg%3E"),
+    linear-gradient(180deg, #F2F2F2 45%, #EBEBEB 45%, #CFCFCF);
+}
+::-webkit-scrollbar-corner { background: var(--a-face); }
+
+/* ---------- 11. Jauge : cadre du canvas Tetris ---------- */
+/* Le canvas dessine ses propres pixels (fond Game Boy #0F380F voulu, non
+   thématique) -- seul le cadre autour relève de la charte. */
+canvas.tetris {
+  border: 1px solid var(--border-progress);
+  border-radius: var(--radius-control);
+  box-shadow: var(--inner-line);
+}

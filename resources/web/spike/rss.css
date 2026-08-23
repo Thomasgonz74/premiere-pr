@@ -1,0 +1,10 @@
+/* ---------- RSS page ---------- */
+#rssContainer { display: flex; flex-direction: column; gap: var(--space-3); flex: 1; min-height: 0; }
+#rssFeedList { flex: 1; }
+#rssLogList { flex: 1; }
+
+.rss-feed-row { grid-template-columns: 1fr 160px 24px 60px; }
+
+.rss-log-row { padding: 2px var(--space-2); margin: 0; font-size: 0.9em; border-bottom: 1px solid var(--border-group); }
+.rss-log-row:last-child { border-bottom: none; }
+.rss-log-error { color: #A33B12; }

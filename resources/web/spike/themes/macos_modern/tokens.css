@@ -1,0 +1,684 @@
+/* ==========================================================================
+   TAHOE — tokens.css — v1.5 (port spike)
+   Style : "macOS 26 Tahoe (Liquid Glass, thème clair)"
+   Rôle  : SOURCE DE VÉRITÉ des variables. À importer tel quel.
+   Port du thème natif ("resources/web/charters/Charte graphique/macOS 26
+   (Tahoe Liquid Glass)/tokens.css") vers le contrat structurel de l'app
+   (même gabarit que luna_xp/tokens.css) -- valeurs propres à Tahoe,
+   jamais celles de Luna.
+   ========================================================================== */
+
+:root {
+
+  /* ========================================================
+     1. PRIMITIVES — palette Tahoe (clair), telle que la charte
+     ======================================================== */
+  /* Surfaces mates (le contenu reste lisible) */
+  --th-content: #F5F5F7;    /* fond de contenu (gris Apple) */
+  --th-view:    #FFFFFF;    /* cartes, listes, champs */
+  --th-ink:     #1D1D1F;    /* texte Apple */
+  --th-ink-soft:     rgba(0,0,0,.55);
+  --th-ink-disabled: rgba(0,0,0,.28);
+
+  /* Filets */
+  --hairline:        rgba(0,0,0,.10);
+  --hairline-soft:   rgba(0,0,0,.06);
+  --hairline-strong: rgba(0,0,0,.18);   /* survol des champs */
+
+  /* L'ACCENT — bleu système Apple */
+  --accent:         #007AFF;
+  --accent-hover:   #268CFF;
+  --accent-pressed: #0064D6;
+  --accent-link:    #0071E3;
+  --accent-ring:    rgba(0,122,255,.45);   /* le halo (héritier d'Aqua) */
+
+  /* Sélection : pilule pleine pour les listes, voile pâle pour le texte */
+  --selection-bg:      var(--accent);
+  --selection-text:    #FFFFFF;
+  --selection-text-bg: #B4D8FE;   /* ::selection — texte noir dessus */
+
+  /* Rôles (couleurs système SF) */
+  --destructive:         #FF3B30;   /* TEXTE destructif ; plein UNIQUEMENT en alerte */
+  --destructive-hover:   #FF554B;
+  --destructive-pressed: #E0352B;
+  --warning:     #FF9F0A;   /* jauge en pause */
+  --success:     #34C759;
+
+  /* Les trois billes — PLATES (glyphes au survol) */
+  --ball-close: #FF5F57;  --ball-close-edge: #E0443A;  --ball-close-glyph: #99201A;
+  --ball-min:   #FEBC2E;  --ball-min-edge:   #DFA023;  --ball-min-glyph:   #985D00;
+  --ball-max:   #28C840;  --ball-max-edge:   #1DAD34;  --ball-max-glyph:   #0A6120;
+  --ball-off:   #D5D5D5;  --ball-off-edge:   #C0C0C0;
+
+  /* Jauge fine */
+  --progress-rail: rgba(0,0,0,.10);
+
+  /* Défilement en surimpression */
+  --scroll-thumb: rgba(0,0,0,.32);
+
+  /* ========================================================
+     2. SÉMANTIQUES
+     ======================================================== */
+  /* --th-content = fond de contenu -> c'est la surface "fenêtre" de l'app
+     (chrome, panneaux, barres) ; --th-view = cartes/listes/champs -> c'est
+     la surface "champ" (plus claire, en retrait), exactement le rapport
+     cream/white de Luna transposé au vocabulaire Tahoe. */
+  --surface-desktop:  #6A87C9;  /* teinte plate représentative du dégradé --gradient-desktop (repli non-gradient) */
+  --surface-window:   var(--th-content);
+  --surface-field:    var(--th-view);
+  --surface-panel:    var(--th-view);      /* panneaux/onglets = carte --th-view radius 14 */
+  --surface-tooltip:  var(--tooltip-bg);
+
+  --text-primary:     var(--th-ink);
+  --text-disabled:    var(--th-ink-disabled);
+  --text-inverse:     #FFFFFF;             /* texte sur capsule pleine accent, toujours blanc */
+
+  --title-active-text:   var(--th-ink);      /* titre sombre sur chrome de verre clair */
+  --title-inactive-text: var(--th-ink-soft); /* "fenêtre inactive : titre --text-soft" (STYLE.md §6) */
+
+  /* Generic aliases consumed by resources/web/spike/*.css -- Tahoe n'a pas
+     de bordures dures (interdit §10 : "bordures dures ou grises opaques"),
+     seulement des hairlines -- elles servent donc ici de couleurs de
+     bordure. --text-legend n'a pas de teinte propre (une seule capsule
+     accent par vue, §2.3) : la légende se distingue par la graisse (600)
+     dans le CSS de l'app, pas par la couleur -- donc encre pleine. */
+  --border-control:  var(--hairline);
+  --border-field:    var(--hairline);
+  --border-group:    var(--hairline-soft);
+  --border-progress: var(--hairline-strong);
+  --border-tab:      var(--hairline);
+  --text-legend:     var(--text-primary);
+  --text-soft:       var(--th-ink-soft);   /* texte secondaire (row-state, hint, statusbar) -- components.html §"--text-soft" */
+
+  /* ========================================================
+     3. LE VERRE — la matière du chrome, des contrôles et des
+     panneaux (jamais du contenu). Opacité + flou + liseré,
+     repli @supports côté composants qui l'utilisent.
+     ======================================================== */
+  --window-glass:    rgba(243,244,248,.86);
+  --window-fallback: #F1F2F6;              /* repli sans backdrop-filter */
+
+  --glass-chrome: rgba(255,255,255,.55);
+  --glass-panel:  rgba(250,250,252,.78);
+  --glass-blur:   blur(28px) saturate(1.7);
+  --glass-shine:  inset 0 1px 0 rgba(255,255,255,.70);   /* liseré lumineux */
+
+  --capsule:         rgba(255,255,255,.85);
+  --capsule-hover:   rgba(255,255,255,1);
+  --capsule-pressed: rgba(233,233,238,.95);
+  --capsule-shadow:  0 1px 2px rgba(0,0,0,.10);
+
+  --track-fill:       rgba(120,120,128,.16);
+  --track-fill-hover: rgba(120,120,128,.24);
+
+  --tooltip-bg: rgba(246,246,248,.88);
+  --tooltip-fg: var(--th-ink);
+
+  --gradient-desktop: radial-gradient(115% 95% at 30% 20%,
+                      #A9CBEF, #6A87C9 55%, #24305C 95%);
+
+  /* Generic aliases -- interdit §10.8 : "tout dégradé hors
+     --gradient-desktop" -- donc jamais un vrai dégradé multi-arrêts ici.
+     On respecte la lettre ET l'esprit de la règle avec un dégradé
+     2 arrêts de MÊME couleur (fond plat), forme syntaxique exigée par le
+     CSS partagé mais rendu visuel identique à la capsule --capsule*. */
+  --plastic-raised:  linear-gradient(var(--capsule), var(--capsule));
+  --plastic-pressed: linear-gradient(var(--capsule-pressed), var(--capsule-pressed));
+
+  /* Barre titre+outils : même logique -- fond plat translucide, pas de
+     dégradé décoratif (le flou/glass-blur reste porté par les recettes
+     ci-dessus, pas modifiable depuis cette seule variable "background"). */
+  --gradient-title-active: linear-gradient(var(--glass-chrome), var(--glass-chrome));
+
+  /* Billes de fenêtre (fermer/réduire/agrandir) : plates, cerclées --
+     jamais glossy/radiales comme les aînées gel (interdit §10.8). */
+  --gradient-titlebtn:       linear-gradient(var(--ball-min), var(--ball-min));
+  --gradient-titlebtn-close: linear-gradient(var(--ball-close), var(--ball-close));
+
+  /* Jauge de progression : remplissage plat --accent, sans lustre ni
+     animation (§9 "Progression" : "sans lustre, sans animation"). */
+  --gradient-progress: linear-gradient(var(--accent), var(--accent));
+
+  /* ========================================================
+     4. OMBRES — profondes et douces (jamais dures, interdit §10.9)
+     ======================================================== */
+  --shadow-window: 0 24px 60px rgba(0,0,0,.30), 0 2px 10px rgba(0,0,0,.14);
+  --shadow-window-inactive: 0 12px 28px rgba(0,0,0,.18);
+  --shadow-menu: 0 12px 32px rgba(0,0,0,.22);
+  --shadow-knob: 0 2px 3px rgba(0,0,0,.20);
+  --shadow-segment: 0 1px 3px rgba(0,0,0,.14);
+
+  /* Generic aliases -- le cadre de fenêtre Tahoe EST l'ombre portée de la
+     plaque de verre (pas de biseau emboîté façon Luna). Le survol n'a pas
+     de lueur : la capsule s'opacifie (--capsule-hover) à la place -- donc
+     "none" est le choix authentique ici (§10.9 "ombres dures" interdites,
+     et aucune recette de lueur n'existe dans la charte). */
+  --frame-shadow: var(--shadow-window);
+  --glow-hover: none;
+
+  /* ========================================================
+     5. TYPOGRAPHIE — SF Pro (pile système), 13 px
+     ======================================================== */
+  --font-ui: -apple-system, BlinkMacSystemFont, "SF Pro Text",
+             "SF Pro Display", "Helvetica Neue", Helvetica, Inter,
+             "Segoe UI", sans-serif;
+  --font-mono: "SF Mono", ui-monospace, Menlo, Monaco, monospace;
+  --font-size-base: 13px;
+  --font-size-title: 13px;        /* titre : 600, À GAUCHE après les billes */
+  --font-size-dialog-title: 13px; /* 700, centré (alerte verticale) */
+  --line-height: 1.45;
+
+  /* Generic aliases -- pas de police d'affichage dédiée : le titre de
+     fenêtre reste SF Pro, seule la graisse change (600, portée par le CSS
+     de l'app). Pas d'ombre portée sur le texte (§10.9, mat et calme). */
+  --font-title: var(--font-ui);
+  --title-text-shadow: none;
+
+  /* ========================================================
+     6. MÉTRIQUES & ESPACEMENT
+     ======================================================== */
+  --unit: 4px;
+  --space-1: 2px;  --space-2: 4px;  --space-3: 8px;
+  --space-4: 12px; --space-5: 16px; --space-6: 24px;
+
+  --control-height: 28px;        /* capsules et champs */
+  --button-min-width: 72px;
+  --toolbar-height: 52px;        /* barre d'outils de verre */
+  --ball-size: 12px;             /* les trois billes plates */
+  --scrollbar-size: 10px;
+  --checkbox-size: 16px;
+  --toggle-w: 40px;  --toggle-h: 24px;
+  --icon-small: 16px;  --icon-large: 32px;
+
+  /* Rayons — la suite concentrique (§2 STYLE.md) */
+  --radius-window:  18px;
+  --radius-panel:   14px;   /* menus, cartes, panneaux, dialogues */
+  --radius-field:   10px;
+  --radius-item:    8px;    /* items de liste/menu, segment */
+  --radius-capsule: 999px;  /* boutons, segmented, commutateur */
+
+  /* Generic aliases -- champs et capsules partagent la même hauteur dans
+     Tahoe (STYLE.md §5 : "Capsules et champs : 28 px"), pas de barre
+     "titre" séparée d'une barre "outils" comme sur Windows : la barre
+     52 px unique (billes + titre + actions) fait office des deux, donc
+     --titlebar-height reprend --toolbar-height. Les boutons de fenêtre
+     sont les billes rondes 12 px. --radius-control reprend le rayon
+     capsule (999) : posé sur la boîte 12x12 des billes il donne un
+     cercle, posé sur un bouton 72x28 il donne la pilule Tahoe -- fidèle
+     aux deux à la fois. Les group box sont des cartes radius 14. */
+  --field-height: var(--control-height);
+  --titlebar-height: var(--toolbar-height);
+  --titlebar-btn: var(--ball-size);
+  --radius-control: var(--radius-capsule);
+  --radius-group: var(--radius-panel);
+
+  /* ========================================================
+     7. ÉTATS & MOUVEMENT — fondu 180 ms, focus = HALO bleu
+     Propriétés permises : background, border-color, color,
+     box-shadow (halo, liserés), opacity. JAMAIS position,
+     taille, transform.
+     ======================================================== */
+  --transition-state: .18s ease;
+  --focus-ring: 0 0 0 3.5px var(--accent-ring);
+  --cursor-interactive: var(--cursor-default);
+
+  /* Generic aliases -- pas de pointillé façon Win9x/XP : le halo est déjà
+     l'indicateur de focus Tahoe (--focus-ring). --focus-outline sert de
+     repli "outline" au même endroit et à la même teinte que le halo. */
+  --focus-outline: 2px solid var(--accent);
+  --transition: var(--transition-state);
+
+  /* ========================================================
+     8. CURSEURS — mêmes 14 actions que les dix aînées,
+     matière macOS : corps NOIRS à liseré blanc ; l'attente
+     reste le BEACHBALL — inchangé depuis 2001 ; le « ? »
+     d'aide passe au bleu système.
+     --cur-img-* = image seule · --cursor-* = image + point chaud + secours
+     ======================================================== */
+  --cur-img-default: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.25' transform='translate(1.5,1.5)'%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23000' stroke='%23000' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%231A1A1A' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-link: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.25' transform='translate(1.5,1.5)'%3E%3Cpolygon points='10,2 13,2 13,9 16,9 19,11 19,15 16,20 9,20 5,14 5,12 7,11 10,14' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='10,2 13,2 13,9 16,9 19,11 19,15 16,20 9,20 5,14 5,12 7,11 10,14' fill='%231A1A1A' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpath d='M13.5 11v4M16 12v3' stroke='%23fff' stroke-width='.9' stroke-linecap='round'/%3E%3C/svg%3E");
+  --cur-img-text: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg fill='none' stroke='%23fff' stroke-width='4.2' stroke-linecap='round'%3E%3Cpath d='M8 3h6M11 3v18M8 21h6'/%3E%3C/g%3E%3Cg fill='none' stroke='%231A1A1A' stroke-width='1.6' stroke-linecap='round'%3E%3Cpath d='M8 3h6M11 3v18M8 21h6'/%3E%3C/g%3E%3C/svg%3E");
+  --cur-img-wait: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.25' transform='translate(1,1.5)'%3E%3Ccircle cx='12' cy='12' r='9' fill='%23000'/%3E%3C/g%3E%3Cg transform='translate(12 12)'%3E%3Cpath d='M0 0L0 -9A9 9 0 0 1 7.79 -4.5Z' fill='%234A90E2'/%3E%3Cpath d='M0 0L7.79 -4.5A9 9 0 0 1 7.79 4.5Z' fill='%237ED321'/%3E%3Cpath d='M0 0L7.79 4.5A9 9 0 0 1 0 9Z' fill='%23F8E71C'/%3E%3Cpath d='M0 0L0 9A9 9 0 0 1 -7.79 4.5Z' fill='%23F5A623'/%3E%3Cpath d='M0 0L-7.79 4.5A9 9 0 0 1 -7.79 -4.5Z' fill='%23E0533D'/%3E%3Cpath d='M0 0L-7.79 -4.5A9 9 0 0 1 0 -9Z' fill='%239013FE'/%3E%3C/g%3E%3Ccircle cx='12' cy='12' r='9' fill='none' stroke='%23fff' stroke-width='1.6'/%3E%3C/svg%3E");
+  --cur-img-progress: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.25' transform='translate(1.5,1.5)'%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23000' stroke='%23000' stroke-width='2.4' stroke-linejoin='round'/%3E%3Ccircle cx='17.5' cy='17.5' r='5.2' fill='%23000'/%3E%3C/g%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%231A1A1A' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cg transform='translate(17.5 17.5)'%3E%3Cpath d='M0 0L0 -5.2A5.2 5.2 0 0 1 4.5 -2.6Z' fill='%234A90E2'/%3E%3Cpath d='M0 0L4.5 -2.6A5.2 5.2 0 0 1 4.5 2.6Z' fill='%237ED321'/%3E%3Cpath d='M0 0L4.5 2.6A5.2 5.2 0 0 1 0 5.2Z' fill='%23F8E71C'/%3E%3Cpath d='M0 0L0 5.2A5.2 5.2 0 0 1 -4.5 2.6Z' fill='%23F5A623'/%3E%3Cpath d='M0 0L-4.5 2.6A5.2 5.2 0 0 1 -4.5 -2.6Z' fill='%23E0533D'/%3E%3Cpath d='M0 0L-4.5 -2.6A5.2 5.2 0 0 1 0 -5.2Z' fill='%239013FE'/%3E%3C/g%3E%3Ccircle cx='17.5' cy='17.5' r='5.2' fill='none' stroke='%23fff' stroke-width='1.4'/%3E%3C/svg%3E");
+  --cur-img-help: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.25' transform='translate(1.5,1.5)'%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23000' stroke='%23000' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%231A1A1A' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpath d='M14.5 6c0-2.6 6.5-2.6 6.5 0c0 2.2-3.2 2-3.2 4.4' fill='none' stroke='%23fff' stroke-width='3.8' stroke-linecap='round'/%3E%3Cpath d='M14.5 6c0-2.6 6.5-2.6 6.5 0c0 2.2-3.2 2-3.2 4.4' fill='none' stroke='%230071E3' stroke-width='1.8' stroke-linecap='round'/%3E%3Ccircle cx='17.9' cy='13.8' r='1.7' fill='%23fff'/%3E%3Ccircle cx='17.9' cy='13.8' r='1.1' fill='%230071E3'/%3E%3C/svg%3E");
+  --cur-img-crosshair: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg fill='none' stroke='%23fff' stroke-width='4.2'%3E%3Cpath d='M12 3v18M3 12h18'/%3E%3C/g%3E%3Cg fill='none' stroke='%231A1A1A' stroke-width='1.6'%3E%3Cpath d='M12 3v18M3 12h18'/%3E%3C/g%3E%3C/svg%3E");
+  --cur-img-not-allowed: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg fill='none' stroke='%23fff' stroke-width='5.4'%3E%3Ccircle cx='12' cy='12' r='8'/%3E%3Cpath d='M6.5 6.5l11 11'/%3E%3C/g%3E%3Cg fill='none' stroke='%231A1A1A' stroke-width='2.4'%3E%3Ccircle cx='12' cy='12' r='8'/%3E%3Cpath d='M6.5 6.5l11 11'/%3E%3C/g%3E%3C/svg%3E");
+  --cur-img-resize-v: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.25' transform='translate(1.5,1.5)'%3E%3Cpolygon points='12,1 17,7 14,7 14,17 17,17 12,23 7,17 10,17 10,7 7,7' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='12,1 17,7 14,7 14,17 17,17 12,23 7,17 10,17 10,7 7,7' fill='%231A1A1A' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-resize-h: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.25' transform='translate(1.5,1.5)'%3E%3Cpolygon points='1,12 7,7 7,10 17,10 17,7 23,12 17,17 17,14 7,14 7,17' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='1,12 7,7 7,10 17,10 17,7 23,12 17,17 17,14 7,14 7,17' fill='%231A1A1A' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-resize-nwse: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.25' transform='translate(1.5,1.5)'%3E%3Cpath d='M6 6l12 12' stroke='%23000' stroke-width='4.6'/%3E%3Cpolygon points='4,4 12,4 4,12' fill='%23000'/%3E%3Cpolygon points='20,20 12,20 20,12' fill='%23000'/%3E%3C/g%3E%3Cpath d='M7 7l10 10' stroke='%23fff' stroke-width='4'/%3E%3Cpath d='M7 7l10 10' stroke='%231A1A1A' stroke-width='1.8'/%3E%3Cpolygon points='4,4 12,4 4,12' fill='%231A1A1A' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpolygon points='20,20 12,20 20,12' fill='%231A1A1A' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-resize-nesw: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.25' transform='translate(1.5,1.5)'%3E%3Cpath d='M18 6L6 18' stroke='%23000' stroke-width='4.6'/%3E%3Cpolygon points='20,4 12,4 20,12' fill='%23000'/%3E%3Cpolygon points='4,20 12,20 4,12' fill='%23000'/%3E%3C/g%3E%3Cpath d='M17 7L7 17' stroke='%23fff' stroke-width='4'/%3E%3Cpath d='M17 7L7 17' stroke='%231A1A1A' stroke-width='1.8'/%3E%3Cpolygon points='20,4 12,4 20,12' fill='%231A1A1A' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpolygon points='4,20 12,20 4,12' fill='%231A1A1A' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-move: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.25' transform='translate(1.5,1.5)' fill='%23000'%3E%3Cpolygon points='12,1 15,5 13,5 13,19 15,19 12,23 9,19 11,19 11,5 9,5'/%3E%3Cpolygon points='1,12 5,9 5,11 19,11 19,9 23,12 19,15 19,13 5,13 5,15'/%3E%3C/g%3E%3Cg fill='%231A1A1A' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'%3E%3Cpolygon points='12,1 15,5 13,5 13,19 15,19 12,23 9,19 11,19 11,5 9,5'/%3E%3Cpolygon points='1,12 5,9 5,11 19,11 19,9 23,12 19,15 19,13 5,13 5,15'/%3E%3C/g%3E%3Cpolygon points='12,1 15,5 13,5 13,19 15,19 12,23 9,19 11,19 11,5 9,5' fill='%231A1A1A'/%3E%3Cpolygon points='1,12 5,9 5,11 19,11 19,9 23,12 19,15 19,13 5,13 5,15' fill='%231A1A1A'/%3E%3C/svg%3E");
+  --cur-img-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.25' transform='translate(1.5,1.5)'%3E%3Cpolygon points='12,2 18,9 14,9 14,20 10,20 10,9 6,9' fill='%23000' stroke='%23000' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='12,2 18,9 14,9 14,20 10,20 10,9 6,9' fill='%231A1A1A' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+
+  /* Curseurs composés : image + point chaud + secours système */
+  --cursor-default:     var(--cur-img-default) 2 2, default;
+  --cursor-link:        var(--cur-img-link) 11 3, pointer;      /* hyperliens UNIQUEMENT */
+  --cursor-text:        var(--cur-img-text) 11 12, text;
+  --cursor-wait:        var(--cur-img-wait) 12 12, wait;        /* le beachball, inchangé */
+  --cursor-progress:    var(--cur-img-progress) 2 2, progress;
+  --cursor-help:        var(--cur-img-help) 2 2, help;
+  --cursor-crosshair:   var(--cur-img-crosshair) 12 12, crosshair;
+  --cursor-not-allowed: var(--cur-img-not-allowed) 12 12, not-allowed;
+  --cursor-resize-v:    var(--cur-img-resize-v) 12 12, ns-resize;
+  --cursor-resize-h:    var(--cur-img-resize-h) 12 12, ew-resize;
+  --cursor-resize-nwse: var(--cur-img-resize-nwse) 12 12, nwse-resize;
+  --cursor-resize-nesw: var(--cur-img-resize-nesw) 12 12, nesw-resize;
+  --cursor-move:        var(--cur-img-move) 12 12, move;
+  --cursor-up:          var(--cur-img-up) 12 3, default;
+
+  /* matière tokenisée (phase 3) */
+  --seg-active: #FFFFFF;
+  /* P2TOK:BEGIN */
+  --p2-knob: #FFFFFF;
+  --p2-warn-fg: #3A2E00; --p2-on-accent: #FFFFFF;
+  /* P2TOK:END */
+
+  /* ================================================== ICONS:BEGIN
+     9. ICÔNES — navigation & fichiers (14), tokenisées
+     comme les curseurs : SVG data-URI dessinés dans la
+     matière du style. À consommer en background-image :
+     background: var(--icon-folder) center/contain no-repeat;
+     Jamais d'image externe, jamais d'emoji.
+     ======================================================== */
+  --icon-folder: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cdefs%3E%3ClinearGradient id='gt' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%236FB5FF'/%3E%3Cstop offset='1' stop-color='%232E86E8'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M3 7.2Q3 6 4.2 6h5l1.8 2.2h8.8Q21 8.2 21 9.4v9Q21 19.6 19.8 19.6H4.2Q3 19.6 3 18.4z' fill='url(%23gt)'/%3E%3C/svg%3E");
+  --icon-folder-open: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cdefs%3E%3ClinearGradient id='gto' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%236FB5FF'/%3E%3Cstop offset='1' stop-color='%232E86E8'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M3 7.2Q3 6 4.2 6h5l1.8 2.2h8.8Q21 8.2 21 9.4v2.8H3z' fill='%232670C8'/%3E%3Cpath d='M4.9 11.4h16.2q1 0 .7 1l-1.8 6.2q-.3 1-1.3 1H3.5q-1 0-.7-1l1.8-6.2q.3-1 1.3-1z' fill='url(%23gto)'/%3E%3C/svg%3E");
+  --icon-file: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M6 2.5h8l4.5 4.5v14.5H6z' fill='%23FFFFFF' stroke='%23C2C7CE' stroke-width='1.1' stroke-linejoin='round'/%3E%3Cpath d='M14 2.5v4.5h4.5z' fill='%23E8EBEF' stroke='%23C2C7CE' stroke-width='0.9900000000000001' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-file-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M6 2.5h8l4.5 4.5v14.5H6z' fill='%23FFFFFF' stroke='%23C2C7CE' stroke-width='1.1' stroke-linejoin='round'/%3E%3Cpath d='M14 2.5v4.5h4.5z' fill='%23E8EBEF' stroke='%23C2C7CE' stroke-width='0.9900000000000001' stroke-linejoin='round'/%3E%3Ccircle cx='10.2' cy='11.2' r='1.5' fill='%23FFCC33'/%3E%3Cpolygon points='8,18.4 10.8,14.6 12.6,16.9 14,15.1 16.4,18.4' fill='%234DA3FF'/%3E%3C/svg%3E");
+  --icon-drive: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Crect x='3.4' y='8.8' width='17.2' height='6.6' fill='%23E9EBEE' rx='3' stroke='%23C2C7CE' stroke-width='1'/%3E%3Ccircle cx='17.2' cy='12.1' r='1.2' fill='%23007AFF'/%3E%3C/svg%3E");
+  --icon-home: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M4.4 11.5L12 4.8l7.6 6.7M6.4 10v9h11.2v-9M10.4 19v-5h3.2v5' fill='none' stroke='%233A3A3C' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-computer: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cdefs%3E%3ClinearGradient id='gtm' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%235AB2FF'/%3E%3Cstop offset='1' stop-color='%231560D0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x='3.8' y='4.6' width='16.4' height='10.8' fill='%232C2C2E' rx='2'/%3E%3Crect x='5.1' y='5.9' width='13.8' height='8.2' fill='url(%23gtm)' rx='1'/%3E%3Cpath d='M12 15.4v2.8' fill='none' stroke='%232C2C2E' stroke-width='1.8' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3Cpath d='M8.4 18.9h7.2' fill='none' stroke='%232C2C2E' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-network: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M12 7.6L6.4 16M12 7.6l5.6 8.4M6.4 16h11.2' fill='none' stroke='%23AEB2B8' stroke-width='1.4' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3Ccircle cx='12' cy='6.4' r='2.2' fill='%23007AFF'/%3E%3Ccircle cx='5.6' cy='17' r='2.2' fill='%23007AFF'/%3E%3Ccircle cx='18.4' cy='17' r='2.2' fill='%23007AFF'/%3E%3C/svg%3E");
+  --icon-trash: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M5.6 6.4h12.8' fill='none' stroke='%233A3A3C' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M9.6 6.4V4.6h4.8v1.8' fill='none' stroke='%233A3A3C' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M7 6.4l.9 13h8.2l.9-13' fill='none' stroke='%233A3A3C' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M10.2 9.6v6.6M13.8 9.6v6.6' fill='none' stroke='%233A3A3C' stroke-width='1.2800000000000002' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-search: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='10.4' cy='10.4' r='4.9' fill='none' stroke='%233A3A3C' stroke-width='1.7'/%3E%3Cpath d='M14.2 14.2l5.2 5.2' fill='none' stroke='%233A3A3C' stroke-width='2.0' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-back: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M20 12H5.5M11.5 5.5L5 12l6.5 6.5' fill='none' stroke='%233A3A3C' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-forward: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M4 12h14.5M12.5 5.5L19 12l-6.5 6.5' fill='none' stroke='%233A3A3C' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M12 20V5.5M5.5 11.5L12 5l6.5 6.5' fill='none' stroke='%233A3A3C' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-refresh: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M18.6 8.2A7.6 7.6 0 1 0 19.6 14' fill='none' stroke='%233A3A3C' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpolygon points='19.9,4.4 19.9,9.8 14.7,8.6' fill='%233A3A3C'/%3E%3C/svg%3E");
+  /* ICONS:END */
+}
+/* DARK:BEGIN — thème sombre (phase 3) */
+[data-theme="dark"] {
+  --th-content: #282828;
+  --th-view: #1E1E1E;
+  --th-ink: rgba(255,255,255,.88);
+  --th-ink-soft: rgba(255,255,255,.55);
+  --th-ink-disabled: rgba(255,255,255,.28);
+  --hairline: rgba(255,255,255,.12);
+  --hairline-soft: rgba(255,255,255,.07);
+  --hairline-strong: rgba(255,255,255,.2);
+  --accent: #0A84FF;
+  --accent-hover: #2E95FF;
+  --accent-pressed: #0068D0;
+  --accent-link: #409CFF;
+  --accent-ring: rgba(10,132,255,.5);
+  --selection-bg: rgba(255,255,255,.16);
+  --selection-text: rgba(255,255,255,.92);
+  --destructive: #FF453A; --destructive-hover: #FF5F55; --destructive-pressed: #E03328;
+  --warning: #FFD60A; --success: #30D158;
+  --capsule: rgba(255,255,255,.08);
+  --capsule-hover: rgba(255,255,255,.12);
+  --capsule-pressed: rgba(255,255,255,.17);
+  --window-glass: rgba(30,30,32,.62);
+  --window-fallback: #2A2A2C;
+  --glass-chrome: rgba(36,36,38,.55);
+  --glass-panel: rgba(44,44,46,.66);
+  --progress-rail: rgba(255,255,255,.14);
+  --track-fill: #0A84FF; --track-fill-hover: #2E95FF;
+  --scroll-thumb: rgba(255,255,255,.3);
+  --tooltip-bg: #3A3A3C; --tooltip-fg: rgba(255,255,255,.9);
+  --gradient-desktop: linear-gradient(160deg,#1A2230,#0D111A);
+  --surface-desktop: #161D2A;  /* teinte plate représentative du dégradé nuit */
+  --shadow-window: 0 18px 50px rgba(0,0,0,.65);
+  --shadow-knob: 0 1px 3px rgba(0,0,0,.6), 0 0 0 .5px rgba(255,255,255,.15);
+  --p2-warn-fg: #3A2E00;
+  --seg-active: #6E6E70;
+  /* icônes surchargées pour le fond sombre */
+  --icon-back: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M20 12H5.5M11.5 5.5L5 12l6.5 6.5' fill='none' stroke='%23D1D1D6' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-forward: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M4 12h14.5M12.5 5.5L19 12l-6.5 6.5' fill='none' stroke='%23D1D1D6' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M12 20V5.5M5.5 11.5L12 5l6.5 6.5' fill='none' stroke='%23D1D1D6' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-refresh: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M18.6 8.2A7.6 7.6 0 1 0 19.6 14' fill='none' stroke='%23D1D1D6' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpolygon points='19.9,4.4 19.9,9.8 14.7,8.6' fill='%23D1D1D6'/%3E%3C/svg%3E");
+  --icon-search: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='10.4' cy='10.4' r='4.9' fill='none' stroke='%23D1D1D6' stroke-width='1.7'/%3E%3Cpath d='M14.2 14.2l5.2 5.2' fill='none' stroke='%23D1D1D6' stroke-width='2.0' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-trash: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M5.6 6.4h12.8' fill='none' stroke='%23D1D1D6' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M9.6 6.4V4.6h4.8v1.8' fill='none' stroke='%23D1D1D6' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M7 6.4l.9 13h8.2l.9-13' fill='none' stroke='%23D1D1D6' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M10.2 9.6v6.6M13.8 9.6v6.6' fill='none' stroke='%23D1D1D6' stroke-width='1.2800000000000002' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-home: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M4.4 11.5L12 4.8l7.6 6.7M6.4 10v9h11.2v-9M10.4 19v-5h3.2v5' fill='none' stroke='%23D1D1D6' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-computer: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Crect x='3.4' y='4.4' width='17.2' height='11.6' fill='%2398989D' rx='1.2'/%3E%3Crect x='4.9' y='5.9' width='14.2' height='8.6' fill='%231560D0'/%3E%3Cpath d='M12 16v2.6' fill='none' stroke='%2398989D' stroke-width='1.8' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3Cpath d='M8 19.4h8' fill='none' stroke='%2398989D' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+/* DARK:END */
+
+/* HC:BEGIN — contraste élevé (phase 4) */
+[data-theme="hc"] {
+  --th-content: #FFFFFF;
+  --th-view: #FFFFFF;
+  --th-ink: #000000;
+  --th-ink-soft: #333333;
+  --th-ink-disabled: #767676;
+  --hairline: #000000;             /* la hairline devient une bordure */
+  --hairline-soft: #000000;
+  --hairline-strong: #000000;
+  --accent: #002FA8;
+  --accent-hover: #002888;
+  --accent-pressed: #002270;
+  --accent-link: #002FA8;
+  --accent-ring: #002FA8;
+  --selection-bg: #002FA8;
+  --selection-text: #FFFFFF;
+  --destructive: #8E000A;
+  --destructive-hover: #760008;
+  --destructive-pressed: #600006;
+  --warning: #6E5100;
+  --success: #005A26;
+  --capsule: #FFFFFF;
+  --capsule-hover: #E8E8E8;
+  --capsule-pressed: #D5D5D5;
+  --window-glass: #F5F5F7;         /* le verre devient pierre */
+  --window-fallback: #F5F5F7;
+  --glass-chrome: #EFEFF2;
+  --glass-panel: #FFFFFF;
+  --progress-rail: #C8C8C8;
+  --track-fill: #B8B8BC;           /* la piste reste une piste */
+  --track-fill-hover: #A8A8AC;
+  --shadow-segment: 0 0 0 1.5px #000000;
+  --scroll-thumb: #555555;
+  --seg-active: #FFFFFF;
+  --tooltip-bg: #000000; --tooltip-fg: #FFFFFF;
+  --shadow-window: 0 0 0 1.5px #000000;
+  --shadow-knob: 0 0 0 1.5px #000000;
+  --p2-warn-fg: #FFFFFF;
+  --p2-knob: #FFFFFF;
+  /* icônes en contraste élevé */
+  --icon-back: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M20 12H5.5M11.5 5.5L5 12l6.5 6.5' fill='none' stroke='%23000000' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-forward: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M4 12h14.5M12.5 5.5L19 12l-6.5 6.5' fill='none' stroke='%23000000' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M12 20V5.5M5.5 11.5L12 5l6.5 6.5' fill='none' stroke='%23000000' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-refresh: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M18.6 8.2A7.6 7.6 0 1 0 19.6 14' fill='none' stroke='%23000000' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpolygon points='19.9,4.4 19.9,9.8 14.7,8.6' fill='%23000000'/%3E%3C/svg%3E");
+  --icon-search: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='10.4' cy='10.4' r='4.9' fill='none' stroke='%23000000' stroke-width='1.9'/%3E%3Cpath d='M14.2 14.2l5.2 5.2' fill='none' stroke='%23000000' stroke-width='2.1999999999999997' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-trash: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M5.6 6.4h12.8' fill='none' stroke='%23000000' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M9.6 6.4V4.6h4.8v1.8' fill='none' stroke='%23000000' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M7 6.4l.9 13h8.2l.9-13' fill='none' stroke='%23000000' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M10.2 9.6v6.6M13.8 9.6v6.6' fill='none' stroke='%23000000' stroke-width='1.4400000000000002' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-home: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M4.4 11.5L12 4.8l7.6 6.7M6.4 10v9h11.2v-9M10.4 19v-5h3.2v5' fill='none' stroke='%23000000' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+/* HC:END */
+
+/* --- Base recommandée (à copier dans l'app) ------------------------------ */
+/*
+body {
+  margin: 0;
+  background: var(--gradient-desktop);
+  color: var(--text-primary);
+  font: 400 var(--font-size-base)/var(--line-height) var(--font-ui);
+  cursor: var(--cursor-default);
+}
+::selection { background: var(--selection-text-bg); color: var(--th-ink); }
+a { color: var(--accent-link); cursor: var(--cursor-link); }
+input[type=text], textarea { cursor: var(--cursor-text); }
+*/
+
+/* ==========================================================================
+   STRUCTURE — recette Tahoe appliquée aux sélecteurs partagés de style.css.
+   Chargé en dernier (voir index.html) : ces règles gagnent la cascade à
+   spécificité égale ou supérieure, sans !important. Patterns copiés de
+   components.html (STYLE.md §11.2), jamais réinterprétés en générique.
+   ========================================================================== */
+
+/* ---------- Chrome de fenêtre : billes plates à GAUCHE, titre semibold ---
+   §6/§7 STYLE.md. Le radius 15px hérité de style.css (radius-window - 3px,
+   pensé pour le cadre 3px des aînées gel) casse la concentricité 18/14/10/8
+   (interdit §10.2) -- corrigé ici sur le radius plein de la plaque. */
+.titlebar {
+  gap: var(--space-4);
+  padding: 0 var(--space-5);
+  background: var(--glass-chrome);
+  border-radius: var(--radius-window) var(--radius-window) 0 0;
+  border-bottom: 1px solid var(--hairline-soft);
+  box-shadow: var(--glass-shine);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .titlebar, .context-menu, .modal-box { background: var(--window-fallback); }
+}
+.titlebar-buttons {
+  order: -1;             /* billes à GAUCHE, jamais à droite (interdit §10.3) */
+  gap: var(--space-3);
+  margin-right: var(--space-3);
+}
+.titlebar-title {
+  font-weight: 600;       /* semibold, jamais centré (déjà à gauche par le flex) */
+}
+
+.cap-btn {
+  width: var(--ball-size);
+  height: var(--ball-size);
+  border-radius: 50%;
+  border: 1px solid transparent;
+  box-shadow: none;
+  padding: 0;
+}
+.cap-btn:hover, .cap-btn:active { filter: none; }  /* pas de lustre : le survol révèle le glyphe */
+/* .cap-btn.X (classe composée) bat systématiquement le futur "button:hover"
+   générique ci-dessous (B=2 > B=1) -- la bille garde sa vraie couleur même
+   survolée, jamais blanche comme une capsule ordinaire. */
+.cap-btn.cap-close { background: var(--ball-close); border-color: var(--ball-close-edge); order: -1; }
+.cap-btn.cap-min   { background: var(--ball-min);   border-color: var(--ball-min-edge);   order: 0; }
+.cap-btn.cap-max   { background: var(--ball-max);   border-color: var(--ball-max-edge);   order: 1; }
+
+.cap-min span, .cap-max span, .cap-close span {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font: 700 9px/1 var(--font-ui);
+  opacity: 0;                                   /* glyphes révélés au survol du GROUPE */
+  transition: opacity var(--transition-state);
+}
+.titlebar-buttons:hover .cap-btn span { opacity: 1; }
+.cap-min span::before, .cap-max span::before, .cap-close span::before {
+  position: static; background: none; border: none; height: auto; width: auto; transform: none; line-height: 1;
+}
+.cap-min span::before   { content: "\2013"; color: var(--ball-min-glyph); }
+.cap-max span::before   { content: "+";      color: var(--ball-max-glyph); }
+.cap-close span::before { content: "\00D7"; color: var(--ball-close-glyph); }
+.cap-close span::after  { content: none; }      /* une seule glyphe (×), pas deux barres croisées */
+
+/* ---------- Onglets : segmenté à segment blanc flottant (§9) ------------- */
+.tabbar {
+  background: var(--track-fill);
+  border-bottom: none;
+  border-radius: var(--radius-capsule);
+  padding: 2px;
+  margin: var(--space-4) var(--space-5) 0;
+  gap: 2px;
+}
+.tab-btn {
+  min-width: 0;
+  height: auto;
+  padding: 5px 16px;
+  border: none;
+  border-radius: var(--radius-capsule);
+  background: none;
+  box-shadow: none;
+  font-weight: 500;
+  transition: background var(--transition-state), box-shadow var(--transition-state);
+}
+.tab-btn:hover:not(.active) { filter: none; background: rgba(255,255,255,.45); }
+.tab-btn.active {
+  background: var(--seg-active);
+  box-shadow: var(--shadow-segment);
+  font-weight: 600;
+}
+
+/* ---------- Capsules : le survol EXISTE (contrairement à 2001) ---------- */
+button {
+  min-width: var(--button-min-width);
+  height: var(--control-height);
+  padding: 0 14px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-capsule);
+  background: var(--capsule);
+  box-shadow: var(--capsule-shadow), var(--glass-shine);
+  color: var(--text-primary);
+  transition: background var(--transition-state), border-color var(--transition-state),
+              color var(--transition-state), box-shadow var(--transition-state);
+}
+button:hover { background: var(--capsule-hover); }
+button:active { background: var(--capsule-pressed); }
+button:focus-visible { outline: none; box-shadow: var(--capsule-shadow), var(--glass-shine), var(--focus-ring); }
+button:disabled { opacity: .4; }
+
+/* Une SEULE capsule pleine accent par vue (interdit §10.6) : le CTA
+   "Démarrer" de chaque page (Add / Share ne sont jamais visibles ensemble). */
+.start-btn {
+  background: var(--accent);
+  border-color: transparent;
+  color: #fff;
+  font-weight: 500;
+  box-shadow: var(--capsule-shadow);
+}
+.start-btn:hover { background: var(--accent-hover); }
+.start-btn:active { background: var(--accent-pressed); }
+
+.row-actions button {
+  min-width: 0;
+  height: 22px;
+  padding: 0 10px;
+  font-size: 11px;
+  box-shadow: none;
+}
+
+/* ---------- Champs : mats, concentriques (radius 10 -- PAS carrés : c'est
+   l'inversion propre à Tahoe vs Aqua, STYLE.md §1 "champs carrés -> concentriques") */
+input[type="text"], input[type="number"], .search-input {
+  background: var(--surface-field);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-field);
+  height: var(--control-height);
+  padding: 0 10px;
+  color: var(--text-primary);
+  transition: border-color var(--transition-state), box-shadow var(--transition-state);
+}
+input[type="text"]:hover, input[type="number"]:hover, .search-input:hover { border-color: var(--hairline-strong); }
+input[type="text"]:focus, input[type="number"]:focus, .search-input:focus {
+  border-color: var(--accent); box-shadow: var(--focus-ring); outline: none;
+}
+textarea {
+  background: var(--surface-field);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-field);
+  padding: 6px 10px;
+  min-height: 64px;
+  resize: none;
+}
+textarea:focus { border-color: var(--accent); box-shadow: var(--focus-ring); outline: none; }
+/* Menu déroulant : capsule à chevrons bleus (recette exacte de components.html) */
+select {
+  appearance: none; -webkit-appearance: none;
+  height: var(--control-height);
+  padding: 0 30px 0 12px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-capsule);
+  color: var(--text-primary);
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='13'%3E%3Cpath d='M4.5 0L8 4.5H1Z' fill='%23007AFF'/%3E%3Cpath d='M4.5 13L1 8.5H8Z' fill='%23007AFF'/%3E%3C/svg%3E") right 10px center/9px 13px no-repeat, var(--capsule);
+  box-shadow: var(--capsule-shadow), var(--glass-shine);
+  transition: background var(--transition-state), box-shadow var(--transition-state);
+}
+select:hover {
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='13'%3E%3Cpath d='M4.5 0L8 4.5H1Z' fill='%23007AFF'/%3E%3Cpath d='M4.5 13L1 8.5H8Z' fill='%23007AFF'/%3E%3C/svg%3E") right 10px center/9px 13px no-repeat, var(--capsule-hover);
+}
+select:focus { outline: none; box-shadow: var(--capsule-shadow), var(--glass-shine), var(--focus-ring); }
+
+/* ---------- Case à cocher : coche blanche sur accent, radius 5 ---------- */
+input[type="checkbox"] {
+  appearance: none; -webkit-appearance: none;
+  margin: 0;
+  width: var(--checkbox-size);
+  height: var(--checkbox-size);
+  border: 1px solid var(--hairline);
+  border-radius: 5px;
+  background: var(--surface-field);
+  box-shadow: 0 1px 1px rgba(0,0,0,.06);
+  display: inline-grid;
+  place-content: center;
+  transition: background var(--transition-state), border-color var(--transition-state);
+}
+input[type="checkbox"]:hover { border-color: var(--hairline-strong); }
+input[type="checkbox"]:checked { background: var(--accent); border-color: transparent; }
+input[type="checkbox"]:checked::after {
+  content: "";
+  width: 11px; height: 11px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11'%3E%3Cpath d='M2 6l2.6 2.6L9 2.5' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat center;
+}
+input[type="checkbox"]:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+input[type="checkbox"]:disabled { opacity: .4; }
+
+/* ---------- Listes : sélection en PILULE INSÉRÉE, jamais en bande bord à
+   bord (interdit §10.7) -- fix structurel, pas seulement une couleur. ---- */
+.listbox, .profile-group, .details-group {
+  border-color: var(--border-group);   /* hairline-soft, pas la hairline pleine des contrôles */
+}
+.profile-group h3, .details-group h3 { font-weight: 600; }
+
+.row, .share-row, .downloads-row, .scan-row {
+  border-bottom: none;
+  border-radius: var(--radius-item);
+  margin: 1px 4px;
+  transition: background var(--transition-state), color var(--transition-state);
+}
+.row:hover, .share-row:hover, .downloads-row:hover, .scan-row:hover { background: var(--track-fill); }
+.downloads-row-header {
+  border-radius: 0;
+  margin: 0;
+  background: none;
+  border-bottom: 1px solid var(--hairline-strong);
+}
+#downloadsList .row.selected {
+  background: var(--accent);
+  color: #fff;
+  border-radius: var(--radius-item);
+}
+.row-name { font-weight: 600; }
+.row-state, .row-eta, .row-peers, .row-category { color: var(--text-soft); }
+.row-rate { color: var(--text-primary); }
+/* Texte secondaire "délavé blanc" sur pilule accent, comme .menu-item.is-hl */
+.row.selected .row-state, .row.selected .row-eta,
+.row.selected .row-peers, .row.selected .row-category { color: rgba(255,255,255,.75); }
+.scan-path { font-weight: 500; }
+.scan-size { color: var(--text-soft); }
+
+/* ---------- Menu déroulant : verre + item en pilule insérée (§9) -------- */
+.context-menu {
+  background: var(--glass-panel);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-radius: var(--radius-panel);
+  box-shadow: var(--shadow-menu), var(--glass-shine);
+  padding: 5px;
+}
+.context-menu-item {
+  border-radius: var(--radius-item);
+  margin: 0 1px;
+}
+.context-menu-separator { margin: 5px 6px; }
+
+/* ---------- Boîte de dialogue : chrome de verre (§2/§9) ------------------ */
+.modal-overlay { background: rgba(0,0,0,.25); }
+.modal-box {
+  background: var(--glass-panel);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-radius: var(--radius-panel);
+  box-shadow: var(--shadow-window), var(--glass-shine);
+}
+.modal-box h3 { font-weight: 700; }
+
+/* ---------- Défilement en surimpression : pouce fin, pas de flèches (§9) */
+::-webkit-scrollbar { width: var(--scrollbar-size); height: var(--scrollbar-size); }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background-color: var(--scroll-thumb);
+  border: 3px solid transparent;
+  background-clip: padding-box;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover { border-width: 2px; }
+::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+::-webkit-scrollbar-corner { background: transparent; }
+
+/* ---------- Jauge de progression : cadre plat, sans lustre (§9) --------- */
+canvas.tetris {
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-item);
+  background: var(--progress-rail);
+  box-shadow: inset 0 1px 2px rgba(0,0,0,.08);
+}

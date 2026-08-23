@@ -1,0 +1,662 @@
+/* ==========================================================================
+   MEMPHIS — tokens.css — spike port v1.0
+   Style : "Memphis (Milano 1981)"
+   Rôle  : port du thème Memphis vers le contrat structurel de l'app
+   (même forme que resources/web/spike/themes/luna_xp/tokens.css).
+   Source de vérité design : resources/web/charters/Charte graphique/
+   Memphis (Milano 1981)/{tokens.css,STYLE.md,components.html}.
+   Le groupe de Sottsass (Milan, 1981) : rose, turquoise, jaune qui
+   s'entrechoquent sur creme, cernes noirs, squiggles Bacterio, formes
+   empilees de guingois. L'anti-Bauhaus assume : les formes citent
+   Kandinsky et le contredisent.
+   ========================================================================== */
+
+:root {
+
+  /* ========================================================
+     1. PRIMITIVES — palette Memphis
+     ======================================================== */
+  /* Creme d'expo et encre */
+  --mp-cream:    #FAF3E3;  /* la fenetre */
+  --mp-white:    #FFFFFF;  /* champs, plaques */
+  --mp-ink:      #141414;  /* cernes, textes */
+  --mp-soft:     #6E675C;
+  --mp-disabled: #B5AC9C;
+
+  /* Le trio pop */
+  --mp-pink:     #F25C9B;  --mp-pink-dk: #C93A78;
+  --mp-teal:     #35C1B5;  --mp-teal-dk: #1F8F86;
+  --mp-yellow:   #FFD23F;
+
+  --tooltip-bg: var(--mp-white);
+  --tooltip-fg: var(--mp-ink);
+
+  /* ========================================================
+     2. SÉMANTIQUES
+     ======================================================== */
+  --surface-desktop:  var(--mp-cream);   /* bureau creme a squiggles (--squiggle) */
+  --surface-window:   var(--mp-cream);
+  --surface-field:    var(--mp-white);
+  --surface-panel:    var(--mp-white);   /* plaques : listbox, menu, tab-panel, fieldset */
+  --surface-tooltip:  var(--tooltip-bg);
+
+  --text-primary:     var(--mp-ink);
+  --text-soft:        var(--mp-soft);
+  --text-disabled:    var(--mp-disabled);
+  --text-inverse:     var(--mp-white);   /* texte clair sur plein fonce (danger, badge d'encre) */
+
+  --title-active-text:   var(--text-primary);   /* pas de barre de titre coloree : encre sur creme */
+  --title-inactive-text: var(--mp-disabled);
+  --selection-bg:     var(--mp-yellow);         /* le bandeau jaune a encre */
+  --selection-text:   var(--mp-ink);
+
+  /* Generic aliases consumed by resources/web/spike/*.css -- every theme
+     must define these. Memphis ne distingue pas la couleur de bordure par
+     type de controle (a la difference de Luna) : la doctrine est UN seul
+     cerne d'encre 2px partout -- boutons, champs, group box, jauge,
+     onglets. D'ou les cinq alias qui pointent tous vers --mp-ink : la
+     re-resolution live de var() suffit a suivre encre -> craie en dark. */
+  --border-control:  var(--mp-ink);
+  --border-field:    var(--mp-ink);
+  --border-group:    var(--mp-ink);
+  --border-progress: var(--mp-ink);
+  --border-tab:      var(--mp-ink);
+  --text-legend:     var(--mp-ink);   /* legend/section title : encre + puce rose decorative */
+
+  /* ========================================================
+     3. LA DISSONANCE — la signature du style.
+     Toute la matiere est un APLAT cerne d'encre 2px : AUCUN degrade,
+     AUCUN relief, AUCUN biseau (interdit #3 du STYLE.md). Ce que Luna
+     fait par le plastique, Memphis le fait par l'ombre pleine coloree
+     qui permute (repos ROSE -> survol TURQUOISE -> appui resorbee).
+     ======================================================== */
+  /* Recettes tokenisees (natives Memphis) */
+  --sh-pink:   4px 4px 0 var(--mp-pink);
+  --sh-teal:   4px 4px 0 var(--mp-teal);
+  --sh-yellow: 4px 4px 0 var(--mp-yellow);
+  --squiggle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='14'%3E%3Cpath d='M0 7q3.2-6 6.5 0t6.5 0 6.5 0 6.5 0' fill='none' stroke='%23141414' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+
+  /* "Plastique" requis par l'app : aucun relief n'existe dans cette charte
+     (interdit), donc aplat 2-arrets de la meme teinte -- syntaxe gradient
+     exigee par le site d'utilisation, rendu 100% plat. Memphis ne fonce
+     jamais le fond au clic (seuls l'ombre et le translate(4px,4px)
+     bougent), donc raised == pressed ici : c'est le choix fidele. */
+  --plastic-raised:  linear-gradient(var(--mp-white), var(--mp-white));
+  --plastic-pressed: linear-gradient(var(--mp-white), var(--mp-white));
+
+  /* Barre de titre : creme unie (le squiggle est une COUCHE separee, pas
+     un degrade) -- il n'y a pas de bleu de chrome a citer ici. */
+  --gradient-title-active:   linear-gradient(var(--mp-cream), var(--mp-cream));
+  --gradient-title-inactive: linear-gradient(var(--mp-cream), var(--mp-cream));
+
+  /* Boutons de titre : dans la charte, le fond du bouton reste creme et
+     seule la forme (SVG) porte la couleur -- cercle ROSE (reduire),
+     triangle TURQUOISE penche (agrandir), carre JAUNE penche (fermer).
+     Pour les deux emplacements generiques exiges ici, on reprend les
+     couleurs doctrinales reelles plutot qu'un aplat creme invisible :
+     rose pour le generique (reduire/agrandir), jaune pour Fermer (sa
+     vraie teinte dans la charte -- Memphis n'associe pas le danger au
+     bouton Fermer, la dissonance est le principe). */
+  --gradient-titlebtn:       linear-gradient(var(--mp-pink), var(--mp-pink));
+  --gradient-titlebtn-close: linear-gradient(var(--mp-yellow), var(--mp-yellow));
+
+  /* Cases & radios : aplats, pas de degrade (voir composants) */
+  --gradient-check:         linear-gradient(var(--mp-white), var(--mp-white));
+  --gradient-check-pressed: linear-gradient(var(--mp-yellow), var(--mp-yellow));
+
+  /* Jauge de progression : remplissage TURQUOISE en aplat (indeterminee =
+     hachures jaunes, echec = rose, gerees par les classes d'etat, pas ici) */
+  --gradient-progress: linear-gradient(var(--mp-teal), var(--mp-teal));
+
+  /* ========================================================
+     4. OMBRES — l'autre signature de Memphis : PLEINES, COLOREES,
+     jamais noires ni grises sur l'actif (interdit #2).
+     ======================================================== */
+  --shadow-window:          7px 7px 0 var(--mp-teal);      /* la fenetre aussi joue */
+  --shadow-window-inactive: 7px 7px 0 var(--mp-disabled);  /* stand demonte : le jeu s'arrete */
+  --shadow-menu:            5px 5px 0 var(--mp-pink);
+
+  --frame-shadow: var(--shadow-window);
+  --glow-hover:   var(--sh-teal);   /* le survol EST la permutation d'ombre vers turquoise */
+
+  --title-text-shadow: none;   /* aucun relief/halo : interdit #3 */
+
+  /* ========================================================
+     5. TYPOGRAPHIE
+     ======================================================== */
+  --font-ui:    Verdana, "DejaVu Sans", Geneva, Tahoma, sans-serif;
+  --font-title: var(--font-ui);           /* pas de police d'affichage dediee : meme humaniste, gras */
+  --font-mono:  "Courier New", Consolas, monospace;
+  --font-size-base:  13px;
+  --font-size-title: 14px;
+  --line-height: 1.5;
+
+  /* ========================================================
+     6. MÉTRIQUES & ESPACEMENT
+     ======================================================== */
+  --unit: 4px;
+  --space-1: 2px;  --space-2: 4px;  --space-3: 8px;
+  --space-4: 12px; --space-5: 16px; --space-6: 24px;
+
+  --control-height: 32px;        /* boutons */
+  --field-height: var(--control-height);   /* champs & selects : meme hauteur que les boutons */
+  --button-min-width: 100px;
+  --titlebar-height: 38px;
+  --titlebar-btn: var(--wm-size);          /* 22x22, les formes depareillees */
+  --wm-size: 22px;
+  --scrollbar-size: 12px;
+  --checkbox-size: 17px;
+  --icon-small: 16px;  --icon-large: 32px;
+
+  --radius-control: 2px;
+  --radius-window:  2px;
+  --radius-group:   2px;
+  --radius-field:   2px;          /* rayon discret 2px partout (pas de zero absolu, pas de capsule) */
+
+  /* ========================================================
+     7. ÉTATS & DIVERS
+     ======================================================== */
+  --focus-ring: 2px dashed var(--mp-ink);   /* offset 3, natif Memphis */
+  --focus-outline: var(--focus-ring);       /* alias generique exige par l'app */
+  --cursor-interactive: var(--cursor-default);   /* flèche, pas de main (hors hyperliens) */
+  --transition-state: .14s ease;
+  --transition: var(--transition-state);    /* alias generique exige par l'app */
+
+  /* ========================================================
+     8. CURSEURS — mêmes 14 actions que toutes les chartes.
+     Corps CREME cerne d'encre ; l'attente est l'anneau
+     rose-turquoise (le jeu tourne) ; « ? » rose.
+     --cur-img-* = image seule · --cursor-* = image + point chaud + secours
+     ======================================================== */
+  --cur-img-default: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.35' transform='translate(1.5,1.5)'%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23FAF3E3' stroke='%23141414' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-link: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.35' transform='translate(1.5,1.5)'%3E%3Cpolygon points='10,2 13,2 13,9 16,9 19,11 19,15 16,20 9,20 5,14 5,12 7,11 10,14' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='10,2 13,2 13,9 16,9 19,11 19,15 16,20 9,20 5,14 5,12 7,11 10,14' fill='%23FAF3E3' stroke='%23141414' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpath d='M13.5 11v4M16 12v3' stroke='%23141414' stroke-width='.9' stroke-linecap='round'/%3E%3C/svg%3E");
+  --cur-img-text: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg fill='none' stroke='%23fff' stroke-width='4.2' stroke-linecap='round'%3E%3Cpath d='M8 3h6M11 3v18M8 21h6'/%3E%3C/g%3E%3Cg fill='none' stroke='%23141414' stroke-width='1.6' stroke-linecap='round'%3E%3Cpath d='M8 3h6M11 3v18M8 21h6'/%3E%3C/g%3E%3C/svg%3E");
+  --cur-img-wait: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.35' transform='translate(1.5,1.5)'%3E%3Ccircle cx='12' cy='12' r='7.5' fill='none' stroke='%23000' stroke-width='5'/%3E%3C/g%3E%3Ccircle cx='12' cy='12' r='7.5' fill='none' stroke='%23fff' stroke-width='5.6'/%3E%3Ccircle cx='12' cy='12' r='7.5' fill='none' stroke='%23F25C9B' stroke-width='4'/%3E%3Cpath d='M12 4.5A7.5 7.5 0 0 1 19.5 12' fill='none' stroke='%2335C1B5' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E");
+  --cur-img-progress: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.35' transform='translate(1.5,1.5)'%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23000' stroke='%23000' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/g%3E%3Cg opacity='.35' transform='translate(1.5,1.5)'%3E%3Ccircle cx='17.5' cy='17.5' r='4.6' fill='none' stroke='%23000' stroke-width='3.4'/%3E%3C/g%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23FAF3E3' stroke='%23141414' stroke-width='1.6' stroke-linejoin='round'/%3E%3Ccircle cx='17.5' cy='17.5' r='4.6' fill='none' stroke='%23fff' stroke-width='4.6'/%3E%3Ccircle cx='17.5' cy='17.5' r='4.6' fill='none' stroke='%23F25C9B' stroke-width='3'/%3E%3Cpath d='M17.5 12.9A4.6 4.6 0 0 1 22.1 17.5' fill='none' stroke='%2335C1B5' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E");
+  --cur-img-help: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.35' transform='translate(1.5,1.5)'%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23000' stroke='%23000' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23FAF3E3' stroke='%23141414' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpath d='M14.5 6c0-2.6 6.5-2.6 6.5 0c0 2.2-3.2 2-3.2 4.4' fill='none' stroke='%23fff' stroke-width='3.8' stroke-linecap='round'/%3E%3Cpath d='M14.5 6c0-2.6 6.5-2.6 6.5 0c0 2.2-3.2 2-3.2 4.4' fill='none' stroke='%23F25C9B' stroke-width='1.8' stroke-linecap='round'/%3E%3Ccircle cx='17.9' cy='13.8' r='1.7' fill='%23fff'/%3E%3Ccircle cx='17.9' cy='13.8' r='1.1' fill='%23F25C9B'/%3E%3C/svg%3E");
+  --cur-img-crosshair: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg fill='none' stroke='%23fff' stroke-width='4.2'%3E%3Cpath d='M12 3v18M3 12h18'/%3E%3C/g%3E%3Cg fill='none' stroke='%23141414' stroke-width='1.6'%3E%3Cpath d='M12 3v18M3 12h18'/%3E%3C/g%3E%3C/svg%3E");
+  --cur-img-not-allowed: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg fill='none' stroke='%23fff' stroke-width='5.4'%3E%3Ccircle cx='12' cy='12' r='8'/%3E%3Cpath d='M6.5 6.5l11 11'/%3E%3C/g%3E%3Cg fill='none' stroke='%23141414' stroke-width='2.4'%3E%3Ccircle cx='12' cy='12' r='8'/%3E%3Cpath d='M6.5 6.5l11 11'/%3E%3C/g%3E%3C/svg%3E");
+  --cur-img-resize-v: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.35' transform='translate(1.5,1.5)'%3E%3Cpolygon points='12,1 17,7 14,7 14,17 17,17 12,23 7,17 10,17 10,7 7,7' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='12,1 17,7 14,7 14,17 17,17 12,23 7,17 10,17 10,7 7,7' fill='%23FAF3E3' stroke='%23141414' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-resize-h: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.35' transform='translate(1.5,1.5)'%3E%3Cpolygon points='1,12 7,7 7,10 17,10 17,7 23,12 17,17 17,14 7,14 7,17' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='1,12 7,7 7,10 17,10 17,7 23,12 17,17 17,14 7,14 7,17' fill='%23FAF3E3' stroke='%23141414' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-resize-nwse: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.35' transform='translate(1.5,1.5)'%3E%3Cpath d='M7 7l10 10' stroke='%23000' stroke-width='4.6'/%3E%3Cpolygon points='4,4 12,4 4,12' fill='%23000'/%3E%3Cpolygon points='20,20 12,20 20,12' fill='%23000'/%3E%3C/g%3E%3Cpath d='M7 7l10 10' stroke='%23fff' stroke-width='4'/%3E%3Cpath d='M7 7l10 10' stroke='%23141414' stroke-width='1.8'/%3E%3Cpolygon points='4,4 12,4 4,12' fill='%23FAF3E3' stroke='%23141414' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpolygon points='20,20 12,20 20,12' fill='%23FAF3E3' stroke='%23141414' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-resize-nesw: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.35' transform='translate(1.5,1.5)'%3E%3Cpath d='M17 7L7 17' stroke='%23000' stroke-width='4.6'/%3E%3Cpolygon points='20,4 12,4 20,12' fill='%23000'/%3E%3Cpolygon points='4,20 12,20 4,12' fill='%23000'/%3E%3C/g%3E%3Cpath d='M17 7L7 17' stroke='%23fff' stroke-width='4'/%3E%3Cpath d='M17 7L7 17' stroke='%23141414' stroke-width='1.8'/%3E%3Cpolygon points='20,4 12,4 20,12' fill='%23FAF3E3' stroke='%23141414' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpolygon points='4,20 12,20 4,12' fill='%23FAF3E3' stroke='%23141414' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-move: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.35' transform='translate(1.5,1.5)'%3E%3Cpolygon points='12,1 15,5 13,5 13,19 15,19 12,23 9,19 11,19 11,5 9,5' fill='%23000'/%3E%3Cpolygon points='1,12 5,9 5,11 19,11 19,9 23,12 19,15 19,13 5,13 5,15' fill='%23000'/%3E%3C/g%3E%3Cg fill='%23FAF3E3' stroke='%23141414' stroke-width='1.6' stroke-linejoin='round'%3E%3Cpolygon points='12,1 15,5 13,5 13,19 15,19 12,23 9,19 11,19 11,5 9,5'/%3E%3Cpolygon points='1,12 5,9 5,11 19,11 19,9 23,12 19,15 19,13 5,13 5,15'/%3E%3C/g%3E%3Cpolygon points='12,1 15,5 13,5 13,19 15,19 12,23 9,19 11,19 11,5 9,5' fill='%23FAF3E3'/%3E%3Cpolygon points='1,12 5,9 5,11 19,11 19,9 23,12 19,15 19,13 5,13 5,15' fill='%23FAF3E3'/%3E%3C/svg%3E");
+  --cur-img-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.35' transform='translate(1.5,1.5)'%3E%3Cpolygon points='12,2 18,9 14,9 14,20 10,20 10,9 6,9' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='12,2 18,9 14,9 14,20 10,20 10,9 6,9' fill='%23FAF3E3' stroke='%23141414' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+
+  /* Curseurs composés : image + point chaud + secours système */
+  --cursor-default:     var(--cur-img-default) 2 2, default;
+  --cursor-link:        var(--cur-img-link) 11 3, pointer;
+  --cursor-text:        var(--cur-img-text) 11 12, text;
+  --cursor-wait:        var(--cur-img-wait) 12 12, wait;
+  --cursor-progress:    var(--cur-img-progress) 2 2, progress;
+  --cursor-help:        var(--cur-img-help) 2 2, help;
+  --cursor-crosshair:   var(--cur-img-crosshair) 12 12, crosshair;
+  --cursor-not-allowed: var(--cur-img-not-allowed) 12 12, not-allowed;
+  --cursor-resize-v:    var(--cur-img-resize-v) 12 12, ns-resize;
+  --cursor-resize-h:    var(--cur-img-resize-h) 12 12, ew-resize;
+  --cursor-resize-nwse: var(--cur-img-resize-nwse) 12 12, nwse-resize;
+  --cursor-resize-nesw: var(--cur-img-resize-nesw) 12 12, nesw-resize;
+  --cursor-move:        var(--cur-img-move) 12 12, move;
+  --cursor-up:          var(--cur-img-up) 12 3, default;
+
+  /* ================================================== ICONS:BEGIN
+     9. ICÔNES — navigation & fichiers (14), tokenisées comme les
+     curseurs, aplats cernes d'encre dans la matiere du style.
+     NOTE DE PORT : 5 de ces icones (search/back/forward/up/refresh)
+     étaient doublement (ou triplement) enveloppées dans un url(...)
+     supplémentaire dans le tokens.css source de la charte -- un SVG
+     invalide qui ne se serait pas affiché. Dépaquetées ici vers le
+     seul niveau data-URI valide ; les tracés et couleurs sont
+     inchangés (aucune valeur inventée, juste l'enveloppe en trop
+     retirée).
+     ======================================================== */
+  --icon-folder: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M2.5 6h6.5l2 2.5h10.5v11h-19z' fill='%23FFD23F' stroke='%23141414' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M2.5 6h6.5l2 2.5h-9z' fill='%23F25C9B' stroke='%23141414' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-folder-open: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M2.5 6h6.5l2 2.5h9.5v3h-18z' fill='%23F25C9B' stroke='%23141414' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M4.8 11.5h16.7l-2.6 8H2.5z' fill='%23FFD23F' stroke='%23141414' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-file: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M6 2.5h8l4.5 4.5v14.5h-12.5z' fill='%23FFFFFF' stroke='%23141414' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M14 2.5v4.5h4.5z' fill='%2335C1B5' stroke='%23141414' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-file-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M6 2.5h8l4.5 4.5v14.5h-12.5z' fill='%23FFFFFF' stroke='%23141414' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M14 2.5v4.5h4.5z' fill='%2335C1B5' stroke='%23141414' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3Ccircle cx='10' cy='11' r='1.5' fill='%23F25C9B'/%3E%3Cpath d='M8 18l2.7-3.6 1.9 2.3 1.5-1.9 2.4 3.2z' fill='%23F25C9B'/%3E%3C/svg%3E");
+  --icon-drive: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M3 9h18v6.5H3z' fill='%23FFFFFF' stroke='%23141414' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3Ccircle cx='17.3' cy='12.2' r='1.2' fill='%23F25C9B'/%3E%3Cpath d='M6 12.2h6' fill='none' stroke='%23141414' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-home: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M5.5 11.5h13v8.5h-13z' fill='%23FFFFFF' stroke='%23141414' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M12 3.2L21.2 11H2.8z' fill='%23F25C9B' stroke='%23141414' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M10.3 20v-4.8h3.4V20z' fill='%2335C1B5'/%3E%3C/svg%3E");
+  --icon-computer: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M3.5 4.5h17v11h-17z' fill='%23FFFFFF' stroke='%23141414' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M5.5 6.5h13v7h-13z' fill='%23F25C9B'/%3E%3Cpath d='M12 15.5v3M8.5 19.5h7' fill='none' stroke='%23141414' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-network: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M4 3.5h6v5H4z' fill='%23FFFFFF' stroke='%23141414' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M14 3.5h6v5H14z' fill='%23FFFFFF' stroke='%23141414' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M9 15.5h6v5H9z' fill='%23F25C9B' stroke='%23141414' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M7 8.5v3.5h10V8.5M12 12v3.5' fill='none' stroke='%23141414' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-trash: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M6.7 8.5h10.6l-1 12h-8.6z' fill='%23FFFFFF' stroke='%23141414' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M4.8 6h14.4v2.5H4.8z' fill='%23F25C9B' stroke='%23141414' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M9.4 6V3.8h5.2V6z' fill='%23FFFFFF' stroke='%23141414' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M10.3 11v6.5M13.7 11v6.5' fill='none' stroke='%23141414' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-search: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Ccircle cx='10.4' cy='10.4' r='5.6' fill='none' stroke='%23141414' stroke-width='1.6'/%3E%3Cpath d='M14.7 14.7L20 20' fill='none' stroke='%23141414' stroke-width='1.9' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-back: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M14.5 5.5L8 12l6.5 6.5' fill='none' stroke='%23141414' stroke-width='1.6' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-forward: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M9.5 5.5L16 12l-6.5 6.5' fill='none' stroke='%23141414' stroke-width='1.6' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M12 19.5V6M6.5 11.5L12 6l5.5 5.5' fill='none' stroke='%23141414' stroke-width='1.6' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M5.5 21h13' fill='none' stroke='%23141414' stroke-width='1.6' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-refresh: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M18.9 13a7 7 0 1 1-1.8-6.3' fill='none' stroke='%23141414' stroke-width='1.6' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M19.4 3.6v4.9h-4.9' fill='none' stroke='%23141414' stroke-width='1.6' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  /* ICONS:END */
+}
+
+/* DARK:BEGIN — thème sombre : "Milano by night". La creme devient nuit
+   chaude, l'encre devient craie -- rose/turquoise/jaune traversent tels
+   quels, les ombres pleines colorees claquent plus fort ; la selection
+   garde son encre de JOUR sur le jaune. Toutes les sémantiques et les
+   extras du §2-7 ci-dessus re-résolvent seuls via var(), donc seules les
+   primitives + les icônes (SVG figées, non tokenisables en interne) sont
+   redéfinies ici. */
+[data-theme="dark"] {
+  --mp-cream: #1E1B18;
+  --mp-white: #28241F;
+  --mp-ink: #F4EDDD;
+  --mp-soft: #B5AC9C;
+  --mp-disabled: #6E675E;
+  --selection-text: #141414;   /* l'encre du jour reste sur le jaune */
+  --squiggle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='14'%3E%3Cpath d='M0 7q3.2-6 6.5 0t6.5 0 6.5 0 6.5 0' fill='none' stroke='%23F4EDDD' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+
+  /* icônes surchargées pour le fond sombre (mêmes tracés, encre -> craie ;
+     dépaquetées du même bug d'enveloppe url() en trop que ci-dessus) */
+  --icon-folder: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M2.5 6h6.5l2 2.5h10.5v11h-19z' fill='%23FFD23F' stroke='%23F4EDDD' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M2.5 6h6.5l2 2.5h-9z' fill='%23F25C9B' stroke='%23F4EDDD' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-folder-open: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M2.5 6h6.5l2 2.5h9.5v3h-18z' fill='%23F25C9B' stroke='%23F4EDDD' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M4.8 11.5h16.7l-2.6 8H2.5z' fill='%23FFD23F' stroke='%23F4EDDD' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-file: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M6 2.5h8l4.5 4.5v14.5h-12.5z' fill='%2328241F' stroke='%23F4EDDD' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M14 2.5v4.5h4.5z' fill='%2335C1B5' stroke='%23F4EDDD' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-file-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M6 2.5h8l4.5 4.5v14.5h-12.5z' fill='%2328241F' stroke='%23F4EDDD' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M14 2.5v4.5h4.5z' fill='%2335C1B5' stroke='%23F4EDDD' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3Ccircle cx='10' cy='11' r='1.5' fill='%23F25C9B'/%3E%3Cpath d='M8 18l2.7-3.6 1.9 2.3 1.5-1.9 2.4 3.2z' fill='%23F25C9B'/%3E%3C/svg%3E");
+  --icon-drive: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M3 9h18v6.5H3z' fill='%2328241F' stroke='%23F4EDDD' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3Ccircle cx='17.3' cy='12.2' r='1.2' fill='%23F25C9B'/%3E%3Cpath d='M6 12.2h6' fill='none' stroke='%23F4EDDD' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-home: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M5.5 11.5h13v8.5h-13z' fill='%2328241F' stroke='%23F4EDDD' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M12 3.2L21.2 11H2.8z' fill='%23F25C9B' stroke='%23F4EDDD' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M10.3 20v-4.8h3.4V20z' fill='%2335C1B5'/%3E%3C/svg%3E");
+  --icon-computer: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M3.5 4.5h17v11h-17z' fill='%2328241F' stroke='%23F4EDDD' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M5.5 6.5h13v7h-13z' fill='%23F25C9B'/%3E%3Cpath d='M12 15.5v3M8.5 19.5h7' fill='none' stroke='%23F4EDDD' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-network: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M4 3.5h6v5H4z' fill='%2328241F' stroke='%23F4EDDD' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M14 3.5h6v5H14z' fill='%2328241F' stroke='%23F4EDDD' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M9 15.5h6v5H9z' fill='%23F25C9B' stroke='%23F4EDDD' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M7 8.5v3.5h10V8.5M12 12v3.5' fill='none' stroke='%23F4EDDD' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-trash: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M6.7 8.5h10.6l-1 12h-8.6z' fill='%2328241F' stroke='%23F4EDDD' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M4.8 6h14.4v2.5H4.8z' fill='%23F25C9B' stroke='%23F4EDDD' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M9.4 6V3.8h5.2V6z' fill='%2328241F' stroke='%23F4EDDD' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M10.3 11v6.5M13.7 11v6.5' fill='none' stroke='%23F4EDDD' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-search: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='10.4' cy='10.4' r='5.6' fill='none' stroke='%23F4EDDD' stroke-width='1.6'/%3E%3Cpath d='M14.7 14.7L20 20' fill='none' stroke='%23F4EDDD' stroke-width='1.9' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-back: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M14.5 5.5L8 12l6.5 6.5' fill='none' stroke='%23F4EDDD' stroke-width='1.6' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-forward: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M9.5 5.5L16 12l-6.5 6.5' fill='none' stroke='%23F4EDDD' stroke-width='1.6' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M12 19.5V6M6.5 11.5L12 6l5.5 5.5' fill='none' stroke='%23F4EDDD' stroke-width='1.6' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M5.5 21h13' fill='none' stroke='%23F4EDDD' stroke-width='1.6' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-refresh: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M18.9 13a7 7 0 1 1-1.8-6.3' fill='none' stroke='%23F4EDDD' stroke-width='1.6' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M19.4 3.6v4.9h-4.9' fill='none' stroke='%23F4EDDD' stroke-width='1.6' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+/* DARK:END */
+
+/* HC:BEGIN — contraste élevé (AAA >= 7:1). Le stand au maximum : creme et
+   plaques passent au blanc pur, le rose profond descend a #A02258, le
+   turquoise-lien a #0E5A54 ; le jaune porte deja l'encre a 13:1. L'encre
+   elle-meme (#141414) reste inchangee -- deja assez sombre sur blanc.
+   Aucune icône n'est resurchargée : les tracés du :root (encre #141414)
+   restent lisibles sur le blanc pur de ce mode. */
+[data-theme="hc"] {
+  --mp-cream: #FFFFFF;
+  --mp-white: #FFFFFF;
+  --mp-soft: #575757;
+  --mp-disabled: #767676;
+  --mp-pink: #F98BB8;
+  --mp-pink-dk: #A02258;
+  --mp-teal-dk: #0E5A54;
+}
+/* HC:END */
+
+
+
+/* --- Base recommandée (à copier dans l'app) ------------------------------ */
+/*
+body {
+  margin: 0;
+  background: var(--surface-desktop);
+  background-image: var(--squiggle);
+  color: var(--text-primary);
+  font: 400 var(--font-size-base)/var(--line-height) var(--font-ui);
+  cursor: var(--cursor-default);
+}
+::selection { background: var(--selection-bg); color: var(--selection-text); }
+a { color: var(--mp-teal-dk); cursor: var(--cursor-link); }
+input[type=text], textarea { cursor: var(--cursor-text); }
+*/
+
+/* ==========================================================================
+   STRUCTURAL COMPOSITION -- Memphis's real component shapes, ported from
+   this folder's own components.html (not a color reskin of style.css's
+   generic grid). Loaded last in index.html's link order, so plain selectors
+   here beat style.css's same-specificity rules by cascade order alone -- no
+   !important anywhere below. Where a style.css rule has HIGHER specificity
+   (an extra class, e.g. ".form-grid input[type=text]"), that exact selector
+   is repeated here so the override actually lands.
+   The one doctrine that shapes almost everything below: the FULL COLORED
+   SHADOW (--sh-pink at rest, permuting to --sh-teal on hover, resorbed by
+   translate(4px,4px) on press) -- no gradients, no bevels, no relief
+   anywhere (interdit #3), and never a black/grey shadow on an active
+   control (interdit #2, reserved for :disabled and .is-inactive). ---------- */
+
+/* ---------- Window chrome : la dissonance de Kandinsky, citée et contredite
+   -- cercle ROSE (réduire), triangle TURQUOISE penché 14°, carré JAUNE
+   penché -10° (fermer). Le bouton lui-même reste creme/transparent : c'est
+   la FORME qui porte la couleur, jamais la boîte (interdit #3 : pas de
+   plaque colorée en relief ici). ---------- */
+.titlebar {
+  /* The shared style.css paints .titlebar with --gradient-title-active
+     (a full-cover value on most charters). Memphis's frieze is an SVG with
+     transparent gaps between the wave strokes, so it needs an explicit
+     solid backdrop of its own -- otherwise the transparent <body> beneath
+     (kept transparent on purpose for the rounded-corner window trick) would
+     show through the gaps instead of cream. */
+  background: var(--mp-cream);
+  background-image: var(--squiggle);
+  background-size: 26px 14px;
+  border-bottom: 2px solid var(--mp-ink);
+}
+.titlebar-drag { min-width: 0; }   /* lets .titlebar-title's ellipsis actually engage */
+.titlebar-title {
+  background: var(--mp-cream);
+  padding: 2px 10px;
+}
+.titlebar-buttons { gap: 9px; }
+.cap-btn, .cap-close {
+  background: var(--surface-window);
+  border: none;
+  box-shadow: none;
+  cursor: var(--cursor-interactive);
+}
+.cap-btn:hover, .cap-close:hover, .cap-btn:active, .cap-close:active { filter: none; }
+.cap-min span, .cap-close span {
+  display: flex; align-items: center; justify-content: center;
+  transition: transform var(--transition-state);
+}
+.cap-max span { transition: transform var(--transition-state); }
+.cap-btn:hover span { transform: scale(1.12); }
+.cap-btn:active span { transform: scale(.94); }
+
+/* Réduire : cercle rose cerné d'encre */
+.cap-min span::before {
+  content: "";
+  position: static;
+  width: 13px; height: 13px;
+  border-radius: 50%;
+  background: var(--mp-pink);
+  border: 2px solid var(--mp-ink);
+}
+/* Agrandir : triangle turquoise penché 14° -- deux triangles empilés
+   (encre dessous, un peu plus grand ; turquoise dessus) pour simuler le
+   cerne 2px que le "border-trick" ne peut pas dessiner en une seule passe. */
+.cap-max span::before,
+.cap-max span::after {
+  content: "";
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 0; height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+}
+.cap-max span::before {
+  border-bottom: 14px solid var(--mp-ink);
+  transform: translate(-50%, -50%) rotate(14deg);
+}
+.cap-max span::after {
+  border-left-width: 6px;
+  border-right-width: 6px;
+  border-bottom: 10px solid var(--mp-teal);
+  transform: translate(-50%, calc(-50% + 2px)) rotate(14deg);
+}
+/* Fermer : carré jaune penché -10° cerné d'encre */
+.cap-close span::before {
+  content: "";
+  position: static;
+  width: 12px; height: 12px;
+  border-radius: 0;
+  background: var(--mp-yellow);
+  border: 2px solid var(--mp-ink);
+  transform: rotate(-10deg);
+}
+.cap-close span::after { content: none; }
+
+/* ---------- Onglets : cernés, penchés en alternance ±1.5°, l'actif se
+   redresse et jaunit ---------- */
+.tabbar { border-bottom: none; gap: 6px; align-items: flex-end; }
+.tab-btn {
+  min-width: auto; height: auto;
+  padding: 6px 16px;
+  background: var(--mp-white);
+  border: 2px solid var(--mp-ink);
+  border-radius: var(--radius-control);
+  font-weight: 600;
+  transform: rotate(-1.5deg);
+}
+.tab-btn:nth-child(2n) { transform: rotate(1.5deg); }
+.tab-btn:hover:not(.active) { box-shadow: 2px 2px 0 var(--mp-teal); }
+.tab-btn.active {
+  background: var(--mp-yellow);
+  color: var(--selection-text);
+  transform: rotate(0);
+  font-weight: 700;
+  box-shadow: 3px 3px 0 var(--mp-pink);
+}
+
+/* ---------- Boutons : ombre pleine ROSE au repos, permute au TURQUOISE au
+   survol, se résorbe (translate 4,4) à l'appui -- l'objet ne change jamais
+   de forme, seule son ombre parle. ---------- */
+button {
+  min-width: var(--button-min-width);
+  height: var(--control-height);
+  padding: 0 16px;
+  background: var(--mp-white);
+  border: 2px solid var(--mp-ink);
+  border-radius: var(--radius-control);
+  box-shadow: var(--sh-pink);
+  color: var(--text-primary);
+  font: 700 13px var(--font-ui);
+  cursor: var(--cursor-interactive);
+  transition: box-shadow var(--transition-state), transform var(--transition-state);
+}
+button:not(:disabled):hover { box-shadow: var(--sh-teal); }
+button:not(:disabled):active { transform: translate(4px, 4px); box-shadow: none; }
+button:focus-visible { outline: var(--focus-ring); outline-offset: 3px; }
+button:disabled {
+  border-color: var(--mp-disabled);
+  color: var(--text-disabled);
+  box-shadow: 4px 4px 0 var(--mp-disabled);
+  cursor: var(--cursor-default);
+}
+
+/* Bouton par défaut : seul fond ROSE de l'interface (STYLE.md §7) */
+.start-btn {
+  min-width: var(--button-min-width);
+  height: var(--control-height);
+  padding: 0 20px;
+  border: 2px solid var(--mp-ink);
+  border-radius: var(--radius-control);
+  background: var(--mp-pink);
+  color: var(--selection-text);
+  box-shadow: var(--sh-teal);
+  font-weight: 700;
+}
+.start-btn:hover { box-shadow: var(--sh-yellow); }
+.start-btn:active {
+  transform: translate(4px, 4px);
+  box-shadow: none;
+  background: var(--mp-pink-dk);
+  color: var(--mp-white);
+}
+
+/* Actions de ligne : même doctrine, ombre réduite à l'échelle du contrôle */
+.row-actions button {
+  min-width: 0; height: auto;
+  padding: 4px 10px;
+  font-size: 12px;
+  background: var(--mp-white);
+  border: 2px solid var(--mp-ink);
+  border-radius: var(--radius-control);
+  box-shadow: 2px 2px 0 var(--mp-pink);
+}
+.row-actions button:not(:disabled):hover { box-shadow: 2px 2px 0 var(--mp-teal); }
+.row-actions button:not(:disabled):active { transform: translate(2px, 2px); box-shadow: none; }
+
+/* ---------- Champs : blancs, cernés d'encre, ombre TURQUOISE ; le focus
+   fait permuter l'ombre au ROSE (l'inverse des boutons -- la dissonance
+   encore) ---------- */
+input[type="text"], input[type="number"], select, textarea, .search-input {
+  height: var(--control-height);
+  padding: 0 10px;
+  background: var(--mp-white);
+  border: 2px solid var(--mp-ink);
+  border-radius: var(--radius-field);
+  box-shadow: var(--sh-teal);
+  color: var(--text-primary);
+  font: 400 13px var(--font-ui);
+}
+.form-grid input[type="text"], .form-grid input[type="number"] {
+  height: var(--control-height);
+  padding: 0 10px;
+  background: var(--mp-white);
+  border: 2px solid var(--mp-ink);
+  border-radius: var(--radius-field);
+  box-shadow: var(--sh-teal);
+}
+textarea { height: auto; min-height: 64px; padding: 8px 10px; resize: vertical; }
+input[type="text"]:not(:disabled):hover, input[type="number"]:not(:disabled):hover,
+textarea:not(:disabled):hover, select:not(:disabled):hover, .search-input:not(:disabled):hover {
+  box-shadow: var(--sh-yellow);
+}
+input[type="text"]:focus, input[type="number"]:focus, textarea:focus, select:focus, .search-input:focus {
+  outline: var(--focus-ring);
+  outline-offset: 3px;
+  box-shadow: var(--sh-pink);
+}
+input:disabled, textarea:disabled {
+  border-color: var(--mp-disabled);
+  color: var(--text-disabled);
+  box-shadow: 4px 4px 0 var(--mp-disabled);
+}
+select {
+  appearance: none; -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23141414' stroke-width='2'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 28px;
+}
+
+/* ---------- Cases à cocher : coche d'encre sur fond JAUNE ---------- */
+input[type="checkbox"] {
+  appearance: none; -webkit-appearance: none;
+  margin: 0; vertical-align: middle;
+  width: var(--checkbox-size); height: var(--checkbox-size);
+  background: var(--mp-white);
+  border: 2px solid var(--mp-ink);
+  border-radius: 0;
+  position: relative;
+  display: inline-block;
+}
+input[type="checkbox"]:not(:disabled):hover { box-shadow: 2px 2px 0 var(--mp-teal); }
+input[type="checkbox"]:checked { background: var(--mp-yellow); }
+input[type="checkbox"]:checked::after {
+  content: "";
+  position: absolute; left: 4px; top: 1px;
+  width: 5px; height: 9px;
+  border: solid var(--mp-ink);
+  border-width: 0 2.5px 2.5px 0;
+  transform: rotate(40deg);
+}
+input[type="checkbox"]:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
+input[type="checkbox"]:disabled { border-color: var(--mp-disabled); }
+
+/* ---------- Listes : plaque blanche cernée à ombre jaune ; survol =
+   lavis turquoise transparent (is-hot du spécimen) ; sélection = bandeau
+   jaune à encre noire ---------- */
+.listbox {
+  background: var(--mp-white);
+  border: 2px solid var(--mp-ink);
+  border-radius: var(--radius-field);
+  box-shadow: var(--sh-yellow);
+  padding: 0;
+}
+.row:hover:not(.selected) { background: rgba(53, 193, 181, .18); }
+.row.selected { background: var(--selection-bg); color: var(--selection-text); font-weight: 600; }
+
+/* Colonnes du tableau (Téléchargements/Partage/Analyse) : en-tête en bandeau
+   JAUNE (le "th doctrinal" du spécimen, phase 2), l'état en petite plaque
+   cernée à ombre rose (le badge du spécimen), le reste des chiffres en
+   encre douce -- jamais un simple héritage de la grille générique. */
+.downloads-row-header {
+  background: var(--mp-yellow);
+  color: var(--selection-text);
+  border-bottom: 2px solid var(--mp-ink);
+  font-weight: 700;
+  font-size: 12px;
+}
+.share-row, .downloads-row, .scan-row { border-bottom: 1px solid var(--mp-ink); }
+.row-name { font-weight: 700; }
+.row-state {
+  display: inline-block;
+  padding: 1px 8px;
+  background: var(--mp-white);
+  border: 2px solid var(--mp-ink);
+  border-radius: var(--radius-control);
+  box-shadow: 2px 2px 0 var(--mp-pink);
+  font-weight: 600;
+  font-size: .82em;
+}
+.row-rate, .row-eta, .row-category, .row-peers { color: var(--text-soft); }
+.scan-path { color: var(--text-primary); }
+.scan-size { color: var(--text-soft); }
+
+/* ---------- Group box : cerne d'encre, ombre jaune ; puce rose devant le
+   titre (même geste que les en-têtes de section du spécimen, faute d'un
+   vrai <legend> posé sur le filet) ---------- */
+.profile-group, .details-group {
+  background: var(--mp-white);
+  border: 2px solid var(--mp-ink);
+  border-radius: var(--radius-field);
+  box-shadow: var(--sh-yellow);
+}
+.profile-group h3, .details-group h3 {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+.profile-group h3::before, .details-group h3::before {
+  content: "\25CF  ";
+  color: var(--mp-pink);
+}
+
+/* ---------- Menu contextuel : plaque blanche cernée, ombre rose 5×5 ;
+   l'item au pointeur prend le bandeau jaune ---------- */
+.context-menu {
+  background: var(--mp-white);
+  border: 2px solid var(--mp-ink);
+  border-radius: var(--radius-field);
+  box-shadow: var(--shadow-menu);
+  padding: 4px 0;
+}
+.context-menu-item { padding: 6px 14px; }
+.context-menu-item:hover { background: var(--mp-yellow); color: var(--selection-text); }
+.context-menu-separator { height: 2px; background: var(--mp-ink); margin: 4px 10px; }
+
+/* ---------- Dialogue : plaque crème cernée à ombre ROSE 7×7 (pas la
+   turquoise de la fenêtre principale -- la dissonance encore) ; carré
+   jaune penché devant le titre gras (STYLE.md §9) ---------- */
+.modal-overlay { background: rgba(20, 20, 20, .42); }
+.modal-box {
+  background: var(--surface-window);
+  border: 2px solid var(--mp-ink);
+  border-radius: var(--radius-window);
+  box-shadow: 7px 7px 0 var(--mp-pink);
+  padding: 0 var(--space-5) var(--space-5);
+  gap: var(--space-3);
+}
+.modal-box h3 {
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14.5px;
+  font-weight: 700;
+  background: none;
+}
+.modal-box h3::before {
+  content: "";
+  width: 12px; height: 12px;
+  background: var(--mp-yellow);
+  border: 2px solid var(--mp-ink);
+  transform: rotate(-10deg);
+  flex: 0 0 auto;
+}
+
+/* ---------- Défilement : pouce rose rectangulaire, turquoise au survol,
+   SANS FLÈCHES (STYLE.md §7 -- "sans fleches") ---------- */
+::-webkit-scrollbar { width: var(--scrollbar-size); height: var(--scrollbar-size); }
+::-webkit-scrollbar-track { background: var(--mp-white); border: 1.5px solid var(--mp-ink); }
+::-webkit-scrollbar-thumb { background: var(--mp-pink); border: 1.5px solid var(--mp-ink); border-radius: 0; }
+::-webkit-scrollbar-thumb:hover { background: var(--mp-teal); }
+::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+::-webkit-scrollbar-corner { background: transparent; }
+
+/* ---------- Jauge de progression (cadre autour du canvas Tetris) : piste
+   blanche cernée d'encre, ombre ROSE -- le remplissage turquoise/hachures
+   jaunes/rose d'échec restent des pixels Canvas, hors de portée CSS ---------- */
+canvas.tetris {
+  border: 2px solid var(--mp-ink);
+  border-radius: var(--radius-control);
+  background: var(--mp-white);
+  box-shadow: var(--sh-pink);
+}

@@ -1,0 +1,35 @@
+/* Profile tab -- "Advanced/Rules" group (routing rules + settings profiles).
+   Reuses .form-grid/.field-row/.field-label/.status-line/.start-btn/.listbox/
+   .row-actions from style.css; this file only adds the sub-section heading
+   and the routing-rules table row, which nothing else in the app needed yet. */
+
+.profile-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-bottom: var(--space-4);
+  margin-bottom: var(--space-4);
+  border-bottom: 1px solid var(--border-group);
+}
+.profile-section:last-child { border-bottom: none; }
+
+.profile-section-heading {
+  margin: 0;
+  font-size: var(--font-size-base);
+  font-weight: bold;
+  color: var(--text-legend);
+}
+
+.rule-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 110px 1fr 160px;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--border-group);
+}
+.rule-row:last-child { border-bottom: none; }
+.rule-header { font-weight: bold; color: var(--text-legend); border-bottom: 1px solid var(--border-tab); }
+.rule-cell { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+#arRulesList { max-height: 220px; }

@@ -1,0 +1,636 @@
+/* ==========================================================================
+   NEXTSTEP — tokens.css — v1.0 (spike port)
+   Style : "NeXTSTEP (1989)"
+   Rôle  : SOURCE DE VÉRITÉ des variables. Port fidèle de la charte propre
+   (resources/web/charters/Charte graphique/NeXTSTEP/) vers le contrat
+   structurel de resources/web/spike (cf. luna_xp/tokens.css, référence).
+   Lire  : STYLE.md (règles & interdits) · components.html (référence visuelle)
+   L'ancêtre direct de macOS et la première charte SOMBRE de la collection :
+   quatre gris, une barre de titre noire, des biseaux de deux pixels — et le
+   glyphe Retour sur le bouton par défaut. Aucune couleur, aucun dégradé,
+   aucun survol : le relief (biseau/puits) porte toute la matière.
+   ========================================================================== */
+
+:root {
+
+  /* ========================================================
+     1. PRIMITIVES — les quatre gris NeXT (+ noir, + blanc)
+     ======================================================== */
+  --nx-white: #FFFFFF;
+  --nx-light: #D5D5D5;
+  --nx-face:  #ABABAB;
+  --nx-dark:  #6E6E6E;
+  --nx-black: #000000;
+  --nx-ink:   #000000;
+  --nx-ink-soft: #4A4A4A;
+  --nx-ink-disabled: #7E7E7E;
+
+  /* Biseaux 2 px */
+  --nx-bevel-light: #E2E2E2;
+  --nx-bevel-dark:  #5C5C5C;
+
+  --tooltip-bg: #E8E8E8;
+  --desktop: #565656;         /* aplat sombre, bureau — sans dégradé */
+
+  /* ========================================================
+     2. SÉMANTIQUES
+     ======================================================== */
+  --surface-window:   var(--nx-face);
+  --surface-field:    var(--nx-white);   /* champs = puits blancs */
+  --surface-desktop:  var(--desktop);
+  --surface-tooltip:  var(--tooltip-bg);
+  --surface-panel:    var(--nx-light);   /* corps d'onglet */
+
+  --text-primary:     var(--nx-ink);
+  --text-soft:        var(--nx-ink-soft);
+  --text-disabled:    var(--nx-ink-disabled);
+  --text-inverse:     var(--nx-white);
+
+  --selection-bg:      var(--nx-white);   /* la sélection est BLANCHE */
+  --selection-text:    #000000;
+  --title-active-text:   var(--nx-white);
+  --title-inactive-text: var(--nx-light);
+
+  /* Generic aliases consumed by resources/web/spike/*.css. NeXTSTEP n'a
+     qu'UN trait : noir, 1 px, partout (boutons, champs, group box, onglets,
+     jauge) — voir components.html. Pas de hiérarchie de bordures comme Luna,
+     c'est le relief (biseau/puits), pas la couleur du trait, qui distingue
+     les états. Définis une fois ici (pas répétés dans [data-theme="hc"]
+     ci-dessous) : var() se ré-résout en direct contre --nx-black courant. */
+  --border-control:  var(--nx-black);
+  --border-field:    var(--nx-black);
+  --border-group:    var(--nx-black);
+  --border-progress: var(--nx-black);
+  --border-tab:      var(--nx-black);
+  --text-legend:     var(--nx-ink);   /* legend : pas d'accent, juste gras noir */
+
+  /* ========================================================
+     3. LE RELIEF MONOCHROME — la signature du style.
+     Le relief remplace le dégradé : plateaux --nx-face à biseaux de
+     2 px (--bevel-out), enfoncement par inversion (--bevel-in), puits
+     blancs pour les champs (--well). AUCUN dégradé, hex compris — les
+     propriétés "plastic-*"/"gradient-*" ci-dessous que le CSS partagé de
+     l'app exige sont donc des APLATS 2-arrêts de même teinte : elles
+     restent du type gradient() attendu par le point de consommation
+     tout en rendant un remplissage plat, fidèle à l'interdit §8 de
+     STYLE.md ("Dégradés — ce style n'en contient AUCUN").
+     ======================================================== */
+  --bevel-out: inset 2px 2px 0 var(--nx-bevel-light),
+               inset -2px -2px 0 var(--nx-bevel-dark);
+  --bevel-in:  inset 2px 2px 0 var(--nx-bevel-dark),
+               inset -2px -2px 0 var(--nx-bevel-light);
+  --well: inset 1px 1px 0 var(--nx-bevel-dark),
+          inset -1px -1px 0 var(--nx-bevel-light);
+
+  --plastic-raised:  linear-gradient(var(--nx-face),var(--nx-face));   /* plateau au repos */
+  --plastic-pressed: linear-gradient(var(--nx-dark),var(--nx-dark));   /* pressé : fond --nx-dark, texte blanc */
+
+  --gradient-title-active:   linear-gradient(var(--nx-black),var(--nx-black));  /* barre NOIRE unie */
+  --gradient-titlebtn:       linear-gradient(var(--nx-face),var(--nx-face));    /* carré biseauté, Miniaturiser */
+  --gradient-titlebtn-close: linear-gradient(var(--nx-face),var(--nx-face));    /* carré biseauté, Fermer — MÊME plateau, zéro rouge */
+  --gradient-progress:       linear-gradient(var(--nx-dark),var(--nx-dark));    /* jauge : remplissage plat --nx-dark */
+
+  /* ========================================================
+     4. OMBRES
+     ======================================================== */
+  --shadow-window: 0 16px 34px rgba(0,0,0,.55), 0 2px 8px rgba(0,0,0,.4);
+  --shadow-window-inactive: 0 8px 18px rgba(0,0,0,.35);
+  --shadow-menu: 4px 4px 0 rgba(0,0,0,.45);
+  --frame-shadow: var(--shadow-window);
+  --glow-hover: none;   /* "Survolé | N'EXISTE PAS (1989)" — STYLE.md §7 */
+
+  /* ========================================================
+     5. TYPOGRAPHIE
+     ======================================================== */
+  --font-ui:    Helvetica, "Helvetica Neue", Arial, "Liberation Sans", sans-serif;
+  --font-title: var(--font-ui);   /* pas de police d'affichage dédiée */
+  --font-mono:  "Courier New", Courier, monospace;
+  --font-size-base:  13px;
+  --font-size-title: 13px;      /* BLANC, GRAS, centré sur le noir */
+  --line-height: 1.4;
+  --title-text-shadow: none;    /* aucune ombre portée sur le texte du titre */
+
+  /* ========================================================
+     6. MÉTRIQUES & ESPACEMENT
+     ======================================================== */
+  --unit: 4px;
+  --space-1: 2px; --space-2: 4px; --space-3: 6px;
+  --space-4: 8px; --space-5: 12px; --space-6: 16px;
+  --pad-body: 12px;
+
+  --control-height: 26px;
+  --field-height: var(--control-height);   /* pas de hauteur de champ distincte */
+  --button-min-width: 76px;
+  --titlebar-height: 24px;
+  --titlebar-btn: var(--wm-size);          /* carré Miniaturiser/Fermer */
+  --wm-size: 16px;
+  --checkbox-size: 15px;
+  --toggle-w: 44px; --toggle-h: 20px;      /* adaptation biseautée */
+  --scrollbar-size: 17px;                  /* A GAUCHE */
+  --icon-small: 16px; --icon-large: 32px;
+
+  --radius: 2px;
+  --radius-control: var(--radius);
+  --radius-group:   var(--radius);
+  --radius-window:  var(--radius);         /* rayon 2 px uniforme, presque carré */
+
+  /* ========================================================
+     7. ÉTATS & MOUVEMENT
+     ======================================================== */
+  --transition-state: .1s ease;
+  --transition: var(--transition-state);
+  --focus-ring: 1px dotted var(--nx-black);   /* pointillé, offset -5 px */
+  --focus-outline: var(--focus-ring);
+  --cursor-interactive: var(--cursor-default);
+
+  /* ========================================================
+     8. CURSEURS — mêmes 14 actions que toutes les chartes.
+     Matière NeXT : corps NOIRS à liseré blanc, attente = le
+     DISQUE optique (six secteurs de gris) qui tournait déjà
+     avant le beachball.
+     ======================================================== */
+  --cur-img-default: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.3' transform='translate(1.5,1.5)'%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%231A1A1A' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-link: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.3' transform='translate(1.5,1.5)'%3E%3Cpolygon points='10,2 13,2 13,9 16,9 19,11 19,15 16,20 9,20 5,14 5,12 7,11 10,14' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='10,2 13,2 13,9 16,9 19,11 19,15 16,20 9,20 5,14 5,12 7,11 10,14' fill='%231A1A1A' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpath d='M13.5 11v4M16 12v3' stroke='%23fff' stroke-width='.9' stroke-linecap='round'/%3E%3C/svg%3E");
+  --cur-img-text: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg fill='none' stroke='%23fff' stroke-width='4.2' stroke-linecap='round'%3E%3Cpath d='M8 3h6M11 3v18M8 21h6'/%3E%3C/g%3E%3Cg fill='none' stroke='%231A1A1A' stroke-width='1.6' stroke-linecap='round'%3E%3Cpath d='M8 3h6M11 3v18M8 21h6'/%3E%3C/g%3E%3C/svg%3E");
+  --cur-img-wait: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.3' transform='translate(1,1.5)'%3E%3Ccircle cx='12' cy='12' r='9' fill='%23000'/%3E%3C/g%3E%3Cg transform='translate(12 12)'%3E%3Cpath d='M0 0L0 -9A9 9 0 0 1 7.79 -4.50Z' fill='%23E6E6E6'/%3E%3Cpath d='M0 0L7.79 -4.50A9 9 0 0 1 7.79 4.50Z' fill='%23B8B8B8'/%3E%3Cpath d='M0 0L7.79 4.50A9 9 0 0 1 0 9Z' fill='%238A8A8A'/%3E%3Cpath d='M0 0L0 9A9 9 0 0 1 -7.79 4.50Z' fill='%235E5E5E'/%3E%3Cpath d='M0 0L-7.79 4.50A9 9 0 0 1 -7.79 -4.50Z' fill='%238A8A8A'/%3E%3Cpath d='M0 0L-7.79 -4.50A9 9 0 0 1 0 -9Z' fill='%23B8B8B8'/%3E%3C/g%3E%3Ccircle cx='12' cy='12' r='9' fill='none' stroke='%23fff' stroke-width='1.6'/%3E%3C/svg%3E");
+  --cur-img-progress: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.3' transform='translate(1.5,1.5)'%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23000' stroke='%23000' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/g%3E%3Cg opacity='.3' transform='translate(1.5,1.5)'%3E%3Ccircle cx='17.5' cy='17.5' r='5.2' fill='%23000'/%3E%3C/g%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%231A1A1A' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cg transform='translate(17.5 17.5)'%3E%3Cpath d='M0 0L0 -5.2A5.2 5.2 0 0 1 4.50 -2.60Z' fill='%23E6E6E6'/%3E%3Cpath d='M0 0L4.50 -2.60A5.2 5.2 0 0 1 4.50 2.60Z' fill='%23B8B8B8'/%3E%3Cpath d='M0 0L4.50 2.60A5.2 5.2 0 0 1 0 5.2Z' fill='%238A8A8A'/%3E%3Cpath d='M0 0L0 5.2A5.2 5.2 0 0 1 -4.50 2.60Z' fill='%235E5E5E'/%3E%3Cpath d='M0 0L-4.50 2.60A5.2 5.2 0 0 1 -4.50 -2.60Z' fill='%238A8A8A'/%3E%3Cpath d='M0 0L-4.50 -2.60A5.2 5.2 0 0 1 0 -5.2Z' fill='%23B8B8B8'/%3E%3C/g%3E%3Ccircle cx='17.5' cy='17.5' r='5.2' fill='none' stroke='%23fff' stroke-width='1.4'/%3E%3C/svg%3E");
+  --cur-img-help: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.3' transform='translate(1.5,1.5)'%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23000' stroke='%23000' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%231A1A1A' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpath d='M14.5 6c0-2.6 6.5-2.6 6.5 0c0 2.2-3.2 2-3.2 4.4' fill='none' stroke='%23fff' stroke-width='3.8' stroke-linecap='round'/%3E%3Cpath d='M14.5 6c0-2.6 6.5-2.6 6.5 0c0 2.2-3.2 2-3.2 4.4' fill='none' stroke='%23000000' stroke-width='1.8' stroke-linecap='round'/%3E%3Ccircle cx='17.9' cy='13.8' r='1.7' fill='%23fff'/%3E%3Ccircle cx='17.9' cy='13.8' r='1.1' fill='%23000000'/%3E%3C/svg%3E");
+  --cur-img-crosshair: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg fill='none' stroke='%23fff' stroke-width='4.2'%3E%3Cpath d='M12 3v18M3 12h18'/%3E%3C/g%3E%3Cg fill='none' stroke='%231A1A1A' stroke-width='1.6'%3E%3Cpath d='M12 3v18M3 12h18'/%3E%3C/g%3E%3C/svg%3E");
+  --cur-img-not-allowed: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg fill='none' stroke='%23fff' stroke-width='5.4'%3E%3Ccircle cx='12' cy='12' r='8'/%3E%3Cpath d='M6.5 6.5l11 11'/%3E%3C/g%3E%3Cg fill='none' stroke='%231A1A1A' stroke-width='2.4'%3E%3Ccircle cx='12' cy='12' r='8'/%3E%3Cpath d='M6.5 6.5l11 11'/%3E%3C/g%3E%3C/svg%3E");
+  --cur-img-resize-v: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.3' transform='translate(1.5,1.5)'%3E%3Cpolygon points='12,1 17,7 14,7 14,17 17,17 12,23 7,17 10,17 10,7 7,7' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='12,1 17,7 14,7 14,17 17,17 12,23 7,17 10,17 10,7 7,7' fill='%231A1A1A' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-resize-h: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.3' transform='translate(1.5,1.5)'%3E%3Cpolygon points='1,12 7,7 7,10 17,10 17,7 23,12 17,17 17,14 7,14 7,17' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='1,12 7,7 7,10 17,10 17,7 23,12 17,17 17,14 7,14 7,17' fill='%231A1A1A' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-resize-nwse: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.3' transform='translate(1.5,1.5)'%3E%3Cpath d='M7 7l10 10' stroke='%23000' stroke-width='4.6'/%3E%3Cpolygon points='4,4 12,4 4,12' fill='%23000'/%3E%3Cpolygon points='20,20 12,20 20,12' fill='%23000'/%3E%3C/g%3E%3Cpath d='M7 7l10 10' stroke='%23fff' stroke-width='4'/%3E%3Cpath d='M7 7l10 10' stroke='%231A1A1A' stroke-width='1.8'/%3E%3Cpolygon points='4,4 12,4 4,12' fill='%231A1A1A' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpolygon points='20,20 12,20 20,12' fill='%231A1A1A' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-resize-nesw: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.3' transform='translate(1.5,1.5)'%3E%3Cpath d='M17 7L7 17' stroke='%23000' stroke-width='4.6'/%3E%3Cpolygon points='20,4 12,4 20,12' fill='%23000'/%3E%3Cpolygon points='4,20 12,20 4,12' fill='%23000'/%3E%3C/g%3E%3Cpath d='M17 7L7 17' stroke='%23fff' stroke-width='4'/%3E%3Cpath d='M17 7L7 17' stroke='%231A1A1A' stroke-width='1.8'/%3E%3Cpolygon points='20,4 12,4 20,12' fill='%231A1A1A' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpolygon points='4,20 12,20 4,12' fill='%231A1A1A' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-move: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.3' transform='translate(1.5,1.5)'%3E%3Cpolygon points='12,1 15,5 13,5 13,19 15,19 12,23 9,19 11,19 11,5 9,5' fill='%23000'/%3E%3Cpolygon points='1,12 5,9 5,11 19,11 19,9 23,12 19,15 19,13 5,13 5,15' fill='%23000'/%3E%3C/g%3E%3Cg fill='%231A1A1A' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'%3E%3Cpolygon points='12,1 15,5 13,5 13,19 15,19 12,23 9,19 11,19 11,5 9,5'/%3E%3Cpolygon points='1,12 5,9 5,11 19,11 19,9 23,12 19,15 19,13 5,13 5,15'/%3E%3C/g%3E%3Cpolygon points='12,1 15,5 13,5 13,19 15,19 12,23 9,19 11,19 11,5 9,5' fill='%231A1A1A'/%3E%3Cpolygon points='1,12 5,9 5,11 19,11 19,9 23,12 19,15 19,13 5,13 5,15' fill='%231A1A1A'/%3E%3C/svg%3E");
+  --cur-img-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.3' transform='translate(1.5,1.5)'%3E%3Cpolygon points='12,2 18,9 14,9 14,20 10,20 10,9 6,9' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='12,2 18,9 14,9 14,20 10,20 10,9 6,9' fill='%231A1A1A' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+
+  /* Curseurs composés : image + point chaud + secours système */
+  --cursor-default:     var(--cur-img-default) 2 2, default;
+  --cursor-link:        var(--cur-img-link) 11 3, pointer;
+  --cursor-text:        var(--cur-img-text) 11 12, text;
+  --cursor-wait:        var(--cur-img-wait) 12 12, wait;
+  --cursor-progress:    var(--cur-img-progress) 2 2, progress;
+  --cursor-help:        var(--cur-img-help) 2 2, help;
+  --cursor-crosshair:   var(--cur-img-crosshair) 12 12, crosshair;
+  --cursor-not-allowed: var(--cur-img-not-allowed) 12 12, not-allowed;
+  --cursor-resize-v:    var(--cur-img-resize-v) 12 12, ns-resize;
+  --cursor-resize-h:    var(--cur-img-resize-h) 12 12, ew-resize;
+  --cursor-resize-nwse: var(--cur-img-resize-nwse) 12 12, nwse-resize;
+  --cursor-resize-nesw: var(--cur-img-resize-nesw) 12 12, nesw-resize;
+  --cursor-move:        var(--cur-img-move) 12 12, move;
+  --cursor-up:          var(--cur-img-up) 12 3, default;
+
+  /* ================================================== ICONS:BEGIN
+     9. ICÔNES — navigation & fichiers (14), tokenisées
+     comme les curseurs : SVG data-URI dessinés dans la
+     matière du style. À consommer en background-image :
+     background: var(--icon-folder) center/contain no-repeat;
+     Jamais d'image externe, jamais d'emoji.
+     ======================================================== */
+  --icon-folder: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='4,9 7,6 20,6 17,9' fill='%23DCDCDC' stroke='%23000000' stroke-width='1.1' stroke-linejoin='round'/%3E%3Crect x='4' y='9' width='13' height='10' fill='%23B4B4B4' stroke='%23000000' stroke-width='1.2'/%3E%3Cpath d='M17 9l3-3v10l-3 3z' fill='%237C7C7C' stroke='%23000000' stroke-width='1.1' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-folder-open: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='4,9 7,6 20,6 17,9' fill='%23DCDCDC' stroke='%23000000' stroke-width='1.1' stroke-linejoin='round'/%3E%3Cpath d='M17 9l3-3v10l-3 3z' fill='%237C7C7C' stroke='%23000000' stroke-width='1.1' stroke-linejoin='round'/%3E%3Crect x='4' y='9' width='13' height='3' fill='%238C8C8C' stroke='%23000000' stroke-width='1.1'/%3E%3Cpolygon points='2.6,12.6 16.4,12.6 15,19 1.2,19' fill='%23C8C8C8' stroke='%23000000' stroke-width='1.2' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-file: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M7.4 3.9h8l4.5 4.5v13.1H7.4z' fill='%233A3A3A'/%3E%3Cpath d='M6 2.5h8l4.5 4.5v14.5H6z' fill='%23E8E8E8' stroke='%23000000' stroke-width='1.1' stroke-linejoin='round'/%3E%3Cpath d='M14 2.5v4.5h4.5z' fill='%23A8A8A8' stroke='%23000000' stroke-width='0.9900000000000001' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-file-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M6 2.5h8l4.5 4.5v14.5H6z' fill='%23E8E8E8' stroke='%23000000' stroke-width='1.1' stroke-linejoin='round'/%3E%3Cpath d='M14 2.5v4.5h4.5z' fill='%23A8A8A8' stroke='%23000000' stroke-width='0.9900000000000001' stroke-linejoin='round'/%3E%3Ccircle cx='10.2' cy='11.2' r='1.5' fill='%238C8C8C'/%3E%3Cpolygon points='8,18.4 10.8,14.6 12.6,16.9 14,15.1 16.4,18.4' fill='%234A4A4A'/%3E%3C/svg%3E");
+  --icon-drive: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='4,10 7,7 21,7 18,10' fill='%23DCDCDC' stroke='%23000000' stroke-width='1.1' stroke-linejoin='round'/%3E%3Crect x='4' y='10' width='14' height='6.4' fill='%23B4B4B4' stroke='%23000000' stroke-width='1.1'/%3E%3Cpath d='M18 10l3-3v6.4l-3 3z' fill='%23DCDCDC' stroke='%23000000' stroke-width='1.1' stroke-linejoin='round'/%3E%3Ccircle cx='15.6' cy='13.2' r='1' fill='%234A4A4A'/%3E%3C/svg%3E");
+  --icon-home: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='3.6,11.6 12,4.4 20.4,11.6' fill='%237C7C7C' stroke='%23000000' stroke-width='1.2' stroke-linejoin='round'/%3E%3Crect x='5.8' y='11.6' width='12.4' height='7.8' fill='%23C4C4C4' stroke='%23000000' stroke-width='1.2'/%3E%3Crect x='10.4' y='14.4' width='3.2' height='5' fill='%237C7C7C' stroke='%23000000' stroke-width='0.96'/%3E%3C/svg%3E");
+  --icon-computer: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='12,3.4 19.4,7.6 12,11.8 4.6,7.6' fill='%233D3D3D' stroke='%23000000' stroke-width='1' stroke-linejoin='round'/%3E%3Cpolygon points='4.6,7.6 12,11.8 12,20.4 4.6,16.2' fill='%231C1C1C' stroke='%23000000' stroke-width='1' stroke-linejoin='round'/%3E%3Cpolygon points='19.4,7.6 12,11.8 12,20.4 19.4,16.2' fill='%230E0E0E' stroke='%23000000' stroke-width='1' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-network: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M12 7.6L6.4 16M12 7.6l5.6 8.4M6.4 16h11.2' fill='none' stroke='%237C7C7C' stroke-width='1.5' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3Ccircle cx='12' cy='6.4' r='2.2' fill='%232A2A2A'/%3E%3Ccircle cx='5.6' cy='17' r='2.2' fill='%232A2A2A'/%3E%3Ccircle cx='18.4' cy='17' r='2.2' fill='%232A2A2A'/%3E%3C/svg%3E");
+  --icon-trash: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M7 6h10l-1 13.4H8z' fill='%23B4B4B4' stroke='%23000000' stroke-width='1.2' stroke-linejoin='round'/%3E%3Crect x='7.8' y='4.2' width='8.4' height='1.7' fill='%23DCDCDC' stroke='%23000000' stroke-width='1.1'/%3E%3C/svg%3E");
+  --icon-search: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cg transform='translate(1.6 1.6)'%3E%3Ccircle cx='10.4' cy='10.4' r='4.9' fill='none' stroke='%233A3A3A' stroke-width='2.2'/%3E%3Cpath d='M14.2 14.2l5.2 5.2' fill='none' stroke='%233A3A3A' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/g%3E%3Ccircle cx='10.4' cy='10.4' r='4.9' fill='none' stroke='%23E8E8E8' stroke-width='2.2'/%3E%3Cpath d='M14.2 14.2l5.2 5.2' fill='none' stroke='%23E8E8E8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-back: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='18.1,6.6 8.6,13.6 18.1,20.6 18.1,16.0 22.6,16.0 22.6,11.2 18.1,11.2' fill='%233A3A3A'/%3E%3Cpolygon points='16.5,5 7,12 16.5,19 16.5,14.4 21,14.4 21,9.6 16.5,9.6' fill='%23E8E8E8' stroke='%23000000' stroke-width='1.1' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-forward: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='9.1,6.6 18.6,13.6 9.1,20.6 9.1,16.0 4.6,16.0 4.6,11.2 9.1,11.2' fill='%233A3A3A'/%3E%3Cpolygon points='7.5,5 17,12 7.5,19 7.5,14.4 3,14.4 3,9.6 7.5,9.6' fill='%23E8E8E8' stroke='%23000000' stroke-width='1.1' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='6.6,13.1 13.6,6.1 20.6,13.1 16.2,13.1 16.2,21.6 11.0,21.6 11.0,13.1' fill='%233A3A3A'/%3E%3Cpolygon points='5,11.5 12,4.5 19,11.5 14.6,11.5 14.6,20 9.4,20 9.4,11.5' fill='%23E8E8E8' stroke='%23000000' stroke-width='1.1' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-refresh: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cg transform='translate(1.6 1.6)'%3E%3Cpath d='M18.6 8.2A7.6 7.6 0 1 0 19.6 14' fill='none' stroke='%233A3A3A' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpolygon points='19.9,4.4 19.9,9.8 14.7,8.6' fill='%233A3A3A'/%3E%3C/g%3E%3Cpath d='M18.6 8.2A7.6 7.6 0 1 0 19.6 14' fill='none' stroke='%23E8E8E8' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpolygon points='19.9,4.4 19.9,9.8 14.7,8.6' fill='%23E8E8E8'/%3E%3C/svg%3E");
+  /* ICONS:END */
+}
+
+/* HC:BEGIN — contraste élevé (phase 4)
+   Pas de bloc [data-theme="dark"] : NeXTSTEP est déjà la première charte
+   SOMBRE de la collection (bureau #565656, barre de titre noire) — il n'y a
+   rien à assombrir de plus. Toutes les propriétés "extra" (plastic-*,
+   gradient-*, frame-shadow…) sont composées via var(--nx-*) en section 3/4,
+   donc elles se ré-résolvent automatiquement ici sans être redéfinies. */
+[data-theme="hc"] {
+  --nx-white: #FFFFFF;
+  --nx-light: #FFFFFF;
+  --nx-face: #FFFFFF;
+  --nx-dark: #000000;
+  --nx-black: #000000;
+  --nx-ink: #000000;
+  --nx-ink-soft: #333333;
+  --nx-ink-disabled: #767676;
+  --nx-bevel-light: #000000;       /* le relief devient un trait */
+  --nx-bevel-dark: #000000;
+  --well: inset 0 0 0 2px #000000;
+  --selection-bg: #000000;
+  --selection-text: #FFFFFF;
+  --surface-window: #FFFFFF;
+  --desktop: #FFFFFF;
+  --tooltip-bg: #FFFFFF;
+  --shadow-window: 0 0 0 2px #000000;
+  --shadow-window-inactive: 0 0 0 2px #767676;
+  --shadow-menu: 0 0 0 2px #000000;
+  /* icônes en contraste élevé */
+  --icon-back: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='16.5,5 7,12 16.5,19 16.5,14.4 21,14.4 21,9.6 16.5,9.6' fill='%23000000'/%3E%3C/svg%3E");
+  --icon-forward: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='7.5,5 17,12 7.5,19 7.5,14.4 3,14.4 3,9.6 7.5,9.6' fill='%23000000'/%3E%3C/svg%3E");
+  --icon-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='5,11.5 12,4.5 19,11.5 14.6,11.5 14.6,20 9.4,20 9.4,11.5' fill='%23000000'/%3E%3C/svg%3E");
+  --icon-refresh: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M19.9 4.4v5.4l-5.2-1.2z' fill='%23000000'/%3E%3Cpath d='M18.6 8.2A7.6 7.6 0 1 0 19.6 14' fill='none' stroke='%23000000' stroke-width='2.6' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3C/svg%3E");
+  --icon-search: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='10.4' cy='10.4' r='4.9' fill='none' stroke='%23000000' stroke-width='2.1'/%3E%3Cpath d='M14.2 14.2l5.2 5.2' fill='none' stroke='%23000000' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+/* HC:END */
+
+/* --- Base recommandée (à copier dans l'app) ------------------------------ */
+/*
+body {
+  margin: 0;
+  background: var(--surface-desktop);
+  color: var(--text-primary);
+  font: 400 var(--font-size-base)/var(--line-height) var(--font-ui);
+  cursor: var(--cursor-default);
+}
+::selection { background: var(--selection-bg); color: var(--selection-text); }
+a { cursor: var(--cursor-link); }
+input[type=text], textarea { cursor: var(--cursor-text); }
+*/
+
+/* ==========================================================================
+   STRUCTURAL COMPOSITION -- NeXTSTEP's real component shapes, ported from
+   this folder's own components.html (not a color reskin of style.css's
+   generic grid). Loaded last in index.html's link order, so plain selectors
+   here beat style.css's same-specificity rules by cascade order alone --
+   no !important anywhere below. Every value is a var() reference to a
+   token already defined above (sections 1-8) -- nothing new is invented,
+   only composed the way components.html composes it: six tons, 2 px
+   bevels, a black bar, a white selection, the Retour glyph, and the
+   scrollbar living on the left.
+   ========================================================================== */
+
+/* ---------- Window chrome : barre NOIRE, titre centre, Miniaturiser
+   detache A GAUCHE (position absolue, hors du groupe de boutons), Fermer a
+   DROITE -- Agrandir absent : STYLE.md section 6 n'en liste que deux. ---------- */
+.titlebar {
+  position: relative;
+  background: var(--nx-black);
+}
+.titlebar-drag {
+  justify-content: center;
+  padding-left: 24px;   /* clears the absolutely-positioned Miniaturiser box */
+}
+.titlebar-title {
+  flex: 0 1 auto;
+  min-width: 0;
+  text-align: center;
+  padding-left: 0;
+}
+/* Only Fermer stays in this group's normal flow (Agrandir hidden,
+   Miniaturiser pulled out to position:absolute above) -- no gap needed
+   for a lone plateau. */
+.titlebar-buttons {
+  gap: 0;
+}
+.cap-btn {
+  min-width: 0;   /* cancel the generic <button> min-width set below */
+  border: 1px solid var(--nx-black);
+  background: var(--nx-face);
+  box-shadow: var(--bevel-out);
+}
+/* No hover in 1989 -- style.css's generic brightness filter is cancelled
+   here, not left to leak through (interdit #6). */
+.cap-btn:hover { filter: none; }
+.cap-btn:active {
+  background: var(--nx-dark);
+  box-shadow: var(--bevel-in);
+  filter: none;
+}
+.cap-btn:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: -4px;
+}
+.cap-min {
+  position: absolute;
+  left: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+.cap-max { display: none; }   /* pas de bouton Agrandir dans cette charte */
+/* Miniaturiser : un point noir carre plein (jamais rond -- interdit #7).
+   left/top+transform replace style.css's left/right/bottom placement, so
+   right/bottom are cancelled explicitly rather than left over-constrained. */
+.cap-min span::before {
+  left: 50%; right: auto; bottom: auto; top: 50%;
+  width: 5px; height: 5px;
+  transform: translate(-50%, -50%);
+  background: var(--nx-black);
+  border-radius: 0;
+}
+/* Fermer : style.css already draws an x from two crossed bars -- only the
+   ink changes (white -> black), the geometry stays correct as-is. */
+.cap-close span::before, .cap-close span::after {
+  background: var(--nx-black);
+}
+
+/* ---------- Onglets : plateaux SOUDES (aucun espace), l'actif s'enfonce
+   (biseau inverse) et s'eclaircit -- pas de gras, pas de survol. ---------- */
+.tabbar {
+  gap: 0;
+  border-bottom: 1px solid var(--nx-black);
+}
+.tab-btn {
+  min-width: auto;   /* cancel the generic <button> min-width set below */
+  height: 26px;
+  padding: 0 14px;
+  background: var(--nx-face);
+  border: 1px solid var(--nx-black);
+  border-right-width: 0;
+  border-radius: 0;
+  box-shadow: var(--bevel-out);
+  font: inherit;
+  color: var(--text-primary);
+  user-select: none;
+}
+.tab-btn:last-child { border-right-width: 1px; }
+.tab-btn:hover:not(.active) { filter: none; }
+.tab-btn.active {
+  background: var(--nx-light);
+  box-shadow: var(--bevel-in);
+  font-weight: 400;   /* le relief porte l'emphase, pas la graisse */
+}
+
+/* ---------- Boutons : plateau biseaute 2 px, presse = inversion sombre +
+   encre blanche, aucun survol -- l'element <button> nu cascade partout
+   (dialogues, barre d'outils du scan, details du telechargement). ---------- */
+button {
+  min-width: var(--button-min-width);
+  height: var(--control-height);
+  padding: 0 12px;
+  border: 1px solid var(--nx-black);
+  border-radius: var(--radius);
+  background: var(--nx-face);
+  box-shadow: var(--bevel-out);
+  font: inherit;
+  color: var(--text-primary);
+  cursor: var(--cursor-default);
+  user-select: none;
+}
+button:not(:disabled):active {
+  background: var(--nx-dark);
+  color: var(--nx-white);
+  box-shadow: var(--bevel-in);
+}
+button:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: -5px;
+}
+button:disabled {
+  color: var(--text-disabled);
+  box-shadow: none;
+}
+
+/* Bouton par defaut : ne se colore pas, il porte le glyphe Retour -- un
+   seul par vue (Demarrer / Demarrer le partage vivent sur des pages
+   distinctes, jamais visibles ensemble -- STYLE.md interdit #3). */
+.start-btn {
+  min-width: var(--button-min-width);
+  height: var(--control-height);
+  padding: 0 12px;
+  border: 1px solid var(--nx-black);
+  border-radius: var(--radius);
+  background: var(--nx-face);
+  box-shadow: var(--bevel-out);
+  font-weight: 400;
+}
+.start-btn::after { content: " ↩"; font-weight: 700; }
+.start-btn:active {
+  background: var(--nx-dark);
+  color: var(--nx-white);
+  box-shadow: var(--bevel-in);
+}
+
+.row-actions button {
+  min-width: 0;   /* cancel the generic <button> sizing above */
+  height: auto;
+  padding: 2px 8px;
+  border: 1px solid var(--nx-black);
+  border-radius: var(--radius);
+  background: var(--nx-face);
+  box-shadow: var(--bevel-out);
+}
+.row-actions button:not(:disabled):active {
+  background: var(--nx-dark);
+  color: var(--nx-white);
+  box-shadow: var(--bevel-in);
+}
+
+/* ---------- Champs : puits blancs, meme rayon 2 px que les boutons --
+   ce style est "presque carre" partout, pas de convention champ-carre a
+   part comme Luna (STYLE.md section 5, components.html confirme). ---------- */
+input[type="text"], input[type="number"], select, textarea, .search-input {
+  background: var(--nx-white);
+  border: 1px solid var(--nx-black);
+  border-radius: var(--radius);
+  box-shadow: var(--well);
+  height: var(--control-height);
+  padding: 0 7px;
+  font: inherit;
+  color: var(--text-primary);
+}
+.form-grid input[type="text"], .form-grid input[type="number"] {
+  background: var(--nx-white);
+  border: 1px solid var(--nx-black);
+  border-radius: var(--radius);
+  box-shadow: var(--well);
+  height: var(--control-height);
+  padding: 0 7px;
+}
+textarea { height: auto; min-height: 60px; padding: 4px 7px; resize: none; }
+input[type="text"]:not(:disabled), textarea:not(:disabled) { cursor: var(--cursor-text); }
+input[type="text"]:focus, input[type="number"]:focus, textarea:focus, select:focus, .search-input:focus {
+  outline: var(--focus-ring);
+  outline-offset: -4px;
+}
+input:disabled, textarea:disabled {
+  background: var(--nx-light);
+  color: var(--text-disabled);
+  box-shadow: none;
+}
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 1px solid var(--nx-black);
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='6'%3E%3Cpath d='M4.5 6L0 0H9Z' fill='%23000'/%3E%3C/svg%3E") right 7px center/9px 6px no-repeat, var(--nx-face);
+  box-shadow: var(--bevel-out);
+  padding-right: 24px;
+}
+
+/* ---------- Cases a cocher : puits blanc, x noir epais -- jamais de
+   rond, jamais de couleur de coche (interdit #1). ---------- */
+input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  margin: 0;
+  vertical-align: middle;
+  width: var(--checkbox-size);
+  height: var(--checkbox-size);
+  border: 1px solid var(--nx-black);
+  border-radius: 2px;
+  background: var(--nx-white);
+  box-shadow: var(--well);
+  display: inline-grid;
+  place-content: center;
+}
+input[type="checkbox"]:checked::after {
+  content: "";
+  width: 11px; height: 11px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11'%3E%3Cpath d='M2 2l7 7M9 2l-7 7' stroke='%23000' stroke-width='2.2'/%3E%3C/svg%3E") no-repeat center;
+}
+input[type="checkbox"]:disabled {
+  background: var(--nx-light);
+  box-shadow: none;
+}
+
+/* ---------- Listes : puits blanc, AUCUN rayon (le puits reste carre --
+   components.html ne pose pas de border-radius sur .listbox), ascenseur A
+   GAUCHE via l'astuce direction:rtl du specimen -- chaque ligne repasse en
+   ltr pour que sa grille de colonnes (Nom/Progression/...) ne se retourne
+   pas avec le conteneur (interdit #4). ---------- */
+.listbox {
+  background: var(--nx-white);
+  border: 1px solid var(--nx-black);
+  border-radius: 0;
+  box-shadow: var(--well);
+  direction: rtl;
+}
+.listbox > * { direction: ltr; }
+.row, .scan-row {
+  border-bottom: 1px solid var(--nx-light);
+}
+.row-name, .row-state, .row-rate, .row-eta, .row-category, .row-peers,
+.scan-path, .scan-size {
+  color: var(--text-primary);
+}
+.row-name { font-weight: 700; }
+/* En-tete de colonnes : meme recette que .tbl th de components.html
+   (plateau clair biseaute, pas une simple ligne noire). */
+.downloads-row-header {
+  background: var(--nx-face);
+  box-shadow: var(--bevel-out);
+  border-bottom: none;
+  font-weight: 700;
+}
+
+/* ---------- Groupes (Profil, details du telechargement) : recette du
+   fieldset -- pas de remplissage propre, juste le puits qui cerne, legende
+   grasse noire sans accent (STYLE.md section 4 : "pas d'accent"). ---------- */
+.profile-group, .details-group {
+  background: transparent;
+  box-shadow: var(--well);
+  padding: var(--space-5);
+}
+.profile-group h3, .details-group h3 {
+  color: var(--text-legend);
+  font-weight: 700;
+}
+/* .details-group defile reellement (overflow:auto, max-height 45% dans
+   style.css) -- .profile-group n'est qu'une carte statique dans le
+   conteneur .profile-scroll, donc seul .details-group recoit l'astuce
+   ascenseur-a-gauche. */
+.details-group {
+  direction: rtl;
+}
+.details-group > * { direction: ltr; }
+
+/* ---------- Menu contextuel : plateau biseaute + ombre franche, pointeur
+   = fond blanc/encre noire (meme selection que les listes, jamais une
+   couleur). Le vrai menu NeXT est une colonne coiffee d'une barre de titre
+   noire ; le markup partage du menu contextuel n'a pas cet emplacement de
+   titre, donc seuls le plateau et la selection sont portes ici. ---------- */
+.context-menu {
+  background: var(--nx-face);
+  border: 1px solid var(--nx-black);
+  border-radius: 0;
+  box-shadow: var(--bevel-out), var(--shadow-menu);
+}
+.context-menu-item {
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--nx-dark);
+}
+.context-menu-item:last-child { border-bottom: none; }
+.context-menu-item:hover {
+  background: var(--selection-bg);
+  color: var(--selection-text);
+}
+.context-menu-separator {
+  background: var(--nx-dark);
+}
+
+/* ---------- Dialogue : vrai chrome de fenetre -- plateau biseaute +
+   bandeau NOIR en guise de barre de titre (meme recette que .titlebar),
+   ascenseur a gauche comme partout ailleurs. ---------- */
+.modal-overlay {
+  background: rgba(0, 0, 0, 0.55);
+}
+.modal-box {
+  background: var(--nx-face);
+  border: 1px solid var(--nx-black);
+  box-shadow: var(--bevel-out), var(--shadow-window);
+  padding: 0 var(--space-5) var(--space-5);
+  direction: rtl;
+}
+.modal-box > * { direction: ltr; }
+.modal-box h3 {
+  margin: 0 calc(-1 * var(--space-5)) 0;
+  padding: 0 var(--space-5);
+  height: var(--titlebar-height);
+  line-height: var(--titlebar-height);
+  background: var(--nx-black);
+  border-radius: calc(var(--radius) - 1px) calc(var(--radius) - 1px) 0 0;
+  color: var(--text-inverse);
+  font: 700 var(--font-size-title) / 1 var(--font-ui);
+  text-align: center;
+}
+
+/* ---------- Ascenseur : gouttiere sombre en puits, pouce plateau
+   biseaute, fleches triangulaires noires -- copie directe de
+   components.html (source de verite pour ce composant, interdit #4). ---------- */
+::-webkit-scrollbar { width: var(--scrollbar-size); height: var(--scrollbar-size); }
+::-webkit-scrollbar-track { background: var(--nx-dark); box-shadow: var(--well); }
+::-webkit-scrollbar-thumb { background: var(--nx-face); border: 1px solid var(--nx-black); box-shadow: var(--bevel-out); }
+::-webkit-scrollbar-button { background: var(--nx-face); border: 1px solid var(--nx-black); box-shadow: var(--bevel-out); height: 16px; width: 17px; }
+::-webkit-scrollbar-button:vertical:decrement {
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='6'%3E%3Cpath d='M4.5 0L9 6H0Z' fill='%23000'/%3E%3C/svg%3E") center/9px 6px no-repeat, var(--nx-face);
+}
+::-webkit-scrollbar-button:vertical:increment {
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='6'%3E%3Cpath d='M4.5 6L0 0H9Z' fill='%23000'/%3E%3C/svg%3E") center/9px 6px no-repeat, var(--nx-face);
+}
+::-webkit-scrollbar-corner { background: var(--nx-face); }
+
+/* ---------- Jauge de progression : cadre du canvas Tetris -- puits blanc
+   cerne noir, pas le vert Game Boy generique de style.css. ---------- */
+canvas.tetris {
+  border: 1px solid var(--nx-black);
+  border-radius: var(--radius);
+  background: var(--nx-white);
+  box-shadow: var(--well);
+}
+
+/* ---------- Fuites de couleur residuelles : les badges de risque (page
+   Ajout) et les fonds de sante (page Telechargements) de style.css sont
+   des hex chromatiques bruts (vert/jaune/rouge). L'interdit #1 est "pas de
+   couleur nulle part" -- on les neutralise ici en niveaux de gris, l'alerte
+   protegeant desormais par le gras/le soulignement (STYLE.md section 3 :
+   "l'alerte protege par le phrase"), jamais par la teinte. ---------- */
+.risk-badge {
+  background: var(--nx-white);
+  box-shadow: var(--well);
+  color: var(--nx-ink);
+}
+.risk-critical, .risk-high { font-weight: 700; text-decoration: underline; }
+#downloadsList .row[data-health="critical"] { background: var(--nx-light); font-weight: 700; }
+#downloadsList .row[data-health="warning"] { background: var(--nx-light); }
+#downloadsList .row[data-health="healthy"] { background: transparent; }
+#downloadsList .row[data-health="critical"].selected,
+#downloadsList .row[data-health="warning"].selected,
+#downloadsList .row[data-health="healthy"].selected {
+  background: var(--selection-bg);
+  color: var(--selection-text);
+}

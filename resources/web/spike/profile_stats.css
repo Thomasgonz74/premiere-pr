@@ -1,0 +1,48 @@
+/* Stats group (LevelingSection + HistorySection) -- built on top of the
+   shared .form-grid/.field-label/.field-note/.status-line/.listbox classes
+   in style.css; only the bits with no existing equivalent (heading, level
+   progress bar, history table rows) get new classes here. */
+
+.profile-section-heading {
+  margin: var(--space-3) 0 0;
+  color: var(--text-legend);
+  font-size: var(--font-size-base);
+  font-weight: bold;
+}
+
+.level-progress-track {
+  height: 16px;
+  background: var(--surface-field);
+  border: 1px solid var(--border-progress);
+  border-radius: var(--radius-group);
+  overflow: hidden;
+}
+
+.level-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--gradient-progress);
+}
+
+.history-row {
+  display: grid;
+  grid-template-columns: 1fr 90px 90px 90px 130px 90px;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--border-group);
+}
+.history-row:last-child { border-bottom: none; }
+
+.history-header {
+  font-weight: bold;
+  color: var(--text-legend);
+  border-bottom: 1px solid var(--border-tab);
+}
+
+.history-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.history-cell { font-variant-numeric: tabular-nums; text-align: right; }
+
+#statsHistoryBody {
+  max-height: 160px;
+}

@@ -14,7 +14,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 import pytest
 
-from torrent2000.app import _install_excepthook, _setup_logging
+from torrent2000.logging_setup import _install_excepthook, _setup_logging
 from torrent2000.config.paths import get_logs_dir
 
 

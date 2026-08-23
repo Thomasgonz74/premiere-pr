@@ -1,0 +1,568 @@
+/* ==========================================================================
+   SYNTHWAVE — tokens.css — spike port v1.3
+   Style : "Synthwave (Outrun)"
+   Rôle  : SOURCE DE VÉRITÉ des variables pour le spike web. Port structurel
+   de la charte "Synthwave (Outrun)" (Charte graphique/) sur le contrat de
+   resources/web/spike/themes/luna_xp/tokens.css (référence de travail).
+   Lire : Charte graphique/Synthwave (Outrun)/STYLE.md (règles & interdits) ·
+   .../components.html (référence visuelle) · .../tokens.css (source charte).
+   L'esthetique Outrun/synthwave : nuits violettes, duo de neons rose et
+   cyan, grille d'horizon, chrome des annees 80 revees. L'etat ALLUME LE
+   TUBE : bordure + double halo — cyan pour naviguer, rose pour s'engager.
+   ========================================================================== */
+
+:root {
+
+  /* ========================================================
+     1. PRIMITIVES — palette Outrun (copiée telle quelle de la charte)
+     ======================================================== */
+  /* Les nuits */
+  --sy-night:  #17102B;     /* la fenetre */
+  --sy-void:   #0D0A1E;     /* bureau, champs */
+  --sy-panel:  #221740;     /* panneaux, menus */
+
+  /* Les encres */
+  --sy-ink:    #F2E9FF;     /* lavande claire */
+  --sy-soft:   #9C8FC4;
+  --sy-tube:   #4A3D73;     /* le tube ETEINT (bordures au repos) */
+  --sy-disabled: #5E5285;
+
+  /* Les deux neons */
+  --sy-pink:      #FF3E8E;  /* engagement : defaut, actif, selection */
+  --sy-pink-deep: #C4176B;  /* danger */
+  --sy-cyan:      #29E5F5;  /* navigation : survol, liens, focus */
+  --sy-danger-text: var(--sy-pink-deep); /* eclate pour HC */
+
+  --sy-night-grid: linear-gradient(180deg, #0D0A1E 0%, #17102B 62%, #2B1236 100%);
+  --tooltip-bg: var(--sy-panel);
+  --tooltip-fg: var(--sy-ink);
+
+  /* ========================================================
+     2. SÉMANTIQUES & RECETTES
+     ======================================================== */
+  --surface-window:   var(--sy-night);
+  --surface-desktop:  var(--sy-void);   /* "bureau, champs" : la charte partage la même nuit */
+  --surface-field:    var(--sy-void);
+  --surface-panel:    var(--sy-panel);
+  --surface-tooltip:  var(--tooltip-bg);
+
+  --text-primary:     var(--sy-ink);
+  --text-soft:        var(--sy-soft);
+  --text-disabled:    var(--sy-disabled);
+  --text-inverse:     var(--sy-night);  /* encre sombre sur les blocs neon pleins (sélection, coche) */
+
+  --title-active-text:   var(--sy-ink);
+  --title-inactive-text: var(--sy-soft); /* "le titre perd son glow" en fenêtre inactive */
+  --selection-bg:     var(--sy-pink);
+  --selection-text:   #17102B;
+
+  /* Generic aliases consumed by resources/web/spike/*.css -- every theme
+     must define these. Cette charte n'a QU'UN tube : chaque contrôle
+     (bouton, champ, group-box, jauge, onglet) porte la même bordure
+     éteinte --sy-tube au repos (§7 STYLE.md) -- donc les cinq alias
+     pointent tous sur le même primitif, contrairement à Luna qui
+     distingue une couleur par type de contrôle. --text-legend reprend
+     "légendes douces" (§6 STYLE.md, barre d'état) : --sy-soft. */
+  --border-control:  var(--sy-tube);
+  --border-field:    var(--sy-tube);
+  --border-group:    var(--sy-tube);
+  --border-progress: var(--sy-tube);
+  --border-tab:      var(--sy-tube);
+  --text-legend:     var(--sy-soft);
+
+  /* ========================================================
+     3. LE TUBE — la signature du style.
+     Pas de biseau plastique : l'état est PORTÉ PAR LA BORDURE-tube
+     et son double halo, jamais par un dégradé de surface (interdit
+     §10.4 : "inversion vidéo de bloc / fond neon plein hors
+     sélection/coche"). Les valeurs "plastic-*"/"gradient-titlebtn-*"
+     qu'exige le CSS partagé du spike sont donc des remplissages PLATS
+     (dégradé 2 arrêts même couleur) qui suivent le fond de la charte à
+     chaque état plutôt qu'un relief inventé. --gradient-progress
+     réutilise directement le token propre à la charte : --sunset-line.
+     ======================================================== */
+  --plastic-raised:  linear-gradient(var(--sy-panel), var(--sy-panel));   /* repos : fond panneau */
+  --plastic-pressed: linear-gradient(var(--sy-void), var(--sy-void));    /* appui : "fond --sy-void" (§7 STYLE.md) */
+
+  /* Barre de titre : nuit plate ; l'accent vient du filet-couchant sous
+     le titre (--sunset-line), pas d'un dégradé de matière. */
+  --gradient-title-active: linear-gradient(var(--sy-night), var(--sy-night));
+
+  /* Gadgets de titre (– ▢ ✕) : cercles au tube éteint, invisibles sur la
+     nuit tant qu'ils ne s'allument pas (cyan, cyan, ROSE au survol) --
+     donc même remplissage plat que la barre elle-même, y compris pour
+     "Fermer" : ce style n'a PAS de bouton "toujours rouge" comme Luna,
+     l'état est uniquement porté par la bordure/le halo au survol. */
+  --gradient-titlebtn:       linear-gradient(var(--sy-night), var(--sy-night));
+  --gradient-titlebtn-close: linear-gradient(var(--sy-night), var(--sy-night));
+
+  /* Jauge de progression : LE COUCHANT, directement. */
+  --gradient-progress: var(--sunset-line);
+
+  /* Recettes tokenisées (charte) */
+  --glow-cyan: 0 0 6px rgba(41,229,245,.55), inset 0 0 4px rgba(41,229,245,.3);
+  --glow-pink: 0 0 6px rgba(255,62,142,.55), inset 0 0 4px rgba(255,62,142,.3);
+  --sunset-line: linear-gradient(90deg, var(--sy-pink), var(--sy-cyan));
+  --gridfloor: repeating-linear-gradient(0deg, rgba(255,62,142,.07) 0 1px, transparent 1px 26px),
+               repeating-linear-gradient(90deg, rgba(255,62,142,.07) 0 1px, transparent 1px 26px);
+
+  /* ========================================================
+     4. OMBRES & LUEURS
+     ======================================================== */
+  --shadow-window: 0 14px 40px rgba(0,0,0,.55), 0 0 22px rgba(255,62,142,.14);
+  --shadow-window-inactive: 0 10px 28px rgba(0,0,0,.45);
+  --shadow-menu: 0 10px 26px rgba(0,0,0,.5), 0 0 14px rgba(41,229,245,.12);
+
+  --frame-shadow: var(--shadow-window);   /* cadre de fenêtre = même ombre profonde à souffle rose */
+  --glow-hover:   var(--glow-cyan);       /* survol générique = "LE TUBE S'ALLUME CYAN" (§7 STYLE.md) */
+
+  /* Pas de token dédié dans la charte pour le texte du titre : "léger
+     glow" (§4/§6 STYLE.md) sans valeur chiffrée -- synthétisé ici à
+     partir de la formule du halo rose (l'engagement, cohérent avec un
+     titre de fenêtre active), en version texte (pas d'inset possible). */
+  --title-text-shadow: 0 0 6px rgba(255,62,142,.45);
+
+  /* ========================================================
+     5. TYPOGRAPHIE
+     ======================================================== */
+  --font-ui: "Trebuchet MS", "Segoe UI", Verdana, sans-serif;
+  --font-title: var(--font-ui);   /* pas de police dédiée : l'italique gras porte le titre, même famille */
+  --font-mono: "Courier New", monospace; /* absent de la charte (aucune règle ne l'interdit) */
+  --font-size-base: 13.5px;
+  --font-size-title: 14px;            /* italique gras, leger glow */
+  --line-height: 1.55;
+  --track-cap: .08em;
+
+  /* ========================================================
+     6. MÉTRIQUES & ESPACEMENT
+     ======================================================== */
+  --unit: 4px;             /* base de la grille d'espacement (2/4/8/12/16/24) */
+  --space-1: 2px; --space-2: 4px; --space-3: 8px;
+  --space-4: 12px; --space-5: 16px; --space-6: 24px;
+  --pad-body: 16px;
+
+  --control-height: 30px;
+  --field-height: var(--control-height);  /* la charte ne distingue pas champ/contrôle en hauteur */
+  --button-min-width: 104px;
+  --titlebar-height: 40px;
+  --wm-size: 19px;
+  --titlebar-btn: var(--wm-size);         /* "gadgets 19 px" (§5 STYLE.md) */
+  --checkbox-size: 16px;
+  --icon-small: 16px; --icon-large: 32px; /* générique, absent de la charte */
+  --toggle-w: 48px; --toggle-h: 21px;
+  --scrollbar-size: 11px;
+
+  --radius-window: 8px;
+  --radius-control: 4px;
+  --radius-field: 4px;
+  --radius-group: var(--radius-control);  /* "le tube est doux, pas capsule" (§5 STYLE.md) : même rayon partout */
+
+  /* ========================================================
+     7. ÉTATS & MOUVEMENT
+     ======================================================== */
+  --transition-state: .14s ease;
+  --transition: var(--transition-state);         /* alias générique attendu par le CSS partagé */
+  --focus-ring: 1.5px solid var(--sy-cyan);
+  --focus-outline: var(--focus-ring);            /* alias générique : filet cyan, "la navigation" (§7) */
+  --cursor-interactive: var(--cursor-default);
+
+  /* ========================================================
+     8. CURSEURS — mêmes 14 actions que toutes les chartes.
+     Pointeur lavande a contour de nuit ; l'attente est LA PUCE
+     neon (cyan a broche rose) ; « ? » cyan.
+     ======================================================== */
+  --cur-img-default: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.35' transform='translate(1.5,1.5)'%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23F2E9FF' stroke='%230D0A1E' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-link: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.35' transform='translate(1.5,1.5)'%3E%3Cpolygon points='10,2 13,2 13,9 16,9 19,11 19,15 16,20 9,20 5,14 5,12 7,11 10,14' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='10,2 13,2 13,9 16,9 19,11 19,15 16,20 9,20 5,14 5,12 7,11 10,14' fill='%23F2E9FF' stroke='%230D0A1E' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpath d='M13.5 11v4M16 12v3' stroke='%230D0A1E' stroke-width='.9' stroke-linecap='round'/%3E%3C/svg%3E");
+  --cur-img-text: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg fill='none' stroke='%23fff' stroke-width='4.2' stroke-linecap='round'%3E%3Cpath d='M8 3h6M11 3v18M8 21h6'/%3E%3C/g%3E%3Cg fill='none' stroke='%230D0A1E' stroke-width='1.6' stroke-linecap='round'%3E%3Cpath d='M8 3h6M11 3v18M8 21h6'/%3E%3C/g%3E%3C/svg%3E");
+  --cur-img-wait: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.35' transform='translate(1.5,1.5)'%3E%3Crect x='2' y='2' width='20' height='20' rx='3' fill='%23000'/%3E%3C/g%3E%3Crect x='8.12' y='2.75' width='2.25' height='3.00' fill='%2329E5F5'/%3E%3Crect x='8.12' y='18.25' width='2.25' height='3.00' fill='%2329E5F5'/%3E%3Crect x='2.75' y='8.12' width='3.00' height='2.25' fill='%2329E5F5'/%3E%3Crect x='18.25' y='8.12' width='3.00' height='2.25' fill='%2329E5F5'/%3E%3Crect x='13.62' y='2.75' width='2.25' height='3.00' fill='%2329E5F5'/%3E%3Crect x='13.62' y='18.25' width='2.25' height='3.00' fill='%2329E5F5'/%3E%3Crect x='2.75' y='13.62' width='3.00' height='2.25' fill='%2329E5F5'/%3E%3Crect x='18.25' y='13.62' width='3.00' height='2.25' fill='%2329E5F5'/%3E%3Crect x='5.75' y='5.75' width='12.5' height='12.5' rx='1.5' fill='%23221740' stroke='%2329E5F5' stroke-width='1'/%3E%3Ccircle cx='12' cy='5.75' r='1.62' fill='%23FF3E8E'/%3E%3Ccircle cx='8.75' cy='9.00' r='1.12' fill='%2329E5F5'/%3E%3C/svg%3E");
+  --cur-img-progress: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.35' transform='translate(1.5,1.5)'%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23000' stroke='%23000' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/g%3E%3Cg opacity='.35' transform='translate(1.5,1.5)'%3E%3Crect x='11' y='11' width='13' height='13' rx='2' fill='%23000'/%3E%3C/g%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23F2E9FF' stroke='%230D0A1E' stroke-width='1.6' stroke-linejoin='round'/%3E%3Crect x='14.92' y='11.58' width='1.44' height='1.92' fill='%2329E5F5'/%3E%3Crect x='14.92' y='21.50' width='1.44' height='1.92' fill='%2329E5F5'/%3E%3Crect x='11.48' y='15.02' width='1.92' height='1.44' fill='%2329E5F5'/%3E%3Crect x='21.40' y='15.02' width='1.92' height='1.44' fill='%2329E5F5'/%3E%3Crect x='18.44' y='11.58' width='1.44' height='1.92' fill='%2329E5F5'/%3E%3Crect x='18.44' y='21.50' width='1.44' height='1.92' fill='%2329E5F5'/%3E%3Crect x='11.48' y='18.54' width='1.92' height='1.44' fill='%2329E5F5'/%3E%3Crect x='21.40' y='18.54' width='1.92' height='1.44' fill='%2329E5F5'/%3E%3Crect x='13.40' y='13.50' width='8' height='8' rx='1.5' fill='%23221740' stroke='%2329E5F5' stroke-width='1'/%3E%3Ccircle cx='17.4' cy='13.50' r='1.04' fill='%23FF3E8E'/%3E%3Ccircle cx='15.32' cy='15.58' r='0.72' fill='%2329E5F5'/%3E%3C/svg%3E");
+  --cur-img-help: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.35' transform='translate(1.5,1.5)'%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23000' stroke='%23000' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23F2E9FF' stroke='%230D0A1E' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpath d='M14.5 6c0-2.6 6.5-2.6 6.5 0c0 2.2-3.2 2-3.2 4.4' fill='none' stroke='%23fff' stroke-width='3.8' stroke-linecap='round'/%3E%3Cpath d='M14.5 6c0-2.6 6.5-2.6 6.5 0c0 2.2-3.2 2-3.2 4.4' fill='none' stroke='%2329E5F5' stroke-width='1.8' stroke-linecap='round'/%3E%3Ccircle cx='17.9' cy='13.8' r='1.7' fill='%23fff'/%3E%3Ccircle cx='17.9' cy='13.8' r='1.1' fill='%2329E5F5'/%3E%3C/svg%3E");
+  --cur-img-crosshair: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg fill='none' stroke='%23fff' stroke-width='4.2'%3E%3Cpath d='M12 3v18M3 12h18'/%3E%3C/g%3E%3Cg fill='none' stroke='%230D0A1E' stroke-width='1.6'%3E%3Cpath d='M12 3v18M3 12h18'/%3E%3C/g%3E%3C/svg%3E");
+  --cur-img-not-allowed: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg fill='none' stroke='%23fff' stroke-width='5.4'%3E%3Ccircle cx='12' cy='12' r='8'/%3E%3Cpath d='M6.5 6.5l11 11'/%3E%3C/g%3E%3Cg fill='none' stroke='%230D0A1E' stroke-width='2.4'%3E%3Ccircle cx='12' cy='12' r='8'/%3E%3Cpath d='M6.5 6.5l11 11'/%3E%3C/g%3E%3C/svg%3E");
+  --cur-img-resize-v: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.35' transform='translate(1.5,1.5)'%3E%3Cpolygon points='12,1 17,7 14,7 14,17 17,17 12,23 7,17 10,17 10,7 7,7' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='12,1 17,7 14,7 14,17 17,17 12,23 7,17 10,17 10,7 7,7' fill='%23F2E9FF' stroke='%230D0A1E' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-resize-h: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.35' transform='translate(1.5,1.5)'%3E%3Cpolygon points='1,12 7,7 7,10 17,10 17,7 23,12 17,17 17,14 7,14 7,17' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='1,12 7,7 7,10 17,10 17,7 23,12 17,17 17,14 7,14 7,17' fill='%23F2E9FF' stroke='%230D0A1E' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-resize-nwse: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.35' transform='translate(1.5,1.5)'%3E%3Cpath d='M7 7l10 10' stroke='%23000' stroke-width='4.6'/%3E%3Cpolygon points='4,4 12,4 4,12' fill='%23000'/%3E%3Cpolygon points='20,20 12,20 20,12' fill='%23000'/%3E%3C/g%3E%3Cpath d='M7 7l10 10' stroke='%23fff' stroke-width='4'/%3E%3Cpath d='M7 7l10 10' stroke='%230D0A1E' stroke-width='1.8'/%3E%3Cpolygon points='4,4 12,4 4,12' fill='%23F2E9FF' stroke='%230D0A1E' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpolygon points='20,20 12,20 20,12' fill='%23F2E9FF' stroke='%230D0A1E' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-resize-nesw: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.35' transform='translate(1.5,1.5)'%3E%3Cpath d='M17 7L7 17' stroke='%23000' stroke-width='4.6'/%3E%3Cpolygon points='20,4 12,4 20,12' fill='%23000'/%3E%3Cpolygon points='4,20 12,20 4,12' fill='%23000'/%3E%3C/g%3E%3Cpath d='M17 7L7 17' stroke='%23fff' stroke-width='4'/%3E%3Cpath d='M17 7L7 17' stroke='%230D0A1E' stroke-width='1.8'/%3E%3Cpolygon points='20,4 12,4 20,12' fill='%23F2E9FF' stroke='%230D0A1E' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpolygon points='4,20 12,20 4,12' fill='%23F2E9FF' stroke='%230D0A1E' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-move: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.35' transform='translate(1.5,1.5)'%3E%3Cpolygon points='12,1 15,5 13,5 13,19 15,19 12,23 9,19 11,19 11,5 9,5' fill='%23000'/%3E%3Cpolygon points='1,12 5,9 5,11 19,11 19,9 23,12 19,15 19,13 5,13 5,15' fill='%23000'/%3E%3C/g%3E%3Cg fill='%23F2E9FF' stroke='%230D0A1E' stroke-width='1.6' stroke-linejoin='round'%3E%3Cpolygon points='12,1 15,5 13,5 13,19 15,19 12,23 9,19 11,19 11,5 9,5'/%3E%3Cpolygon points='1,12 5,9 5,11 19,11 19,9 23,12 19,15 19,13 5,13 5,15'/%3E%3C/g%3E%3Cpolygon points='12,1 15,5 13,5 13,19 15,19 12,23 9,19 11,19 11,5 9,5' fill='%23F2E9FF'/%3E%3Cpolygon points='1,12 5,9 5,11 19,11 19,9 23,12 19,15 19,13 5,13 5,15' fill='%23F2E9FF'/%3E%3C/svg%3E");
+  --cur-img-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.35' transform='translate(1.5,1.5)'%3E%3Cpolygon points='12,2 18,9 14,9 14,20 10,20 10,9 6,9' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='12,2 18,9 14,9 14,20 10,20 10,9 6,9' fill='%23F2E9FF' stroke='%230D0A1E' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+
+  /* Curseurs composés : image + point chaud + secours système */
+  --cursor-default:     var(--cur-img-default) 2 2, default;
+  --cursor-link:        var(--cur-img-link) 11 3, pointer;
+  --cursor-text:        var(--cur-img-text) 11 12, text;
+  --cursor-wait:        var(--cur-img-wait) 12 12, wait;
+  --cursor-progress:    var(--cur-img-progress) 2 2, progress;
+  --cursor-help:        var(--cur-img-help) 2 2, help;
+  --cursor-crosshair:   var(--cur-img-crosshair) 12 12, crosshair;
+  --cursor-not-allowed: var(--cur-img-not-allowed) 12 12, not-allowed;
+  --cursor-resize-v:    var(--cur-img-resize-v) 12 12, ns-resize;
+  --cursor-resize-h:    var(--cur-img-resize-h) 12 12, ew-resize;
+  --cursor-resize-nwse: var(--cur-img-resize-nwse) 12 12, nwse-resize;
+  --cursor-resize-nesw: var(--cur-img-resize-nesw) 12 12, nesw-resize;
+  --cursor-move:        var(--cur-img-move) 12 12, move;
+  --cursor-up:          var(--cur-img-up) 12 3, default;
+
+  /* ================================================== ICONS:BEGIN
+     9. ICÔNES — navigation & fichiers (14), tokenisées comme les
+     curseurs. Cinq d'entre elles (search/back/forward/up/refresh)
+     portaient dans la charte source un double encodage cassé --
+     un url('data:...') littéral collé comme texte à l'intérieur du
+     <svg> englobant, invalide et donc invisible au rendu. Corrigé ici
+     en dépliant l'encodage unique attendu ; le dessin (glyphe cyan)
+     est inchangé, copié tel quel depuis la charte.
+     ======================================================== */
+  --icon-folder: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M2.5 6h6.5l2 2.5h10.5v11h-19z' fill='%23221740' stroke='%2329E5F5' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M2.5 6h6.5l2 2.5h-9z' fill='%23FF3E8E' stroke='%2329E5F5' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-folder-open: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M2.5 6h6.5l2 2.5h9.5v3h-18z' fill='%23FF3E8E' stroke='%2329E5F5' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M4.8 11.5h16.7l-2.6 8H2.5z' fill='%23221740' stroke='%2329E5F5' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-file: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M6 2.5h8l4.5 4.5v14.5h-12.5z' fill='%230D0A1E' stroke='%2329E5F5' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M14 2.5v4.5h4.5z' fill='%234A3D73' stroke='%2329E5F5' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-file-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M6 2.5h8l4.5 4.5v14.5h-12.5z' fill='%230D0A1E' stroke='%2329E5F5' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M14 2.5v4.5h4.5z' fill='%234A3D73' stroke='%2329E5F5' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Ccircle cx='10' cy='11' r='1.5' fill='%23FF3E8E'/%3E%3Cpath d='M8 18l2.7-3.6 1.9 2.3 1.5-1.9 2.4 3.2z' fill='%23FF3E8E'/%3E%3C/svg%3E");
+  --icon-drive: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M3 9h18v6.5H3z' fill='%230D0A1E' stroke='%2329E5F5' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Ccircle cx='17.3' cy='12.2' r='1.2' fill='%23FF3E8E'/%3E%3Cpath d='M6 12.2h6' fill='none' stroke='%2329E5F5' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-home: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M5.5 11.5h13v8.5h-13z' fill='%230D0A1E' stroke='%2329E5F5' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M12 3.2L21.2 11H2.8z' fill='%23FF3E8E' stroke='%2329E5F5' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M10.3 20v-4.8h3.4V20z' fill='%234A3D73'/%3E%3C/svg%3E");
+  --icon-computer: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M3.5 4.5h17v11h-17z' fill='%230D0A1E' stroke='%2329E5F5' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M5.5 6.5h13v7h-13z' fill='%23FF3E8E'/%3E%3Cpath d='M12 15.5v3M8.5 19.5h7' fill='none' stroke='%2329E5F5' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-network: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M4 3.5h6v5H4z' fill='%230D0A1E' stroke='%2329E5F5' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M14 3.5h6v5H14z' fill='%230D0A1E' stroke='%2329E5F5' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M9 15.5h6v5H9z' fill='%23FF3E8E' stroke='%2329E5F5' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M7 8.5v3.5h10V8.5M12 12v3.5' fill='none' stroke='%2329E5F5' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-trash: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M6.7 8.5h10.6l-1 12h-8.6z' fill='%230D0A1E' stroke='%2329E5F5' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M4.8 6h14.4v2.5H4.8z' fill='%23FF3E8E' stroke='%2329E5F5' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M9.4 6V3.8h5.2V6z' fill='%230D0A1E' stroke='%2329E5F5' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M10.3 11v6.5M13.7 11v6.5' fill='none' stroke='%2329E5F5' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-search: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Ccircle cx='10.4' cy='10.4' r='5.6' fill='none' stroke='%2329E5F5' stroke-width='1.4'/%3E%3Cpath d='M14.7 14.7L20 20' fill='none' stroke='%2329E5F5' stroke-width='1.7' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-back: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M14.5 5.5L8 12l6.5 6.5' fill='none' stroke='%2329E5F5' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-forward: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M9.5 5.5L16 12l-6.5 6.5' fill='none' stroke='%2329E5F5' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M12 19.5V6M6.5 11.5L12 6l5.5 5.5' fill='none' stroke='%2329E5F5' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M5.5 21h13' fill='none' stroke='%2329E5F5' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-refresh: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M18.9 13a7 7 0 1 1-1.8-6.3' fill='none' stroke='%2329E5F5' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M19.4 3.6v4.9h-4.9' fill='none' stroke='%2329E5F5' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  /* ICONS:END */
+}
+
+/* Pas de bloc [data-theme="dark"] : cette charte est déjà nocturne par
+   défaut (racine = nuit violette #17102B) -- la charte source elle-même
+   n'en définit aucun ; il n'y a pas de delta clair/sombre à décrire. */
+
+/* HC:BEGIN — contraste élevé (phase 4), copié tel quel de la charte.
+   Les alias génériques (--border-*, --text-legend, --glow-hover,
+   --frame-shadow, --plastic-*, --gradient-*...) se re-résolvent seuls
+   via var() contre --sy-tube/--sy-soft/--glow-cyan ci-dessus : rien à
+   répéter ici. */
+[data-theme="hc"] {
+  --sy-pink: #FF88B8;        /* 7.8 sur la nuit */
+  --sy-soft: #B8ABDF;        /* 8.5 */
+  --sy-tube: #6E5FA3;        /* le tube eteint s'affirme */
+  --sy-disabled: #8A7DB5;
+  --sy-pink-deep: #8E0E4C;   /* fond du danger : lavande 9.0 dessus */
+  --sy-danger-text: #FFA0C6; /* texte du danger : 9.4 */
+  --selection-text: #0D0A1E; /* la nuit profonde sous le rose eclairci : 7.4 */
+  --text-soft: #B8ABDF;
+  --text-disabled: #8A7DB5;
+}
+/* HC:END */
+
+/* --- Base recommandée (à copier dans l'app) ------------------------------ */
+/*
+body {
+  margin: 0;
+  background: var(--sy-night-grid);
+  color: var(--text-primary);
+  font: 400 var(--font-size-base)/var(--line-height) var(--font-ui);
+  cursor: var(--cursor-default);
+}
+::selection { background: var(--selection-bg); color: var(--selection-text); }
+a { color: var(--sy-cyan); cursor: var(--cursor-link); }
+input[type=text], textarea { cursor: var(--cursor-text); }
+*/
+
+/* ==========================================================================
+   STRUCTURAL COMPOSITION -- le tube, porté sur la grille partagée. Copié des
+   vraies règles CSS de components.html (pas une réinterprétation générique)
+   -- STYLE.md §2/§7 : chaque contrôle porte une bordure de tube ÉTEINT
+   (--sy-tube) au repos ; l'état ALLUME la bordure (cyan = navigation, rose =
+   engagement) + un double halo qui n'existe QUE sur tube allumé ; l'appui
+   éteint le halo mais laisse le tube néon. Jamais d'inversion vidéo de bloc
+   (fond neon plein) hors sélection/coche -- interdit §10.4. Chargé en
+   dernier dans index.html, donc ces sélecteurs de même spécificité que
+   style.css l'emportent par le seul ordre de cascade -- aucun !important.
+   ========================================================================== */
+
+/* ---------- Chrome de fenêtre : gadgets CERCLES au tube, glyphes
+   typographiques en currentColor (pas de plaque colorée ni de barres
+   blanches géométriques -- l'état est porté par la bordure/le halo, jamais
+   par un remplissage, interdit §10.4/§10.9 "chrome metallique, glossy"). --- */
+.cap-btn {
+  min-width: 0;                 /* annule le min-width du <button> nu plus bas */
+  width: var(--titlebar-btn);
+  height: var(--titlebar-btn);
+  border-radius: 50%;           /* cercles, pas des plaques carrées */
+  border: 1px solid var(--sy-tube);
+  background: none;
+  box-shadow: none;
+  color: var(--sy-soft);
+  filter: none;                 /* annule les brightness() du CSS partagé : pas de reflet */
+  transition: border-color var(--transition-state), box-shadow var(--transition-state), color var(--transition-state);
+}
+.cap-btn:hover { border-color: var(--sy-cyan); color: var(--sy-cyan); box-shadow: var(--glow-cyan); filter: none; }
+.cap-btn:active { border-color: var(--sy-cyan); color: var(--sy-cyan); box-shadow: none; filter: none; }
+.cap-close { background: none; margin-left: 2px; }
+.cap-close:hover { border-color: var(--sy-pink); color: var(--sy-pink); box-shadow: var(--glow-pink); }
+.cap-close:active { border-color: var(--sy-pink); color: var(--sy-pink); box-shadow: none; }
+/* Réduire : glyphe « – » en currentColor, centré dans le cercle */
+.cap-min span::before {
+  content: "\2013";
+  position: absolute; inset: 0; height: auto; width: auto;
+  background: none;
+  display: grid; place-items: center;
+  font: 700 13px/1 var(--font-ui);
+  color: currentColor;
+}
+/* Agrandir : glyphe « ▢ » en currentColor -- annule le cadre blanc géométrique */
+.cap-max span::before {
+  content: "\25A2";
+  position: absolute; inset: 0; height: auto; width: auto;
+  background: none; border: none;
+  display: grid; place-items: center;
+  font: 400 11px/1 var(--font-ui);
+  color: currentColor;
+}
+/* Fermer : le vrai glyphe est « ✕ » typographique -- annule les deux barres
+   géométriques du CSS partagé (comme .cap-min/.cap-max, un seul trait). */
+.cap-close span::after { content: none; }
+.cap-close span::before {
+  content: "\2715";
+  position: absolute; inset: 0; height: auto; width: auto;
+  background: none; transform: none;
+  display: grid; place-items: center;
+  font: 700 10px/1 var(--font-ui);
+  color: currentColor;
+}
+
+/* ---------- Barre de titre : LE COUCHANT sous le titre, titre en italique
+   gras à léger glow (STYLE.md §6 -- absent du CSS partagé, qui ne connaît
+   que le dégradé de matière). ---------- */
+.titlebar { position: relative; }
+.titlebar::after {
+  content: "";
+  position: absolute; left: 0; right: 0; bottom: 0; height: 2px;
+  background: var(--sunset-line);
+}
+.titlebar-title { font-style: italic; }
+
+/* ---------- Onglets : tubes soudés, l'actif s'allume ROSE (l'engagement,
+   jamais le survol -- interdit §10.2). Radius sur les seuls bords externes,
+   comme des tubes accolés (components.html .tab / .tab.is-active). -------- */
+.tabbar { gap: 0; border-bottom: 1px solid var(--sy-tube); }
+.tab-btn {
+  min-width: auto; height: auto;   /* annule le gabarit du <button> nu plus bas */
+  background: none;
+  border: 1px solid var(--sy-tube);
+  border-right: none;
+  border-radius: 0;
+  padding: 6px 15px;
+  color: var(--sy-soft);
+  font-weight: 400;
+  position: relative;
+}
+.tab-btn:first-child { border-radius: var(--radius-control) 0 0 var(--radius-control); }
+.tab-btn:last-child { border-right: 1px solid var(--sy-tube); border-radius: 0 var(--radius-control) var(--radius-control) 0; }
+.tab-btn:hover:not(.active) { color: var(--sy-cyan); filter: none; }
+.tab-btn.active {
+  background: none;
+  border-color: var(--sy-pink);
+  color: var(--sy-pink);
+  font-weight: 700;
+  box-shadow: var(--glow-pink);
+  z-index: 1;
+}
+
+/* ---------- Boutons : le tube nu -- absent avant (chrome natif du
+   navigateur). Repos = tube éteint ; survol = tube CYAN + halo (navigation) ;
+   appui = tube cyan, halo éteint, fond --sy-void ; focus = filet cyan. ----- */
+button {
+  min-width: var(--button-min-width);
+  height: var(--control-height);
+  padding: 0 16px;
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-control);
+  background: var(--plastic-raised);
+  font: 600 13px var(--font-ui);
+  color: var(--text-primary);
+  cursor: var(--cursor-default);
+  user-select: none;
+  transition: border-color var(--transition-state), box-shadow var(--transition-state), color var(--transition-state);
+}
+button:not(:disabled):hover { border-color: var(--sy-cyan); color: var(--sy-cyan); box-shadow: var(--glow-hover); }
+button:not(:disabled):active { border-color: var(--sy-cyan); color: var(--sy-cyan); background: var(--plastic-pressed); box-shadow: none; }
+button:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
+button:disabled { border-color: var(--sy-disabled); color: var(--text-disabled); }
+
+/* Bouton par défaut ("Démarrer"/"Démarrer le partage") : tube ROSE permanent
+   + halo -- l'engagement (STYLE.md §7 "Defaut"). Le survol ÉTEND le halo
+   plutôt que de virer au cyan (jamais d'inversion de la dualité, interdit
+   §10.2) ; l'appui l'éteint comme tout autre tube. */
+.start-btn {
+  min-width: var(--button-min-width);
+  height: var(--control-height);
+  padding: 0 20px;
+  border: 1px solid var(--sy-pink);
+  border-radius: var(--radius-control);
+  background: var(--sy-panel);
+  color: var(--sy-pink);
+  font: 700 13px var(--font-ui);
+  box-shadow: var(--glow-pink);
+}
+.start-btn:hover { box-shadow: 0 0 10px rgba(255,62,142,.7), inset 0 0 6px rgba(255,62,142,.4); }
+.start-btn:active { box-shadow: none; background: var(--sy-void); }
+
+/* Actions de ligne (pause/suppression) : mêmes tubes, en miniature -- pas de
+   plaque plastique, juste le contour. */
+.row-actions button {
+  min-width: 0; height: auto;
+  padding: 2px 10px;
+  border: 1px solid var(--sy-tube);
+  border-radius: var(--radius-control);
+  background: none;
+  color: var(--sy-soft);
+}
+.row-actions button:not(:disabled):hover { border-color: var(--sy-cyan); color: var(--sy-cyan); box-shadow: var(--glow-cyan); background: none; }
+.row-actions button:not(:disabled):active { border-color: var(--sy-cyan); color: var(--sy-cyan); box-shadow: none; background: var(--sy-void); }
+
+/* ---------- Champs : tube éteint sur --sy-void, focus = tube cyan + halo ;
+   simple assombrissement (--sy-soft) au survol, jamais de halo hors focus
+   (composants.html §2 : seul le focus allume). ---------- */
+input[type="text"], input[type="number"], select, textarea, .search-input {
+  height: var(--field-height);
+  padding: 0 11px;
+  background: var(--surface-field);
+  border: 1px solid var(--border-field);
+  border-radius: var(--radius-field);
+  color: var(--text-primary);
+  font: 400 13.5px var(--font-ui);
+  caret-color: var(--sy-cyan);
+  transition: border-color var(--transition-state), box-shadow var(--transition-state);
+}
+.form-grid input[type="text"], .form-grid input[type="number"] {
+  height: var(--field-height);
+  padding: 0 11px;
+  background: var(--surface-field);
+  border: 1px solid var(--border-field);
+  border-radius: var(--radius-field);
+}
+textarea { height: auto; padding: 8px 11px; resize: vertical; }
+input[type="text"]:not(:disabled):hover, textarea:not(:disabled):hover, select:not(:disabled):hover { border-color: var(--sy-soft); }
+input[type="text"]:focus, input[type="number"]:focus, textarea:focus, select:focus { outline: none; border-color: var(--sy-cyan); box-shadow: var(--glow-cyan); }
+input:disabled, textarea:disabled { border-color: var(--sy-disabled); color: var(--text-disabled); }
+input::placeholder, textarea::placeholder { color: var(--sy-soft); }
+select {
+  appearance: none; -webkit-appearance: none;
+  cursor: var(--cursor-interactive);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%2329E5F5' stroke-width='1.6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 28px;
+}
+
+/* ---------- Cases à cocher : COCHÉE = fond rose à coche nuit (l'un des deux
+   seuls blocs pleins autorisés avec la sélection, STYLE.md §7). ---------- */
+input[type="checkbox"] {
+  appearance: none; -webkit-appearance: none;
+  margin: 0; vertical-align: middle;
+  width: var(--checkbox-size); height: var(--checkbox-size);
+  background: var(--sy-void);
+  border: 1px solid var(--sy-tube);
+  border-radius: 3px;
+  position: relative;
+  transition: border-color var(--transition-state), box-shadow var(--transition-state);
+}
+input[type="checkbox"]:not(:disabled):hover { border-color: var(--sy-cyan); box-shadow: var(--glow-cyan); }
+input[type="checkbox"]:checked { background: var(--sy-pink); border-color: var(--sy-pink); box-shadow: var(--glow-pink); }
+input[type="checkbox"]:checked::after {
+  content: "";
+  position: absolute; left: 5px; top: 2px; width: 4px; height: 8px;
+  border: solid var(--sy-night); border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+input[type="checkbox"]:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
+input[type="checkbox"]:disabled { border-color: var(--sy-disabled); box-shadow: none; background: var(--sy-void); }
+
+/* ---------- Listes : le survol allume le tube cyan (contour, pas de fond) ;
+   la sélection est le bandeau ROSE plein à encre de nuit -- l'engagement,
+   seul autre bloc plein autorisé avec la coche. ---------- */
+.listbox { background: var(--sy-void); border: 1px solid var(--sy-tube); border-radius: var(--radius-field); padding: var(--space-1); }
+.row:hover:not(.selected) { box-shadow: inset 0 0 0 1px var(--sy-cyan); color: var(--sy-cyan); }
+.row.selected { background: var(--sy-pink); color: var(--selection-text); }
+.row-name { color: var(--sy-ink); }
+.row-state { color: var(--sy-soft); }
+.row-rate, .row-eta, .row-category, .row-peers { color: var(--text-soft); }
+.scan-path { color: var(--sy-ink); }
+.scan-size { color: var(--text-soft); }
+
+/* ---------- Group box : panneau à tube éteint, légende italique grasse
+   couleur douce (components.html fieldset/legend, radius 6 -- distinct du
+   radius 4 des contrôles, "le tube est doux" mais le panneau respire plus). */
+.profile-group, .details-group {
+  background: var(--sy-panel);
+  border: 1px solid var(--sy-tube);
+  border-radius: 6px;
+}
+.profile-group h3, .details-group h3 {
+  font-weight: 700;
+  font-style: italic;
+  font-size: 12.5px;
+  color: var(--sy-soft);
+}
+
+/* ---------- Menu contextuel : panneau à tube, l'item au pointeur allume son
+   tube CYAN (contour + halo, PAS un fond plein -- le CSS partagé remplissait
+   l'item survolé d'un aplat rose, ce qui viole l'interdit §10.4 : ce n'est
+   ni une sélection ni une coche). ---------- */
+.context-menu {
+  background: var(--sy-panel);
+  border: 1px solid var(--sy-tube);
+  border-radius: 6px;
+  box-shadow: var(--shadow-menu);
+  padding: var(--space-1);
+}
+.context-menu-item {
+  padding: 5px 11px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  color: var(--text-primary);
+}
+.context-menu-item:hover {
+  background: none;
+  border-color: var(--sy-cyan);
+  color: var(--sy-cyan);
+  box-shadow: var(--glow-cyan);
+}
+.context-menu-separator { background: var(--sy-tube); margin: 5px 4px; }
+
+/* ---------- Dialogue : chrome de fenêtre nuit à rayon 8, titre italique
+   souligné du couchant (le seul autre endroit, avec la jauge, où le dégradé
+   rose→cyan est autorisé, STYLE.md §6/interdit §6). ---------- */
+.modal-overlay { background: rgba(13,10,30,.65); }
+.modal-box {
+  background: var(--surface-window);
+  border: 1px solid var(--sy-tube);
+  border-radius: var(--radius-window);
+  box-shadow: var(--shadow-window);
+}
+.modal-box h3 {
+  font-weight: 700;
+  font-style: italic;
+  text-shadow: var(--title-text-shadow);
+  border-bottom: 2px solid transparent;
+  border-image: var(--sunset-line) 1;
+  padding-bottom: var(--space-3);
+}
+
+/* ---------- Défilement : pouce au tube éteint qui s'allume cyan au survol,
+   SANS FLÈCHES (STYLE.md §7 "sans fleches" -- le CSS générique n'en pose
+   pas non plus ici mais on neutralise explicitement au cas où). ---------- */
+::-webkit-scrollbar { width: var(--scrollbar-size); height: var(--scrollbar-size); }
+::-webkit-scrollbar-track { background: var(--sy-void); }
+::-webkit-scrollbar-thumb { background: var(--sy-panel); border: 1px solid var(--sy-tube); }
+::-webkit-scrollbar-thumb:hover { border-color: var(--sy-cyan); box-shadow: var(--glow-cyan); }
+::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+::-webkit-scrollbar-corner { background: transparent; }
+
+/* ---------- Jauge de progression : cadre du canvas Tetris -- piste au tube
+   éteint sur --sy-void (le remplissage LE COUCHANT est peint par le Canvas
+   lui-même, hors de portée CSS ; ce cadre reste le tube au repos, pas le
+   dégradé -- le couchant n'habille que le remplissage, pas la piste). ------ */
+canvas.tetris {
+  border: 1px solid var(--sy-tube);
+  border-radius: var(--radius-control);
+  background: var(--sy-void);
+  box-shadow: none;
+}

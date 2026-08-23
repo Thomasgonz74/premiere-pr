@@ -1,0 +1,700 @@
+/* ==========================================================================
+   BREEZE — tokens.css — v1.0 (port spike)
+   Style : "KDE Plasma (Breeze, thème clair)"
+   Rôle  : port de resources/web/charters/Charte graphique/KDE Plasma (Breeze)/
+           vers le contrat structurel du spike (cf. luna_xp/tokens.css).
+   Lire  : STYLE.md (règles & interdits) · components.html (référence visuelle)
+   Valeurs ancrees sur les sources officielles KDE/breeze (BreezeLight.colors) :
+   fenetre 239,240,241 · vue 255,255,255 · bouton 252,252,252 · selection/focus
+   61,174,233 · barre de titre active 227,229,231 · encre 35,38,41 · inactif
+   112,125,138.
+   ========================================================================== */
+
+:root {
+
+  /* ========================================================
+     1. PRIMITIVES (copiées telles quelles du charter d'origine,
+     jamais réinventées)
+     ======================================================== */
+  --bz-window:  #EFF0F1;    /* Window BackgroundNormal */
+  --bz-view:    #FFFFFF;    /* View BackgroundNormal */
+  --bz-button:  #FCFCFC;    /* Button BackgroundNormal */
+  --bz-titlebar:#E3E5E7;    /* WM activeBackground */
+  --bz-ink:     #232629;    /* WM activeForeground */
+  --bz-ink-soft:#707D8A;    /* WM inactiveForeground */
+  --bz-ink-disabled: #A8ACAF;
+  --bz-border:  #B9BDC0;    /* trait Breeze (derive canonique) */
+  --bz-line:    #D3D6D8;
+
+  /* L'ACCENT — DecorationFocus / Selection officiels */
+  --accent:    #3DAEE9;
+  --accent-dk: #1D6EA8;
+  --accent-pale: #D6ECF8;   /* fond presse / defaut */
+  --accent-veil: rgba(61,174,233,.20);   /* survol des listes */
+
+  /* Fermer survole (rouge Breeze) */
+  --bz-close: #DA4453;
+
+  --tooltip-bg: #FBFBFC;
+  --tooltip-fg: var(--bz-ink);
+
+  /* ========================================================
+     2. SÉMANTIQUES & RECETTES
+     ======================================================== */
+  --surface-window: var(--bz-window);
+  --text-primary:   var(--bz-ink);
+  --text-soft:      var(--bz-ink-soft);
+  --text-disabled:  var(--bz-ink-disabled);
+  --selection-bg:   var(--accent);
+  --selection-text: #FFFFFF;
+  --gradient-desktop: radial-gradient(115% 95% at 30% 22%,
+                      #52B8ED, #1D6EA8 55%, #0B3654 95%);
+
+  /* Alias de contrat manquants dans le charter d'origine (mêmes noms que
+     luna_xp) : Breeze n'a que trois surfaces officielles -- on les
+     réutilise partout où le contrat attend une surface différente. Les
+     vues sont les "vues blanches bordées" du §6.4 ; le panneau d'onglet
+     "fusionne avec le panneau vue" (STYLE.md §9) donc reprend la même
+     surface ; le bureau est le dégradé bleu Breeze déjà défini ci-dessus. */
+  --surface-field:   var(--bz-view);
+  --surface-desktop: var(--gradient-desktop);
+  --surface-panel:   var(--bz-view);
+  --surface-tooltip: var(--tooltip-bg);
+  --text-inverse:    var(--selection-text);   /* même encre blanche que la sélection pleine */
+
+  /* La barre de titre est l'officielle WM : encre foncée active, encre
+     adoucie inactive -- littéralement les deux primitives ci-dessus
+     (BreezeLight.colors documente ces rôles comme WM active/inactive
+     Foreground), donc pas de nouvelle couleur à inventer. */
+  --title-active-text:   var(--bz-ink);
+  --title-inactive-text: var(--bz-ink-soft);
+
+  /* Alias génériques consommés par resources/web/spike/*.css -- chaque
+     thème doit les définir. Les contrôles et les champs partagent le même
+     trait 1 px officiel (STYLE.md ne distingue pas les deux) ; le group
+     box retombe sur le filet plus discret --bz-line ; la piste de jauge
+     reprend le gris #C8CCCF documenté au §9 "Progression" (pas de primitive
+     dédiée dans le charter d'origine, valeur reprise telle quelle du texte) ;
+     le "legend" (titre de groupe) porte le lisere -- seul le poids change
+     ailleurs, ici c'est la couleur qui distingue le titre du corps. */
+  --border-control:  var(--bz-border);
+  --border-field:    var(--bz-border);
+  --border-group:    var(--bz-line);
+  --border-progress: #C8CCCF;
+  --border-tab:      var(--bz-border);
+  --text-legend:     var(--accent-dk);
+
+  /* ========================================================
+     3. LE LISERÉ — la signature du style.
+     L'etat n'est ni un fond, ni une opacite : c'est un LISERE
+     qui s'allume en bleu. Le survol d'un bouton BORDE
+     (--accent) sans changer le fond ; l'appui teinte a peine
+     (--accent-pale) ; le focus borde ; le pouce de defilement
+     BLEUIT au survol ; le bouton par defaut vit borde d'accent
+     en permanence. Plat chirurgical : fonds officiels
+     #EFF0F1 / #FFFFFF / #FCFCFC, traits 1 px, radius 3,
+     glyphes fins — et Fermer, seul, se cercle de ROUGE.
+     ======================================================== */
+
+  /* Alias "background" attendus par le CSS partagé (--plastic-*,
+     --gradient-*) : l'interdit #9 de STYLE.md proscrit tout dégradé
+     hors bureau, donc chaque valeur ci-dessous est un dégradé 2 arrêts
+     même couleur -- syntaxiquement un gradient, visuellement l'aplat pur
+     que la charte exige. Repos = fond bouton officiel, pressé = teinte
+     --accent-pale (tableau d'états §7) ; barre de titre = #E3E5E7 plat ;
+     boutons de légende SANS fond au repos, juste le glyphe fin sur la
+     barre (le survol -- disque gris ou disque rouge pour Fermer -- est un
+     état que ce token de base ne porte pas) ; jauge = plein accent. */
+  --plastic-raised:  linear-gradient(var(--bz-button), var(--bz-button));
+  --plastic-pressed: linear-gradient(var(--accent-pale), var(--accent-pale));
+  --gradient-title-active: linear-gradient(var(--bz-titlebar), var(--bz-titlebar));
+  --gradient-titlebtn:       linear-gradient(transparent, transparent);
+  --gradient-titlebtn-close: linear-gradient(transparent, transparent);
+  --gradient-progress: linear-gradient(var(--accent), var(--accent));
+
+  /* ========================================================
+     4. OMBRES
+     ======================================================== */
+  --shadow-window: 0 12px 30px rgba(0,0,0,.30), 0 2px 6px rgba(0,0,0,.16);
+  --shadow-window-inactive: 0 6px 16px rgba(0,0,0,.18);
+  --shadow-menu: 0 4px 14px rgba(0,0,0,.22);
+
+  /* Alias de contrat : la "plaque" du §6.1 est "radius 5, trait #B9BDC0,
+     ombre douce" -- le filet et l'ombre du charter existent déjà, on les
+     combine simplement en un seul box-shadow composite. Le survol n'est
+     JAMAIS une ombre dans cette charte (interdit #9 "ombres sur
+     contrôles") : c'est le lisere, donc --glow-hover réutilise
+     --focus-ring tel quel (même anneau intérieur 1 px accent, pas de
+     flou). Le texte de titre reste plat, sans ombre portée. */
+  --frame-shadow: 0 0 0 1px var(--bz-border), var(--shadow-window);
+  --glow-hover: var(--focus-ring);
+  --title-text-shadow: none;
+
+  /* ========================================================
+     5. TYPOGRAPHIE
+     ======================================================== */
+  --font-ui: "Noto Sans", "Open Sans", "DejaVu Sans", "Segoe UI", sans-serif;
+  --font-size-base: 14px;
+  --font-size-title: 14px;      /* CENTRE, 500 */
+  --line-height: 1.45;
+
+  /* Alias de contrat : pas de fonte mono dans le charter d'origine --
+     stack Linux/KDE classique assortie à --font-ui. Le titre de fenêtre
+     reste Noto Sans (§6.2 : même famille, seul le poids 500 change,
+     porté par le CSS partagé via font-weight, pas par ce token). */
+  --font-mono: "Noto Sans Mono", "DejaVu Sans Mono", monospace;
+  --font-title: var(--font-ui);
+
+  /* ========================================================
+     6. MÉTRIQUES & ESPACEMENT
+     ======================================================== */
+  --space-1: 2px; --space-2: 4px; --space-3: 8px;
+  --space-4: 12px; --space-5: 14px; --space-6: 20px;
+  --pad-body: 14px;
+  --control-height: 30px;
+  --button-min-width: 80px;
+  --titlebar-height: 30px;
+  --wm-size: 20px;
+  --checkbox-size: 16px;
+  --toggle-w: 42px; --toggle-h: 22px;
+  --scrollbar-size: 10px;
+  --radius-control: 3px;
+  --radius-window: 5px;
+
+  /* Alias de contrat : l'unité de base est le plus petit palier de la
+     grille §5 {2,4,8,12,14,20}. Metro-style "uniformise" les hauteurs
+     (STYLE.md ne distingue pas champ/contrôle) donc --field-height
+     reprend --control-height. Les icônes reprennent les deux paliers
+     officiels du thème d'icônes KDE (16/32, la même paire que le reste
+     de la collection). Le group box suit le même rayon que les
+     contrôles (seuls 3 px et 5 px existent dans la charte, §5). Les
+     boutons de légende sont carrés --wm-size (§6.2 "boutons de fenêtre
+     20 px"). */
+  --unit: 2px;
+  --field-height: var(--control-height);
+  --icon-small: 16px;  --icon-large: 32px;
+  --radius-group: var(--radius-control);
+  --titlebar-btn: var(--wm-size);
+
+  /* ========================================================
+     7. ÉTATS & MOUVEMENT
+     ======================================================== */
+  --transition-state: .12s ease;
+  --focus-ring: inset 0 0 0 1px var(--accent);   /* le lisere, double le trait */
+  --cursor-interactive: var(--cursor-default);
+
+  /* Alias de contrat : le fondu couleur/lisere de la charte. Pas
+     d'anneau pointillé séparé -- "un seul geste dit tous les états"
+     (STYLE.md §2), le lisere (--focus-ring) porte déjà le focus. */
+  --transition: var(--transition-state);
+  --focus-outline: none;
+
+  /* ========================================================
+     8. CURSEURS — mêmes 14 actions que toutes les chartes.
+     Matiere Breeze : corps BLANCS a contour sombre (le theme
+     de curseurs KDE), attente = anneau BLEU #3DAEE9.
+     ======================================================== */
+  --cur-img-default: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.2' transform='translate(1.5,1.5)'%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23fff' stroke='%23000' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-link: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.2' transform='translate(1.5,1.5)'%3E%3Cpolygon points='10,2 13,2 13,9 16,9 19,11 19,15 16,20 9,20 5,14 5,12 7,11 10,14' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='10,2 13,2 13,9 16,9 19,11 19,15 16,20 9,20 5,14 5,12 7,11 10,14' fill='%23fff' stroke='%23000' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpath d='M13.5 11v4M16 12v3' stroke='%23000' stroke-width='.9' stroke-linecap='round'/%3E%3C/svg%3E");
+  --cur-img-text: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg fill='none' stroke='%23fff' stroke-width='4.2' stroke-linecap='round'%3E%3Cpath d='M8 3h6M11 3v18M8 21h6'/%3E%3C/g%3E%3Cg fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round'%3E%3Cpath d='M8 3h6M11 3v18M8 21h6'/%3E%3C/g%3E%3C/svg%3E");
+  --cur-img-wait: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.2' transform='translate(1.5,1.5)'%3E%3Ccircle cx='12' cy='12' r='7.5' fill='none' stroke='%23000' stroke-width='5'/%3E%3C/g%3E%3Ccircle cx='12' cy='12' r='7.5' fill='none' stroke='%23fff' stroke-width='5.6'/%3E%3Ccircle cx='12' cy='12' r='7.5' fill='none' stroke='%233DAEE9' stroke-width='4'/%3E%3Cpath d='M12 4.5A7.5 7.5 0 0 1 19.5 12' fill='none' stroke='%23A6DBF7' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E");
+  --cur-img-progress: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.2' transform='translate(1.5,1.5)'%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23000' stroke='%23000' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/g%3E%3Cg opacity='.2' transform='translate(1.5,1.5)'%3E%3Ccircle cx='17.5' cy='17.5' r='4.6' fill='none' stroke='%23000' stroke-width='3.4'/%3E%3C/g%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23fff' stroke='%23000' stroke-width='1.6' stroke-linejoin='round'/%3E%3Ccircle cx='17.5' cy='17.5' r='4.6' fill='none' stroke='%23fff' stroke-width='4.6'/%3E%3Ccircle cx='17.5' cy='17.5' r='4.6' fill='none' stroke='%233DAEE9' stroke-width='3'/%3E%3Cpath d='M17.5 12.9A4.6 4.6 0 0 1 22.1 17.5' fill='none' stroke='%23A6DBF7' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E");
+  --cur-img-help: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.2' transform='translate(1.5,1.5)'%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23000' stroke='%23000' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23fff' stroke='%23000' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpath d='M14.5 6c0-2.6 6.5-2.6 6.5 0c0 2.2-3.2 2-3.2 4.4' fill='none' stroke='%23fff' stroke-width='3.8' stroke-linecap='round'/%3E%3Cpath d='M14.5 6c0-2.6 6.5-2.6 6.5 0c0 2.2-3.2 2-3.2 4.4' fill='none' stroke='%231D6EA8' stroke-width='1.8' stroke-linecap='round'/%3E%3Ccircle cx='17.9' cy='13.8' r='1.7' fill='%23fff'/%3E%3Ccircle cx='17.9' cy='13.8' r='1.1' fill='%231D6EA8'/%3E%3C/svg%3E");
+  --cur-img-crosshair: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg fill='none' stroke='%23fff' stroke-width='4.2'%3E%3Cpath d='M12 3v18M3 12h18'/%3E%3C/g%3E%3Cg fill='none' stroke='%23000' stroke-width='1.6'%3E%3Cpath d='M12 3v18M3 12h18'/%3E%3C/g%3E%3C/svg%3E");
+  --cur-img-not-allowed: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg fill='none' stroke='%23fff' stroke-width='5.4'%3E%3Ccircle cx='12' cy='12' r='8'/%3E%3Cpath d='M6.5 6.5l11 11'/%3E%3C/g%3E%3Cg fill='none' stroke='%23000' stroke-width='2.4'%3E%3Ccircle cx='12' cy='12' r='8'/%3E%3Cpath d='M6.5 6.5l11 11'/%3E%3C/g%3E%3C/svg%3E");
+  --cur-img-resize-v: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.2' transform='translate(1.5,1.5)'%3E%3Cpolygon points='12,1 17,7 14,7 14,17 17,17 12,23 7,17 10,17 10,7 7,7' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='12,1 17,7 14,7 14,17 17,17 12,23 7,17 10,17 10,7 7,7' fill='%23fff' stroke='%23000' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-resize-h: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.2' transform='translate(1.5,1.5)'%3E%3Cpolygon points='1,12 7,7 7,10 17,10 17,7 23,12 17,17 17,14 7,14 7,17' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='1,12 7,7 7,10 17,10 17,7 23,12 17,17 17,14 7,14 7,17' fill='%23fff' stroke='%23000' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-resize-nwse: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.2' transform='translate(1.5,1.5)'%3E%3Cpath d='M7 7l10 10' stroke='%23000' stroke-width='4.6'/%3E%3Cpolygon points='4,4 12,4 4,12' fill='%23000'/%3E%3Cpolygon points='20,20 12,20 20,12' fill='%23000'/%3E%3C/g%3E%3Cpath d='M7 7l10 10' stroke='%23fff' stroke-width='4'/%3E%3Cpath d='M7 7l10 10' stroke='%23000' stroke-width='1.8'/%3E%3Cpolygon points='4,4 12,4 4,12' fill='%23fff' stroke='%23000' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpolygon points='20,20 12,20 20,12' fill='%23fff' stroke='%23000' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-resize-nesw: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.2' transform='translate(1.5,1.5)'%3E%3Cpath d='M17 7L7 17' stroke='%23000' stroke-width='4.6'/%3E%3Cpolygon points='20,4 12,4 20,12' fill='%23000'/%3E%3Cpolygon points='4,20 12,20 4,12' fill='%23000'/%3E%3C/g%3E%3Cpath d='M17 7L7 17' stroke='%23fff' stroke-width='4'/%3E%3Cpath d='M17 7L7 17' stroke='%23000' stroke-width='1.8'/%3E%3Cpolygon points='20,4 12,4 20,12' fill='%23fff' stroke='%23000' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpolygon points='4,20 12,20 4,12' fill='%23fff' stroke='%23000' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-move: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.2' transform='translate(1.5,1.5)'%3E%3Cpolygon points='12,1 15,5 13,5 13,19 15,19 12,23 9,19 11,19 11,5 9,5' fill='%23000'/%3E%3Cpolygon points='1,12 5,9 5,11 19,11 19,9 23,12 19,15 19,13 5,13 5,15' fill='%23000'/%3E%3C/g%3E%3Cg fill='%23fff' stroke='%23000' stroke-width='1.6' stroke-linejoin='round'%3E%3Cpolygon points='12,1 15,5 13,5 13,19 15,19 12,23 9,19 11,19 11,5 9,5'/%3E%3Cpolygon points='1,12 5,9 5,11 19,11 19,9 23,12 19,15 19,13 5,13 5,15'/%3E%3C/g%3E%3Cpolygon points='12,1 15,5 13,5 13,19 15,19 12,23 9,19 11,19 11,5 9,5' fill='%23fff'/%3E%3Cpolygon points='1,12 5,9 5,11 19,11 19,9 23,12 19,15 19,13 5,13 5,15' fill='%23fff'/%3E%3C/svg%3E");
+  --cur-img-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.2' transform='translate(1.5,1.5)'%3E%3Cpolygon points='12,2 18,9 14,9 14,20 10,20 10,9 6,9' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='12,2 18,9 14,9 14,20 10,20 10,9 6,9' fill='%23fff' stroke='%23000' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cursor-default: var(--cur-img-default) 2 2, default;
+  --cursor-link: var(--cur-img-link) 11 3, pointer;
+  --cursor-text: var(--cur-img-text) 11 12, text;
+  --cursor-wait: var(--cur-img-wait) 12 12, wait;
+  --cursor-progress: var(--cur-img-progress) 2 2, progress;
+  --cursor-help: var(--cur-img-help) 2 2, help;
+  --cursor-crosshair: var(--cur-img-crosshair) 12 12, crosshair;
+  --cursor-not-allowed: var(--cur-img-not-allowed) 12 12, not-allowed;
+  --cursor-resize-v: var(--cur-img-resize-v) 12 12, ns-resize;
+  --cursor-resize-h: var(--cur-img-resize-h) 12 12, ew-resize;
+  --cursor-resize-nwse: var(--cur-img-resize-nwse) 12 12, nwse-resize;
+  --cursor-resize-nesw: var(--cur-img-resize-nesw) 12 12, nesw-resize;
+  --cursor-move: var(--cur-img-move) 12 12, move;
+  --cursor-up: var(--cur-img-up) 12 3, default;
+
+  /* ================================================== ICONS:BEGIN
+     9. ICÔNES — navigation & fichiers (14), tokenisées
+     comme les curseurs : SVG data-URI dessinés dans la
+     matière du style. À consommer en background-image :
+     background: var(--icon-folder) center/contain no-repeat;
+     Jamais d'image externe, jamais d'emoji.
+     ======================================================== */
+  --icon-folder: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M2.8 6h6.3l1.9 2.4h10.2v11H2.8z' fill='%234A94C8'/%3E%3Cpath d='M2.8 9.6h18.4v9.8H2.8z' fill='%2361B0E0'/%3E%3Cpolygon points='21.2,14.4 21.2,19.4 16.2,19.4' fill='%233E84B8'/%3E%3C/svg%3E");
+  --icon-folder-open: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M2.8 6h6.3l1.9 2.4h9.8v3H2.8z' fill='%233E84B8'/%3E%3Cpolygon points='4.9,11.2 21.4,11.2 19.2,19.4 2.7,19.4' fill='%2361B0E0'/%3E%3Cpolygon points='21.4,11.2 21.4,15.2 17.4,11.2' fill='%234A94C8'/%3E%3C/svg%3E");
+  --icon-file: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M6 2.5h8l4.5 4.5v14.5H6z' fill='%23FCFCFC' stroke='%2395A0A6' stroke-width='1.1' stroke-linejoin='round'/%3E%3Cpath d='M14 2.5v4.5h4.5z' fill='%23DDE3E6' stroke='%2395A0A6' stroke-width='0.9900000000000001' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-file-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M6 2.5h8l4.5 4.5v14.5H6z' fill='%23FCFCFC' stroke='%2395A0A6' stroke-width='1.1' stroke-linejoin='round'/%3E%3Cpath d='M14 2.5v4.5h4.5z' fill='%23DDE3E6' stroke='%2395A0A6' stroke-width='0.9900000000000001' stroke-linejoin='round'/%3E%3Ccircle cx='10.2' cy='11.2' r='1.5' fill='%23F6C344'/%3E%3Cpolygon points='8,18.4 10.8,14.6 12.6,16.9 14,15.1 16.4,18.4' fill='%234CA85E'/%3E%3C/svg%3E");
+  --icon-drive: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Crect x='3' y='8.6' width='18' height='7' fill='%23DDE1E4' rx='1' stroke='%237F8C93' stroke-width='1'/%3E%3Ccircle cx='17.6' cy='12.1' r='1.2' fill='%233DAEE9'/%3E%3Cpath d='M5.6 12.1h6.4' fill='none' stroke='%237F8C93' stroke-width='1.1' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3C/svg%3E");
+  --icon-home: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='3.6,11.6 12,4.4 20.4,11.6' fill='%234A94C8' stroke='%236A767C' stroke-width='1.2' stroke-linejoin='round'/%3E%3Crect x='5.8' y='11.6' width='12.4' height='7.8' fill='%23E4E8EA' stroke='%236A767C' stroke-width='1.2'/%3E%3Crect x='10.4' y='14.4' width='3.2' height='5' fill='%234A94C8' stroke='%236A767C' stroke-width='0.96'/%3E%3C/svg%3E");
+  --icon-computer: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Crect x='3.4' y='4.4' width='17.2' height='11.6' fill='%2331363B' rx='1.2'/%3E%3Crect x='4.9' y='5.9' width='14.2' height='8.6' fill='%2393CEE9'/%3E%3Cpath d='M12 16v2.6' fill='none' stroke='%2331363B' stroke-width='1.8' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3Cpath d='M8 19.4h8' fill='none' stroke='%2331363B' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-network: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M12 7.6L6.4 16M12 7.6l5.6 8.4M6.4 16h11.2' fill='none' stroke='%2395A0A6' stroke-width='1.4' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3Ccircle cx='12' cy='6.4' r='2.2' fill='%233DAEE9'/%3E%3Ccircle cx='5.6' cy='17' r='2.2' fill='%233DAEE9'/%3E%3Ccircle cx='18.4' cy='17' r='2.2' fill='%233DAEE9'/%3E%3C/svg%3E");
+  --icon-trash: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M5.6 6.4h12.8' fill='none' stroke='%234D5459' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M9.6 6.4V4.6h4.8v1.8' fill='none' stroke='%234D5459' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M7 6.4l.9 13h8.2l.9-13' fill='none' stroke='%234D5459' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M10.2 9.6v6.6M13.8 9.6v6.6' fill='none' stroke='%234D5459' stroke-width='1.2800000000000002' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-search: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='10.4' cy='10.4' r='4.9' fill='none' stroke='%234D4D4D' stroke-width='1.6'/%3E%3Cpath d='M14.2 14.2l5.2 5.2' fill='none' stroke='%234D4D4D' stroke-width='1.9000000000000001' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-back: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M20 12H5.5M11.5 5.5L5 12l6.5 6.5' fill='none' stroke='%234D4D4D' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-forward: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M4 12h14.5M12.5 5.5L19 12l-6.5 6.5' fill='none' stroke='%234D4D4D' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M12 20V5.5M5.5 11.5L12 5l6.5 6.5' fill='none' stroke='%234D4D4D' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-refresh: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M18.6 8.2A7.6 7.6 0 1 0 19.6 14' fill='none' stroke='%234D4D4D' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpolygon points='19.9,4.4 19.9,9.8 14.7,8.6' fill='%234D4D4D'/%3E%3C/svg%3E");
+  /* ICONS:END */
+}
+/* DARK:BEGIN — thème sombre (phase 3). Toutes les propriétés "extras"
+   ci-dessus référencent --bz-*/--accent/--shadow-window/--gradient-desktop
+   en var(), elles se re-résolvent donc seules ici -- pas besoin de les
+   répéter (même logique que luna_xp §2). */
+[data-theme="dark"] {
+  --bz-window: #2A2E32;
+  --bz-view: #1B1E20;
+  --bz-button: #31363B;
+  --bz-titlebar: #31363B;
+  --bz-ink: #FCFCFC;
+  --bz-ink-soft: #BDC3C7;
+  --bz-ink-disabled: #6E7175;
+  --bz-border: #5C6368;
+  --bz-line: #3B4045;
+  --accent-pale: #17394E;
+  --accent-veil: rgba(61,174,233,.20);
+  --tooltip-bg: #31363B;
+  --surface-desktop: #14171A;
+  --gradient-desktop: linear-gradient(150deg,#1A1E22,#101315);
+  --shadow-window: 0 12px 34px rgba(0,0,0,.65), 0 0 0 1px rgba(0,0,0,.7);
+  --shadow-menu: 0 6px 18px rgba(0,0,0,.6);
+  /* icônes surchargées pour le fond sombre */
+  --icon-back: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M20 12H5.5M11.5 5.5L5 12l6.5 6.5' fill='none' stroke='%23EFF0F1' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-forward: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M4 12h14.5M12.5 5.5L19 12l-6.5 6.5' fill='none' stroke='%23EFF0F1' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M12 20V5.5M5.5 11.5L12 5l6.5 6.5' fill='none' stroke='%23EFF0F1' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-refresh: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M18.6 8.2A7.6 7.6 0 1 0 19.6 14' fill='none' stroke='%23EFF0F1' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpolygon points='19.9,4.4 19.9,9.8 14.7,8.6' fill='%23EFF0F1'/%3E%3C/svg%3E");
+  --icon-search: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='10.4' cy='10.4' r='4.9' fill='none' stroke='%23EFF0F1' stroke-width='1.6'/%3E%3Cpath d='M14.2 14.2l5.2 5.2' fill='none' stroke='%23EFF0F1' stroke-width='1.9000000000000001' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-trash: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M5.6 6.4h12.8' fill='none' stroke='%23EFF0F1' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M9.6 6.4V4.6h4.8v1.8' fill='none' stroke='%23EFF0F1' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M7 6.4l.9 13h8.2l.9-13' fill='none' stroke='%23EFF0F1' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M10.2 9.6v6.6M13.8 9.6v6.6' fill='none' stroke='%23EFF0F1' stroke-width='1.2800000000000002' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-computer: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Crect x='3.4' y='4.4' width='17.2' height='11.6' fill='%239DA5AB' rx='1.2'/%3E%3Crect x='4.9' y='5.9' width='14.2' height='8.6' fill='%233DAEE9'/%3E%3Cpath d='M12 16v2.6' fill='none' stroke='%239DA5AB' stroke-width='1.8' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3Cpath d='M8 19.4h8' fill='none' stroke='%239DA5AB' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+/* DARK:END */
+
+/* HC:BEGIN — contraste élevé (phase 4) */
+[data-theme="hc"] {
+  --bz-window: #FFFFFF;
+  --bz-view: #FFFFFF;
+  --bz-button: #FFFFFF;
+  --bz-titlebar: #FFFFFF;
+  --bz-border: #000000;
+  --bz-line: #000000;
+  --bz-ink: #000000;
+  --bz-ink-soft: #333333;
+  --bz-ink-disabled: #767676;
+  --accent: #0E5586;
+  --accent-dk: #0A3E62;
+  --accent-pale: rgba(14,85,134,.14);
+  --accent-veil: rgba(14,85,134,.20);
+  --bz-close: #8E0000;
+  --selection-text: #FFFFFF;
+  --gradient-desktop: linear-gradient(#E8E8E8,#E8E8E8);
+  --tooltip-bg: #FFFFFF;
+  --shadow-window: 0 0 0 2px #000000;
+  --shadow-menu: 0 0 0 2px #000000;
+  /* la piste de jauge #C8CCCF (§9) est trop pâle sur fond blanc AAA --
+     elle rejoint le noir des autres traits de contraste élevé. */
+  --border-progress: #000000;
+}
+/* HC:END */
+
+
+
+
+/* --- Base recommandée (à copier dans l'app) ------------------------------ */
+/*
+body {
+  margin: 0;
+  background: var(--gradient-desktop);
+  color: var(--text-primary);
+  font: 400 var(--font-size-base)/var(--line-height) var(--font-ui);
+  cursor: var(--cursor-default);
+}
+::selection { background: var(--selection-bg); color: var(--selection-text); }
+a { color: var(--accent-dk); cursor: var(--cursor-link); }
+input[type=text], textarea { cursor: var(--cursor-text); }
+*/
+
+/* ==========================================================================
+   STRUCTURE — port réel de components.html sur la grille partagée du spike.
+   La passe precedente n'avait porté que les tokens de couleur sur la forme
+   generique Luna (boutons a coins arrondis, survol par ombre, etc.) -- ce qui
+   revient a peindre Breeze aux couleurs de Breeze mais avec le geste XP. Ici :
+   le LISERE (survol = bordure accent, fond immobile), le defaut borde en
+   permanence, le Fermer seul se cercle de rouge, les onglets qui posent un
+   lisere haut au lieu de gonfler, les menus en voile (jamais en plein sauf
+   selection de LISTE). Recettes copiées de components.html, pas réinventées.
+   Interdits verifies : #1 (survol = bordure, jamais un fond) #2 (defaut
+   borde, jamais plein) #3 (pouce qui bleuit, zero fleches) #4 (Fermer =
+   seul rouge du chrome) #6 (selection pleine vs survol en voile -- deux
+   registres distincts) #9 (aucune ombre sur un controle).
+   ========================================================================== */
+
+/* ---------- Barre de titre : #E3E5E7 officielle, titre 500 CENTRE,
+   glyphes fins. Le balisage partagé n'a que deux zones flex (.titlebar-drag
+   + .titlebar-buttons), pas les trois de components.html (tb-left/tb-title/
+   tb-right) -- on centre donc le titre par position absolue sur .titlebar
+   (repositionné en 'relative'), ce qui donne le même résultat visuel qu'un
+   3e bloc flex sans toucher au HTML. ---------- */
+.titlebar {
+  height: var(--titlebar-height);
+  min-height: var(--titlebar-height);
+  background: var(--bz-titlebar);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-bottom: 1px solid var(--bz-border);
+  border-radius: calc(var(--radius-window) - 1px) calc(var(--radius-window) - 1px) 0 0;
+  padding: 0 6px;
+  position: relative;
+}
+.titlebar-drag { flex: 1; }
+.titlebar-title {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  max-width: 55%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding-left: 0;
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  font-weight: 500;
+  font-size: var(--font-size-title);
+  text-shadow: none;
+  text-align: center;
+}
+.titlebar-buttons { display: flex; gap: 4px; }
+
+/* Boutons de fenêtre : disques transparents 20×20 (§6.2), glyphes fins
+   tracés en currentColor -- survol = disque gris #CFD3D6 (valeur du
+   spécimen, hors nomenclature de tokens comme dans components.html
+   lui-même) ; Fermer survolé = seul rouge du chrome (interdit #4). Pas
+   d'ombre (interdit #9), pas de biseau. */
+.cap-btn {
+  width: var(--wm-size);
+  height: var(--wm-size);
+  min-width: 0;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-primary);
+  cursor: var(--cursor-default);
+  transition: background var(--transition-state), color var(--transition-state);
+}
+.cap-btn:hover { filter: none; background: #CFD3D6; }
+/* Dark mode : le disque de survol clair #CFD3D6 est proche du blanc, or le
+   glyphe (currentColor = --text-primary) devient lui aussi quasi blanc en
+   sombre -- glyphe blanc sur disque presque blanc = illisible. On reprend
+   --bz-border (deja #5C6368 en sombre) qui offre un plateau moyen, contraste
+   correct contre le glyphe clair ET contre la barre de titre sombre. Ne
+   s'applique qu'en [data-theme="dark"] : HC garde le #CFD3D6 d'origine
+   (encre noire dessus, deja lisible). */
+[data-theme="dark"] .cap-btn:hover { background: var(--bz-border); }
+.cap-btn:active { background: var(--accent); color: #fff; }
+.cap-close:hover { background: var(--bz-close); color: #fff; }
+
+/* Chevrons fins (Réduire = bas, Agrandir = haut) via le coin de bordure
+   classique tourné à 45° -- même geste que le glyphe X ci-dessous, sans
+   image externe. */
+.cap-min span::before,
+.cap-max span::before {
+  content: "";
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 6px; height: 6px;
+  border: solid currentColor;
+  border-width: 0 1.3px 1.3px 0;
+  background: none;
+}
+.cap-min span::before { transform: translate(-50%, -50%) rotate(45deg); }
+.cap-max span::before { transform: translate(-50%, -50%) rotate(-135deg); }
+
+.cap-close span::before,
+.cap-close span::after {
+  content: "";
+  position: absolute;
+  left: 50%; right: auto; top: 50%;
+  width: 9px; height: 1.3px;
+  background: currentColor;
+}
+.cap-close span::before { transform: translate(-50%, -50%) rotate(45deg); }
+.cap-close span::after { transform: translate(-50%, -50%) rotate(-45deg); }
+
+/* ---------- Onglets : barre plate, l'actif pose un liseré haut 2 px
+   (§9 "Onglets") -- pas de gonflement ni de gras, un seul geste. ---------- */
+.tabbar {
+  background: var(--bz-window);
+  border-bottom: 1px solid var(--bz-border);
+  margin-bottom: -1px;
+}
+.tab-btn {
+  height: var(--control-height);
+  background: var(--bz-window);
+  border: 1px solid var(--bz-border);
+  border-bottom: 0;
+  border-radius: var(--radius-control) var(--radius-control) 0 0;
+  box-shadow: inset 0 2px 0 transparent;
+  font: inherit;
+  font-weight: 400;
+  color: var(--text-primary);
+  cursor: var(--cursor-default);
+  transition: box-shadow var(--transition-state), background var(--transition-state);
+}
+/* #F5F6F7 etait un blanc casse fige : correct sur l'encre sombre du clair,
+   mais en sombre --text-primary devient #FCFCFC (quasi blanc) -> texte
+   d'onglet illisible sur ce fond quasi blanc. --bz-button flip deja
+   correctement (clair #FCFCFC proche de l'original, sombre #31363B, HC
+   #FFFFFF) donc le remplace au lieu d'ajouter un override. */
+.tab-btn:hover:not(.active) { filter: none; background: var(--bz-button); }
+.tab-btn.active {
+  background: var(--bz-view);
+  box-shadow: inset 0 2px 0 var(--accent);
+  font-weight: 400;
+}
+
+/* ---------- Boutons : le principe unique. Survol = la bordure passe à
+   l'accent, LE FOND NE BOUGE PAS (interdit #1) ; appui = accent-pale ;
+   focus = liseré double (--focus-ring) ; jamais d'ombre au survol. ---------- */
+button {
+  min-width: var(--button-min-width);
+  height: var(--control-height);
+  padding: 0 14px;
+  border: 1px solid var(--bz-border);
+  border-radius: var(--radius-control);
+  background: var(--bz-button);
+  box-shadow: none;
+  font: inherit;
+  color: var(--text-primary);
+  cursor: var(--cursor-default);
+  user-select: none;
+  transition: border-color var(--transition-state), background var(--transition-state), box-shadow var(--transition-state);
+}
+button:not(:disabled):hover { border-color: var(--accent); background: var(--bz-button); box-shadow: none; }
+button:not(:disabled):active { background: var(--accent-pale); border-color: var(--accent); box-shadow: none; }
+button:focus-visible { outline: none; border-color: var(--accent); box-shadow: var(--focus-ring); }
+button:disabled { color: var(--text-disabled); border-color: var(--bz-line); background: var(--bz-button); }
+
+/* Boutons "Démarrer" = l'action par défaut de la page (§7 "Défaut : bordé
+   accent EN PERMANENCE, fond #FCFCFC") -- jamais un remplissage plein
+   (interdit #2), le liseré suffit à les distinguer. */
+.start-btn {
+  align-self: flex-start;
+  min-width: var(--button-min-width);
+  height: var(--control-height);
+  padding: 0 20px;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-control);
+  background: var(--bz-button);
+  box-shadow: var(--focus-ring);
+  font: inherit;
+  font-weight: 400;
+  color: var(--text-primary);
+  cursor: var(--cursor-default);
+}
+.start-btn:hover { border-color: var(--accent); background: var(--bz-button); }
+.start-btn:active { background: var(--accent-pale); }
+
+/* Boutons de ligne (pause/suppr.) : même principe, gabarit compact --
+   sans quoi ils hériteraient du min-width/height des boutons pleins
+   ci-dessus (--button-min-width est plus large qu'une ligne de liste). */
+.row-actions button {
+  min-width: 0;
+  height: 22px;
+  padding: 0 10px;
+  font-size: 12px;
+  border: 1px solid var(--bz-border);
+  border-radius: var(--radius-control);
+  background: var(--bz-button);
+  box-shadow: none;
+  color: var(--text-primary);
+  cursor: var(--cursor-default);
+}
+.row-actions button:hover { border-color: var(--accent); background: var(--bz-button); box-shadow: none; }
+.row-actions button:active { background: var(--accent-pale); border-color: var(--accent); }
+
+/* ---------- Champs : vue blanche, liseré au focus. Contrairement à Luna/
+   XP, Breeze NE garde PAS les champs carrés -- même rayon 3 px que les
+   boutons (vérifié dans components.html, aucune exception pour --radius-
+   field dans STYLE.md §5/§7). ---------- */
+input[type="text"],
+input[type="number"],
+select,
+textarea,
+.search-input {
+  background: var(--bz-view);
+  border: 1px solid var(--bz-border);
+  border-radius: var(--radius-control);
+  box-shadow: none;
+  font: inherit;
+  color: var(--text-primary);
+  height: var(--control-height);
+  padding: 0 8px;
+  transition: border-color var(--transition-state), box-shadow var(--transition-state);
+}
+textarea { height: auto; min-height: 66px; padding: 5px 8px; resize: none; }
+input[type="text"]:not(:disabled):hover,
+input[type="number"]:not(:disabled):hover,
+select:not(:disabled):hover,
+.search-input:not(:disabled):hover { border-color: var(--accent); }
+input[type="text"]:focus,
+input[type="number"]:focus,
+select:focus,
+textarea:focus,
+.search-input:focus { outline: none; border-color: var(--accent); box-shadow: var(--focus-ring); }
+input:disabled, textarea:disabled, select:disabled { background: var(--bz-window); color: var(--text-disabled); border-color: var(--bz-line); }
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 28px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14'%3E%3Cpath d='M3.5 5.5l3.5 3.5 3.5-3.5' fill='none' stroke='%23232629' stroke-width='1.4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 14px;
+}
+/* Le chevron ci-dessus est un SVG data-URI, la couleur du trait ne peut pas
+   suivre var(--text-primary) -- elle reste figee a #232629 (encre claire).
+   Sur --bz-view sombre (#1B1E20, quasi noir) ce chevron sombre-sur-sombre
+   devient invisible : on fournit le meme dessin avec un trait clair, comme
+   deja fait pour --icon-back/--icon-search etc. ci-dessus. */
+[data-theme="dark"] select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14'%3E%3Cpath d='M3.5 5.5l3.5 3.5 3.5-3.5' fill='none' stroke='%23FCFCFC' stroke-width='1.4'/%3E%3C/svg%3E");
+}
+
+/* ---------- Case à cocher : coche pleine accent, coche blanche --
+   même recette que components.html §3. ---------- */
+input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  margin: 0;
+  width: var(--checkbox-size);
+  height: var(--checkbox-size);
+  border: 1px solid var(--bz-border);
+  border-radius: 2px;
+  background: var(--bz-view);
+  display: inline-grid;
+  place-content: center;
+  cursor: var(--cursor-default);
+  transition: border-color var(--transition-state), background var(--transition-state);
+}
+input[type="checkbox"]:not(:disabled):hover { border-color: var(--accent); }
+input[type="checkbox"]:checked { background: var(--accent); border-color: var(--accent); }
+input[type="checkbox"]:checked::after {
+  content: "";
+  width: 12px; height: 12px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12'%3E%3Cpath d='M2 6.5l3 3 5-7' fill='none' stroke='%23fff' stroke-width='2'/%3E%3C/svg%3E") no-repeat center;
+}
+input[type="checkbox"]:disabled { border-color: var(--bz-line); background: var(--bz-window); }
+
+/* ---------- Listes / lignes : le survol est un VOILE bleu pâle
+   (--accent-veil), la sélection est PLEINE accent (§7 -- deux registres
+   distincts, interdit #6). Une seule règle groupée : chaque sélecteur visé
+   (.row/.share-row/.downloads-row/.scan-row) y figure explicitement. ---------- */
+.row:hover:not(.selected),
+.share-row:hover:not(.selected),
+.downloads-row:hover:not(.selected),
+.scan-row:hover { background: var(--accent-veil); }
+
+.downloads-row-header {
+  font-weight: 700;
+  color: var(--text-primary);
+  background: var(--bz-window);
+  border-bottom: 1px solid var(--bz-border);
+}
+
+.row-name { font-weight: 700; color: var(--text-primary); }
+.row-state { color: var(--text-primary); }
+.row-rate { font-variant-numeric: tabular-nums; color: var(--text-primary); }
+.row-eta, .row-category, .row-peers { font-variant-numeric: tabular-nums; color: var(--text-soft); }
+.scan-path { color: var(--text-primary); }
+.scan-size { font-variant-numeric: tabular-nums; color: var(--text-soft); }
+
+/* ---------- Groupes (Profil / détails) : la "plaque" de components.html --
+   fieldset { vue blanche, trait, radius controle, padding 14 } -- portée sur
+   les div+h3 du balisage partagé (le H3 tient lieu de legend : gras 700,
+   SANS couleur d'accent -- Breeze ne teinte pas ses légendes, à la
+   différence de Luna). Aucune ombre (interdit #9). ---------- */
+.profile-group,
+.details-group {
+  background: var(--bz-view);
+  border: 1px solid var(--bz-border);
+  border-radius: var(--radius-control);
+  box-shadow: none;
+  padding: var(--space-5);
+}
+.profile-group h3,
+.details-group h3 {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* ---------- Menu contextuel : #EFF0F1 bordé, survol en VOILE (jamais en
+   plein -- le plein est réservé à la sélection de liste, interdit #6). ---------- */
+.context-menu {
+  background: var(--bz-window);
+  border: 1px solid var(--bz-border);
+  border-radius: var(--radius-control);
+  box-shadow: var(--shadow-menu);
+  padding: 4px 0;
+}
+.context-menu-item { padding: 5px 12px; color: var(--text-primary); }
+.context-menu-item:hover { background: var(--accent-veil); color: var(--text-primary); }
+.context-menu-separator { height: 1px; background: var(--bz-line); margin: 4px 0; }
+
+/* ---------- Dialogues : plaque radius-window, h3 traité en bandeau de
+   titre #E3E5E7 centré 500 (§9 "Dialogues" -- barre officielle, sans
+   boutons de fenêtre) ; le bouton destructif garde le principe borde,
+   jamais plein (déjà porté par .is-destructive côté JS via button:hover
+   ci-dessus -- rien de spécifique à ajouter ici). ---------- */
+.modal-overlay { background: rgba(20, 23, 26, 0.45); }
+.modal-box {
+  background: var(--bz-window);
+  border: 1px solid var(--bz-border);
+  border-radius: var(--radius-window);
+  box-shadow: var(--shadow-menu);
+  padding: 0 var(--space-5) var(--space-5);
+}
+.modal-box h3 {
+  margin: 0 calc(-1 * var(--space-5)) var(--space-3);
+  padding: var(--space-3) var(--space-5);
+  background: var(--bz-titlebar);
+  border-bottom: 1px solid var(--bz-border);
+  border-radius: var(--radius-window) var(--radius-window) 0 0;
+  color: var(--text-primary);
+  font-weight: 500;
+  font-size: var(--font-size-title);
+  text-align: center;
+}
+
+/* ---------- Défilement : pouce fin qui BLEUIT au survol, ZÉRO flèche
+   (interdit #3). ---------- */
+::-webkit-scrollbar { width: var(--scrollbar-size); height: var(--scrollbar-size); }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background-color: var(--bz-border);
+  border: 3px solid transparent;
+  background-clip: padding-box;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover { background-color: var(--accent); border-width: 2px; }
+::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+::-webkit-scrollbar-corner { background: transparent; }
+
+/* ---------- Jauge Tetris : seul le cadre est stylable (le canvas dessine
+   ses propres pixels) -- bordure fine, radius contrôle, aucune ombre
+   (interdit #9). ---------- */
+canvas.tetris {
+  border: 1px solid var(--bz-border);
+  border-radius: var(--radius-control);
+  box-shadow: none;
+}

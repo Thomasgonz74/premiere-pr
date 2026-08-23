@@ -1,0 +1,20 @@
+/* Profile tab -- "Network" group (proxy/privacy, security center, remote access) */
+
+.profile-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-bottom: var(--space-4);
+  margin-bottom: var(--space-4);
+  border-bottom: 1px solid var(--border-group);
+}
+.profile-section:last-child { border-bottom: none; }
+
+.profile-section-heading {
+  margin: 0;
+  font-size: var(--font-size-base);
+  font-weight: bold;
+  color: var(--text-legend);
+}
+
+.pn-status-value { font-weight: bold; }

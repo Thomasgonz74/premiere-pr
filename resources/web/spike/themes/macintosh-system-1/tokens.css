@@ -1,0 +1,576 @@
+/* ==========================================================================
+   SYSTEM1 — tokens.css — v1.4 (port spike)
+   Style : "Macintosh System 1 (1984)"
+   Rôle  : SOURCE DE VÉRITÉ des variables. À importer tel quel.
+   Lire  : STYLE.md (règles & interdits) · components.html (référence visuelle)
+   sous resources/web/charters/Charte graphique/Macintosh System 1 (1984)/
+   Le Macintosh original (1984) : 1-bit intégral — noir et blanc purs,
+   les gris sont des TRAMES (damiers), la barre de titre a six filets,
+   la case de fermeture seule à gauche, les roundrects de QuickDraw,
+   la montre en attente. Aucun survol : la souris de 1984 clique.
+   ========================================================================== */
+
+:root {
+
+  /* ========================================================
+     1. PRIMITIVES — un bit, deux couleurs
+     ======================================================== */
+  --s1-white: #FFFFFF;
+  --s1-black: #000000;
+
+  /* Les gris n'existent pas : ce sont des trames (damiers SVG) */
+  --dither50: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='2' height='2'%3E%3Crect width='1' height='1' fill='%23000'/%3E%3Crect x='1' y='1' width='1' height='1' fill='%23000'/%3E%3C/svg%3E");
+  --dither25: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Crect width='1' height='1' fill='%23000'/%3E%3Crect x='2' y='2' width='1' height='1' fill='%23000'/%3E%3C/svg%3E");
+
+  --s1-desktop: #FFFFFF;    /* recouvert de la trame 50 par le corps */
+  --tooltip-bg: #FFFFFF;
+  --tooltip-fg: #000000;
+
+  /* ========================================================
+     2. SÉMANTIQUES
+     ======================================================== */
+  --surface-window:  var(--s1-white);
+  --surface-field:   var(--s1-white);   /* champs : angles vifs, même matière que la fenêtre */
+  --surface-desktop: var(--s1-desktop); /* recouvert de --dither50 par le corps */
+  --surface-tooltip: var(--tooltip-bg);
+  --surface-panel:   var(--s1-white);   /* plaques blanches bordées */
+
+  --text-primary:   var(--s1-black);
+  --text-soft:      var(--s1-black);     /* 1-bit : le doux est une taille, pas un gris */
+  --text-disabled:  var(--s1-black);     /* le désactivé se TRAME, il ne grise pas */
+  --text-inverse:   var(--s1-white);     /* texte porté sur fond inversé (sélection, appui) */
+
+  --selection-bg:   var(--s1-black);     /* l'inversion de QuickDraw */
+  --selection-text: var(--s1-white);
+
+  --title-active-text:   var(--s1-black); /* le cartouche du titre est blanc : texte noir dessus */
+  --title-inactive-text: var(--s1-black); /* interdit #2 : jamais de texte gris, même inactif */
+
+  /* Generic aliases consumed by resources/web/spike/*.css -- réécrites ici
+     via var() sur les primitives --s1-* pour se re-résoudre seules sous
+     [data-theme="dark"] (inversion vidéo) sans être répétées là-bas. */
+  --border-control:  var(--s1-black);   /* tout est bordé de noir 1px en 1-bit */
+  --border-field:    var(--s1-black);
+  --border-group:    var(--s1-black);
+  --border-progress: var(--s1-black);
+  --border-tab:      var(--s1-black);
+  --text-legend:     var(--s1-black);   /* pas d'accent en 1-bit : le titre de groupe est gras, pas coloré */
+
+  /* Recettes tokenisées */
+  --stripes: repeating-linear-gradient(180deg, var(--s1-black) 0 1px, var(--s1-white) 1px 3px);
+  --hatch-err: repeating-linear-gradient(45deg, var(--s1-black) 0 2px, var(--s1-white) 2px 6px);
+
+  /* ========================================================
+     3. LA TRAME — la signature du style (pas de "plastique").
+     Aucun dégradé de relief, aucun biseau : 1984 est plat.
+     ======================================================== */
+  --plastic-raised:  linear-gradient(var(--s1-white), var(--s1-white));   /* repos : remplissage plat blanc */
+  --plastic-pressed: linear-gradient(var(--s1-black), var(--s1-black));   /* appui : INVERSION pleine noire */
+
+  --gradient-title-active:   var(--stripes);   /* les six filets, interrompus par le cartouche du titre */
+  --gradient-title-inactive: var(--s1-white);  /* fenêtre inactive : les filets disparaissent (barre blanche) */
+
+  --gradient-titlebtn:       linear-gradient(var(--s1-white), var(--s1-white)); /* case de fermeture : carré vide */
+  --gradient-titlebtn-close: linear-gradient(var(--s1-white), var(--s1-white)); /* même case, pas de rouge (interdit #9) */
+
+  --gradient-check:         linear-gradient(var(--s1-white), var(--s1-white));
+  --gradient-check-pressed: linear-gradient(var(--s1-black), var(--s1-black));
+
+  --gradient-progress: linear-gradient(var(--s1-black), var(--s1-black));  /* remplissage noir plein */
+
+  /* ========================================================
+     4. OMBRES — un seul type : le décalage plein de 2 px (interdit #6)
+     ======================================================== */
+  --shadow-window:          2px 2px 0 var(--s1-black);
+  --shadow-window-inactive: 2px 2px 0 var(--s1-black);
+  --shadow-menu:            2px 2px 0 var(--s1-black);
+  --frame-shadow:           var(--shadow-window);   /* alias pour le nom générique consommé par l'app */
+  --glow-hover: none;    /* interdit #3 : aucun survol nulle part en 1984 */
+
+  /* ========================================================
+     5. TYPOGRAPHIE
+     ======================================================== */
+  --font-ui:    Geneva, "Lucida Grande", Verdana, Tahoma, sans-serif;
+  --font-title: var(--font-ui);                      /* pas de police dédiée : le titre est gras, pas différent */
+  --font-mono:  Monaco, "Courier New", monospace;     /* Monaco (1984) : le monospace canonique du Mac original */
+  --font-size-base:  13px;
+  --font-size-title: 13px;   /* gras, centré, dans son cartouche */
+  --line-height: 1.5;
+  --title-text-shadow: none;   /* interdit #6 : pas d'ombre portée douce */
+
+  /* ========================================================
+     6. MÉTRIQUES & ESPACEMENT
+     ======================================================== */
+  --unit: 4px;
+  --space-1: 2px; --space-2: 4px; --space-3: 8px;
+  --space-4: 12px; --space-5: 16px; --space-6: 24px;
+  --pad-body: 14px;
+
+  --control-height: 28px;
+  --field-height: var(--control-height);   /* les champs partagent la hauteur des contrôles (v. components.html) */
+  --button-min-width: 92px;
+  --titlebar-height: 26px;   /* la vraie : fine */
+  --wm-size: 15px;           /* la case de fermeture */
+  --titlebar-btn: var(--wm-size);
+  --checkbox-size: 14px;
+  --toggle-w: 44px; --toggle-h: 18px;
+  --scrollbar-size: 14px;
+  --icon-small: 16px; --icon-large: 32px;
+
+  --radius-window: 0px;
+  --radius-control: 8px;     /* le roundrect de QuickDraw */
+  --radius-group: 0px;       /* plaques et group-box : angles vifs (interdit #7) */
+  --radius-field: 0px;       /* les champs restent carrés */
+
+  /* ========================================================
+     7. ÉTATS & MOUVEMENT
+     ======================================================== */
+  --transition-state: 0s;    /* 1984 ne fond pas */
+  --transition: var(--transition-state);
+  --focus-ring: 1px dotted var(--s1-black);
+  --focus-outline: var(--focus-ring);
+  --cursor-interactive: var(--cursor-default);
+
+  /* ========================================================
+     8. CURSEURS — mêmes 14 actions que toutes les chartes.
+     Le pointeur ORIGINEL : noir à contour blanc ; l'attente
+     est LA MONTRE noire ; « ? » noir.
+     --cur-img-* = image seule · --cursor-* = image + point chaud + secours
+     ======================================================== */
+  --cur-img-default: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.2' transform='translate(1.5,1.5)'%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23000000' stroke='%23FFFFFF' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-link: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.2' transform='translate(1.5,1.5)'%3E%3Cpolygon points='10,2 13,2 13,9 16,9 19,11 19,15 16,20 9,20 5,14 5,12 7,11 10,14' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='10,2 13,2 13,9 16,9 19,11 19,15 16,20 9,20 5,14 5,12 7,11 10,14' fill='%23000000' stroke='%23FFFFFF' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpath d='M13.5 11v4M16 12v3' stroke='%23FFFFFF' stroke-width='.9' stroke-linecap='round'/%3E%3C/svg%3E");
+  --cur-img-text: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg fill='none' stroke='%23fff' stroke-width='4.2' stroke-linecap='round'%3E%3Cpath d='M8 3h6M11 3v18M8 21h6'/%3E%3C/g%3E%3Cg fill='none' stroke='%23FFFFFF' stroke-width='1.6' stroke-linecap='round'%3E%3Cpath d='M8 3h6M11 3v18M8 21h6'/%3E%3C/g%3E%3C/svg%3E");
+  --cur-img-wait: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.2' transform='translate(1.5,1.5)'%3E%3Ccircle cx='12' cy='13' r='8' fill='%23000'/%3E%3C/g%3E%3Crect x='10.4' y='1.6' width='3.2' height='3.2' rx='1' fill='%23000000'/%3E%3Ccircle cx='12' cy='13' r='8' fill='%23fff' stroke='%23000000' stroke-width='1.8'/%3E%3Cpath d='M12 13V7.4M12 13L17.4 14.6' stroke='%23000000' stroke-width='1.7' stroke-linecap='round' fill='none'/%3E%3C/svg%3E");
+  --cur-img-progress: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.2' transform='translate(1.5,1.5)'%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23000' stroke='%23000' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/g%3E%3Cg opacity='.2' transform='translate(1.5,1.5)'%3E%3Ccircle cx='17.5' cy='17.5' r='4.8' fill='%23000'/%3E%3C/g%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23000000' stroke='%23FFFFFF' stroke-width='1.6' stroke-linejoin='round'/%3E%3Crect x='15.9' y='9.299999999999999' width='3.2' height='3.2' rx='1' fill='%23000000'/%3E%3Ccircle cx='17.5' cy='17.5' r='4.8' fill='%23fff' stroke='%23000000' stroke-width='1.8'/%3E%3Cpath d='M17.5 17.5V15.1M17.5 17.5L19.7 19.1' stroke='%23000000' stroke-width='1.7' stroke-linecap='round' fill='none'/%3E%3C/svg%3E");
+  --cur-img-help: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.2' transform='translate(1.5,1.5)'%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23000' stroke='%23000' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23000000' stroke='%23FFFFFF' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpath d='M14.5 6c0-2.6 6.5-2.6 6.5 0c0 2.2-3.2 2-3.2 4.4' fill='none' stroke='%23fff' stroke-width='3.8' stroke-linecap='round'/%3E%3Cpath d='M14.5 6c0-2.6 6.5-2.6 6.5 0c0 2.2-3.2 2-3.2 4.4' fill='none' stroke='%23000000' stroke-width='1.8' stroke-linecap='round'/%3E%3Ccircle cx='17.9' cy='13.8' r='1.7' fill='%23fff'/%3E%3Ccircle cx='17.9' cy='13.8' r='1.1' fill='%23000000'/%3E%3C/svg%3E");
+  --cur-img-crosshair: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg fill='none' stroke='%23fff' stroke-width='4.2'%3E%3Cpath d='M12 3v18M3 12h18'/%3E%3C/g%3E%3Cg fill='none' stroke='%23FFFFFF' stroke-width='1.6'%3E%3Cpath d='M12 3v18M3 12h18'/%3E%3C/g%3E%3C/svg%3E");
+  --cur-img-not-allowed: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg fill='none' stroke='%23fff' stroke-width='5.4'%3E%3Ccircle cx='12' cy='12' r='8'/%3E%3Cpath d='M6.5 6.5l11 11'/%3E%3C/g%3E%3Cg fill='none' stroke='%23FFFFFF' stroke-width='2.4'%3E%3Ccircle cx='12' cy='12' r='8'/%3E%3Cpath d='M6.5 6.5l11 11'/%3E%3C/g%3E%3C/svg%3E");
+  --cur-img-resize-v: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.2' transform='translate(1.5,1.5)'%3E%3Cpolygon points='12,1 17,7 14,7 14,17 17,17 12,23 7,17 10,17 10,7 7,7' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='12,1 17,7 14,7 14,17 17,17 12,23 7,17 10,17 10,7 7,7' fill='%23000000' stroke='%23FFFFFF' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-resize-h: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.2' transform='translate(1.5,1.5)'%3E%3Cpolygon points='1,12 7,7 7,10 17,10 17,7 23,12 17,17 17,14 7,14 7,17' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='1,12 7,7 7,10 17,10 17,7 23,12 17,17 17,14 7,14 7,17' fill='%23000000' stroke='%23FFFFFF' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-resize-nwse: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.2' transform='translate(1.5,1.5)'%3E%3Cpath d='M7 7l10 10' stroke='%23000' stroke-width='4.6'/%3E%3Cpolygon points='4,4 12,4 4,12' fill='%23000'/%3E%3Cpolygon points='20,20 12,20 20,12' fill='%23000'/%3E%3C/g%3E%3Cpath d='M7 7l10 10' stroke='%23fff' stroke-width='4'/%3E%3Cpath d='M7 7l10 10' stroke='%23FFFFFF' stroke-width='1.8'/%3E%3Cpolygon points='4,4 12,4 4,12' fill='%23000000' stroke='%23FFFFFF' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpolygon points='20,20 12,20 20,12' fill='%23000000' stroke='%23FFFFFF' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-resize-nesw: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.2' transform='translate(1.5,1.5)'%3E%3Cpath d='M17 7L7 17' stroke='%23000' stroke-width='4.6'/%3E%3Cpolygon points='20,4 12,4 20,12' fill='%23000'/%3E%3Cpolygon points='4,20 12,20 4,12' fill='%23000'/%3E%3C/g%3E%3Cpath d='M17 7L7 17' stroke='%23fff' stroke-width='4'/%3E%3Cpath d='M17 7L7 17' stroke='%23FFFFFF' stroke-width='1.8'/%3E%3Cpolygon points='20,4 12,4 20,12' fill='%23000000' stroke='%23FFFFFF' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpolygon points='4,20 12,20 4,12' fill='%23000000' stroke='%23FFFFFF' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-move: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.2' transform='translate(1.5,1.5)'%3E%3Cpolygon points='12,1 15,5 13,5 13,19 15,19 12,23 9,19 11,19 11,5 9,5' fill='%23000'/%3E%3Cpolygon points='1,12 5,9 5,11 19,11 19,9 23,12 19,15 19,13 5,13 5,15' fill='%23000'/%3E%3C/g%3E%3Cg fill='%23000000' stroke='%23FFFFFF' stroke-width='1.6' stroke-linejoin='round'%3E%3Cpolygon points='12,1 15,5 13,5 13,19 15,19 12,23 9,19 11,19 11,5 9,5'/%3E%3Cpolygon points='1,12 5,9 5,11 19,11 19,9 23,12 19,15 19,13 5,13 5,15'/%3E%3C/g%3E%3Cpolygon points='12,1 15,5 13,5 13,19 15,19 12,23 9,19 11,19 11,5 9,5' fill='%23000000'/%3E%3Cpolygon points='1,12 5,9 5,11 19,11 19,9 23,12 19,15 19,13 5,13 5,15' fill='%23000000'/%3E%3C/svg%3E");
+  --cur-img-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.2' transform='translate(1.5,1.5)'%3E%3Cpolygon points='12,2 18,9 14,9 14,20 10,20 10,9 6,9' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='12,2 18,9 14,9 14,20 10,20 10,9 6,9' fill='%23000000' stroke='%23FFFFFF' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+
+  /* Curseurs composés : image + point chaud + secours système */
+  --cursor-default: var(--cur-img-default) 2 2, default;
+  --cursor-link: var(--cur-img-link) 11 3, pointer;
+  --cursor-text: var(--cur-img-text) 11 12, text;
+  --cursor-wait: var(--cur-img-wait) 12 12, wait;
+  --cursor-progress: var(--cur-img-progress) 2 2, progress;
+  --cursor-help: var(--cur-img-help) 2 2, help;
+  --cursor-crosshair: var(--cur-img-crosshair) 12 12, crosshair;
+  --cursor-not-allowed: var(--cur-img-not-allowed) 12 12, not-allowed;
+  --cursor-resize-v: var(--cur-img-resize-v) 12 12, ns-resize;
+  --cursor-resize-h: var(--cur-img-resize-h) 12 12, ew-resize;
+  --cursor-resize-nwse: var(--cur-img-resize-nwse) 12 12, nwse-resize;
+  --cursor-resize-nesw: var(--cur-img-resize-nesw) 12 12, nesw-resize;
+  --cursor-move: var(--cur-img-move) 12 12, move;
+  --cursor-up: var(--cur-img-up) 12 3, default;
+
+  /* ================================================== ICONS:BEGIN
+     9. ICÔNES — navigation & fichiers (14), tokenisées
+     comme les curseurs : SVG data-URI dessinés dans la
+     matière du style. À consommer en background-image :
+     background: var(--icon-folder) center/contain no-repeat;
+     Jamais d'image externe, jamais d'emoji.
+     ======================================================== */
+  --icon-folder: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M2.5 6h6.5l2 2.5h10.5v11h-19z' fill='%23FFFFFF' stroke='%23000000' stroke-width='1.5' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M2.5 6h6.5l2 2.5h-9z' fill='%23FFFFFF' stroke='%23000000' stroke-width='1.5' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-folder-open: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M2.5 6h6.5l2 2.5h9.5v3h-18z' fill='%23FFFFFF' stroke='%23000000' stroke-width='1.5' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M4.8 11.5h16.7l-2.6 8H2.5z' fill='%23FFFFFF' stroke='%23000000' stroke-width='1.5' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-file: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M6 2.5h8l4.5 4.5v14.5h-12.5z' fill='%23FFFFFF' stroke='%23000000' stroke-width='1.5' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M14 2.5v4.5h4.5z' fill='%23000000' stroke='%23000000' stroke-width='1.5' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-file-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M6 2.5h8l4.5 4.5v14.5h-12.5z' fill='%23FFFFFF' stroke='%23000000' stroke-width='1.5' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M14 2.5v4.5h4.5z' fill='%23000000' stroke='%23000000' stroke-width='1.5' stroke-linejoin='round' stroke-linecap='round'/%3E%3Ccircle cx='10' cy='11' r='1.5' fill='%23FFFFFF'/%3E%3Cpath d='M8 18l2.7-3.6 1.9 2.3 1.5-1.9 2.4 3.2z' fill='%23FFFFFF'/%3E%3C/svg%3E");
+  --icon-drive: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M3 9h18v6.5H3z' fill='%23FFFFFF' stroke='%23000000' stroke-width='1.5' stroke-linejoin='round' stroke-linecap='round'/%3E%3Ccircle cx='17.3' cy='12.2' r='1.2' fill='%23FFFFFF'/%3E%3Cpath d='M6 12.2h6' fill='none' stroke='%23000000' stroke-width='1.5' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-home: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M5.5 11.5h13v8.5h-13z' fill='%23FFFFFF' stroke='%23000000' stroke-width='1.5' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M12 3.2L21.2 11H2.8z' fill='%23FFFFFF' stroke='%23000000' stroke-width='1.5' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M10.3 20v-4.8h3.4V20z' fill='%23000000'/%3E%3C/svg%3E");
+  --icon-computer: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M3.5 4.5h17v11h-17z' fill='%23FFFFFF' stroke='%23000000' stroke-width='1.5' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M5.5 6.5h13v7h-13z' fill='%23FFFFFF'/%3E%3Cpath d='M12 15.5v3M8.5 19.5h7' fill='none' stroke='%23000000' stroke-width='1.5' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-network: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M4 3.5h6v5H4z' fill='%23FFFFFF' stroke='%23000000' stroke-width='1.5' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M14 3.5h6v5H14z' fill='%23FFFFFF' stroke='%23000000' stroke-width='1.5' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M9 15.5h6v5H9z' fill='%23FFFFFF' stroke='%23000000' stroke-width='1.5' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M7 8.5v3.5h10V8.5M12 12v3.5' fill='none' stroke='%23000000' stroke-width='1.5' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-trash: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M6.7 8.5h10.6l-1 12h-8.6z' fill='%23FFFFFF' stroke='%23000000' stroke-width='1.5' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M4.8 6h14.4v2.5H4.8z' fill='%23FFFFFF' stroke='%23000000' stroke-width='1.5' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M9.4 6V3.8h5.2V6z' fill='%23FFFFFF' stroke='%23000000' stroke-width='1.5' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M10.3 11v6.5M13.7 11v6.5' fill='none' stroke='%23000000' stroke-width='1.5' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-search: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Ccircle cx='10.4' cy='10.4' r='5.6' fill='none' stroke='%23000000' stroke-width='1.6'/%3E%3Cpath d='M14.7 14.7L20 20' fill='none' stroke='%23000000' stroke-width='1.9' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-back: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M14.5 5.5L8 12l6.5 6.5' fill='none' stroke='%23000000' stroke-width='1.6' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-forward: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M9.5 5.5L16 12l-6.5 6.5' fill='none' stroke='%23000000' stroke-width='1.6' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M12 19.5V6M6.5 11.5L12 6l5.5 5.5' fill='none' stroke='%23000000' stroke-width='1.6' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M5.5 21h13' fill='none' stroke='%23000000' stroke-width='1.6' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-refresh: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M18.9 13a7 7 0 1 1-1.8-6.3' fill='none' stroke='%23000000' stroke-width='1.6' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M19.4 3.6v4.9h-4.9' fill='none' stroke='%23000000' stroke-width='1.6' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  /* ICONS:END */
+}
+/* DARK:BEGIN — thème sombre (phase 3) */
+[data-theme="dark"] {
+  --s1-white: #000000;             /* l'inversion vidéo */
+  --s1-black: #FFFFFF;
+  --s1-desktop: #000000;
+  --tooltip-bg: #000000;
+  --tooltip-fg: #FFFFFF;
+  --dither50: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='2' height='2'%3E%3Crect width='1' height='1' fill='%23FFF'/%3E%3Crect x='1' y='1' width='1' height='1' fill='%23FFF'/%3E%3C/svg%3E");
+  --dither25: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Crect width='1' height='1' fill='%23FFF'/%3E%3Crect x='2' y='2' width='1' height='1' fill='%23FFF'/%3E%3C/svg%3E");
+  /* icônes surchargées pour le fond sombre */
+  --icon-folder: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M2.5 6h6.5l2 2.5h10.5v11h-19z' fill='%23000000' stroke='%23FFFFFF' stroke-width='1.5' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M2.5 6h6.5l2 2.5h-9z' fill='%23000000' stroke='%23FFFFFF' stroke-width='1.5' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-folder-open: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M2.5 6h6.5l2 2.5h9.5v3h-18z' fill='%23000000' stroke='%23FFFFFF' stroke-width='1.5' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M4.8 11.5h16.7l-2.6 8H2.5z' fill='%23000000' stroke='%23FFFFFF' stroke-width='1.5' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-file: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M6 2.5h8l4.5 4.5v14.5h-12.5z' fill='%23000000' stroke='%23FFFFFF' stroke-width='1.5' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M14 2.5v4.5h4.5z' fill='%23FFFFFF' stroke='%23FFFFFF' stroke-width='1.5' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-file-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M6 2.5h8l4.5 4.5v14.5h-12.5z' fill='%23000000' stroke='%23FFFFFF' stroke-width='1.5' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M14 2.5v4.5h4.5z' fill='%23FFFFFF' stroke='%23FFFFFF' stroke-width='1.5' stroke-linejoin='round' stroke-linecap='round'/%3E%3Ccircle cx='10' cy='11' r='1.5' fill='%23000000'/%3E%3Cpath d='M8 18l2.7-3.6 1.9 2.3 1.5-1.9 2.4 3.2z' fill='%23000000'/%3E%3C/svg%3E");
+  --icon-drive: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M3 9h18v6.5H3z' fill='%23000000' stroke='%23FFFFFF' stroke-width='1.5' stroke-linejoin='round' stroke-linecap='round'/%3E%3Ccircle cx='17.3' cy='12.2' r='1.2' fill='%23000000'/%3E%3Cpath d='M6 12.2h6' fill='none' stroke='%23FFFFFF' stroke-width='1.5' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-home: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M5.5 11.5h13v8.5h-13z' fill='%23000000' stroke='%23FFFFFF' stroke-width='1.5' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M12 3.2L21.2 11H2.8z' fill='%23000000' stroke='%23FFFFFF' stroke-width='1.5' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M10.3 20v-4.8h3.4V20z' fill='%23FFFFFF'/%3E%3C/svg%3E");
+  --icon-computer: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M3.5 4.5h17v11h-17z' fill='%23000000' stroke='%23FFFFFF' stroke-width='1.5' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M5.5 6.5h13v7h-13z' fill='%23000000'/%3E%3Cpath d='M12 15.5v3M8.5 19.5h7' fill='none' stroke='%23FFFFFF' stroke-width='1.5' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-network: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M4 3.5h6v5H4z' fill='%23000000' stroke='%23FFFFFF' stroke-width='1.5' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M14 3.5h6v5H14z' fill='%23000000' stroke='%23FFFFFF' stroke-width='1.5' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M9 15.5h6v5H9z' fill='%23000000' stroke='%23FFFFFF' stroke-width='1.5' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M7 8.5v3.5h10V8.5M12 12v3.5' fill='none' stroke='%23FFFFFF' stroke-width='1.5' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-trash: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M6.7 8.5h10.6l-1 12h-8.6z' fill='%23000000' stroke='%23FFFFFF' stroke-width='1.5' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M4.8 6h14.4v2.5H4.8z' fill='%23000000' stroke='%23FFFFFF' stroke-width='1.5' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M9.4 6V3.8h5.2V6z' fill='%23000000' stroke='%23FFFFFF' stroke-width='1.5' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M10.3 11v6.5M13.7 11v6.5' fill='none' stroke='%23FFFFFF' stroke-width='1.5' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-search: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Ccircle cx='10.4' cy='10.4' r='5.6' fill='none' stroke='%23FFFFFF' stroke-width='1.6'/%3E%3Cpath d='M14.7 14.7L20 20' fill='none' stroke='%23FFFFFF' stroke-width='1.9' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-back: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M14.5 5.5L8 12l6.5 6.5' fill='none' stroke='%23FFFFFF' stroke-width='1.6' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-forward: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M9.5 5.5L16 12l-6.5 6.5' fill='none' stroke='%23FFFFFF' stroke-width='1.6' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M12 19.5V6M6.5 11.5L12 6l5.5 5.5' fill='none' stroke='%23FFFFFF' stroke-width='1.6' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M5.5 21h13' fill='none' stroke='%23FFFFFF' stroke-width='1.6' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-refresh: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M18.9 13a7 7 0 1 1-1.8-6.3' fill='none' stroke='%23FFFFFF' stroke-width='1.6' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M19.4 3.6v4.9h-4.9' fill='none' stroke='%23FFFFFF' stroke-width='1.6' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+/* DARK:END */
+
+/* HC:BEGIN — contraste élevé (phase 4) */
+[data-theme="hc"] {
+  --shadow-window: 3px 3px 0 var(--s1-black);
+  --shadow-window-inactive: 3px 3px 0 var(--s1-black);
+  --shadow-menu: 3px 3px 0 var(--s1-black);
+  --focus-ring: 2px dotted var(--s1-black);
+}
+/* HC:END */
+
+
+/* --- Base recommandée (à copier dans l'app) ------------------------------ */
+/*
+body {
+  margin: 0;
+  background: var(--s1-desktop);
+  color: var(--text-primary);
+  font: 400 var(--font-size-base)/var(--line-height) var(--font-ui);
+  cursor: var(--cursor-default);
+}
+::selection { background: var(--selection-bg); color: var(--selection-text); }
+a { color: var(--s1-black); cursor: var(--cursor-link); }
+input[type=text], textarea { cursor: var(--cursor-text); }
+*/
+
+/* ==========================================================================
+   STRUCTURAL COMPOSITION -- SYSTEM1's real component shapes, ported from
+   this folder's own components.html (not a color reskin of style.css's
+   generic grid). Loaded last in index.html's link order, so plain selectors
+   here beat style.css's same-specificity rules by cascade order alone -- no
+   !important anywhere below. shared style.css defines NO bare `button`,
+   `input[type=...]`, `select`, `textarea` or `input[type=checkbox]` rules at
+   all (only class-scoped ones) -- those generic elements are fully defined
+   from scratch below, exactly as components.html does it.
+   Interdits durs respected throughout: #1 deux valeurs (pas de gris uni,
+   les demi-tons sont --dither50/--dither25) -- #2 le désactivé se TRAME,
+   le texte reste noir -- #3 AUCUN survol nulle part (every :hover style.css
+   already ships is neutralised below) -- #4 case de fermeture UNIQUE à
+   GAUCHE -- #6 l'ombre est un décalage plein de 2px, jamais de flou --
+   #7 roundrect réservé aux boutons, champs/cases/fenêtres restent carrés --
+   #9 pas de rouge : l'échec se hachure.
+   ========================================================================== */
+
+/* ---------- Window chrome : six filets, cartouche blanc qui les
+   interrompt, UNE case de fermeture vide à gauche, rien à droite ---------- */
+.titlebar {
+  position: relative;
+  padding: 0 8px;
+  background: var(--gradient-title-active);   /* les six filets (--stripes) */
+  border-radius: 0;   /* style.css's calc(var(--radius-window) - 3px) is -3px here: invalid, must pin to 0 */
+  border-bottom: 1px solid var(--s1-black);
+  box-sizing: border-box;
+}
+.titlebar-drag {
+  min-width: 0;   /* the title no longer contributes intrinsic width (see below): keep the flex track from mis-sizing */
+}
+.titlebar-title {
+  /* Centré sur la barre ENTIÈRE (pas sur l'espace restant après la case de
+     fermeture) : positionné hors flux, ancré au centre de .titlebar. Fond
+     blanc opaque = le cartouche qui interrompt les six filets (interdit #5). */
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  max-width: calc(100% - 50px);
+  padding: 0 10px;
+  background: var(--s1-white);
+  color: var(--s1-black);
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: var(--font-size-title);
+  text-shadow: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.titlebar-buttons {
+  order: -1;   /* 1984 n'a qu'UNE case, à GAUCHE (interdit #4) : bascule le conteneur avant la zone de titre */
+}
+.cap-min, .cap-max {
+  display: none;   /* 1984 n'agrandit pas, ne réduit pas -- ces gadgets n'existent pas dans ce chrome */
+}
+.cap-btn {
+  border-color: var(--s1-black);   /* style.css pose un liseré blanc translucide (chrome glossy) : ici bordure noire franche 1px */
+}
+.cap-btn:hover { filter: none; }   /* interdit #3 : aucun survol -- neutralise le brightness() de style.css */
+.cap-btn:active { filter: none; }
+.cap-close {
+  margin-left: 0;
+}
+.cap-close:active {
+  background: var(--s1-black);   /* l'appui INVERSE, comme tout le reste du style */
+}
+/* La case de fermeture de 1984 est un carré VIDE (aucun glyphe) -- on
+   neutralise le "×" en deux barres que style.css dessine par défaut. */
+.cap-close span::before,
+.cap-close span::after {
+  content: none;
+}
+
+/* ---------- Onglets : roundrects SOUDÉS (pas d'espace entre eux), l'actif
+   s'INVERSE (pas de liseré de couleur -- 1-bit n'a que le noir et le blanc) --------- */
+.tabbar {
+  gap: 0;
+  border-bottom: 1px solid var(--s1-black);
+}
+.tab-btn {
+  min-width: auto;
+  height: auto;
+  background: var(--s1-white);
+  border: 1px solid var(--s1-black);
+  border-right: none;   /* les roundrects sont SOUDÉS : une seule bordure partagée entre deux onglets */
+  border-bottom: none;
+  border-radius: var(--radius-control) var(--radius-control) 0 0;
+  padding: 5px 14px;
+  color: var(--text-primary);
+}
+.tab-btn:last-child { border-right: 1px solid var(--s1-black); }
+.tab-btn:hover:not(.active) { filter: none; }   /* interdit #3 */
+.tab-btn.active {
+  background: var(--s1-black);   /* l'inversion de QuickDraw, pas un fond clair */
+  color: var(--s1-white);
+  font-weight: 700;
+}
+
+/* ---------- Boutons : roundrect blanc bordé de noir, AUCUN survol,
+   l'appui INVERSE (noir, texte blanc) -- entièrement absent avant (chrome
+   natif du navigateur, style.css ne définit pas <button> nu) ---------- */
+button {
+  min-width: var(--button-min-width);
+  height: var(--control-height);
+  padding: 0 14px;
+  background: var(--s1-white);
+  border: 1px solid var(--s1-black);
+  border-radius: var(--radius-control);
+  color: var(--text-primary);
+  font: 400 var(--font-size-base) var(--font-ui);
+  cursor: var(--cursor-interactive);
+  transition: none;
+}
+button:not(:disabled):hover { box-shadow: none; }   /* interdit #3 */
+button:not(:disabled):active { background: var(--s1-black); color: var(--s1-white); }
+button:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
+button:disabled {
+  background: var(--s1-white);
+  background-image: var(--dither25);   /* le désactivé se TRAME (interdit #2) */
+  color: var(--text-primary);          /* jamais de texte gris */
+  border-color: var(--s1-black);
+  cursor: var(--cursor-default);
+}
+
+.start-btn {
+  min-width: var(--button-min-width);
+  height: var(--control-height);
+  padding: 0 20px;
+  background: var(--s1-white);
+  border: 1px solid var(--s1-black);
+  border-radius: var(--radius-control);
+  color: var(--text-primary);
+  font-weight: 700;
+  box-shadow: 0 0 0 2px var(--s1-white), 0 0 0 3.5px var(--s1-black);   /* bouton par DÉFAUT : le double cadre */
+}
+.start-btn:hover { box-shadow: 0 0 0 2px var(--s1-white), 0 0 0 3.5px var(--s1-black); }   /* le halo reste, aucun survol ne l'efface */
+.start-btn:active { background: var(--s1-black); color: var(--s1-white); }
+
+.row-actions button {
+  min-width: 0;
+  height: auto;
+  padding: 3px 10px;
+  background: var(--s1-white);
+  border: 1px solid var(--s1-black);
+  border-radius: var(--radius-control);
+  color: var(--text-primary);
+}
+.row-actions button:not(:disabled):hover { box-shadow: none; }
+.row-actions button:not(:disabled):active { background: var(--s1-black); color: var(--s1-white); }
+
+/* ---------- Champs : PLATS et CARRÉS, même quand les boutons sont
+   arrondis (authentique -- STYLE.md interdit #7) ---------- */
+input[type="text"], input[type="number"], select, textarea, .search-input {
+  background: var(--s1-white);
+  border: 1px solid var(--s1-black);
+  border-radius: var(--radius-field);
+  height: var(--control-height);
+  padding: 0 8px;
+  color: var(--text-primary);
+  font: 400 var(--font-size-base) var(--font-ui);
+  caret-color: var(--s1-black);
+}
+/* .form-grid's own selector in style.css is exactly as specific as this one
+   (class + attribute + type) -- repeated verbatim so cascade order (this
+   file loads after style.css) decides, instead of relying on specificity. */
+.form-grid input[type="text"], .form-grid input[type="number"] {
+  background: var(--s1-white);
+  border: 1px solid var(--s1-black);
+  border-radius: var(--radius-field);
+  height: var(--control-height);
+  padding: 0 8px;
+}
+textarea { height: auto; min-height: 60px; padding: 6px 8px; resize: vertical; }
+input[type="text"]:focus, input[type="number"]:focus, textarea:focus, select:focus, .search-input:focus {
+  outline: var(--focus-ring);
+  outline-offset: 2px;
+}
+input:disabled, textarea:disabled {
+  background: var(--s1-white);
+  background-image: var(--dither25);   /* interdit #2 : se trame, ne grise pas */
+  color: var(--text-primary);
+  border-color: var(--s1-black);
+}
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 26px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='%23000'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+}
+
+/* ---------- Cases à cocher : boîte carrée blanche, coche NOIRE en croix
+   (pas de check-mark décoratif), radio = disque noir ---------- */
+input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: var(--checkbox-size);
+  height: var(--checkbox-size);
+  margin: 0 6px 0 0;
+  vertical-align: middle;
+  background: var(--s1-white);
+  border: 1px solid var(--s1-black);
+  border-radius: 0;
+  position: relative;
+}
+input[type="checkbox"]:checked::after {
+  content: "";
+  position: absolute; inset: 0px;
+  background:
+    linear-gradient(45deg, transparent calc(50% - .9px), var(--s1-black) calc(50% - .9px) calc(50% + .9px), transparent calc(50% + .9px)),
+    linear-gradient(-45deg, transparent calc(50% - .9px), var(--s1-black) calc(50% - .9px) calc(50% + .9px), transparent calc(50% + .9px));
+}
+input[type="checkbox"]:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
+input[type="checkbox"]:disabled { background: var(--s1-white); background-image: var(--dither25); }
+
+/* ---------- Listes : plaque blanche bordée de noir, rangées à ras bord
+   (le padding vit sur la rangée, pas sur la plaque) ; la sélection
+   INVERSE la ligne entière -- déjà correct via --selection-bg/-text ---------- */
+.listbox {
+  background: var(--s1-white);
+  border: 1px solid var(--s1-black);
+  border-radius: var(--radius-field);
+  padding: 0;
+}
+.row-name { font-weight: 700; }   /* en 1-bit, l'accent est la graisse -- pas une couleur */
+.row-state { font-weight: 400; }
+.row-rate, .row-eta, .row-category, .row-peers { font-variant-numeric: tabular-nums; }
+.downloads-row-header { border-bottom: 1px solid var(--s1-black); }
+
+/* ---------- Rangées supplémentaires listées à part par la grille (.scan-row
+   n'hérite pas de .row ; .share-row/.downloads-row le font déjà via le
+   markup combiné "row share-row"/"row downloads-row", donc le filet et le
+   poids de .row-name leur arrivent déjà) : même filet noir d'un pixel,
+   angles vifs. Les teintes de santé du panneau Téléchargements (attribut
+   data-health, posées par style.css en couleurs pleines) sont neutralisées :
+   le 1-bit n'encode AUCUN statut par la teinte (interdits #1 et #9) -- le
+   texte de .row-state porte déjà l'information. ---------- */
+.row, .scan-row {
+  border-bottom: 1px solid var(--s1-black);
+  border-radius: 0;
+}
+.scan-path, .scan-size {
+  color: var(--text-primary);
+}
+#downloadsList .row[data-health="critical"],
+#downloadsList .row[data-health="warning"],
+#downloadsList .row[data-health="healthy"] {
+  background: var(--s1-white);
+}
+
+/* ---------- Group box : bordure noire, angles vifs, légende GRASSE (pas
+   de couleur d'accent -- interdit #9) ---------- */
+.profile-group, .details-group {
+  background: var(--s1-white);
+  border: 1px solid var(--s1-black);
+  border-radius: var(--radius-group);
+}
+.profile-group h3, .details-group h3 {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+/* ---------- Menu contextuel : blanc bordé, ombre d'un pixel épais,
+   AUCUN survol (interdit #3 -- neutralise l'inversion au survol de
+   style.css, la sélection ne s'affiche qu'au clic réel) ---------- */
+.context-menu {
+  background: var(--s1-white);
+  border: 1px solid var(--s1-black);
+  border-radius: 0;
+  box-shadow: var(--shadow-menu);
+  padding: 4px 0;
+}
+.context-menu-item {
+  padding: 4px 14px;
+  color: var(--text-primary);
+}
+.context-menu-item:hover {
+  background: none;
+  color: var(--text-primary);
+}
+.context-menu-separator {
+  background: var(--s1-black);
+  height: 1px;
+  margin: 4px 0;
+}
+
+/* ---------- Dialogue : l'alerte de 1984 -- double bordure (2px pleine +
+   filet intérieur blanc/noir à 1px d'écart), PAS de barre de titre dégradée ---------- */
+.modal-overlay {
+  background: rgba(0, 0, 0, 0.5);
+}
+.modal-box {
+  background: var(--s1-white);
+  border: 2px solid var(--s1-black);
+  border-radius: 0;
+  box-shadow: inset 0 0 0 1px var(--s1-white), inset 0 0 0 2px var(--s1-black), var(--shadow-window);
+}
+.modal-box h3 {
+  margin: 0 0 var(--space-2);
+  color: var(--text-primary);
+  font-weight: 700;
+  font-size: var(--font-size-title);
+}
+
+/* ---------- Défilement : piste tramée 50%, pouce blanc bordé, SANS
+   flèches (STYLE.md §7) -- entièrement absent avant (chrome natif) ---------- */
+::-webkit-scrollbar { width: var(--scrollbar-size); height: var(--scrollbar-size); }
+::-webkit-scrollbar-track {
+  background: var(--s1-white);
+  background-image: var(--dither50);
+  border-left: 1px solid var(--s1-black);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--s1-white);
+  border: 1px solid var(--s1-black);
+  border-radius: 0;
+}
+::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+::-webkit-scrollbar-corner { background: var(--s1-white); }
+
+/* ---------- Jauge de progression (cadre autour du canvas Tetris) : piste
+   blanche bordée de noir, angles vifs, sans ombre -- pas le vert Game Boy
+   posé par défaut dans style.css ---------- */
+canvas.tetris {
+  border: 1px solid var(--s1-black);
+  border-radius: 0;
+  background: var(--s1-white);
+  box-shadow: none;
+}

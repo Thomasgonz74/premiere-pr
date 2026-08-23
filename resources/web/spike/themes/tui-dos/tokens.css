@@ -1,0 +1,635 @@
+/* ==========================================================================
+   TUI-DOS — tokens.css — v1.0 (port spike)
+   Style   : "Interface texte DOS (Turbo Vision / Norton)"
+   Rôle    : SOURCE DE VÉRITÉ des variables pour le port web QWebEngineView.
+   Source  : resources/web/charters/Charte graphique/TUI DOS (Turbo Vision)/
+             tokens.css + STYLE.md + components.html (recopiés/adaptés).
+   Référence structurelle : resources/web/spike/themes/luna_xp/tokens.css —
+   même contrat (9 sections numérotées, curseurs ×14, icônes ×14, alias
+   génériques consommés par le CSS partagé de l'app).
+
+   Pas de bloc [data-theme="dark"] ICI : le charter TUI DOS lui-même n'en
+   définit aucun (voir STYLE.md — seules les phases 3 "cursors/icons" et
+   4 "contraste élevé" existent ; le mode texte CGA n'a pas de notion
+   clair/sombre, sa palette est déjà fixe). C'est un choix fidèle, pas un
+   oubli : var(--surface-window) etc. re-résolvent tel quel si un jour un
+   [data-theme="dark"] générique est ajouté ailleurs.
+   ========================================================================== */
+
+:root {
+
+  /* ========================================================
+     1. PRIMITIVES — palette CGA (8 des 16 couleurs d'époque)
+     ======================================================== */
+  --dos-blue:    #0000A8;
+  --dos-blue-hi: #1414C8;   /* case claire du damier */
+  --dos-gray:    #A8A8A8;   /* dialogues, fenêtres, menus */
+  --dos-gray-dk: #545454;
+  --dos-cyan:    #00A8A8;   /* boutons, pouce, sélection */
+  --dos-green:   #00A800;   /* bouton par défaut, menu ouvert */
+  --dos-red:     #A80000;   /* touches rapides, erreur */
+  --dos-brown:   #A85400;   /* jauge en pause */
+  --dos-yellow:  #FCFC54;   /* texte des champs, focus, infobulle */
+  --dos-white:   #FCFCFC;
+  --dos-black:   #000000;
+
+  --tooltip-bg:    var(--dos-yellow);
+  --desktop-color: var(--dos-blue);
+
+  /* Les damiers (motifs SVG tokenisés — jamais un dégradé) */
+  --shade-desktop: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Crect width='4' height='4' fill='%230000A8'/%3E%3Crect x='0' y='0' width='2' height='2' fill='%231414C8'/%3E%3Crect x='2' y='2' width='2' height='2' fill='%231414C8'/%3E%3C/svg%3E");
+  --shade-track: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Crect width='4' height='4' fill='%23A8A8A8'/%3E%3Crect x='0' y='0' width='2' height='2' fill='%23545454'/%3E%3Crect x='2' y='2' width='2' height='2' fill='%23545454'/%3E%3C/svg%3E");
+
+  /* L'ombre-bloc DOS : pleine, décalée, sans flou (jamais de blur) */
+  --block-shadow:       10px 10px 0 var(--dos-black);
+  --btn-shadow:         6px 6px 0 var(--dos-black);
+  --btn-shadow-pressed: 3px 3px 0 var(--dos-black);
+
+  --on-accent: #FFFFFF;   /* encre sur les fonds pleins (vert, rouge, cyan) */
+  --link:      #A80000;   /* liens et raccourcis de barre d'état (rouge doctrine) */
+  --btn-press: #00C4C4;   /* cyan éclairci de l'appui d'un bouton */
+
+  /* ========================================================
+     2. SÉMANTIQUES
+     ======================================================== */
+  --surface-window: var(--dos-gray);
+  --text-primary:   var(--dos-black);
+  --text-soft:      var(--dos-gray-dk);
+  --text-disabled:  #7E7E7E;
+  --selection-bg:   var(--dos-cyan);
+  --selection-text: #000000;
+
+  /* Alias génériques du contrat universel (mêmes noms que toutes les
+     34 chartes) — le mode texte n'a pas de "panneau" ou de "champ" avec
+     un nom propre : on relie directement aux primitives CGA doctrinales. */
+  --surface-desktop: var(--desktop-color);   /* le vrai bureau est --shade-desktop (damier) ; ceci est le repli couleur unie */
+  --surface-field:   var(--dos-blue);        /* champs & listes : BLEUS (STYLE.md §7) */
+  --surface-panel:   var(--surface-window);  /* pages d'onglets : pas de nuance dédiée, même gris que la fenêtre */
+  --surface-tooltip: var(--tooltip-bg);
+
+  --text-inverse: var(--on-accent);
+
+  --title-active-text:   var(--text-primary);   /* titre noir gras centré (STYLE.md §6) */
+  --title-inactive-text: var(--text-soft);      /* fenêtre inactive : encre qui s'éteint */
+
+  /* Generic aliases consumed by resources/web/spike/*.css -- every theme
+     must define these. Ce charter n'a qu'UNE encre de trait (noire) pour
+     tous les cadres, simples ou doubles : la distinction du style se fait
+     par l'ÉPAISSEUR/le style de trait (simple/double) et l'ombre-bloc, pas
+     par une couleur de bordure différente par contrôle -- fidèle à
+     STYLE.md ("Le code n'utilise que les tokens, jamais les hex.") et à
+     components.html où bouton, champ, onglet, jauge partagent tous
+     `border: 1px solid var(--dos-black)`. */
+  --border-control:  var(--dos-black);
+  --border-field:    var(--dos-black);
+  --border-group:    var(--dos-black);
+  --border-progress: var(--dos-black);
+  --border-tab:      var(--dos-black);
+  /* Pas d'accent dédié pour les titres de groupe (STYLE.md ne réserve pas
+     de couleur aux légendes, `legend{font-weight:700}` reste à l'encre du
+     texte) : on relie donc au texte primaire plutôt que d'inventer une
+     teinte hors palette CGA (interdit #8). */
+  --text-legend: var(--text-primary);
+
+  /* ========================================================
+     3. LA STRUCTURE — matière plate & ombre-bloc.
+     TUI DOS proscrit tout dégradé et tout relief (interdits §4 & §9) :
+     "Le plastique" de Luna devient ici des APLATS purs -- gradient()
+     à 2 arrêts identiques (flat fill), exigé par le type de valeur des
+     propriétés consommées par le CSS partagé -- et l'ombre-bloc pleine,
+     jamais un dégradé, jamais un flou.
+     ======================================================== */
+  --plastic-raised:  linear-gradient(var(--dos-cyan), var(--dos-cyan));    /* boutons : cyan plat */
+  --plastic-pressed: linear-gradient(var(--btn-press), var(--btn-press));  /* appui : cyan éclairci, l'ombre se rapproche ailleurs */
+
+  /* Barre de titre : grise plate, filet double dessous (STYLE.md §6) */
+  --gradient-title-active: linear-gradient(var(--surface-window), var(--surface-window));
+
+  /* Boutons de titre : pas de min/max en Turbo Vision authentique (une
+     seule case, [■] Fermer, CYAN -- pas rouge, c'est la doctrine §6) ;
+     les boutons génériques (min/max) que l'app requiert restent neutres,
+     fondus dans le chrome, pour laisser Fermer seul visible/doctrinal. */
+  --gradient-titlebtn:       linear-gradient(var(--surface-window), var(--surface-window));
+  --gradient-titlebtn-close: linear-gradient(var(--dos-cyan), var(--dos-cyan));
+
+  /* Jauge : remplissage cyan plein (STYLE.md §9 "Progression") */
+  --gradient-progress: linear-gradient(var(--dos-cyan), var(--dos-cyan));
+
+  /* ========================================================
+     4. OMBRES
+     ======================================================== */
+  --shadow-window:          var(--block-shadow);
+  --shadow-window-inactive: 6px 6px 0 var(--dos-black);
+  --shadow-menu:            8px 8px 0 var(--dos-black);
+
+  /* --frame-shadow : le cadre applicatif (corps de fenêtre) n'a qu'un
+     box-shadow à disposition -- ni bordure ni relief séparés. On y
+     recompose donc le CADRE À DOUBLE TRAIT (3px : noir 1px / creux 1px /
+     noir 1px, exactement la largeur de `border:3px double` utilisée
+     partout dans components.html) EN PLUS de l'ombre-bloc décalée, par
+     calques inset successifs (aucun flou, chaque calque est un aplat) :
+     1 noir dessus, 1 gris dessous (le "creux" du double-trait), 1 noir
+     encore dessous -- superposés à l'ombre-bloc portée (non-inset). */
+  --frame-shadow:
+    var(--block-shadow),
+    inset 0 0 0 1px var(--dos-black),
+    inset 0 0 0 2px var(--dos-gray),
+    inset 0 0 0 3px var(--dos-black);
+
+  /* Survol : N'EXISTE PAS en mode texte (STYLE.md §7 : "le mode texte ne
+     pré-allume pas" ; interdit §4 : "tout survol"). */
+  --glow-hover: none;
+
+  /* ========================================================
+     5. TYPOGRAPHIE — tout est monospace, aucune exception (interdit §1)
+     ======================================================== */
+  --font-ui: "Perfect DOS VGA 437", "Px437 IBM VGA8", "PxPlus IBM VGA8",
+             Consolas, "Courier New", monospace;
+  --font-mono: var(--font-ui);      /* déjà à chasse fixe : rien à distinguer */
+  --font-title: var(--font-ui);     /* même police pour le titre (§4 : "une seule police pour tout") */
+  --font-size-base:  15px;
+  --font-size-title: 15px;          /* NOIR, centré entre les doubles traits */
+  --line-height: 1.4;
+  --title-text-shadow: none;        /* pas d'effet de texte : encre plate (interdit §3, réservé aux ombres de boîte) */
+
+  /* ========================================================
+     6. MÉTRIQUES & ESPACEMENT
+     ======================================================== */
+  --unit: 4px;
+  --space-1: 2px; --space-2: 4px;  --space-3: 8px;
+  --space-4: 12px; --space-5: 14px; --space-6: 26px;
+  --pad-body: 14px;
+
+  --control-height: 30px;
+  --field-height: var(--control-height);  /* même hauteur que les boutons (components.html : input reprend --control-height) */
+  --button-min-width: 96px;
+  --titlebar-height: 28px;
+  --titlebar-btn: 20px;              /* carré, proche de .wm-close (26×20) et .to-close (22×22) de components.html */
+  --checkbox-size: 18px;
+  --toggle-w: 48px; --toggle-h: 20px;
+  --scrollbar-size: 16px;
+  --icon-small: 16px; --icon-large: 32px;
+
+  --radius: 0;              /* token propre au charter : radius plat, préservé tel quel */
+  --radius-control: 0px;    /* Radius 0 ABSOLU (interdit §4 : "même la radio est carrée") */
+  --radius-group:   0px;
+  --radius-window:  0px;
+
+  /* ========================================================
+     7. ÉTATS & MOUVEMENT
+     ======================================================== */
+  --transition-state: 0s;                      /* le mode texte ne fond pas */
+  --transition: var(--transition-state);        /* alias du contrat générique */
+  --focus-ring: 2px solid var(--dos-yellow);    /* outline jaune (STYLE.md §7) */
+  --focus-outline: var(--focus-ring);           /* alias du contrat générique */
+  --cursor-interactive: var(--cursor-default);
+
+  /* ========================================================
+     8. CURSEURS — mêmes 14 actions que toutes les chartes.
+     Matière DOS : corps BLANCS pixelisés (crispEdges), attente = SABLIER.
+     ======================================================== */
+  --cur-img-default: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' shape-rendering='crispEdges'%3E%3Cg opacity='.35' transform='translate(1.5,1.5)'%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23FCFCFC' stroke='%23000' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-link: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' shape-rendering='crispEdges'%3E%3Cg opacity='.35' transform='translate(1.5,1.5)'%3E%3Cpolygon points='10,2 13,2 13,9 16,9 19,11 19,15 16,20 9,20 5,14 5,12 7,11 10,14' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='10,2 13,2 13,9 16,9 19,11 19,15 16,20 9,20 5,14 5,12 7,11 10,14' fill='%23FCFCFC' stroke='%23000' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpath d='M13.5 11v4M16 12v3' stroke='%23000' stroke-width='.9' stroke-linecap='round'/%3E%3C/svg%3E");
+  --cur-img-text: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' shape-rendering='crispEdges'%3E%3Cg fill='none' stroke='%23fff' stroke-width='4.2' stroke-linecap='round'%3E%3Cpath d='M8 3h6M11 3v18M8 21h6'/%3E%3C/g%3E%3Cg fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round'%3E%3Cpath d='M8 3h6M11 3v18M8 21h6'/%3E%3C/g%3E%3C/svg%3E");
+  --cur-img-wait: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' shape-rendering='crispEdges'%3E%3Cg opacity='.35' transform='translate(1.5,1.5)'%3E%3Crect x='5' y='3.5' width='14' height='17' fill='%23000'/%3E%3C/g%3E%3Cpath d='M6 4h12v3l-4.6 5 4.6 5v3h-12v-3l4.6-5-4.6-5z' fill='%23FCFCFC' stroke='%23000000' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpath d='M8.6 5.8h6.8l-3.4 3.8z' fill='%23000000'/%3E%3Cpath d='M7.5 18h8l-4-4.5z' fill='%23000000'/%3E%3C/svg%3E");
+  --cur-img-progress: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' shape-rendering='crispEdges'%3E%3Cg opacity='.35' transform='translate(1.5,1.5)'%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23000' stroke='%23000' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23FCFCFC' stroke='%23000' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cg transform='translate(11.2 11.2) scale(.55)'%3E%3Cpath d='M6 4h12v3l-4.6 5 4.6 5v3h-12v-3l4.6-5-4.6-5z' fill='%23FCFCFC' stroke='%23000000' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpath d='M8.6 5.8h6.8l-3.4 3.8z' fill='%23000000'/%3E%3C/g%3E%3C/svg%3E");
+  --cur-img-help: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' shape-rendering='crispEdges'%3E%3Cg opacity='.35' transform='translate(1.5,1.5)'%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23000' stroke='%23000' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23FCFCFC' stroke='%23000' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpath d='M14.5 6c0-2.6 6.5-2.6 6.5 0c0 2.2-3.2 2-3.2 4.4' fill='none' stroke='%23fff' stroke-width='3.8' stroke-linecap='round'/%3E%3Cpath d='M14.5 6c0-2.6 6.5-2.6 6.5 0c0 2.2-3.2 2-3.2 4.4' fill='none' stroke='%23A80000' stroke-width='1.8' stroke-linecap='round'/%3E%3Ccircle cx='17.9' cy='13.8' r='1.7' fill='%23fff'/%3E%3Ccircle cx='17.9' cy='13.8' r='1.1' fill='%23A80000'/%3E%3C/svg%3E");
+  --cur-img-crosshair: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' shape-rendering='crispEdges'%3E%3Cg fill='none' stroke='%23fff' stroke-width='4.2'%3E%3Cpath d='M12 3v18M3 12h18'/%3E%3C/g%3E%3Cg fill='none' stroke='%23000' stroke-width='1.6'%3E%3Cpath d='M12 3v18M3 12h18'/%3E%3C/g%3E%3C/svg%3E");
+  --cur-img-not-allowed: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' shape-rendering='crispEdges'%3E%3Cg fill='none' stroke='%23fff' stroke-width='5.4'%3E%3Ccircle cx='12' cy='12' r='8'/%3E%3Cpath d='M6.5 6.5l11 11'/%3E%3C/g%3E%3Cg fill='none' stroke='%23000' stroke-width='2.4'%3E%3Ccircle cx='12' cy='12' r='8'/%3E%3Cpath d='M6.5 6.5l11 11'/%3E%3C/g%3E%3C/svg%3E");
+  --cur-img-resize-v: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' shape-rendering='crispEdges'%3E%3Cg opacity='.35' transform='translate(1.5,1.5)'%3E%3Cpolygon points='12,1 17,7 14,7 14,17 17,17 12,23 7,17 10,17 10,7 7,7' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='12,1 17,7 14,7 14,17 17,17 12,23 7,17 10,17 10,7 7,7' fill='%23FCFCFC' stroke='%23000' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-resize-h: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' shape-rendering='crispEdges'%3E%3Cg opacity='.35' transform='translate(1.5,1.5)'%3E%3Cpolygon points='1,12 7,7 7,10 17,10 17,7 23,12 17,17 17,14 7,14 7,17' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='1,12 7,7 7,10 17,10 17,7 23,12 17,17 17,14 7,14 7,17' fill='%23FCFCFC' stroke='%23000' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-resize-nwse: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' shape-rendering='crispEdges'%3E%3Cg opacity='.35' transform='translate(1.5,1.5)'%3E%3Cpath d='M7 7l10 10' stroke='%23000' stroke-width='4.6'/%3E%3Cpolygon points='4,4 12,4 4,12' fill='%23000'/%3E%3Cpolygon points='20,20 12,20 20,12' fill='%23000'/%3E%3C/g%3E%3Cpath d='M7 7l10 10' stroke='%23fff' stroke-width='4'/%3E%3Cpath d='M7 7l10 10' stroke='%23000' stroke-width='1.8'/%3E%3Cpolygon points='4,4 12,4 4,12' fill='%23FCFCFC' stroke='%23000' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpolygon points='20,20 12,20 20,12' fill='%23FCFCFC' stroke='%23000' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-resize-nesw: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' shape-rendering='crispEdges'%3E%3Cg opacity='.35' transform='translate(1.5,1.5)'%3E%3Cpath d='M17 7L7 17' stroke='%23000' stroke-width='4.6'/%3E%3Cpolygon points='20,4 12,4 20,12' fill='%23000'/%3E%3Cpolygon points='4,20 12,20 4,12' fill='%23000'/%3E%3C/g%3E%3Cpath d='M17 7L7 17' stroke='%23fff' stroke-width='4'/%3E%3Cpath d='M17 7L7 17' stroke='%23000' stroke-width='1.8'/%3E%3Cpolygon points='20,4 12,4 20,12' fill='%23FCFCFC' stroke='%23000' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpolygon points='4,20 12,20 4,12' fill='%23FCFCFC' stroke='%23000' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-move: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' shape-rendering='crispEdges'%3E%3Cg opacity='.35' transform='translate(1.5,1.5)'%3E%3Cpolygon points='12,1 15,5 13,5 13,19 15,19 12,23 9,19 11,19 11,5 9,5' fill='%23000'/%3E%3Cpolygon points='1,12 5,9 5,11 19,11 19,9 23,12 19,15 19,13 5,13 5,15' fill='%23000'/%3E%3C/g%3E%3Cg fill='%23FCFCFC' stroke='%23000' stroke-width='1.6' stroke-linejoin='round'%3E%3Cpolygon points='12,1 15,5 13,5 13,19 15,19 12,23 9,19 11,19 11,5 9,5'/%3E%3Cpolygon points='1,12 5,9 5,11 19,11 19,9 23,12 19,15 19,13 5,13 5,15'/%3E%3C/g%3E%3Cpolygon points='12,1 15,5 13,5 13,19 15,19 12,23 9,19 11,19 11,5 9,5' fill='%23FCFCFC'/%3E%3Cpolygon points='1,12 5,9 5,11 19,11 19,9 23,12 19,15 19,13 5,13 5,15' fill='%23FCFCFC'/%3E%3C/svg%3E");
+  --cur-img-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' shape-rendering='crispEdges'%3E%3Cg opacity='.35' transform='translate(1.5,1.5)'%3E%3Cpolygon points='12,2 18,9 14,9 14,20 10,20 10,9 6,9' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='12,2 18,9 14,9 14,20 10,20 10,9 6,9' fill='%23FCFCFC' stroke='%23000' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+
+  --cursor-default:     var(--cur-img-default) 2 2, default;
+  --cursor-link:        var(--cur-img-link) 11 3, pointer;
+  --cursor-text:        var(--cur-img-text) 11 12, text;
+  --cursor-wait:        var(--cur-img-wait) 12 12, wait;
+  --cursor-progress:    var(--cur-img-progress) 2 2, progress;
+  --cursor-help:        var(--cur-img-help) 2 2, help;
+  --cursor-crosshair:   var(--cur-img-crosshair) 12 12, crosshair;
+  --cursor-not-allowed: var(--cur-img-not-allowed) 12 12, not-allowed;
+  --cursor-resize-v:    var(--cur-img-resize-v) 12 12, ns-resize;
+  --cursor-resize-h:    var(--cur-img-resize-h) 12 12, ew-resize;
+  --cursor-resize-nwse: var(--cur-img-resize-nwse) 12 12, nwse-resize;
+  --cursor-resize-nesw: var(--cur-img-resize-nesw) 12 12, nesw-resize;
+  --cursor-move:        var(--cur-img-move) 12 12, move;
+  --cursor-up:          var(--cur-img-up) 12 3, default;
+
+  /* ================================================== ICONS:BEGIN
+     9. ICÔNES — navigation & fichiers (14), tokenisées comme les
+     curseurs : SVG data-URI dessinés dans la matière du style.
+     ======================================================== */
+  --icon-folder: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='4.6,7.6 10.6,7.6 12.4,9.8 22.6,9.8 22.6,20.6 4.6,20.6' fill='%23000000'/%3E%3Cpolygon points='2.6,5.6 8.6,5.6 10.4,7.8 20.6,7.8 20.6,18.6 2.6,18.6' fill='%23FFCB00' stroke='%23000000' stroke-width='1.3' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-folder-open: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='4.6,7.6 22.6,7.6 22.6,20.6 4.6,20.6' fill='%23000000'/%3E%3Cpolygon points='2.6,5.6 8.6,5.6 10.4,7.8 18.6,7.8 18.6,10 2.6,10' fill='%23C89B00' stroke='%23000000' stroke-width='1.2' stroke-linejoin='round'/%3E%3Cpolygon points='4.6,11 20.8,11 18.8,18.6 2.6,18.6' fill='%23FFCB00' stroke='%23000000' stroke-width='1.3' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-file: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Crect x='8' y='4.6' width='12.4' height='17' fill='%23000000'/%3E%3Cpath d='M6 2.5h8l4.5 4.5v14.5H6z' fill='%23FFFFFF' stroke='%23000000' stroke-width='1.4' stroke-linejoin='round'/%3E%3Cpath d='M14 2.5v4.5h4.5z' fill='%2300A8A8' stroke='%23000000' stroke-width='1.26' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-file-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Crect x='8' y='4.6' width='12.4' height='17' fill='%23000000'/%3E%3Cpath d='M6 2.5h8l4.5 4.5v14.5H6z' fill='%23FFFFFF' stroke='%23000000' stroke-width='1.4' stroke-linejoin='round'/%3E%3Cpath d='M14 2.5v4.5h4.5z' fill='%2300A8A8' stroke='%23000000' stroke-width='1.26' stroke-linejoin='round'/%3E%3Ccircle cx='10.2' cy='11.2' r='1.5' fill='%23FFCB00'/%3E%3Cpolygon points='8,18.4 10.8,14.6 12.6,16.9 14,15.1 16.4,18.4' fill='%2300A800'/%3E%3C/svg%3E");
+  --icon-drive: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Crect x='5' y='10.6' width='18' height='7' fill='%23000000'/%3E%3Crect x='3' y='8.6' width='18' height='7' fill='%23A8A8A8' stroke='%23000000' stroke-width='1.4'/%3E%3Ccircle cx='17' cy='12.1' r='1.2' fill='%2300A800'/%3E%3Cpath d='M5.6 12.1h6' fill='none' stroke='%23000000' stroke-width='1.2' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3C/svg%3E");
+  --icon-home: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Crect x='7.8' y='13.6' width='12.4' height='7.4' fill='%23000000'/%3E%3Cpolygon points='3.6,11.6 12,4.4 20.4,11.6' fill='%230000A8' stroke='%23000000' stroke-width='1.4' stroke-linejoin='round'/%3E%3Crect x='5.8' y='11.6' width='12.4' height='7.8' fill='%2300A8A8' stroke='%23000000' stroke-width='1.4'/%3E%3Crect x='10.4' y='14.4' width='3.2' height='5' fill='%230000A8' stroke='%23000000' stroke-width='1.1199999999999999'/%3E%3C/svg%3E");
+  --icon-computer: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Crect x='5.6' y='5.6' width='16.8' height='11.4' fill='%23000000'/%3E%3Crect x='3.6' y='3.6' width='16.8' height='11.4' fill='%23A8A8A8' stroke='%23000000' stroke-width='1.4'/%3E%3Crect x='5.4' y='5.4' width='13.2' height='7.8' fill='%230000A8'/%3E%3Ctext x='6.4' y='11.4' font-family='monospace' font-size='6' fill='%23FFCB00'%3E%3E_%3C/text%3E%3Crect x='9.4' y='15' width='5.2' height='1.8' fill='%23A8A8A8' stroke='%23000000' stroke-width='1.2'/%3E%3Crect x='7.2' y='16.8' width='9.6' height='1.8' fill='%23A8A8A8' stroke='%23000000' stroke-width='1.2'/%3E%3C/svg%3E");
+  --icon-network: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M12 7.6L6.4 16M12 7.6l5.6 8.4M6.4 16h11.2' fill='none' stroke='%23FFFFFF' stroke-width='1.8' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3Ccircle cx='12' cy='6.4' r='2.4' fill='%2300A800'/%3E%3Ccircle cx='5.6' cy='17' r='2.4' fill='%2300A800'/%3E%3Ccircle cx='18.4' cy='17' r='2.4' fill='%2300A800'/%3E%3C/svg%3E");
+  --icon-trash: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Crect x='8.8' y='6' width='10.8' height='15.4' fill='%23000000'/%3E%3Crect x='7.6' y='4' width='8.8' height='1.8' fill='%23A8A8A8' stroke='%23000000' stroke-width='1.4'/%3E%3Crect x='10.2' y='2.6' width='3.6' height='1.4' fill='%23A8A8A8' stroke='%23000000' stroke-width='1.1199999999999999'/%3E%3Cpath d='M6.6 5.8h10.8l-1.1 14.4H7.7z' fill='%23A8A8A8' stroke='%23000000' stroke-width='1.4' stroke-linejoin='round'/%3E%3Cpath d='M10 8.2l.3 9.6M14 8.2l-.3 9.6M12 8.2v9.6' fill='none' stroke='%23000000' stroke-width='0.9799999999999999' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3C/svg%3E");
+  --icon-search: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cg transform='translate(1.8 1.8)'%3E%3Ccircle cx='10.4' cy='10.4' r='4.9' fill='none' stroke='%23000000' stroke-width='2.2'/%3E%3Cpath d='M14.2 14.2l5.2 5.2' fill='none' stroke='%23000000' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/g%3E%3Ccircle cx='10.4' cy='10.4' r='4.9' fill='none' stroke='%23FFFFFF' stroke-width='2.2'/%3E%3Cpath d='M14.2 14.2l5.2 5.2' fill='none' stroke='%23FFFFFF' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-back: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='18.3,6.8 8.8,13.8 18.3,20.8 18.3,16.2 22.8,16.2 22.8,11.4 18.3,11.4' fill='%23000000'/%3E%3Cpolygon points='16.5,5 7,12 16.5,19 16.5,14.4 21,14.4 21,9.6 16.5,9.6' fill='%23FFFFFF' stroke='%23000000' stroke-width='1.4' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-forward: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='9.3,6.8 18.8,13.8 9.3,20.8 9.3,16.2 4.8,16.2 4.8,11.4 9.3,11.4' fill='%23000000'/%3E%3Cpolygon points='7.5,5 17,12 7.5,19 7.5,14.4 3,14.4 3,9.6 7.5,9.6' fill='%23FFFFFF' stroke='%23000000' stroke-width='1.4' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='6.8,13.3 13.8,6.3 20.8,13.3 16.4,13.3 16.4,21.8 11.200000000000001,21.8 11.200000000000001,13.3' fill='%23000000'/%3E%3Cpolygon points='5,11.5 12,4.5 19,11.5 14.6,11.5 14.6,20 9.4,20 9.4,11.5' fill='%23FFFFFF' stroke='%23000000' stroke-width='1.4' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-refresh: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cg transform='translate(1.8 1.8)'%3E%3Cpath d='M18.6 8.2A7.6 7.6 0 1 0 19.6 14' fill='none' stroke='%23000000' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpolygon points='19.9,4.4 19.9,9.8 14.7,8.6' fill='%23000000'/%3E%3C/g%3E%3Cpath d='M18.6 8.2A7.6 7.6 0 1 0 19.6 14' fill='none' stroke='%23FFFFFF' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpolygon points='19.9,4.4 19.9,9.8 14.7,8.6' fill='%23FFFFFF'/%3E%3C/svg%3E");
+  /* ICONS:END */
+}
+
+/* HC:BEGIN — contraste élevé (phase 4). Repris tel quel du charter (mêmes
+   primitives CGA remappées noir/blanc/jaune) ; tous les alias/extras
+   ajoutés ci-dessus au §2-7 sont des var() sur ces mêmes primitives et se
+   re-résolvent donc correctement ici SANS rien redéfinir de plus :
+   --frame-shadow retombe sur noir/blanc/noir (le "filet blanc" doctrinal
+   sur panneau noir), --plastic-raised/--gradient-titlebtn-close passent
+   au blanc plein (dos-cyan→blanc), --text-legend suit --text-primary
+   (blanc), --shadow-menu est déjà repris du charter juste en dessous. */
+[data-theme="hc"] {
+  --dos-blue: #000000;
+  --dos-blue-hi: #FFFFFF;
+  --dos-gray: #FFFFFF;             /* dialogues, menus, boutons : blancs, comme le BW de TV */
+  --dos-gray-dk: #000000;
+  --dos-cyan: #FFFFFF;
+  --dos-green: #FFEE32;
+  --dos-red: #8E0000;
+  --dos-brown: #FFEE32;
+  --dos-yellow: #FFEE32;
+  --dos-white: #FFFFFF;
+  --text-primary: #FFFFFF;
+  --text-soft: #E0E0E0;
+  --text-disabled: #808080;
+  --selection-bg: #FFFFFF;
+  --selection-text: #000000;
+  --surface-window: #000000;
+  --desktop-color: #000000;
+  --shade-desktop: #000000;
+  --shade-track: #000000;
+  --block-shadow: 0 0 0 transparent;
+  --btn-shadow: 0 0 0 transparent;
+  --btn-shadow-pressed: 0 0 0 transparent;
+  --shadow-window: 0 0 0 2px #FFFFFF;
+  --shadow-window-inactive: 0 0 0 2px #808080;
+  --shadow-menu: 0 0 0 2px #FFFFFF;
+  --tooltip-bg: #FFFFFF;
+  --on-accent: #000000;
+  --link: #FF6A60;
+  --btn-press: #FFFFFF;
+  /* icônes en contraste élevé (fonds sombres -> traits blancs) */
+  --icon-search: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='10.4' cy='10.4' r='4.9' fill='none' stroke='%23FFFFFF' stroke-width='2.2'/%3E%3Cpath d='M14.2 14.2l5.2 5.2' fill='none' stroke='%23FFFFFF' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+/* HC:END */
+
+/* --- Base recommandée (à copier dans l'app) ------------------------------ */
+/*
+body {
+  margin: 0;
+  background-color: var(--desktop-color);
+  background-image: var(--shade-desktop);
+  color: var(--text-primary);
+  font: 400 var(--font-size-base)/var(--line-height) var(--font-ui);
+  cursor: var(--cursor-default);
+}
+::selection { background: var(--selection-bg); color: var(--selection-text); }
+a { color: var(--dos-yellow); cursor: var(--cursor-link); }
+input[type=text], textarea { cursor: var(--cursor-text); }
+*/
+
+/* ==========================================================================
+   STRUCTURAL COMPOSITION -- real Turbo Vision component shapes, ported from
+   this folder's own components.html (not a color reskin of style.css's
+   generic rounded-rect grid). Loaded last in index.html's link order, so
+   plain selectors here beat style.css's same-specificity rules by cascade
+   order alone -- no !important anywhere below.
+
+   The single rule that shapes everything else: RADIUS 0 ABSOLUE (interdit
+   §4) -- every border-radius below is a literal 0, not a var(), because the
+   charter's own --radius-control/--radius-group/--radius-window tokens are
+   already 0 (kept as var() refs where the base rule already used one, hard
+   0 where style.css's generic rule had NO radius property at all to
+   override, e.g. the bare <button>/input rules this theme adds from
+   scratch below).
+   ========================================================================== */
+
+/* ---------- Window chrome : cadre double, [■] Fermer CYAN à GAUCHE, pas de
+   réduire/agrandir (Turbo Vision n'a qu'une case de fermeture -- STYLE.md
+   §6), titre centré entre les doubles traits ---------- */
+.titlebar {
+  padding: 0 8px;
+  gap: 8px;
+  border-bottom: 3px double var(--dos-black);
+  border-radius: 0;
+}
+.titlebar-drag { justify-content: center; }
+.titlebar-title {
+  flex: 1;
+  text-align: center;
+  padding-left: 0;
+}
+.titlebar-buttons {
+  order: -1;             /* [■] passe à GAUCHE (STYLE.md §6) */
+  gap: 4px;
+}
+.cap-btn {
+  border: 1px solid var(--dos-black);
+  border-radius: 0;
+  box-shadow: none;      /* .wm-close du spécimen n'a pas d'ombre-bloc propre */
+}
+/* Survolé N'EXISTE PAS (interdit §4 + STYLE.md §7) : on neutralise le
+   brightness-filter que style.css applique par défaut sur .cap-btn. */
+.cap-btn:hover, .cap-btn:active { filter: none; }
+.cap-min, .cap-max { display: none; }   /* pas de réduire/agrandir en Turbo Vision */
+.cap-close {
+  min-width: 0;           /* le spécimen (.wm-close) pose min-width:0 -- sans ça, le
+                              min-width:96px de la règle "button" ci-dessous écrase le
+                              width:26px et étire la case de fermeture en ovale. */
+  width: 26px;           /* .wm-close du spécimen : 26×20, pas un carré */
+  margin-left: 0;
+}
+.cap-close:active { background: var(--dos-green); }  /* .wm-close:active du spécimen */
+.cap-close span::before, .cap-close span::after { content: none; }
+.cap-close span::before {
+  content: "■";           /* le vrai glyphe Turbo Vision : un bloc plein, pas un X */
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+  background: none;
+  color: var(--dos-black);
+  font: 700 12px/1 var(--font-ui);
+}
+.cap-close:active span::before { color: var(--on-accent); }
+
+/* ---------- Onglets : segments gris soudés (trait simple, sans radius),
+   l'actif vire au cyan (STYLE.md §9 "Onglets") ---------- */
+.tabbar {
+  gap: 0;
+  border-bottom: none;
+}
+.tab-btn {
+  min-width: auto;
+  height: 28px;
+  padding: 0 15px;
+  background: var(--dos-gray);
+  border: 1px solid var(--dos-black);
+  border-right-width: 0;
+  border-radius: 0;
+  font: 700 var(--font-size-base)/1 var(--font-ui);
+  color: var(--dos-black);
+}
+.tab-btn:last-child { border-right-width: 1px; }
+.tab-btn:hover:not(.active) { filter: none; }  /* survolé n'existe pas */
+.tab-btn.active {
+  background: var(--dos-cyan);
+  color: var(--on-accent);
+}
+
+/* ---------- Boutons : blocs CYAN à encre noire, ombre-bloc qui SE RAPPROCHE
+   à l'appui (jamais un enfoncement), défaut VERT, focus = contour jaune,
+   désactivé = gris sans ombre (STYLE.md §7). L'élément <button> nu n'avait
+   AUCUNE règle avant (chrome natif du navigateur) -- c'est le charter qui
+   lui donne sa matière, comme pour toutes les 34 chartes de la collection. ---------- */
+button {
+  min-width: var(--button-min-width);
+  height: var(--control-height);
+  padding: 0 16px;
+  border: 1px solid var(--border-control);
+  border-radius: 0;
+  background: var(--plastic-raised);
+  box-shadow: var(--btn-shadow);
+  font: 700 var(--font-size-base)/1 var(--font-ui);
+  color: var(--dos-black);
+  cursor: var(--cursor-default);
+  user-select: none;
+}
+/* Pas de règle :hover -- le mode texte ne pré-allume pas (interdit §4). */
+button:not(:disabled):active { box-shadow: var(--btn-shadow-pressed); background: var(--btn-press); }
+button:focus-visible { outline: var(--focus-ring); outline-offset: 1px; }
+button:disabled { background: var(--dos-gray-dk); color: var(--text-disabled); box-shadow: none; }
+
+.start-btn {
+  min-width: var(--button-min-width);
+  height: var(--control-height);
+  padding: 0 20px;
+  border: 1px solid var(--border-control);
+  border-radius: 0;
+  background: var(--dos-green);   /* .is-default du spécimen : le bouton par défaut est VERT */
+  color: var(--on-accent);
+  box-shadow: var(--btn-shadow);
+  font: 700 var(--font-size-base)/1 var(--font-ui);
+}
+/* style.css pose un :hover à base de --glow-hover (déjà "none" dans ce
+   charter) -- on le fige explicitement sur l'ombre de repos pour qu'aucun
+   pixel ne bouge au survol (interdit §4), plutôt que de laisser l'ombre
+   disparaître puis réapparaître. */
+.start-btn:hover { box-shadow: var(--btn-shadow); }
+.start-btn:active { box-shadow: var(--btn-shadow-pressed); }
+
+.row-actions button {
+  min-width: 0; height: auto;
+  padding: 3px 10px;
+  border: 1px solid var(--border-control);
+  border-radius: 0;
+  background: var(--plastic-raised);
+  box-shadow: var(--btn-shadow);
+  font: 700 calc(var(--font-size-base) - 1px)/1 var(--font-ui);
+  color: var(--dos-black);
+}
+.row-actions button:not(:disabled):hover { box-shadow: var(--btn-shadow); }  /* no-op : pas de survol */
+.row-actions button:not(:disabled):active { box-shadow: var(--btn-shadow-pressed); background: var(--btn-press); }
+
+/* ---------- Champs : BLEUS à texte JAUNE, cadre noir 1px, CARRÉS (radius 0
+   -- ici ça ne les distingue pas des boutons, eux-mêmes déjà carrés dans ce
+   charter : STYLE.md §4 "0 radius" est absolu, pas une exception réservée
+   aux champs comme chez Luna). Focus = contour jaune (STYLE.md §7). ---------- */
+input[type="text"], input[type="number"], select, textarea, .search-input {
+  background: var(--surface-field);
+  border: 1px solid var(--border-field);
+  border-radius: 0;
+  height: var(--control-height);
+  padding: 0 8px;
+  font: inherit;
+  color: var(--dos-yellow);
+}
+.form-grid input[type="text"], .form-grid input[type="number"] {
+  background: var(--surface-field);
+  border: 1px solid var(--border-field);
+  border-radius: 0;
+  height: var(--control-height);
+  padding: 0 8px;
+  color: var(--dos-yellow);
+}
+textarea { height: auto; min-height: 68px; padding: 5px 8px; resize: none; }
+input[type="text"]:not(:disabled), textarea:not(:disabled) { cursor: var(--cursor-text); }
+input[type="text"]:focus, input[type="number"]:focus, textarea:focus, select:focus, .search-input:focus {
+  outline: var(--focus-ring);
+  outline-offset: 1px;
+}
+input:disabled, textarea:disabled, select:disabled { background: var(--dos-gray-dk); color: #9E9E9E; }
+select {
+  appearance: none; -webkit-appearance: none;
+  color: var(--dos-yellow);
+  padding-right: 26px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='6'%3E%3Cpath d='M4 6L0 0H8Z' fill='%23FCFC54'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 8px 6px;
+  background-color: var(--surface-field);
+}
+
+/* ---------- Cases : CARRÉES, coche = « X » jaune sur bleu (le rond n'existe
+   pas en mode texte -- STYLE.md §7). Pas de survol. ---------- */
+input[type="checkbox"] {
+  appearance: none; -webkit-appearance: none;
+  margin: 0; vertical-align: middle;
+  width: var(--checkbox-size); height: var(--checkbox-size);
+  border: 1px solid var(--border-control);
+  border-radius: 0;
+  background: var(--surface-field);
+  display: inline-grid; place-content: center;
+}
+input[type="checkbox"]:checked::after {
+  content: "X";
+  color: var(--dos-yellow);
+  font: 700 13px/1 var(--font-ui);
+}
+input[type="checkbox"]:focus-visible { outline: var(--focus-ring); outline-offset: 1px; }
+input[type="checkbox"]:disabled { background: var(--dos-gray-dk); }
+input[type="checkbox"]:disabled:checked::after { opacity: .6; }
+
+/* ---------- Listes : panneau BLEU à texte BLANC (hérité par les cellules
+   .row-*), sélection CYAN à encre noire pleine (déjà exact via
+   --selection-bg/--selection-text), « ligne au pointeur » = bleu clair du
+   damier --dos-blue-hi -- exactement la teinte que le spécimen utilise pour
+   .tbl tr.is-hot / .tr-row.is-hot (STYLE.md §9 "table et arbre en PANNEAU
+   BLEU" -- un état de survol de LISTE existe dans cette charte, distinct de
+   l'interdit générique sur les CONTRÔLES/boutons). Pas de filet entre
+   lignes : le spécimen (.listbox>div) n'en trace aucun. ---------- */
+.listbox { border-radius: 0; padding: 0; color: var(--dos-white); }
+.row, .downloads-row, .share-row, .scan-row {
+  border-bottom: none;
+  padding: 4px 10px;
+}
+.row:hover:not(.selected),
+#downloadsList .row:hover:not(.selected),
+.scan-row:hover { background: var(--dos-blue-hi); color: var(--on-accent); }
+.downloads-row-header {
+  color: var(--dos-yellow);
+  font-weight: 400;
+  border-bottom: 1px solid var(--dos-cyan);
+}
+/* Cellules de donnees : style.css pose `.row-state{color:var(--text-primary)}`
+   (noir) -- illisible sur le panneau BLEU de ce charter. On aligne toutes les
+   cellules sur l'encre blanche du panneau (STYLE.md §9 "table et arbre en
+   PANNEAU BLEU"), y compris les colonnes du scanner (meme .listbox bleue). */
+.row-name, .row-state, .row-rate, .row-eta, .row-category, .row-peers,
+.scan-path, .scan-size {
+  color: inherit;
+}
+
+/* ---------- Group box : cadre DOUBLE noir (STYLE.md §7 "fieldset : double
+   3px"), fond transparent (la plaque grise du dialogue transparaît),
+   légende en gras à l'encre du texte -- ce charter ne réserve pas de
+   couleur de légende dédiée (voir §2 du fichier). ---------- */
+.profile-group, .details-group {
+  background: transparent;
+  border: 3px double var(--dos-black);
+  border-radius: 0;
+}
+.profile-group h3, .details-group h3 {
+  color: var(--text-legend);
+  font-weight: 700;
+}
+
+/* ---------- Menu contextuel : panneau gris à cadre DOUBLE + ombre-bloc
+   (STYLE.md §9 "Menus"), item au pointeur = fond VERT texte blanc (jamais
+   le cyan de sélection générique -- c'est la doctrine du menu, distincte de
+   la sélection de liste). ---------- */
+.context-menu {
+  background: var(--dos-gray);
+  border: 3px double var(--dos-black);
+  border-radius: 0;
+  box-shadow: var(--shadow-menu);
+  padding: 2px 0;
+}
+.context-menu-item {
+  padding: 4px 12px;
+  color: var(--dos-black);
+}
+.context-menu-item:hover {
+  background: var(--dos-green);
+  color: var(--on-accent);
+}
+.context-menu-separator {
+  height: 0;
+  background: none;
+  border-top: 1px solid var(--dos-black);
+  margin: 3px 6px;
+}
+
+/* ---------- Dialogue : même chrome que la fenêtre (cadre double + ombre-
+   bloc), bandeau de titre gris à filet double, texte centré (STYLE.md §9
+   "Dialogues" : boutons CENTRÉS en bas -- le bouton par défaut .start-btn-
+   like est déjà vert via la règle générique .is-default appliquée plus
+   haut si le markup en pose un ; ici on ne fait que le chrome de la boîte
+   elle-même, cf. gabarit .modal-box h3 = bandeau de titre bleedé). ---------- */
+/* Fond du calque modal : noir plein (jamais un flou/degrade -- interdits
+   §3 & §4), opacite relevee pour trancher net sur le damier du bureau. */
+.modal-overlay {
+  background: rgba(0, 0, 0, 0.6);
+}
+.modal-box {
+  background: var(--surface-window);
+  border: 3px double var(--dos-black);
+  border-radius: 0;
+  box-shadow: var(--shadow-window);
+  padding: 0 var(--space-5) var(--space-5);
+  gap: var(--space-3);
+}
+.modal-box h3 {
+  margin: 0 calc(-1 * var(--space-5)) 0;
+  padding: 0 var(--space-5);
+  height: var(--titlebar-height);
+  line-height: var(--titlebar-height);
+  background: var(--dos-gray);
+  border-bottom: 3px double var(--dos-black);
+  color: var(--dos-black);
+  font: 700 var(--font-size-title)/1 var(--font-ui);
+  text-align: center;
+}
+
+/* ---------- Défilement : gouttière en DAMIER, pouce cyan cerné de noir,
+   flèches noires sur gris (STYLE.md §7 "Ascenseur") -- absent avant (chrome
+   natif du système). ---------- */
+::-webkit-scrollbar { width: var(--scrollbar-size); height: var(--scrollbar-size); }
+::-webkit-scrollbar-track { background: var(--shade-track); }
+::-webkit-scrollbar-thumb {
+  background: var(--dos-cyan);
+  border: 1px solid var(--dos-black);
+  border-radius: 0;
+}
+::-webkit-scrollbar-button {
+  background-color: var(--dos-gray);
+  border: 1px solid var(--dos-black);
+  height: 16px; width: 16px;
+}
+::-webkit-scrollbar-button:vertical:decrement {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='6'%3E%3Cpath d='M4 0L8 6H0Z' fill='%23000'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: center; background-size: 8px 6px;
+}
+::-webkit-scrollbar-button:vertical:increment {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='6'%3E%3Cpath d='M4 6L0 0H8Z' fill='%23000'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: center; background-size: 8px 6px;
+}
+::-webkit-scrollbar-corner { background: var(--dos-gray); }
+
+/* ---------- Jauge de progression (cadre autour du canvas Tetris) : piste
+   en DAMIER gris, cadre noir 1px, radius 0, aucune ombre (STYLE.md §9
+   "Progression" -- pas le vert Game Boy générique posé par défaut dans
+   style.css). ---------- */
+canvas.tetris {
+  border: 1px solid var(--border-progress);
+  border-radius: 0;
+  background: var(--shade-track);
+  box-shadow: none;
+}

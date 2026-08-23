@@ -1,0 +1,778 @@
+/* ==========================================================================
+   WIN95 CLASSIC — tokens.css — v1.0 (port spike)
+   Style : "Windows 95 Classic"
+   Rôle  : SOURCE DE VÉRITÉ des variables. À importer tel quel.
+   Port fidèle de resources/web/charters/Charte graphique/Windows 95/tokens.css
+   vers le contrat structurel de themes/luna_xp/tokens.css (référence).
+   Lire  : STYLE.md du dossier charte (règles & interdits) · components.html
+   ========================================================================== */
+
+/* --- Police pixel (optionnelle : fallback Tahoma si hors-ligne) ---------- */
+@font-face {
+  font-family: "Pixelated MS Sans Serif";
+  src: url("https://unpkg.com/98.css@0.1.20/dist/ms_sans_serif.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: "Pixelated MS Sans Serif";
+  src: url("https://unpkg.com/98.css@0.1.20/dist/ms_sans_serif_bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+}
+
+:root {
+
+  /* ========================================================
+     1. PRIMITIVES — palette système fermée (8 couleurs UI)
+     Aucune autre couleur n'est autorisée dans l'interface.
+     ======================================================== */
+  --w95-black:      #000000;  /* texte, ombre 3D externe */
+  --w95-gray-dark:  #808080;  /* ombre 3D interne, texte désactivé */
+  --w95-gray:       #C0C0C0;  /* LA surface. ~80 % de l'écran */
+  --w95-gray-light: #DFDFDF;  /* lumière 3D interne */
+  --w95-white:      #FFFFFF;  /* lumière 3D externe, fonds de saisie */
+  --w95-navy:       #000080;  /* titre actif + sélection. UNIQUE accent */
+  --w95-teal:       #008080;  /* bureau (arrière-plan hors fenêtres) */
+  --w95-info:       #FFFFE1;  /* fond des infobulles */
+
+  /* Couleurs réservées aux PICTOGRAMMES système (jamais sur des surfaces UI) */
+  --w95-icon-red:    #FF0000; /* icône "critique" */
+  --w95-icon-yellow: #FFFF00; /* icône "avertissement" */
+  --w95-icon-blue:   #0000FF; /* icône "information" */
+
+  /* ========================================================
+     2. SÉMANTIQUES — le sens, jamais les hex, dans le code
+     ======================================================== */
+  --surface-desktop:   var(--w95-teal);
+  --surface-window:    var(--w95-gray);      /* fenêtres, boutons, menus, barres */
+  --surface-field:     var(--w95-white);     /* inputs, listes, zones d'édition */
+  --surface-panel:     var(--w95-gray);      /* pages d'onglets : même gris, pas de palier dédié en 95 */
+  --surface-tooltip:   var(--w95-info);
+
+  --text-primary:      var(--w95-black);
+  --text-disabled:     var(--w95-gray-dark); /* + text-shadow 1px 1px 0 blanc (gravé) */
+  --text-inverse:      var(--w95-white);
+
+  --title-active-bg:   var(--w95-navy);      /* APLAT. Jamais de dégradé (95 ≠ 98) */
+  --title-active-text: var(--w95-white);
+  --title-inactive-bg: var(--w95-gray-dark);
+  --title-inactive-text: var(--w95-gray-light);
+
+  --selection-bg:      var(--w95-navy);
+  --selection-text:    var(--w95-white);
+
+  /* Generic aliases consumed by resources/web/spike/*.css -- Win95 n'a pas de
+     bordures plates dédiées (le relief vient des biseaux, §3), donc ces alias
+     pointent vers les tons qui dessinent le bord visible de chaque biseau :
+     noir = arête externe des contrôles relevés, gris foncé = arête des zones
+     creusées/groupes (valeur reprise telle quelle du `fieldset{border:1px
+     solid var(--w95-gray-dark)}` de components.html). Comme les primitives
+     ci-dessus sont redéfinies en dark/hc, ces alias se recalculent seuls. */
+  --border-control:  var(--w95-black);
+  --border-field:    var(--w95-gray-dark);
+  --border-group:    var(--w95-gray-dark);
+  --border-progress: var(--w95-gray-dark);
+  --border-tab:      var(--w95-gray-dark);
+  /* Légende de group box : en 95 la hiérarchie se fait par le gras, jamais par
+     la couleur (STYLE.md §4) -- donc pas de bleu-légende à la Luna : la légende
+     reste du texte normal. */
+  --text-legend:     var(--text-primary);
+
+  /* ========================================================
+     3. LE BISEAU — la signature du style (équivalent du "plastique" Luna).
+     Toute la profondeur vient de 4 traits de 1 px empilés en inset :
+     AUCUNE ombre portée, AUCUN flou, AUCUN dégradé arbitraire.
+     ======================================================== */
+  /* Relief (boutons, barres) */
+  --bevel-raised:
+    inset -1px -1px var(--w95-black),
+    inset  1px  1px var(--w95-white),
+    inset -2px -2px var(--w95-gray-dark),
+    inset  2px  2px var(--w95-gray-light);
+
+  /* Enfoncé (bouton pressé, onglet/état actif) */
+  --bevel-pressed:
+    inset -1px -1px var(--w95-white),
+    inset  1px  1px var(--w95-black),
+    inset -2px -2px var(--w95-gray-light),
+    inset  2px  2px var(--w95-gray-dark);
+
+  /* Creusé (champs de saisie, listes, zones blanches) */
+  --bevel-sunken:
+    inset -1px -1px var(--w95-white),
+    inset  1px  1px var(--w95-gray-dark),
+    inset -2px -2px var(--w95-gray-light),
+    inset  2px  2px var(--w95-black);
+
+  /* Cadre de fenêtre / menus déroulants */
+  --bevel-window:
+    inset -1px -1px var(--w95-black),
+    inset  1px  1px var(--w95-gray-light),
+    inset -2px -2px var(--w95-gray-dark),
+    inset  2px  2px var(--w95-white);
+
+  /* Biseaux fins 1px (barre d'état, séparateurs, jauges) */
+  --bevel-thin-raised:  inset -1px -1px var(--w95-gray-dark), inset 1px 1px var(--w95-white);
+  --bevel-thin-sunken:  inset -1px -1px var(--w95-white), inset 1px 1px var(--w95-gray-dark);
+
+  /* Bouton par défaut : anneau noir 1px EN PLUS du relief */
+  --bevel-raised-default: 0 0 0 1px var(--w95-black),
+    inset -1px -1px var(--w95-black),
+    inset  1px  1px var(--w95-white),
+    inset -2px -2px var(--w95-gray-dark),
+    inset  2px  2px var(--w95-gray-light);
+
+  /* Trame en damier 2×2 (piste des scrollbars, zones hachurées) */
+  --pattern-dither: repeating-conic-gradient(
+      var(--w95-white) 0% 25%, var(--w95-gray) 0% 50%
+    ) 0 0 / 2px 2px;
+
+  /* -- Valeurs "background" requises par l'app (type gradient imposé par le
+     site d'usage) : en 95 tout est un aplat, donc dégradé 2 arrêts même
+     couleur -- ce qui reste visuellement plat, comme l'exige STYLE.md
+     interdit #3 ("Dégradés... l'aplat navy, le dégradé c'est Win98"). */
+  --plastic-raised:  linear-gradient(var(--w95-gray), var(--w95-gray));
+  --plastic-pressed: linear-gradient(var(--w95-gray), var(--w95-gray));
+
+  /* Barre de titre : aplat navy, jamais de dégradé (interdit #3). */
+  --gradient-title-active: linear-gradient(var(--w95-navy), var(--w95-navy));
+
+  /* Boutons de titre (réduire/agrandir/fermer) : gris plat identique aux
+     autres boutons -- en Win95 le bouton Fermer n'est PAS rouge (ça, c'est
+     Win98/XP) ; seul le glyphe "×" en noir le distingue, cf. .tb-btn dans
+     components.html qui ne porte aucune couleur dédiée. */
+  --gradient-titlebtn:       linear-gradient(var(--w95-gray), var(--w95-gray));
+  --gradient-titlebtn-close: linear-gradient(var(--w95-gray), var(--w95-gray));
+
+  /* Jauge de progression : blocs navy 9px espacés de 2px (STYLE.md §9),
+     repris tel quel de `.progress>i` dans components.html -- un vrai
+     dégradé répété, pas un aplat. */
+  --gradient-progress:
+    repeating-linear-gradient(90deg, var(--w95-navy) 0 9px, transparent 9px 11px);
+
+  /* ========================================================
+     4. OMBRES & LUEURS — Win95 interdit le flou et le survol lumineux
+     (STYLE.md interdits #2 et #5) : la profondeur est 100% biseaux.
+     ======================================================== */
+  /* Cadre de fenêtre : le biseau EST le cadre, pas une ombre portée. */
+  --frame-shadow: var(--bevel-window);
+  /* Menus/popovers : "une mini-fenêtre, posée SANS ombre" (STYLE.md §2) --
+     le même biseau structurel, aucun flou rgba ajouté. */
+  --shadow-menu: var(--bevel-window);
+  /* Aucune lueur de survol : "RIEN sur boutons/champs" est la règle
+     authentique (STYLE.md §7, interdit #5). */
+  --glow-hover: none;
+
+  /* ========================================================
+     5. TYPOGRAPHIE — aucun anti-aliasing, aucune échelle de tailles
+     ======================================================== */
+  --font-ui: "Pixelated MS Sans Serif", "MS Sans Serif", Tahoma, "Segoe UI", sans-serif;
+  --font-mono: "Courier New", monospace;      /* zones de code / terminal */
+  --font-size-base: 11px;   /* authentique. Option lisibilité : 13px (non canon) */
+  --line-height: 1.2;
+  --font-weight-normal: 400;
+  --font-weight-bold: 700;  /* réservé : barres de titre, légendes de groupe */
+
+  /* Titre de fenêtre : même police, même corps -- la hiérarchie vient du
+     gras + de la position, jamais d'une police ou taille dédiée
+     (STYLE.md §4 : "pas d'échelle typographique"). */
+  --font-title: var(--font-ui);
+  --font-size-title: var(--font-size-base);
+  /* Aucune ombre de texte sur le titre : aplat navy + blanc gras suffisent,
+     cf. .titlebar dans components.html (pas de text-shadow). */
+  --title-text-shadow: none;
+
+  /* ========================================================
+     6. MÉTRIQUES & ESPACEMENT — unité fine 2px, unité 4px
+     ======================================================== */
+  --unit: 4px;
+  --space-1: 2px;    /* micro : bordures internes, gouttières de chrome */
+  --space-2: 4px;    /* intra-composant */
+  --space-3: 6px;    /* entre contrôles liés (boutons d'un même groupe) */
+  --space-4: 8px;    /* entre lignes de formulaire */
+  --space-5: 12px;   /* marge interne des fenêtres et boîtes de dialogue */
+  --space-6: 16px;   /* entre sections */
+
+  --control-height: 23px;      /* boutons, inputs, selects */
+  /* Pas de hauteur de champ distincte en 95 : inputs/selects partagent
+     --control-height (cf. `input,select{height:var(--control-height)}`
+     dans components.html) -- donc field-height = control-height. */
+  --field-height: var(--control-height);
+  --button-min-width: 75px;
+  --titlebar-height: 18px;
+  --titlebar-btn-w: 16px;
+  --titlebar-btn-h: 14px;
+  /* Bouton de titre carré requis par l'app : la charte distingue largeur
+     16px / hauteur 14px (rectangulaire) -- on retient la largeur, qui
+     correspond aussi à --icon-small, comme taille carrée de repli. */
+  --titlebar-btn: 16px;
+  --menubar-height: 19px;
+  --scrollbar-size: 16px;
+  --checkbox-size: 13px;
+  --icon-small: 16px;
+  --icon-large: 32px;
+  --window-frame: 3px;         /* padding du cadre de fenêtre */
+
+  --radius-control: 0px;        /* NON NÉGOCIABLE (exception : rond des radios) */
+  --radius-group:   0px;
+  --radius-window:  0px;
+  --radius: 0px;                 /* alias historique de la charte, conservé */
+
+  /* ========================================================
+     7. ÉTATS & DIVERS
+     ======================================================== */
+  --focus-outline: 1px dotted var(--w95-black);  /* offset -4px dans les boutons */
+  --cursor-interactive: var(--cursor-default); /* flèche, même sur les boutons (authentique) */
+  --transition: none;             /* changements d'état instantanés */
+
+  /* ========================================================
+     8. CURSEURS — jeu complet Windows 95
+     Redessins pixel 24 px (flèches blanches cerclées de noir,
+     outils noirs cerclés de blanc), inspirés des .cur d'origine.
+     --cur-img-* = image seule · --cursor-* = image + point chaud + secours
+     ======================================================== */
+  --cur-img-default: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' shape-rendering='crispEdges'%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23fff' stroke='%23000' stroke-width='2'/%3E%3C/svg%3E");
+  --cur-img-link: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' shape-rendering='crispEdges'%3E%3Cpolygon points='10,2 13,2 13,9 16,9 19,11 19,15 16,20 9,20 5,14 5,12 7,11 10,14' fill='%23fff' stroke='%23000' stroke-width='1.8'/%3E%3Cpath d='M13.5 11v4M16 12v3' stroke='%23000' stroke-width='1'/%3E%3C/svg%3E");
+  --cur-img-text: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' shape-rendering='crispEdges'%3E%3Cg fill='none' stroke='%23fff' stroke-width='4.5'%3E%3Cpath d='M8 3h6M11 3v18M8 21h6'/%3E%3C/g%3E%3Cg fill='none' stroke='%23000' stroke-width='1.8'%3E%3Cpath d='M8 3h6M11 3v18M8 21h6'/%3E%3C/g%3E%3C/svg%3E");
+  --cur-img-wait: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' shape-rendering='crispEdges'%3E%3Crect x='4' y='2' width='15' height='2.5' fill='%23000'/%3E%3Crect x='4' y='19.5' width='15' height='2.5' fill='%23000'/%3E%3Cpath d='M6 5h11l-4.5 6.5v1L17 19H6l4.5-6.5v-1z' fill='%23fff' stroke='%23000' stroke-width='1.6'/%3E%3Cpath d='M8.5 6.5h6L11.5 10z' fill='%23000'/%3E%3Cpath d='M7.5 18h8l-4-4.5z' fill='%23000'/%3E%3Crect x='11' y='12.5' width='1.4' height='3' fill='%23000'/%3E%3C/svg%3E");
+  --cur-img-progress: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' shape-rendering='crispEdges'%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23fff' stroke='%23000' stroke-width='2'/%3E%3Cg fill='%23000' stroke='%23fff' stroke-width='1.6'%3E%3Crect x='14' y='11' width='9' height='2'/%3E%3Crect x='14' y='21' width='9' height='2'/%3E%3Cpath d='M15 13.5h7l-3.5 3.5z'/%3E%3Cpath d='M15 20.5h7l-3.5-3.5z'/%3E%3C/g%3E%3C/svg%3E");
+  --cur-img-help: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' shape-rendering='crispEdges'%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23fff' stroke='%23000' stroke-width='2'/%3E%3Cpath d='M14.5 6c0-2.6 6.5-2.6 6.5 0c0 2.2-3.2 2-3.2 4.4' fill='none' stroke='%23fff' stroke-width='4'/%3E%3Cpath d='M14.5 6c0-2.6 6.5-2.6 6.5 0c0 2.2-3.2 2-3.2 4.4' fill='none' stroke='%23000' stroke-width='2'/%3E%3Crect x='16.4' y='12.4' width='2.8' height='2.8' fill='%23fff'/%3E%3Crect x='16.8' y='12.8' width='2' height='2' fill='%23000'/%3E%3C/svg%3E");
+  --cur-img-crosshair: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' shape-rendering='crispEdges'%3E%3Cg fill='none' stroke='%23fff' stroke-width='4'%3E%3Cpath d='M12 3v18M3 12h18'/%3E%3C/g%3E%3Cg fill='none' stroke='%23000' stroke-width='1.6'%3E%3Cpath d='M12 3v18M3 12h18'/%3E%3C/g%3E%3C/svg%3E");
+  --cur-img-not-allowed: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' shape-rendering='crispEdges'%3E%3Cg fill='none' stroke='%23fff' stroke-width='5.5'%3E%3Ccircle cx='12' cy='12' r='8'/%3E%3Cpath d='M6.5 6.5l11 11'/%3E%3C/g%3E%3Cg fill='none' stroke='%23000' stroke-width='2.6'%3E%3Ccircle cx='12' cy='12' r='8'/%3E%3Cpath d='M6.5 6.5l11 11'/%3E%3C/g%3E%3C/svg%3E");
+  --cur-img-resize-v: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' shape-rendering='crispEdges'%3E%3Cpolygon points='12,1 17,7 14,7 14,17 17,17 12,23 7,17 10,17 10,7 7,7' fill='%23000' stroke='%23fff' stroke-width='1.8'/%3E%3C/svg%3E");
+  --cur-img-resize-h: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' shape-rendering='crispEdges'%3E%3Cpolygon points='1,12 7,7 7,10 17,10 17,7 23,12 17,17 17,14 7,14 7,17' fill='%23000' stroke='%23fff' stroke-width='1.8'/%3E%3C/svg%3E");
+  --cur-img-resize-nwse: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' shape-rendering='crispEdges'%3E%3Cpath d='M6 6l12 12' stroke='%23fff' stroke-width='5'/%3E%3Cg fill='%23000' stroke='%23fff' stroke-width='1.8'%3E%3Cpolygon points='4,4 12,4 4,12'/%3E%3Cpolygon points='20,20 12,20 20,12'/%3E%3C/g%3E%3Cpath d='M6 6l12 12' stroke='%23000' stroke-width='2.4'/%3E%3Cpolygon points='4,4 12,4 4,12' fill='%23000'/%3E%3Cpolygon points='20,20 12,20 20,12' fill='%23000'/%3E%3C/svg%3E");
+  --cur-img-resize-nesw: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' shape-rendering='crispEdges'%3E%3Cpath d='M18 6L6 18' stroke='%23fff' stroke-width='5'/%3E%3Cg fill='%23000' stroke='%23fff' stroke-width='1.8'%3E%3Cpolygon points='20,4 12,4 20,12'/%3E%3Cpolygon points='4,20 12,20 4,12'/%3E%3C/g%3E%3Cpath d='M18 6L6 18' stroke='%23000' stroke-width='2.4'/%3E%3Cpolygon points='20,4 12,4 20,12' fill='%23000'/%3E%3Cpolygon points='4,20 12,20 4,12' fill='%23000'/%3E%3C/svg%3E");
+  --cur-img-move: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' shape-rendering='crispEdges'%3E%3Cg fill='%23000' stroke='%23fff' stroke-width='1.8'%3E%3Cpolygon points='12,1 15,5 13,5 13,19 15,19 12,23 9,19 11,19 11,5 9,5'/%3E%3Cpolygon points='1,12 5,9 5,11 19,11 19,9 23,12 19,15 19,13 5,13 5,15'/%3E%3C/g%3E%3Cpolygon points='12,1 15,5 13,5 13,19 15,19 12,23 9,19 11,19 11,5 9,5' fill='%23000'/%3E%3Cpolygon points='1,12 5,9 5,11 19,11 19,9 23,12 19,15 19,13 5,13 5,15' fill='%23000'/%3E%3C/svg%3E");
+  --cur-img-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' shape-rendering='crispEdges'%3E%3Cpolygon points='12,2 18,9 14,9 14,20 10,20 10,9 6,9' fill='%23fff' stroke='%23000' stroke-width='2'/%3E%3C/svg%3E");
+
+  /* Curseurs composés : image + point chaud + secours système */
+  --cursor-default:     var(--cur-img-default) 2 2, default;
+  --cursor-link:        var(--cur-img-link) 11 3, pointer;      /* hyperliens UNIQUEMENT */
+  --cursor-text:        var(--cur-img-text) 11 12, text;
+  --cursor-wait:        var(--cur-img-wait) 12 12, wait;        /* app occupée, saisie bloquée */
+  --cursor-progress:    var(--cur-img-progress) 2 2, progress;  /* travail en arrière-plan */
+  --cursor-help:        var(--cur-img-help) 2 2, help;
+  --cursor-crosshair:   var(--cur-img-crosshair) 12 12, crosshair;
+  --cursor-not-allowed: var(--cur-img-not-allowed) 12 12, not-allowed; /* drag & drop refusé */
+  --cursor-resize-v:    var(--cur-img-resize-v) 12 12, ns-resize;
+  --cursor-resize-h:    var(--cur-img-resize-h) 12 12, ew-resize;
+  --cursor-resize-nwse: var(--cur-img-resize-nwse) 12 12, nwse-resize;
+  --cursor-resize-nesw: var(--cur-img-resize-nesw) 12 12, nesw-resize;
+  --cursor-move:        var(--cur-img-move) 12 12, move;
+  --cursor-up:          var(--cur-img-up) 12 3, default;        /* sélection alternative (marge) */
+
+  --link: #000080;
+
+  /* ================================================== ICONS:BEGIN
+     9. ICÔNES — navigation & fichiers (14), tokenisées
+     comme les curseurs : SVG data-URI dessinés dans la
+     matière du style. À consommer en background-image :
+     background: var(--icon-folder) center/contain no-repeat;
+     Jamais d'image externe, jamais d'emoji.
+     ======================================================== */
+  --icon-folder: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M2.5 6h6.4l1.9 2.4h10.7v11.1H2.5z' fill='%23F7E88A' stroke='%231A1A1A' stroke-width='1.3' stroke-linejoin='round'/%3E%3Cpath d='M2.5 6h6.4l1.9 2.4H2.5z' fill='%23D9BC55' stroke='%231A1A1A' stroke-width='1.1' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-folder-open: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M2.5 6h6.4l1.9 2.4h9.7v3H2.5z' fill='%23D9BC55' stroke='%231A1A1A' stroke-width='1.2' stroke-linejoin='round'/%3E%3Cpolygon points='4.7,11.4 21.5,11.4 19.3,19.5 2.5,19.5' fill='%23F7E88A' stroke='%231A1A1A' stroke-width='1.3' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-file: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M6 2.5h8l4.5 4.5v14.5H6z' fill='%23FFFFFF' stroke='%231A1A1A' stroke-width='1.2' stroke-linejoin='round'/%3E%3Cpath d='M14 2.5v4.5h4.5z' fill='%23C0C0C0' stroke='%231A1A1A' stroke-width='1.08' stroke-linejoin='round'/%3E%3Cpath d='M8.4 11h7.6' fill='none' stroke='%239AA4C8' stroke-width='1' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3Cpath d='M8.4 13.6h7.6' fill='none' stroke='%239AA4C8' stroke-width='1' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3Cpath d='M8.4 16.2h5.2' fill='none' stroke='%239AA4C8' stroke-width='1' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3C/svg%3E");
+  --icon-file-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M6 2.5h8l4.5 4.5v14.5H6z' fill='%23FFFFFF' stroke='%231A1A1A' stroke-width='1.2' stroke-linejoin='round'/%3E%3Cpath d='M14 2.5v4.5h4.5z' fill='%23C0C0C0' stroke='%231A1A1A' stroke-width='1.08' stroke-linejoin='round'/%3E%3Ccircle cx='10.2' cy='11.2' r='1.5' fill='%23D9BC55'/%3E%3Cpolygon points='8,18.4 10.8,14.6 12.6,16.9 14,15.1 16.4,18.4' fill='%233E7C4F'/%3E%3C/svg%3E");
+  --icon-drive: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='4,10 7,7 21,7 18,10' fill='%23E4E4E4' stroke='%231A1A1A' stroke-width='1.2' stroke-linejoin='round'/%3E%3Crect x='4' y='10' width='14' height='6.4' fill='%23C0C0C0' stroke='%231A1A1A' stroke-width='1.2'/%3E%3Cpath d='M18 10l3-3v6.4l-3 3z' fill='%23E4E4E4' stroke='%231A1A1A' stroke-width='1.2' stroke-linejoin='round'/%3E%3Ccircle cx='15.6' cy='13.2' r='1' fill='%233E9E3E'/%3E%3C/svg%3E");
+  --icon-home: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='3.6,11.6 12,4.4 20.4,11.6' fill='%239A3B3B' stroke='%231A1A1A' stroke-width='1.3' stroke-linejoin='round'/%3E%3Crect x='5.8' y='11.6' width='12.4' height='7.8' fill='%23C0C0C0' stroke='%231A1A1A' stroke-width='1.3'/%3E%3Crect x='10.4' y='14.4' width='3.2' height='5' fill='%239A3B3B' stroke='%231A1A1A' stroke-width='1.04'/%3E%3C/svg%3E");
+  --icon-computer: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Crect x='3.6' y='3.6' width='16.8' height='12.4' fill='%23C0C0C0' rx='1' stroke='%231A1A1A' stroke-width='1.3'/%3E%3Crect x='5.8' y='5.6' width='12.4' height='8.2' fill='%23000080' stroke='%231A1A1A' stroke-width='1.04'/%3E%3Crect x='9.4' y='16' width='5.2' height='2' fill='%23C0C0C0' stroke='%231A1A1A' stroke-width='1.3'/%3E%3Crect x='7.2' y='18' width='9.6' height='1.8' fill='%23C0C0C0' stroke='%231A1A1A' stroke-width='1.3'/%3E%3C/svg%3E");
+  --icon-network: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Crect x='2.6' y='3.4' width='8.4' height='6.6' fill='%23C0C0C0' stroke='%231A1A1A' stroke-width='1.1'/%3E%3Crect x='4.0' y='4.7' width='5.6' height='4' fill='%23000080'/%3E%3Crect x='5.4' y='10.0' width='2.8' height='1.2' fill='%23C0C0C0' stroke='%231A1A1A' stroke-width='0.8800000000000001'/%3E%3Crect x='13' y='12.6' width='8.4' height='6.6' fill='%23C0C0C0' stroke='%231A1A1A' stroke-width='1.1'/%3E%3Crect x='14.4' y='13.9' width='5.6' height='4' fill='%23000080'/%3E%3Crect x='15.8' y='19.2' width='2.8' height='1.2' fill='%23C0C0C0' stroke='%231A1A1A' stroke-width='0.8800000000000001'/%3E%3Cpath d='M10.6 8.4L14 14.2' fill='none' stroke='%231A1A1A' stroke-width='1.4000000000000001' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3C/svg%3E");
+  --icon-trash: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Crect x='7.6' y='4' width='8.8' height='1.8' fill='%23B0B0B0' stroke='%231A1A1A' stroke-width='1.3'/%3E%3Crect x='10.2' y='2.6' width='3.6' height='1.4' fill='%23B0B0B0' stroke='%231A1A1A' stroke-width='1.04'/%3E%3Cpath d='M6.6 5.8h10.8l-1.1 14.4H7.7z' fill='%23C8C8C8' stroke='%231A1A1A' stroke-width='1.3' stroke-linejoin='round'/%3E%3Cpath d='M10 8.2l.3 9.6M14 8.2l-.3 9.6M12 8.2v9.6' fill='none' stroke='%231A1A1A' stroke-width='0.9099999999999999' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3C/svg%3E");
+  --icon-search: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='10.4' cy='10.4' r='4.9' fill='none' stroke='%231A1A1A' stroke-width='2.1'/%3E%3Cpath d='M14.2 14.2l5.2 5.2' fill='none' stroke='%231A1A1A' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-back: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='16.5,5 7,12 16.5,19 16.5,14.4 21,14.4 21,9.6 16.5,9.6' fill='%231A1A1A'/%3E%3C/svg%3E");
+  --icon-forward: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='7.5,5 17,12 7.5,19 7.5,14.4 3,14.4 3,9.6 7.5,9.6' fill='%231A1A1A'/%3E%3C/svg%3E");
+  --icon-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='5,11.5 12,4.5 19,11.5 14.6,11.5 14.6,20 9.4,20 9.4,11.5' fill='%231A1A1A'/%3E%3C/svg%3E");
+  --icon-refresh: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M19.9 4.4v5.4l-5.2-1.2z' fill='%231A1A1A'/%3E%3Cpath d='M18.6 8.2A7.6 7.6 0 1 0 19.6 14' fill='none' stroke='%231A1A1A' stroke-width='2.6' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3C/svg%3E");
+  /* ICONS:END */
+}
+/* DARK:BEGIN — thème sombre (phase 3) — "Rainy Day" (scheme Plus!) */
+[data-theme="dark"] {
+  --w95-gray: #4C5666;
+  --w95-gray-light: #66738A;
+  --w95-gray-dark: #262C36;
+  --w95-black: #05070A;
+  --w95-white: #9AA8BD;            /* la lumière des biseaux */
+  --surface-window: #4C5666;
+  --surface-field: #20262E;
+  --surface-panel: #4C5666;
+  --text-primary: #E8ECF2;
+  --text-disabled: #66738A;
+  --surface-desktop: #1A2028;
+  /* Tous les alias --border-*, --text-legend, les biseaux, --plastic-*,
+     --gradient-*, --frame-shadow et --shadow-menu ci-dessus sont exprimés en
+     var(--w95-*) : ils se recalculent seuls, rien à répéter ici. Navy des
+     titres et bulle jaune conservés (STYLE.md phase 3), donc --w95-navy et
+     --w95-info ne sont pas touchés. */
+  /* icônes surchargées pour le fond sombre */
+  --icon-back: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='16.5,5 7,12 16.5,19 16.5,14.4 21,14.4 21,9.6 16.5,9.6' fill='%23E8ECF2'/%3E%3C/svg%3E");
+  --icon-forward: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='7.5,5 17,12 7.5,19 7.5,14.4 3,14.4 3,9.6 7.5,9.6' fill='%23E8ECF2'/%3E%3C/svg%3E");
+  --icon-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='5,11.5 12,4.5 19,11.5 14.6,11.5 14.6,20 9.4,20 9.4,11.5' fill='%23E8ECF2'/%3E%3C/svg%3E");
+  --icon-refresh: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M19.9 4.4v5.4l-5.2-1.2z' fill='%23E8ECF2'/%3E%3Cpath d='M18.6 8.2A7.6 7.6 0 1 0 19.6 14' fill='none' stroke='%23E8ECF2' stroke-width='2.6' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3C/svg%3E");
+  --icon-search: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='10.4' cy='10.4' r='4.9' fill='none' stroke='%23E8ECF2' stroke-width='2.1'/%3E%3Cpath d='M14.2 14.2l5.2 5.2' fill='none' stroke='%23E8ECF2' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+/* DARK:END */
+
+/* HC:BEGIN — contraste élevé (phase 4) — "Night Sky" */
+[data-theme="hc"] {
+  --w95-gray: #000000;
+  --w95-gray-light: #FFEE32;       /* le biseau devient un trait jaune */
+  --w95-gray-dark: #FFEE32;
+  --w95-white: #FFEE32;
+  --w95-black: #000000;
+  --w95-navy: #000000;             /* la titlebar rentre dans le noir cadré */
+  --w95-teal: #3DFFC8;
+  --w95-icon-red: #FF7070;
+  --w95-icon-yellow: #FFEE32;
+  --surface-window: #000000;
+  --surface-field: #000000;
+  --surface-panel: #000000;
+  --surface-desktop: #000000;
+  --text-primary: #FFFFFF;
+  --text-disabled: #808080;
+  --selection-bg: #D5B4FD;
+  --selection-text: #000000;
+  --link: #9D9DFF;
+  /* Idem : tout le relief/dégradé/ombre dérive de var(--w95-*) redéfinis
+     ci-dessus, rien à répéter pour --border-*, --plastic-*, --gradient-*,
+     --frame-shadow, --shadow-menu. */
+  /* icônes en contraste élevé */
+  --icon-back: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='16.5,5 7,12 16.5,19 16.5,14.4 21,14.4 21,9.6 16.5,9.6' fill='%23FFFFFF'/%3E%3C/svg%3E");
+  --icon-forward: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='7.5,5 17,12 7.5,19 7.5,14.4 3,14.4 3,9.6 7.5,9.6' fill='%23FFFFFF'/%3E%3C/svg%3E");
+  --icon-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='5,11.5 12,4.5 19,11.5 14.6,11.5 14.6,20 9.4,20 9.4,11.5' fill='%23FFFFFF'/%3E%3C/svg%3E");
+  --icon-refresh: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M19.9 4.4v5.4l-5.2-1.2z' fill='%23FFFFFF'/%3E%3Cpath d='M18.6 8.2A7.6 7.6 0 1 0 19.6 14' fill='none' stroke='%23FFFFFF' stroke-width='2.6' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3C/svg%3E");
+  --icon-search: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='10.4' cy='10.4' r='4.9' fill='none' stroke='%23FFFFFF' stroke-width='2.1'/%3E%3Cpath d='M14.2 14.2l5.2 5.2' fill='none' stroke='%23FFFFFF' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+/* HC:END */
+
+/* --- Base recommandée (à copier dans l'app) ------------------------------ */
+/*
+body {
+  margin: 0;
+  background: var(--surface-desktop);
+  color: var(--text-primary);
+  font: var(--font-weight-normal) var(--font-size-base)/var(--line-height) var(--font-ui);
+  -webkit-font-smoothing: none;
+  cursor: var(--cursor-default);
+}
+::selection { background: var(--selection-bg); color: var(--selection-text); }
+* { border-radius: var(--radius); }
+a { cursor: var(--cursor-link); }
+input[type=text], textarea { cursor: var(--cursor-text); }
+*/
+
+/* ==========================================================================
+   STRUCTURE — port des vrais composants de components.html (v1.6) sur la
+   grille partagée de resources/web/spike/style.css. Ce fichier étant chargé
+   en dernier, les sélecteurs ci-dessous (même spécificité, ordre plus tard)
+   gagnent naturellement la cascade sur les règles génériques -- aucun
+   !important. On adapte STRUCTURE, pas seulement couleur : biseaux 4 traits
+   au lieu d'ombres/dégradés/radius, zéro hover sur boutons/champs (interdit
+   #5), zéro border-radius hors radio (interdit #1), zéro transition
+   (interdit #4). Voir STYLE.md pour la justification de chaque choix.
+   ========================================================================== */
+
+/* ---------- Chrome de fenêtre (barre de titre + boutons système) -------- */
+.titlebar {
+  height: var(--titlebar-height);
+  min-height: var(--titlebar-height);
+  background: var(--title-active-bg); /* aplat navy -- jamais de dégradé (interdit #3) */
+  border-radius: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 0 2px;
+  font-weight: var(--font-weight-bold);
+  user-select: none;
+}
+.titlebar-drag {
+  flex: 1;
+  height: 100%;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+/* Icône d'appli 14x14 dans la barre de titre, comme .app-ico du spécimen --
+   pseudo-élément sur un nœud déjà présent dans le DOM partagé, pas un ajout
+   de balisage. */
+.titlebar-drag::before {
+  content: "";
+  flex: none;
+  width: 14px;
+  height: 14px;
+  background: var(--w95-white) var(--icon-computer) center / 12px no-repeat;
+  box-shadow: inset 0 0 0 1px var(--w95-black);
+}
+.titlebar-title {
+  color: var(--title-active-text);
+  font-family: var(--font-title);
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-title);
+  text-shadow: var(--title-text-shadow); /* none : aplat + gras suffisent */
+  padding-left: 1px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.titlebar-buttons {
+  display: flex;
+  flex: none;
+  gap: 2px;
+}
+.cap-btn {
+  width: var(--titlebar-btn-w);
+  height: var(--titlebar-btn-h);
+  min-width: 0;
+  border: none;
+  border-radius: 0;
+  background: var(--surface-window);
+  box-shadow: var(--bevel-raised);
+  padding: 0;
+  cursor: var(--cursor-default);
+  position: relative;
+}
+/* Pas de survol (interdit #5) : seul :active change l'état, biseau inversé +
+   glyphe décalé de 1 px, comme .tb-btn:active du spécimen. */
+.cap-btn:not(:disabled):active {
+  box-shadow: var(--bevel-pressed);
+  padding: 0;
+}
+.cap-btn:not(:disabled):active span {
+  transform: translate(1px, 1px);
+}
+.cap-close { background: var(--surface-window); } /* pas de rouge : seul le × noir distingue (STYLE.md) */
+
+/* Le <span> enfant est vide dans le HTML partagé -- le glyphe est
+   entièrement dessiné en pseudo-éléments, taille/position calquées sur
+   .g-min / .g-max / .g-close du spécimen. */
+.cap-btn span { position: absolute; inset: 0; pointer-events: none; }
+.cap-min span::before {
+  content: "";
+  position: absolute;
+  left: 50%; bottom: 3px;
+  transform: translateX(-50%);
+  width: 6px; height: 2px;
+  background: var(--w95-black);
+}
+.cap-max span::before {
+  content: "";
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  width: 8px; height: 7px;
+  border: 1px solid var(--w95-black);
+  border-top-width: 2px;
+}
+.cap-close span::before, .cap-close span::after {
+  content: "";
+  position: absolute;
+  left: 3px; right: 3px; top: 50%;
+  height: 2px;
+  background: var(--w95-black);
+}
+.cap-close span::before { transform: translateY(-50%) rotate(45deg); }
+.cap-close span::after  { transform: translateY(-50%) rotate(-45deg); }
+
+/* ---------- Onglets ------------------------------------------------------ */
+.tabbar {
+  display: flex;
+  gap: 0;
+  align-items: flex-end;
+  padding: var(--space-2) var(--space-2) 0;
+  background: var(--surface-window);
+  border-bottom: none;
+}
+.tab-btn {
+  min-width: 0;
+  height: auto;
+  margin-top: 2px;
+  padding: 3px 11px;
+  background: var(--surface-window);
+  border: none;
+  border-radius: 0;
+  /* biseau ouvert : arête vive à droite/bas, claire en haut/gauche -- calqué
+     sur .tab du spécimen (pas le relief plein d'un bouton). */
+  box-shadow:
+    inset -1px  0    var(--w95-black),
+    inset  1px  1px  var(--w95-white),
+    inset -2px  0    var(--w95-gray-dark),
+    inset  2px  2px  var(--w95-gray-light);
+  font: inherit;
+  font-weight: var(--font-weight-normal); /* pas de gras hors §4 (interdit #7) */
+  color: var(--text-primary);
+  cursor: var(--cursor-default);
+}
+/* L'onglet actif gagne en hauteur et mord sur le corps -- même fond gris que
+   .body, donc la jointure devient invisible (fusion sans ombre, cf. §2). */
+.tab-btn.active {
+  margin: 0 0 -2px;
+  padding: 4px 14px 6px;
+  position: relative;
+  z-index: 2;
+  background: var(--surface-window);
+  font-weight: var(--font-weight-normal);
+}
+/* Aucun survol (interdit #5) : les onglets ne changent pas au hover. */
+
+/* ---------- Boutons ------------------------------------------------------ */
+button {
+  min-width: var(--button-min-width);
+  height: var(--control-height);
+  padding: 0 12px;
+  background: var(--surface-window);
+  box-shadow: var(--bevel-raised);
+  border: none;
+  border-radius: 0;
+  font: inherit;
+  color: var(--text-primary);
+  cursor: var(--cursor-default);
+  user-select: none;
+}
+/* RIEN au survol -- authentique (interdit #5). Seul :active bascule le
+   biseau et décale le label de 1 px bas-droite (§7). */
+button:not(:disabled):active {
+  box-shadow: var(--bevel-pressed);
+  padding: 2px 11px 0 13px;
+}
+button:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: -4px; /* rectangle pointillé À L'INTÉRIEUR, obligatoire §7 */
+}
+button:disabled {
+  color: var(--text-disabled);
+  text-shadow: 1px 1px 0 var(--w95-white); /* effet gravé, le biseau ne change pas */
+  cursor: var(--cursor-default);
+}
+
+.start-btn {
+  align-self: flex-start;
+  height: var(--control-height);
+  padding: 0 20px;
+  background: var(--surface-window);
+  border: none;
+  border-radius: 0;
+  /* Bouton "par défaut" de la charte : anneau noir 1 px en plus du relief --
+     un seul CTA par page active, cohérent avec §7/§9. */
+  box-shadow: var(--bevel-raised-default);
+  font: inherit;
+  font-weight: var(--font-weight-bold);
+  cursor: var(--cursor-default);
+}
+.start-btn:not(:disabled):active {
+  box-shadow: 0 0 0 1px var(--w95-black), var(--bevel-pressed);
+  padding: 2px 19px 0 21px;
+}
+.start-btn:focus-visible { outline: var(--focus-outline); outline-offset: -4px; }
+
+.row-actions button {
+  min-width: 0;
+  height: 20px;
+  padding: 0 8px;
+  background: var(--surface-window);
+  box-shadow: var(--bevel-raised);
+  border: none;
+  border-radius: 0;
+  cursor: var(--cursor-default);
+}
+.row-actions button:not(:disabled):active {
+  box-shadow: var(--bevel-pressed);
+  padding: 1px 7px 0 9px;
+}
+
+/* ---------- Champs de saisie ---------------------------------------------*/
+input[type="text"], input[type="number"], select, textarea, .search-input {
+  background: var(--surface-field);
+  box-shadow: var(--bevel-sunken); /* creusé -- jamais une bordure plate */
+  border: none;
+  border-radius: 0;
+  font: inherit;
+  color: var(--text-primary);
+  height: var(--control-height);
+  padding: 3px 6px;
+}
+textarea { height: auto; min-height: 56px; resize: none; padding: 4px 6px; }
+input[type="text"]:disabled, input[type="number"]:disabled, textarea:disabled {
+  background: var(--surface-window);
+  box-shadow: var(--bevel-sunken);
+  color: var(--text-disabled);
+}
+input[type="text"]:not(:disabled), input[type="number"]:not(:disabled),
+textarea:not(:disabled), .search-input:not(:disabled) { cursor: var(--cursor-text); }
+input[type="text"]:focus-visible, input[type="number"]:focus-visible,
+select:focus-visible, textarea:focus-visible, .search-input:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: -4px;
+}
+/* Select : flèche plate dessinée en pseudo-image (identique au spécimen),
+   jamais le triangle par défaut du navigateur. */
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 24px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Cpath d='M4.5 6.5h7L8 10z' fill='%23000'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 4px center;
+}
+
+/* ---------- Cases à cocher ------------------------------------------------*/
+input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  margin: 0;
+  flex: none;
+  width: var(--checkbox-size);
+  height: var(--checkbox-size);
+  background: var(--surface-field);
+  box-shadow: var(--bevel-sunken);
+  border-radius: 0; /* seule exception au radius 0 : le rond du radio, pas la case */
+  display: inline-grid;
+  place-content: center;
+}
+input[type="checkbox"]:checked::after {
+  content: "";
+  width: 7px; height: 7px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='7' height='7'%3E%3Cpath d='M1 3.5 2.8 5.3 6.2 1.2' stroke='%23000' stroke-width='1.6' fill='none'/%3E%3C/svg%3E") no-repeat center;
+}
+input[type="checkbox"]:disabled { background: var(--surface-window); }
+input[type="checkbox"]:disabled:checked::after { filter: grayscale(1) opacity(.55); }
+input[type="checkbox"]:focus-visible { outline: var(--focus-outline); outline-offset: 1px; }
+
+/* ---------- Listes / lignes (Téléchargements, Partage, résultats Ajout) --*/
+.listbox {
+  background: var(--surface-field);
+  border: none;
+  border-radius: 0;
+  box-shadow: var(--bevel-sunken);
+  padding: 3px;
+}
+.row-name { font-weight: var(--font-weight-normal); } /* pas de gras hors §4 (interdit #7) */
+.row-state { color: var(--text-primary); font-weight: var(--font-weight-normal); }
+.row-rate, .row-eta, .row-category, .row-peers { font-variant-numeric: tabular-nums; }
+.share-row { border-radius: 0; } /* même ligne que .row (biseaux/hover hérités) -- juste une grille plus large */
+/* Exception documentée du §7 : "RIEN sur boutons/champs" mais surbrillance
+   navy AUTORISÉE sur les items de liste -- ici les lignes de torrents. */
+.listbox .row:hover, .listbox .scan-row:hover {
+  background: var(--selection-bg);
+  color: var(--selection-text);
+}
+/* En-tête de colonnes = rangée de boutons enfoncés-relevés, comme .tbl th
+   du spécimen ("les en-têtes de table sont des boutons"). */
+.downloads-row-header {
+  background: var(--surface-window);
+  border-bottom: none;
+  padding: 0;
+  font-weight: var(--font-weight-normal);
+}
+.downloads-row-header span {
+  display: block;
+  background: var(--surface-window);
+  box-shadow: var(--bevel-raised);
+  padding: var(--space-2) var(--space-3);
+  text-align: left;
+}
+.scan-path { color: var(--text-primary); }
+.scan-size { font-variant-numeric: tabular-nums; }
+
+/* ---------- Groupes (profil, détails) — équivalent fieldset/legend ------ */
+.profile-group, .details-group {
+  background: var(--surface-window); /* gris, PAS blanc : le blanc est réservé aux champs (§3) */
+  border: 1px solid var(--w95-gray-dark);
+  border-radius: 0;
+  /* bord gravé : trait sombre + surlignage blanc en dehors, calqué sur le
+     fieldset du spécimen (pas de flou, juste des offsets nets). */
+  box-shadow: inset 1px 1px 0 var(--w95-white), 1px 1px 0 var(--w95-white);
+  padding: var(--space-5);
+}
+.profile-group h3, .details-group h3 {
+  margin: 0 0 var(--space-3);
+  padding: 0 0 var(--space-2);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-bold); /* gras autorisé : légende de groupe (§4) */
+  color: var(--text-legend);
+  /* règle gravée sous le titre du groupe (même recette que --bevel-thin-sunken) */
+  border-bottom: 1px solid var(--w95-gray-dark);
+  box-shadow: 0 1px 0 var(--w95-white);
+}
+
+/* ---------- Menu contextuel (clic droit) --------------------------------- */
+.context-menu {
+  background: var(--surface-window);
+  border: none;
+  border-radius: 0;
+  box-shadow: var(--bevel-window); /* mini-fenêtre posée sans ombre (§2) */
+  padding: 3px 0;
+  min-width: 180px;
+}
+.context-menu-item {
+  padding: 3px 17px 3px 24px;
+  font-size: var(--font-size-base);
+  color: var(--text-primary);
+}
+.context-menu-item:hover {
+  background: var(--selection-bg); /* surbrillance navy autorisée : item de menu (§7) */
+  color: var(--selection-text);
+}
+.context-menu-separator {
+  height: 0;
+  background: none;
+  border-top: 1px solid var(--w95-gray-dark);
+  border-bottom: 1px solid var(--w95-white);
+  margin: 3px 2px;
+}
+
+/* ---------- Boîtes de dialogue / modales ---------------------------------*/
+/* Écran plein, opaque : AUCUNE transparence (interdit #2) -- le teal joue le
+   rôle du bureau qui apparaît "derrière" la boîte de dialogue modale. */
+.modal-overlay { background: var(--surface-desktop); }
+.modal-box {
+  background: var(--surface-window);
+  border: none;
+  border-radius: 0;
+  box-shadow: var(--bevel-window);
+}
+/* Le <h3> devient la barre de titre de la boîte : marges négatives = à
+   exactement le padding du parent, donc affleure le bord sans jamais le
+   dépasser (pas de clip malgré l'overflow:auto du conteneur). */
+.modal-box h3 {
+  margin: calc(-1 * var(--space-5)) calc(-1 * var(--space-5)) var(--space-4);
+  padding: 3px var(--space-5);
+  background: var(--title-active-bg);
+  color: var(--title-active-text);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-bold);
+  text-shadow: var(--title-text-shadow);
+}
+
+/* ---------- Scrollbars (16 px, piste en damier, flèches biseautées) -----*/
+::-webkit-scrollbar { width: var(--scrollbar-size); height: var(--scrollbar-size); }
+::-webkit-scrollbar-track { background: var(--pattern-dither); }
+::-webkit-scrollbar-thumb { background: var(--surface-window); box-shadow: var(--bevel-raised); border-radius: 0; }
+::-webkit-scrollbar-button:single-button {
+  background-color: var(--surface-window);
+  box-shadow: var(--bevel-raised);
+  height: 16px; width: 16px;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+::-webkit-scrollbar-button:single-button:vertical:decrement {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Cpath d='M4.5 9.5h7L8 6z' fill='%23000'/%3E%3C/svg%3E");
+}
+::-webkit-scrollbar-button:single-button:vertical:increment {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Cpath d='M4.5 6.5h7L8 10z' fill='%23000'/%3E%3C/svg%3E");
+}
+::-webkit-scrollbar-corner { background: var(--surface-window); }
+
+/* ---------- Jauge de progression (cadre du canvas Tetris) ---------------*/
+canvas.tetris {
+  border: none;
+  border-radius: 0;
+  box-shadow: var(--bevel-sunken); /* piste creusée, comme .progress du spécimen */
+  background: var(--surface-window);
+  image-rendering: pixelated;
+}

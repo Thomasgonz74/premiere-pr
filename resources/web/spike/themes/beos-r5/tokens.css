@@ -1,0 +1,643 @@
+/* ==========================================================================
+   BEOS-R5 — tokens.css — v1.0 (port pour le spike web)
+   Style : "BeOS R5 (1998)"
+   Rôle  : SOURCE DE VÉRITÉ des variables pour le port QWebEngineView.
+   Source: resources/web/charters/Charte graphique/BeOS R5/{STYLE.md,tokens.css}
+   Structure calquée sur la référence luna_xp/tokens.css (9 sections + blocs
+   [data-theme="dark"]/[data-theme="hc"] qui ne redéfinissent QUE ce qui change).
+   La fenêtre à onglet jaune partiel + le curseur-MAIN par défaut.
+   ========================================================================== */
+
+:root {
+
+  /* ========================================================
+     1. PRIMITIVES — palette BeOS R5
+     ======================================================== */
+  /* Gris BeOS */
+  --be-face:  #D8D8D8;
+  --be-face-hi: #E8E8E8;
+  --be-face-pressed: #A8A8A8;  /* état Pressé (STYLE.md §7 : "fond #A8A8A8, biseau inversé") */
+  --be-view:  #FFFFFF;
+  --be-border:#6A6A6A;
+  --be-line:  #B0B0B0;
+  --be-ink:   #000000;
+  --be-ink-soft: #5A5A5A;
+  --be-ink-disabled: #969696;
+
+  /* L'ONGLET jaune et ses bords */
+  --be-yellow:    #FFCB00;
+  --be-yellow-hi: #FFE47A;
+  --be-yellow-dk: #B08A00;
+  --be-yellow-off:#E4E1D4;   /* onglet de fenêtre inactive */
+
+  /* Les bleus BeOS */
+  --be-navy:   #22448C;      /* focus et anneau du défaut */
+  --be-blue:   #4E7CC6;      /* jauge */
+  --be-menu-hl:#567CB8;      /* pointeur des menus, texte blanc */
+  --be-select: #B8CCE8;      /* sélection des listes, encre noire */
+
+  --tab-ink:   #22334E;      /* encre de l'onglet + traits d'icônes */
+  --btn-hover: #F2F2F2;      /* survol léger, "pré-allumé" 1998 */
+  --hl-soft:   #D6E2F4;
+
+  --tooltip-bg: #FFF9C4;
+  --tooltip-border: #9C8F4A;
+  --desktop: #51748C;        /* l'aplat bleu-gris du bureau BeOS */
+
+  /* ========================================================
+     2. SÉMANTIQUES — surfaces, textes, sélection, titre
+     ======================================================== */
+  --surface-window:  var(--be-face);
+  --surface-field:   var(--be-view);
+  --surface-desktop: var(--desktop);
+  --surface-tooltip: var(--tooltip-bg);
+  --surface-panel:   var(--be-face-hi);   /* "l'actif s'éclaircit" — pages d'onglets de contenu */
+
+  --text-primary:  var(--be-ink);
+  --text-soft:     var(--be-ink-soft);
+  --text-disabled: var(--be-ink-disabled);
+  --text-inverse:  var(--be-view);
+
+  --selection-bg:   var(--be-select);
+  --selection-text: #000000;             /* encre NOIRE — jamais blanche (interdit §6) */
+
+  /* --tab-ink reste sombre y compris en thème sombre (l'onglet garde son jaune
+     dans les deux thèmes) ; --be-ink-soft est déjà recalculé clair/sombre par
+     les blocs dark/hc ci-dessous, donc title-inactive-text se re-résout seul. */
+  --title-active-text:   var(--tab-ink);
+  --title-inactive-text: var(--be-ink-soft);
+
+  /* Alias génériques consommés par le CSS partagé de l'app (contrat commun à
+     toutes les chartes) : bordures et légende, puisées dans les tons BeOS. */
+  --border-control:  var(--be-border);
+  --border-field:    var(--be-line);
+  --border-group:    var(--be-line);
+  --border-progress: var(--be-border);
+  --border-tab:      var(--be-border);
+  --text-legend:     var(--be-navy);
+
+  /* ========================================================
+     3. LA FENÊTRE À ONGLET — matière BeOS.
+     Aucun dégradé (interdit §8 : "dégradés (aucun — 3e aplat total,
+     bureau compris)") : le relief vient des biseaux 1px (--bevel-*),
+     jamais d'un gradient de couleur. Les propriétés --plastic-* /
+     --gradient-* attendues par le CSS partagé reçoivent donc des
+     dégradés à 2 arrêts DE MÊME TEINTE (rendu = aplat).
+     ======================================================== */
+  --bevel-out: inset 1px 1px 0 #F4F4F4, inset -1px -1px 0 #989898;
+  --bevel-in:  inset 1px 1px 0 #989898, inset -1px -1px 0 #F4F4F4;
+  --tab-bevel: inset 1px 1px 0 var(--be-yellow-hi),
+               inset -1px 0 0 var(--be-yellow-dk);
+
+  --plastic-raised:  linear-gradient(var(--be-face-hi),var(--be-face-hi));
+  --plastic-pressed: linear-gradient(var(--be-face-pressed),var(--be-face-pressed));
+
+  --gradient-title-active:   linear-gradient(var(--be-yellow),var(--be-yellow));
+  --gradient-titlebtn:       linear-gradient(var(--be-face-hi),var(--be-face-hi));
+  --gradient-titlebtn-close: linear-gradient(var(--be-face-hi),var(--be-face-hi)); /* pas de rouge — interdit §8 */
+  --gradient-progress:       linear-gradient(var(--be-blue),var(--be-blue));
+
+  /* ========================================================
+     4. OMBRES — pas de lueur douce sur les contrôles (interdit §8) ;
+     seule la fenêtre porte une ombre portée franche.
+     ======================================================== */
+  --shadow-window:          0 12px 28px rgba(0,0,0,.42), 0 2px 6px rgba(0,0,0,.28);
+  --shadow-window-inactive: 0 6px 14px rgba(0,0,0,.26);
+  --shadow-menu:            3px 3px 0 rgba(0,0,0,.30);
+  --frame-shadow: var(--shadow-window);
+  --glow-hover: none;          /* survol = léger réblanchiment du plateau, pas une lueur */
+  --title-text-shadow: none;   /* aplat total, aucune ombre de texte */
+
+  /* ========================================================
+     5. TYPOGRAPHIE
+     ======================================================== */
+  --font-ui:    Verdana, "DejaVu Sans", Geneva, Tahoma, sans-serif;
+  --font-title: var(--font-ui);              /* pas de police d'affichage dédiée en 1998 */
+  --font-mono:  "Courier New", monospace;
+  --font-size-base:  12px;
+  --font-size-title: 12px;   /* gras, à GAUCHE dans l'onglet */
+  --line-height: 1.45;
+
+  /* ========================================================
+     6. MÉTRIQUES & ESPACEMENT
+     ======================================================== */
+  --unit: 4px;
+  --space-1: 2px;  --space-2: 4px;  --space-3: 6px;
+  --space-4: 8px;  --space-5: 12px; --space-6: 16px;
+  --pad-body: 12px;
+
+  --control-height: 24px;
+  --field-height: 22px;          /* puits légèrement moins haut que le contrôle */
+  --button-min-width: 74px;
+  --titlebar-height: var(--tab-height);
+  --titlebar-btn: var(--gadget-size);
+  --tab-height: 24px;            /* l'onglet jaune */
+  --gadget-size: 14px;           /* Fermer et Zoom, carrés biseautés */
+  --checkbox-size: 14px;
+  --toggle-w: 42px; --toggle-h: 19px;   /* adaptation, inexistant en 1998 (STYLE.md §7) */
+  --scrollbar-size: 16px;
+  --icon-small: 16px;  --icon-large: 32px;
+
+  --radius-control: 3px;
+  --radius-tab: 4px 4px 0 0;
+  --radius-group: 0px;    /* "radius hors 3px contrôle / 4px onglet" interdit — panneaux carrés */
+  --radius-window: 0px;   /* fenêtre carrée (le seul radius est celui de l'onglet) */
+
+  /* ========================================================
+     7. ÉTATS & MOUVEMENT
+     ======================================================== */
+  --transition-state: .12s ease;
+  --transition: var(--transition-state);
+  --focus-ring: 0 0 0 2px var(--be-navy);      /* anneau navy (§7 : Focus/Défaut) */
+  --focus-outline: 2px solid var(--be-navy);
+  --cursor-interactive: var(--cursor-default); /* la main partout, y compris sur les boutons */
+
+  /* ========================================================
+     8. CURSEURS — mêmes 14 actions que toutes les chartes.
+     Matière BeOS : le pointeur par défaut est LA MAIN (blanche
+     à contour noir) ; le lien y ajoute un trait navy sous
+     l'index ; attente = la montre.
+     --cur-img-* = image seule · --cursor-* = image + point chaud + secours
+     ======================================================== */
+  --cur-img-default: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.22' transform='translate(1.5,1.5)'%3E%3Cpolygon points='10,2 13,2 13,9 16,9 19,11 19,15 16,20 9,20 5,14 5,12 7,11 10,14' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='10,2 13,2 13,9 16,9 19,11 19,15 16,20 9,20 5,14 5,12 7,11 10,14' fill='%23fff' stroke='%23000' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpath d='M13.5 11v4M16 12v3' stroke='%23000' stroke-width='.9' stroke-linecap='round'/%3E%3C/svg%3E");
+  --cur-img-link: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.22' transform='translate(1.5,1.5)'%3E%3Cpolygon points='10,2 13,2 13,9 16,9 19,11 19,15 16,20 9,20 5,14 5,12 7,11 10,14' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='10,2 13,2 13,9 16,9 19,11 19,15 16,20 9,20 5,14 5,12 7,11 10,14' fill='%23fff' stroke='%23000' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpath d='M13.5 11v4M16 12v3' stroke='%23000' stroke-width='.9' stroke-linecap='round'/%3E%3Crect x='9' y='21.2' width='7' height='2' fill='%2322448C'/%3E%3C/svg%3E");
+  --cur-img-text: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg fill='none' stroke='%23fff' stroke-width='4.2' stroke-linecap='round'%3E%3Cpath d='M8 3h6M11 3v18M8 21h6'/%3E%3C/g%3E%3Cg fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round'%3E%3Cpath d='M8 3h6M11 3v18M8 21h6'/%3E%3C/g%3E%3C/svg%3E");
+  --cur-img-wait: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.22' transform='translate(1.5,1.5)'%3E%3Ccircle cx='12' cy='13' r='8' fill='%23000'/%3E%3C/g%3E%3Crect x='10.4' y='1.6' width='3.2' height='3.2' rx='1' fill='%231A1A1A'/%3E%3Ccircle cx='12' cy='13' r='8' fill='%23fff' stroke='%231A1A1A' stroke-width='1.8'/%3E%3Cpath d='M12 13V7.4M12 13L17.4 14.6' stroke='%231A1A1A' stroke-width='1.7' stroke-linecap='round' fill='none'/%3E%3C/svg%3E");
+  --cur-img-progress: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.22' transform='translate(1.5,1.5)'%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23000' stroke='%23000' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/g%3E%3Cg opacity='.22' transform='translate(1.5,1.5)'%3E%3Ccircle cx='17.5' cy='17.5' r='4.8' fill='%23000'/%3E%3C/g%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23fff' stroke='%23000' stroke-width='1.6' stroke-linejoin='round'/%3E%3Crect x='15.9' y='9.299999999999999' width='3.2' height='3.2' rx='1' fill='%231A1A1A'/%3E%3Ccircle cx='17.5' cy='17.5' r='4.8' fill='%23fff' stroke='%231A1A1A' stroke-width='1.8'/%3E%3Cpath d='M17.5 17.5V15.1M17.5 17.5L19.7 19.1' stroke='%231A1A1A' stroke-width='1.7' stroke-linecap='round' fill='none'/%3E%3C/svg%3E");
+  --cur-img-help: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.22' transform='translate(1.5,1.5)'%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23000' stroke='%23000' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23fff' stroke='%23000' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpath d='M14.5 6c0-2.6 6.5-2.6 6.5 0c0 2.2-3.2 2-3.2 4.4' fill='none' stroke='%23fff' stroke-width='3.8' stroke-linecap='round'/%3E%3Cpath d='M14.5 6c0-2.6 6.5-2.6 6.5 0c0 2.2-3.2 2-3.2 4.4' fill='none' stroke='%2322448C' stroke-width='1.8' stroke-linecap='round'/%3E%3Ccircle cx='17.9' cy='13.8' r='1.7' fill='%23fff'/%3E%3Ccircle cx='17.9' cy='13.8' r='1.1' fill='%2322448C'/%3E%3C/svg%3E");
+  --cur-img-crosshair: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg fill='none' stroke='%23fff' stroke-width='4.2'%3E%3Cpath d='M12 3v18M3 12h18'/%3E%3C/g%3E%3Cg fill='none' stroke='%23000' stroke-width='1.6'%3E%3Cpath d='M12 3v18M3 12h18'/%3E%3C/g%3E%3C/svg%3E");
+  --cur-img-not-allowed: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg fill='none' stroke='%23fff' stroke-width='5.4'%3E%3Ccircle cx='12' cy='12' r='8'/%3E%3Cpath d='M6.5 6.5l11 11'/%3E%3C/g%3E%3Cg fill='none' stroke='%23000' stroke-width='2.4'%3E%3Ccircle cx='12' cy='12' r='8'/%3E%3Cpath d='M6.5 6.5l11 11'/%3E%3C/g%3E%3C/svg%3E");
+  --cur-img-resize-v: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.22' transform='translate(1.5,1.5)'%3E%3Cpolygon points='12,1 17,7 14,7 14,17 17,17 12,23 7,17 10,17 10,7 7,7' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='12,1 17,7 14,7 14,17 17,17 12,23 7,17 10,17 10,7 7,7' fill='%23fff' stroke='%23000' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-resize-h: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.22' transform='translate(1.5,1.5)'%3E%3Cpolygon points='1,12 7,7 7,10 17,10 17,7 23,12 17,17 17,14 7,14 7,17' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='1,12 7,7 7,10 17,10 17,7 23,12 17,17 17,14 7,14 7,17' fill='%23fff' stroke='%23000' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-resize-nwse: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.22' transform='translate(1.5,1.5)'%3E%3Cpath d='M7 7l10 10' stroke='%23000' stroke-width='4.6'/%3E%3Cpolygon points='4,4 12,4 4,12' fill='%23000'/%3E%3Cpolygon points='20,20 12,20 20,12' fill='%23000'/%3E%3C/g%3E%3Cpath d='M7 7l10 10' stroke='%23fff' stroke-width='4'/%3E%3Cpath d='M7 7l10 10' stroke='%23000' stroke-width='1.8'/%3E%3Cpolygon points='4,4 12,4 4,12' fill='%23fff' stroke='%23000' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpolygon points='20,20 12,20 20,12' fill='%23fff' stroke='%23000' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-resize-nesw: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.22' transform='translate(1.5,1.5)'%3E%3Cpath d='M17 7L7 17' stroke='%23000' stroke-width='4.6'/%3E%3Cpolygon points='20,4 12,4 20,12' fill='%23000'/%3E%3Cpolygon points='4,20 12,20 4,12' fill='%23000'/%3E%3C/g%3E%3Cpath d='M17 7L7 17' stroke='%23fff' stroke-width='4'/%3E%3Cpath d='M17 7L7 17' stroke='%23000' stroke-width='1.8'/%3E%3Cpolygon points='20,4 12,4 20,12' fill='%23fff' stroke='%23000' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpolygon points='4,20 12,20 4,12' fill='%23fff' stroke='%23000' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-move: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.22' transform='translate(1.5,1.5)'%3E%3Cpolygon points='12,1 15,5 13,5 13,19 15,19 12,23 9,19 11,19 11,5 9,5' fill='%23000'/%3E%3Cpolygon points='1,12 5,9 5,11 19,11 19,9 23,12 19,15 19,13 5,13 5,15' fill='%23000'/%3E%3C/g%3E%3Cg fill='%23fff' stroke='%23000' stroke-width='1.6' stroke-linejoin='round'%3E%3Cpolygon points='12,1 15,5 13,5 13,19 15,19 12,23 9,19 11,19 11,5 9,5'/%3E%3Cpolygon points='1,12 5,9 5,11 19,11 19,9 23,12 19,15 19,13 5,13 5,15'/%3E%3C/g%3E%3Cpolygon points='12,1 15,5 13,5 13,19 15,19 12,23 9,19 11,19 11,5 9,5' fill='%23fff'/%3E%3Cpolygon points='1,12 5,9 5,11 19,11 19,9 23,12 19,15 19,13 5,13 5,15' fill='%23fff'/%3E%3C/svg%3E");
+  --cur-img-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.22' transform='translate(1.5,1.5)'%3E%3Cpolygon points='12,2 18,9 14,9 14,20 10,20 10,9 6,9' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='12,2 18,9 14,9 14,20 10,20 10,9 6,9' fill='%23fff' stroke='%23000' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+
+  /* Curseurs composés : image + point chaud + secours système */
+  --cursor-default:     var(--cur-img-default) 11 3, default;
+  --cursor-link:        var(--cur-img-link) 11 3, pointer;
+  --cursor-text:        var(--cur-img-text) 11 12, text;
+  --cursor-wait:        var(--cur-img-wait) 12 12, wait;
+  --cursor-progress:    var(--cur-img-progress) 2 2, progress;
+  --cursor-help:        var(--cur-img-help) 2 2, help;
+  --cursor-crosshair:   var(--cur-img-crosshair) 12 12, crosshair;
+  --cursor-not-allowed: var(--cur-img-not-allowed) 12 12, not-allowed;
+  --cursor-resize-v:    var(--cur-img-resize-v) 12 12, ns-resize;
+  --cursor-resize-h:    var(--cur-img-resize-h) 12 12, ew-resize;
+  --cursor-resize-nwse: var(--cur-img-resize-nwse) 12 12, nwse-resize;
+  --cursor-resize-nesw: var(--cur-img-resize-nesw) 12 12, nesw-resize;
+  --cursor-move:        var(--cur-img-move) 12 12, move;
+  --cursor-up:          var(--cur-img-up) 12 3, default;
+
+  /* ================================================== ICONS:BEGIN
+     9. ICÔNES — navigation & fichiers (14), tokenisées
+     comme les curseurs : SVG data-URI dessinés dans la
+     matière du style. À consommer en background-image :
+     background: var(--icon-folder) center/contain no-repeat;
+     Jamais d'image externe, jamais d'emoji.
+     ======================================================== */
+  --icon-folder: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='4,9.4 7,6.4 20,6.4 17,9.4' fill='%23B4C4DA' stroke='%2322334E' stroke-width='1.2' stroke-linejoin='round'/%3E%3Crect x='4' y='9.4' width='13' height='9.6' fill='%238AA0C0' stroke='%2322334E' stroke-width='1.2'/%3E%3Cpath d='M17 9.4l3-3v9.6l-3 3z' fill='%235C7494' stroke='%2322334E' stroke-width='1.2' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-folder-open: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='4,9.4 7,6.4 20,6.4 17,9.4' fill='%23B4C4DA' stroke='%2322334E' stroke-width='1.2' stroke-linejoin='round'/%3E%3Cpath d='M17 9.4l3-3v9.6l-3 3z' fill='%235C7494' stroke='%2322334E' stroke-width='1.2' stroke-linejoin='round'/%3E%3Crect x='4' y='9.4' width='13' height='2.8' fill='%236E86A6' stroke='%2322334E' stroke-width='1.1'/%3E%3Cpolygon points='2.6,12.8 16.4,12.8 15,19 1.2,19' fill='%23A8BAD2' stroke='%2322334E' stroke-width='1.2' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-file: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M6 2.5h8l4.5 4.5v14.5H6z' fill='%23FCFCF8' stroke='%2322334E' stroke-width='1.1' stroke-linejoin='round'/%3E%3Cpath d='M14 2.5v4.5h4.5z' fill='%23C9D2DE' stroke='%2322334E' stroke-width='0.9900000000000001' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-file-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M6 2.5h8l4.5 4.5v14.5H6z' fill='%23FCFCF8' stroke='%2322334E' stroke-width='1.1' stroke-linejoin='round'/%3E%3Cpath d='M14 2.5v4.5h4.5z' fill='%23C9D2DE' stroke='%2322334E' stroke-width='0.9900000000000001' stroke-linejoin='round'/%3E%3Ccircle cx='10.2' cy='11.2' r='1.5' fill='%23F6C344'/%3E%3Cpolygon points='8,18.4 10.8,14.6 12.6,16.9 14,15.1 16.4,18.4' fill='%234C8A5E'/%3E%3C/svg%3E");
+  --icon-drive: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='4,10 7,7 21,7 18,10' fill='%23E4E8E0' stroke='%2322334E' stroke-width='1.1' stroke-linejoin='round'/%3E%3Crect x='4' y='10' width='14' height='6.4' fill='%23C9CEC6' stroke='%2322334E' stroke-width='1.1'/%3E%3Cpath d='M18 10l3-3v6.4l-3 3z' fill='%23E4E8E0' stroke='%2322334E' stroke-width='1.1' stroke-linejoin='round'/%3E%3Ccircle cx='15.6' cy='13.2' r='1' fill='%234CAA4C'/%3E%3C/svg%3E");
+  --icon-home: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='3.6,11.6 12,4.4 20.4,11.6' fill='%238AA0C0' stroke='%2322334E' stroke-width='1.2' stroke-linejoin='round'/%3E%3Crect x='5.8' y='11.6' width='12.4' height='7.8' fill='%23D9DED6' stroke='%2322334E' stroke-width='1.2'/%3E%3Crect x='10.4' y='14.4' width='3.2' height='5' fill='%238AA0C0' stroke='%2322334E' stroke-width='0.96'/%3E%3C/svg%3E");
+  --icon-computer: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Crect x='3.6' y='3.6' width='16.8' height='12.4' fill='%23D9DED6' rx='1' stroke='%2322334E' stroke-width='1.2'/%3E%3Crect x='5.8' y='5.6' width='12.4' height='8.2' fill='%2322448C' stroke='%2322334E' stroke-width='0.96'/%3E%3Crect x='9.4' y='16' width='5.2' height='2' fill='%23D9DED6' stroke='%2322334E' stroke-width='1.2'/%3E%3Crect x='7.2' y='18' width='9.6' height='1.8' fill='%23D9DED6' stroke='%2322334E' stroke-width='1.2'/%3E%3C/svg%3E");
+  --icon-network: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Crect x='2.6' y='3.4' width='8.4' height='6.6' fill='%23D9DED6' stroke='%2322334E' stroke-width='1.1'/%3E%3Crect x='4.0' y='4.7' width='5.6' height='4' fill='%237FA0D0'/%3E%3Crect x='5.4' y='10.0' width='2.8' height='1.2' fill='%23D9DED6' stroke='%2322334E' stroke-width='0.8800000000000001'/%3E%3Crect x='13' y='12.6' width='8.4' height='6.6' fill='%23D9DED6' stroke='%2322334E' stroke-width='1.1'/%3E%3Crect x='14.4' y='13.9' width='5.6' height='4' fill='%237FA0D0'/%3E%3Crect x='15.8' y='19.2' width='2.8' height='1.2' fill='%23D9DED6' stroke='%2322334E' stroke-width='0.8800000000000001'/%3E%3Cpath d='M10.6 8.4L14 14.2' fill='none' stroke='%2322334E' stroke-width='1.4000000000000001' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3C/svg%3E");
+  --icon-trash: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Crect x='7.6' y='4' width='8.8' height='1.8' fill='%23AEB8C6' stroke='%2322334E' stroke-width='1.2'/%3E%3Crect x='10.2' y='2.6' width='3.6' height='1.4' fill='%23AEB8C6' stroke='%2322334E' stroke-width='0.96'/%3E%3Cpath d='M6.6 5.8h10.8l-1.1 14.4H7.7z' fill='%23C4CCD6' stroke='%2322334E' stroke-width='1.2' stroke-linejoin='round'/%3E%3Cpath d='M10 8.2l.3 9.6M14 8.2l-.3 9.6M12 8.2v9.6' fill='none' stroke='%2322334E' stroke-width='0.84' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3C/svg%3E");
+  --icon-search: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='10.4' cy='10.4' r='4.9' fill='none' stroke='%2322448C' stroke-width='2.1'/%3E%3Cpath d='M14.2 14.2l5.2 5.2' fill='none' stroke='%2322448C' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-back: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='16.5,5 7,12 16.5,19 16.5,14.4 21,14.4 21,9.6 16.5,9.6' fill='%2322448C'/%3E%3C/svg%3E");
+  --icon-forward: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='7.5,5 17,12 7.5,19 7.5,14.4 3,14.4 3,9.6 7.5,9.6' fill='%2322448C'/%3E%3C/svg%3E");
+  --icon-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='5,11.5 12,4.5 19,11.5 14.6,11.5 14.6,20 9.4,20 9.4,11.5' fill='%2322448C'/%3E%3C/svg%3E");
+  --icon-refresh: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M19.9 4.4v5.4l-5.2-1.2z' fill='%2322448C'/%3E%3Cpath d='M18.6 8.2A7.6 7.6 0 1 0 19.6 14' fill='none' stroke='%2322448C' stroke-width='2.6' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3C/svg%3E");
+  /* ICONS:END */
+}
+
+/* DARK:BEGIN — thème sombre (phase 3) */
+[data-theme="dark"] {
+  --be-face: #3A424E;
+  --be-face-hi: #46505E;
+  --be-face-pressed: #262C36;
+  --be-view: #262C36;
+  --be-border: #10151C;
+  --be-line: #3E4654;
+  --be-ink: #ECEFF4;
+  --be-ink-soft: #AEB8C6;
+  --be-ink-disabled: #6A7482;
+  --be-navy: #7E9CD8;
+  --be-blue: #5E88CC;
+  --be-select: #2E4A7C;
+  --be-menu-hl: #2E4A7C;
+  /* --be-select devient une navy sombre en dark : l'encre noire fixée en
+     :root (interdit §6, valable pour le bleu clair #B8CCE8) illisible
+     dessus (~2.4:1) -- HC portait déjà ce correctif (ligne HC ci-dessous),
+     dark ne l'avait pas : encre blanche pour tenir, comme le fait déjà HC. */
+  --selection-text: #FFFFFF;
+  --be-yellow-off: #4E472C;
+  --btn-hover: #4E5866;
+  --bevel-out: inset 1px 1px 0 #5E6878, inset -1px -1px 0 #10151C;
+  --bevel-in: inset 1px 1px 0 #10151C, inset -1px -1px 0 #5E6878;
+  --desktop: #141A22;
+  --tooltip-bg: #FFF9C8; --tooltip-border: #8A8250;
+  --surface-window: #3A424E;
+  --shadow-window: 0 8px 24px rgba(0,0,0,.6);
+  /* icônes surchargées pour le fond sombre */
+  --icon-back: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='16.5,5 7,12 16.5,19 16.5,14.4 21,14.4 21,9.6 16.5,9.6' fill='%238FA8D8'/%3E%3C/svg%3E");
+  --icon-forward: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='7.5,5 17,12 7.5,19 7.5,14.4 3,14.4 3,9.6 7.5,9.6' fill='%238FA8D8'/%3E%3C/svg%3E");
+  --icon-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='5,11.5 12,4.5 19,11.5 14.6,11.5 14.6,20 9.4,20 9.4,11.5' fill='%238FA8D8'/%3E%3C/svg%3E");
+  --icon-refresh: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M19.9 4.4v5.4l-5.2-1.2z' fill='%238FA8D8'/%3E%3Cpath d='M18.6 8.2A7.6 7.6 0 1 0 19.6 14' fill='none' stroke='%238FA8D8' stroke-width='2.6' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3C/svg%3E");
+  --icon-search: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='10.4' cy='10.4' r='4.9' fill='none' stroke='%238FA8D8' stroke-width='2.1'/%3E%3Cpath d='M14.2 14.2l5.2 5.2' fill='none' stroke='%238FA8D8' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+/* DARK:END */
+
+/* HC:BEGIN — contraste élevé (phase 4) */
+[data-theme="hc"] {
+  --be-face: #FFFFFF;
+  --be-face-hi: #FFFFFF;
+  --be-face-pressed: #E8E8E8;
+  --be-view: #FFFFFF;
+  --be-border: #000000;
+  --be-line: #000000;
+  --be-ink: #000000;
+  --be-ink-soft: #333333;
+  --be-ink-disabled: #767676;
+  --be-navy: #163C80;
+  --be-blue: #1E4FA8;
+  --be-select: #1E4FA8;
+  --be-menu-hl: #1E4FA8;
+  --selection-text: #FFFFFF;
+  --tab-ink: #000000;
+  --be-yellow-off: #D5D5D5;
+  --hl-soft: #FFFFFF;
+  --bevel-out: inset 0 0 0 1px #000000;
+  --bevel-in: inset 0 0 0 1px #000000;
+  --btn-hover: #E8E8E8;
+  --desktop: #E8E8E8;
+  --surface-window: #FFFFFF;
+  --tooltip-bg: #FFF9C8; --tooltip-border: #6E5C00;
+  --shadow-window: 0 0 0 2px #000000;
+}
+/* HC:END */
+
+
+/* --- Base recommandée (à copier dans l'app) ------------------------------ */
+/*
+body {
+  margin: 0;
+  background: var(--surface-desktop);
+  color: var(--text-primary);
+  font: 400 var(--font-size-base)/var(--line-height) var(--font-ui);
+  cursor: var(--cursor-default);
+}
+::selection { background: var(--selection-bg); color: var(--selection-text); }
+a { color: var(--be-navy); cursor: var(--cursor-link); }
+input[type=text], textarea { cursor: var(--cursor-text); }
+*/
+
+/* ==========================================================================
+   STRUCTURE — port du composant, pas seulement de la couleur.
+   Patterns copiés de components.html v1.5 (celui-ci fait foi en cas de
+   doute, per STYLE.md ligne 5). Charge en dernier dans index.html : les
+   sélecteurs ci-dessous n'ont besoin que d'une spécificité égale à
+   style.css pour gagner la cascade (jamais de !important).
+   ========================================================================== */
+
+/* ---------- La plaque de fenêtre (racine <body>, sous l'onglet) ----------
+   La fenêtre BeOS est cernée --be-border, biseau 1px, radius 0 — style.css
+   ne peint aucun fond ici (transparence pour le chrome verre des autres
+   chartes) ; BeOS n'a pas de verre, il lui faut donc son propre fond gris
+   pour combler la zone à droite de l'onglet une fois celui-ci rétréci. */
+body {
+  background: var(--be-face);
+  border: 1px solid var(--be-border);
+  border-radius: 0;
+  box-shadow: var(--bevel-out), var(--shadow-window);
+}
+
+/* ---------- Chrome de fenêtre : l'onglet jaune partiel (interdit #1) ----------
+   .titlebar EST l'onglet : rétréci à 65% max, calé au coin haut-gauche
+   (align-self:flex-start rompt le stretch de la colonne flex du <body>),
+   biseau clair/foncé du jaune, radius seulement en haut. Le bord supérieur
+   de la plaque reste nu à droite — c'est simplement le body gris visible
+   au-delà de l'onglet rétréci. */
+.titlebar {
+  align-self: flex-start;
+  max-width: 65%;
+  height: var(--tab-height);
+  min-height: var(--tab-height);
+  padding: 0 10px 0 6px;
+  background: var(--be-yellow);
+  border: 1px solid var(--be-yellow-dk);
+  border-bottom: 0;
+  border-radius: var(--radius-tab);
+  box-shadow: var(--tab-bevel);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.titlebar-title {
+  color: var(--tab-ink);
+  font-weight: 700;
+  text-shadow: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding-left: 4px;
+}
+/* Espace onglet<->titre (gap:7px du .be-tab de components.html) ; min-width:0
+   laisse l'ellipse du titre fonctionner dans ce flex-item désormais compact. */
+.titlebar-drag { margin-left: 7px; min-width: 0; }
+/* Interdit #3 : Fermer à GAUCHE du titre, Zoom à sa droite (comme le
+   .be-tab de components.html : Fermer, titre, Zoom). Titre et boutons
+   sont deux flex-children distincts de .titlebar, donc déplacer TOUT le
+   cluster .titlebar-buttons avant le titre (ancienne approche) mettait
+   Fermer ET Zoom à gauche — Zoom ne se retrouvait jamais à la droite du
+   titre. Fix : display:contents sur le cluster promeut ses boutons au
+   rang de flex-children directs de .titlebar, entrelacés avec le titre ;
+   Fermer passe en tête (order:-1), le titre garde sa position naturelle,
+   Zoom le suit (ordre source, inchangé). */
+.titlebar-buttons { display: contents; }
+.cap-close { order: -1; }
+.cap-max { margin-left: 7px; }
+/* BeOS R5 n'a pas de bouton Réduire sur son onglet (interdit implicite :
+   seuls Fermer et Zoom existent, cf. STYLE.md §6 et §10.3). */
+.cap-min { display: none; }
+
+.cap-btn {
+  width: var(--gadget-size);
+  height: var(--gadget-size);
+  min-width: 0;
+  padding: 0;
+  border: 1px solid var(--be-yellow-dk);
+  border-radius: 0;
+  background: var(--be-yellow);
+  box-shadow: var(--tab-bevel);
+  display: grid;
+  place-items: center;
+}
+.cap-btn:hover { filter: none; background: var(--be-yellow-hi); }
+.cap-btn:active { filter: none; box-shadow: inset 1px 1px 0 var(--be-yellow-dk); }
+.cap-close { background: var(--be-yellow); margin-left: 0; }
+/* Fermer (components.html) est une plaque NUE, sans glyphe dessiné dedans —
+   seule sa position + son aria-label la distinguent. */
+.cap-close span::before, .cap-close span::after { content: none; }
+/* Zoom porte le petit carré biseauté décalé (.g-zoom), pas un cadre plein. */
+.cap-max span::before {
+  content: "";
+  position: absolute;
+  left: 50%; top: 50%; right: auto; bottom: auto;
+  transform: translate(-50%, -50%);
+  width: 6px; height: 6px;
+  border: 1px solid var(--be-yellow-dk);
+  background: var(--be-yellow-hi);
+  box-shadow: none;
+}
+
+/* ---------- Onglets de contenu : plateaux soudés (§9 « Onglets de contenu ») ---------- */
+.tabbar {
+  gap: 0;
+  padding: 0 var(--space-4) 0;
+  background: var(--be-face);
+  border-bottom: 1px solid var(--be-border);
+}
+.tab-btn {
+  height: 23px;
+  padding: 0 13px;
+  background: var(--be-face);
+  border: 1px solid var(--be-border);
+  border-radius: 0;
+  box-shadow: var(--bevel-out);
+  color: var(--text-primary);
+}
+.tab-btn + .tab-btn { margin-left: -1px; }
+.tab-btn.active {
+  background: var(--be-face-hi);
+  border-bottom-color: var(--be-face-hi);
+  font-weight: 700;
+}
+.tab-btn:hover:not(.active) { background: var(--btn-hover); filter: none; }
+
+/* ---------- Boutons : plateau biseauté 1px, jamais de dégradé de couleur ---------- */
+button {
+  min-width: var(--button-min-width);
+  height: var(--control-height);
+  padding: 0 12px;
+  border: 1px solid var(--be-border);
+  border-radius: var(--radius-control);
+  background: var(--be-face-hi);
+  box-shadow: var(--bevel-out);
+  color: var(--text-primary);
+  font: inherit;
+}
+button:not(:disabled):hover { background: var(--btn-hover); }
+button:not(:disabled):active { background: var(--be-face-pressed); box-shadow: var(--bevel-in); }
+button:focus-visible { outline: none; box-shadow: var(--bevel-out), var(--focus-ring); }
+button:disabled { color: var(--text-disabled); box-shadow: none; }
+
+/* Démarrer / Démarrer le partage : les deux actions "par défaut" de chaque
+   vue — en BeOS le défaut ne se colore JAMAIS (interdit #7), il porte
+   l'anneau navy en permanence (§7 "Défaut"). */
+.start-btn {
+  background: var(--be-face-hi);
+  border: 1px solid var(--be-border);
+  border-radius: var(--radius-control);
+  box-shadow: var(--bevel-out), var(--focus-ring);
+  padding: 0 20px;
+  height: var(--control-height);
+}
+.start-btn:hover { background: var(--btn-hover); box-shadow: var(--bevel-out), var(--focus-ring); }
+.start-btn:active { background: var(--be-face-pressed); box-shadow: var(--bevel-in), var(--focus-ring); }
+
+.row-actions button {
+  min-width: 0;
+  height: auto;
+  padding: 3px 10px;
+  border: 1px solid var(--be-border);
+  border-radius: var(--radius-control);
+  background: var(--be-face-hi);
+  box-shadow: var(--bevel-out);
+}
+.row-actions button:hover { background: var(--btn-hover); box-shadow: var(--bevel-out); }
+.row-actions button:active { background: var(--be-face-pressed); box-shadow: var(--bevel-in); }
+
+/* ---------- Champs : puits blancs cernés, radius 2 (§7 "Champs") ---------- */
+input[type="text"], input[type="number"], textarea, .search-input {
+  background: var(--be-view);
+  border: 1px solid var(--be-border);
+  border-radius: 2px;
+  box-shadow: inset 1px 1px 0 #B4B4B4;
+  height: var(--control-height);
+  padding: 0 7px;
+  font: inherit;
+  color: var(--text-primary);
+}
+textarea { height: auto; min-height: 58px; padding: 4px 7px; resize: none; }
+input[type="text"]:focus, input[type="number"]:focus, textarea:focus, .search-input:focus {
+  outline: none;
+  box-shadow: inset 1px 1px 0 #B4B4B4, var(--focus-ring);
+}
+input[type="text"]:disabled, input[type="number"]:disabled, textarea:disabled {
+  background: #EFEFEF;
+  color: var(--text-disabled);
+}
+/* Le select N'EST PAS un puits : c'est une plaque biseautée comme un
+   bouton (composant "select" de components.html — seul champ à sortir de
+   la règle "champs carrés/plats"). */
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='6'%3E%3Cpath d='M4.5 6L0 0H9Z' fill='%23000'/%3E%3C/svg%3E")
+      right 7px center/9px 6px no-repeat,
+    var(--be-face-hi);
+  border: 1px solid var(--be-border);
+  border-radius: 2px;
+  box-shadow: var(--bevel-out);
+  height: var(--control-height);
+  padding: 0 24px 0 7px;
+  font: inherit;
+  color: var(--text-primary);
+}
+select:focus { outline: none; box-shadow: var(--bevel-out), var(--focus-ring); }
+/* Le chevron est un SVG figé au noir ; en dark le puits sous-jacent
+   (--be-face-hi) fonce (#46505E) et le noir n'y tient plus (~2.6:1) --
+   on le repeint dans l'encre claire du thème sombre (--be-ink dark). */
+[data-theme="dark"] select {
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='6'%3E%3Cpath d='M4.5 6L0 0H9Z' fill='%23ECEFF4'/%3E%3C/svg%3E");
+}
+
+/* ---------- Case à cocher : coche NAVY (§7 "Cases : cochées = coche navy") ---------- */
+input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  margin: 0;
+  width: var(--checkbox-size);
+  height: var(--checkbox-size);
+  border: 1px solid var(--be-border);
+  border-radius: 2px;
+  background: var(--be-view);
+  box-shadow: inset 1px 1px 0 #B4B4B4;
+  display: inline-grid;
+  place-content: center;
+}
+input[type="checkbox"]:checked::after {
+  content: "";
+  width: 10px; height: 10px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10'%3E%3Cpath d='M1.5 5.5l2.6 2.6L8.5 2' fill='none' stroke='%2322448C' stroke-width='2.2'/%3E%3C/svg%3E") no-repeat center;
+}
+input[type="checkbox"]:focus-visible {
+  outline: none;
+  box-shadow: inset 1px 1px 0 #B4B4B4, var(--focus-ring);
+}
+input[type="checkbox"]:disabled { background: #EFEFEF; box-shadow: none; }
+/* Coche figée navy #22448C ; en dark le puits (--be-view) devient quasi
+   noir (#262C36) et cette navy n'y tient plus (~1.5:1, quasi invisible) --
+   on reprend la navy déjà éclaircie du thème sombre (--be-navy dark). */
+[data-theme="dark"] input[type="checkbox"]:checked::after {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10'%3E%3Cpath d='M1.5 5.5l2.6 2.6L8.5 2' fill='none' stroke='%237E9CD8' stroke-width='2.2'/%3E%3C/svg%3E");
+}
+
+/* ---------- Listes / lignes : puits blanc, sélection #B8CCE8 à encre NOIRE ----------
+   (interdit #6 : jamais de texte blanc sur la sélection de liste — déjà
+   garanti ailleurs par --selection-text:#000000, on ne fait ici que la
+   plomberie visuelle : puits + survol léger + hiérarchie de gris.) */
+.listbox {
+  background: var(--be-view);
+  border: 1px solid var(--be-border);
+  border-radius: 0;
+  box-shadow: inset 1px 1px 0 #B4B4B4;
+  padding: 0;
+}
+.row { border-bottom: 1px solid var(--be-line); }
+.row:hover { background: var(--be-face-hi); }
+.row-name { color: var(--be-ink); font-weight: 700; }
+.row-state { color: var(--be-ink-soft); }
+.row-rate, .row-eta, .row-peers, .row-category { color: var(--be-ink); font-variant-numeric: tabular-nums; }
+
+.share-row, .downloads-row { border-bottom: 1px solid var(--be-line); }
+.downloads-row-header {
+  background: var(--be-face);
+  box-shadow: var(--bevel-out);
+  border-bottom: 2px solid var(--be-border);
+}
+
+.scan-row { border-bottom: 1px solid var(--be-line); }
+.scan-row:hover { background: var(--be-face-hi); }
+.scan-path { color: var(--be-ink); }
+.scan-size { color: var(--be-ink-soft); font-variant-numeric: tabular-nums; }
+
+/* ---------- Group box : cerné --be-line, légende grasse encre noire ----------
+   components.html donne la valeur qui fait foi : le fieldset BeOS utilise
+   var(--radius-control) (3px, catégorie "contrôle"), pas un radius de
+   fenêtre ; et la légende n'est PAS teintée navy (aucune couleur dédiée
+   dans components.html), juste grasse. Pas de fond propre : le group box
+   est un simple cadre posé sur le gris ambiant de la plaque. */
+.profile-group, .details-group {
+  background: transparent;
+  border: 1px solid var(--be-line);
+  border-radius: var(--radius-control);
+  box-shadow: none;
+}
+.profile-group h3, .details-group h3 {
+  color: var(--be-ink);
+  font-weight: 700;
+}
+
+/* ---------- Menu contextuel : bande #567CB8, texte BLANC (interdit #6) ----------
+   À l'inverse de la sélection de liste (encre noire), le survol de menu
+   EST à texte blanc — deux postes, deux règles, ne pas les confondre. */
+.context-menu {
+  background: var(--be-face);
+  border: 1px solid var(--be-border);
+  border-radius: 0;
+  box-shadow: var(--bevel-out), var(--shadow-menu);
+  padding: 3px 0;
+}
+.context-menu-item { padding: 4px 12px; color: var(--be-ink); }
+.context-menu-item:hover { background: var(--be-menu-hl); color: #FFFFFF; }
+.context-menu-separator {
+  height: 0;
+  border-top: 1px solid var(--be-line);
+  background: none;
+  margin: 3px 1px;
+}
+
+/* ---------- Boîte de dialogue : plaque cernée, pas de rouge ---------- */
+.modal-overlay { background: rgba(0, 0, 0, .4); }
+.modal-box {
+  background: var(--be-face);
+  border: 1px solid var(--be-border);
+  border-radius: 0;
+  box-shadow: var(--bevel-out), var(--shadow-window);
+}
+.modal-box h3 { font-weight: 700; color: var(--be-ink); }
+
+/* ---------- Ascenseurs : gouttiere cernee, pouce biseaute, fleches noires ---------- */
+::-webkit-scrollbar { width: var(--scrollbar-size); height: var(--scrollbar-size); }
+::-webkit-scrollbar-track { background: #C4C4C4; border: 1px solid var(--be-border); }
+::-webkit-scrollbar-thumb { background: var(--be-face); border: 1px solid var(--be-border); box-shadow: var(--bevel-out); }
+::-webkit-scrollbar-button { background: var(--be-face); border: 1px solid var(--be-border); box-shadow: var(--bevel-out); height: 16px; width: 16px; }
+::-webkit-scrollbar-button:vertical:decrement {
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='6'%3E%3Cpath d='M4.5 0L9 6H0Z' fill='%23000'/%3E%3C/svg%3E") center/9px 6px no-repeat, var(--be-face);
+}
+::-webkit-scrollbar-button:vertical:increment {
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='6'%3E%3Cpath d='M4.5 6L0 0H9Z' fill='%23000'/%3E%3C/svg%3E") center/9px 6px no-repeat, var(--be-face);
+}
+::-webkit-scrollbar-corner { background: var(--be-face); }
+/* Flèches figées au noir sur le pavé --be-face ; en dark ce pavé fonce
+   (#3A424E) et le noir n'y tient plus (~2.1:1) -- repeint dans l'encre
+   claire du thème sombre (--be-ink dark), même logique que le select. */
+[data-theme="dark"] ::-webkit-scrollbar-button:vertical:decrement {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='6'%3E%3Cpath d='M4.5 0L9 6H0Z' fill='%23ECEFF4'/%3E%3C/svg%3E");
+}
+[data-theme="dark"] ::-webkit-scrollbar-button:vertical:increment {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='6'%3E%3Cpath d='M4.5 6L0 0H9Z' fill='%23ECEFF4'/%3E%3C/svg%3E");
+}
+
+/* ---------- Jauge Tetris : cadre puits, pas de dégradé décoratif ---------- */
+canvas.tetris {
+  border: 1px solid var(--be-border);
+  border-radius: 0;
+  box-shadow: inset 1px 1px 0 #B4B4B4;
+}

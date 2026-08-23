@@ -1,0 +1,12 @@
+/* Profile "General" group -- sub-heading style only, everything else
+   reuses .form-grid/.field-row/.field-label/.field-note/.start-btn/
+   .status-line from the shared style.css. */
+#profileGeneralContainer .profile-subheading {
+  margin: var(--space-4) 0 var(--space-2);
+  font-size: var(--font-size-base);
+  font-weight: bold;
+  color: var(--text-primary);
+}
+#profileGeneralContainer .profile-subheading:first-of-type {
+  margin-top: 0;
+}

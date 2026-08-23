@@ -1,0 +1,206 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Torrent 2000</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="profile_general.css">
+<link rel="stylesheet" href="profile_network.css">
+<link rel="stylesheet" href="profile_automation.css">
+<link rel="stylesheet" href="profile_security.css">
+<link rel="stylesheet" href="profile_advanced.css">
+<link rel="stylesheet" href="profile_stats.css">
+<link rel="stylesheet" href="rss.css">
+<!-- Loaded LAST on purpose: besides :root/dark/hc custom properties, a
+     theme's tokens.css can also carry real structural CSS rules (button
+     shape/order, tab style, scrollbars, etc.) that must win the cascade
+     over the generic rules above -- charter composition overrides the
+     shared grid, not the other way around. -->
+<link rel="stylesheet" href="themes/luna_xp/tokens.css" id="themeTokensLink">
+</head>
+<body>
+  <div id="titlebar" class="titlebar">
+    <div class="titlebar-drag" id="dragRegion">
+      <span class="titlebar-title">Torrent 2000 — spike Phase 1</span>
+    </div>
+    <div class="titlebar-buttons">
+      <button class="cap-btn cap-min" id="btnMin" aria-label="Réduire"><span></span></button>
+      <button class="cap-btn cap-max" id="btnMax" aria-label="Agrandir"><span></span></button>
+      <button class="cap-btn cap-close" id="btnClose" aria-label="Fermer"><span></span></button>
+    </div>
+  </div>
+
+  <nav class="tabbar" id="tabbar">
+    <button class="tab-btn active" data-tab="add">Ajout / Analyse</button>
+    <button class="tab-btn" data-tab="downloads">Téléchargements</button>
+    <button class="tab-btn" data-tab="share">Partage</button>
+    <button class="tab-btn" data-tab="rss">RSS</button>
+    <button class="tab-btn" data-tab="profile">Profil</button>
+  </nav>
+
+  <div class="resize-edge resize-top" data-edge="top"></div>
+  <div class="resize-edge resize-bottom" data-edge="bottom"></div>
+  <div class="resize-edge resize-left" data-edge="left"></div>
+  <div class="resize-edge resize-right" data-edge="right"></div>
+  <div class="resize-corner resize-tl" data-edge="top-left"></div>
+  <div class="resize-corner resize-tr" data-edge="top-right"></div>
+  <div class="resize-corner resize-bl" data-edge="bottom-left"></div>
+  <div class="resize-corner resize-br" data-edge="bottom-right"></div>
+
+  <div class="content-row">
+  <main class="body">
+    <section class="page" id="page-downloads">
+      <input type="text" id="downloadsSearchInput" class="search-input" placeholder="Rechercher...">
+      <div class="downloads-row-header row downloads-row">
+        <span>Nom</span>
+        <span>Progression</span>
+        <span>Temps restant</span>
+        <span>↓ Vitesse</span>
+        <span>↑ Vitesse</span>
+        <span>Pairs</span>
+        <span>État</span>
+        <span>Catégorie</span>
+        <span>Action</span>
+      </div>
+      <div class="listbox" id="downloadsList">
+        <p class="empty-note" id="emptyNote">Aucun torrent actif — ajoutez-en un depuis l'onglet Ajouter pour le voir apparaître ici en direct.</p>
+      </div>
+
+      <div class="details-group" id="downloadsDetails">
+        <h3>Détails du torrent sélectionné</h3>
+        <p class="field-note" id="downloadsDetailsTracker">Tracker actuel : —</p>
+        <div class="field-row">
+          <button id="downloadsDetailsPauseBtn">Pause</button>
+          <button id="downloadsDetailsResumeBtn">Reprendre</button>
+        </div>
+        <div class="field-row">
+          <span class="field-note" id="downloadsDetailsQueue">File d'attente : —</span>
+          <button id="downloadsDetailsQueueUpBtn">Monter la priorité</button>
+          <button id="downloadsDetailsQueueDownBtn">Baisser la priorité</button>
+        </div>
+        <label class="field-row">
+          <input type="checkbox" id="downloadsDetailsSequential">
+          <span>Téléchargement séquentiel (pour lecture en streaming)</span>
+        </label>
+        <div id="downloadsDetailsTrackerEditor"></div>
+      </div>
+    </section>
+
+    <section class="page active" id="page-add">
+      <div class="form-grid">
+        <div class="drop-zone" id="addDropZone">Déposez un fichier .torrent ici</div>
+        <div class="field-row">
+          <button id="addBrowseBtn">Parcourir…</button>
+          <span class="field-note" id="addSelectedFile"></span>
+        </div>
+        <label class="field-label" for="addMagnetInput">Lien magnet</label>
+        <input type="text" id="addMagnetInput" placeholder="magnet:?xt=urn:btih:...">
+        <label class="field-label" for="addDestInput">Destination</label>
+        <div class="field-row">
+          <input type="text" id="addDestInput">
+          <button id="addDestBrowseBtn">Parcourir…</button>
+        </div>
+        <div class="field-row">
+          <button id="addAnalyzeBtn">Analyser</button>
+          <label class="field-label inline" for="addThresholdInput">Seuil d'exclusion auto.</label>
+          <input type="number" id="addThresholdInput" min="0" max="100" style="width: 60px;">
+          <button id="addCreateTorrentBtn">Créer un torrent…</button>
+        </div>
+        <p class="status-line" id="addStatus"></p>
+      </div>
+
+      <div class="scan-toolbar">
+        <button id="addCheckAllBtn">Tout cocher</button>
+        <button id="addUncheckAllBtn">Tout décocher</button>
+      </div>
+      <div class="listbox scan-list" id="addScanList">
+        <p class="empty-note">Aucune analyse pour l'instant.</p>
+      </div>
+
+      <button class="start-btn" id="addStartBtn">Démarrer</button>
+    </section>
+
+    <section class="page" id="page-share">
+      <div class="form-grid">
+        <div class="drop-zone" id="shareDropZone">Déposez un fichier .torrent ici</div>
+        <div class="field-row">
+          <button id="shareBrowseBtn">Parcourir…</button>
+          <span class="field-note" id="shareSelectedFile"></span>
+        </div>
+        <label class="field-label" for="shareMagnetInput">Lien magnet</label>
+        <input type="text" id="shareMagnetInput" placeholder="magnet:?xt=urn:btih:...">
+        <label class="field-label" for="shareDataDirInput">Dossier contenant déjà les fichiers</label>
+        <div class="field-row">
+          <input type="text" id="shareDataDirInput">
+          <button id="shareDataDirBrowseBtn">Parcourir…</button>
+        </div>
+        <div class="field-row limits-row">
+          <label class="field-label inline">Temps (h)</label>
+          <input type="number" id="shareTimeLimitInput" min="0" max="999" value="0" style="width: 60px;">
+          <label class="field-label inline">Données (Mo)</label>
+          <input type="number" id="shareDataLimitInput" min="0" max="1000000" value="0" style="width: 80px;">
+          <label class="field-label inline">Ratio</label>
+          <input type="number" id="shareRatioLimitInput" min="0" max="100" step="0.1" value="0" style="width: 60px;">
+        </div>
+        <p class="status-line" id="shareStatus"></p>
+      </div>
+
+      <button class="start-btn" id="shareStartBtn">Démarrer le partage</button>
+
+      <input type="text" id="shareSearchInput" class="search-input" placeholder="Rechercher…">
+      <div class="listbox" id="shareList">
+        <p class="empty-note" id="shareEmptyNote">Aucun torrent partagé — ajoutez-en un ci-dessus pour le voir apparaître ici en direct.</p>
+      </div>
+    </section>
+
+    <section class="page" id="page-rss">
+      <div id="rssContainer"></div>
+    </section>
+
+    <section class="page" id="page-profile">
+      <div id="profileScroll" class="profile-scroll">
+        <div id="profileGeneralContainer" class="profile-group"></div>
+        <div id="profileNetworkContainer" class="profile-group"></div>
+        <div id="profileAutomationContainer" class="profile-group"></div>
+        <div id="profileSecurityContainer" class="profile-group"></div>
+        <div id="profileAdvancedContainer" class="profile-group"></div>
+        <div id="profileStatsContainer" class="profile-group"></div>
+      </div>
+    </section>
+  </main>
+
+  <aside id="cccpPropagandaPanel" class="cccp-propaganda-panel" hidden>
+    <h2 id="propagandaHeader" class="propaganda-header">RADIO KOLKHOZE</h2>
+    <div class="propaganda-divider"></div>
+    <div id="propagandaIcon" class="propaganda-icon"></div>
+    <p id="propagandaMessage" class="propaganda-message"></p>
+  </aside>
+  </div>
+
+  <script src="qrc:///qtwebchannel/qwebchannel.js"></script>
+  <script src="format.js"></script>
+  <script src="tetris.js"></script>
+  <script src="modal.js"></script>
+  <script src="contextmenu.js"></script>
+  <script src="theme_switcher.js"></script>
+  <script src="app.js"></script>
+  <script src="downloads.js"></script>
+  <script src="add.js"></script>
+  <script src="share.js"></script>
+  <script src="rss.js"></script>
+  <script src="profile_general.js"></script>
+  <script src="profile_network.js"></script>
+  <script src="profile_automation.js"></script>
+  <script src="profile_security.js"></script>
+  <script src="profile_advanced.js"></script>
+  <script src="profile_stats.js"></script>
+  <script src="file_priority.js"></script>
+  <script src="peer_list.js"></script>
+  <script src="speed_graph_dialog.js"></script>
+  <script src="create_torrent.js"></script>
+  <script src="tracker_editor.js"></script>
+  <script src="tabs.js"></script>
+  <script src="keydown.js"></script>
+  <script src="propaganda_panel.js"></script>
+</body>
+</html>

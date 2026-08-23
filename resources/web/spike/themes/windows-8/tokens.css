@@ -1,0 +1,727 @@
+/* ==========================================================================
+   METRO — tokens.css — v1.0 (port spike)
+   Style : "Windows 8.1 (Metro, thème clair)"
+   Rôle  : port de resources/web/charters/Charte graphique/Windows 8.1 (Metro)/
+           vers le contrat structurel du spike (cf. luna_xp/tokens.css).
+   Lire  : STYLE.md (règles & interdits) · components.html (référence visuelle)
+   Le flat le plus radical de la collection : aplats, angles vifs, AUCUN
+   dégradé nulle part (bureau compris). Deux encres (noir trace/inverse,
+   bleu #2672EC affirme) + une hiérarchie 100% typographique.
+   ========================================================================== */
+
+:root {
+
+  /* ========================================================
+     1. PRIMITIVES — palette Metro (copiées telles quelles du
+     charter d'origine, jamais réinventées)
+     ======================================================== */
+  --mt-white: #FFFFFF;
+  --mt-ink:   #171717;
+  --mt-ink-soft: #6D6D6D;
+  --mt-ink-faint: #8A8A8A;      /* pivots inactifs */
+  --mt-ink-disabled: #9E9E9E;
+  --mt-gray-line:  #7A7A7A;     /* bordure des champs au repos */
+  --mt-gray-soft:  #E6E6E6;     /* piste de jauge, désactivé */
+  --mt-gray-hover: #E5E5E5;     /* survol des captions */
+
+  /* L'ACCENT — bleu du Démarrer 8.1 */
+  --accent:         #2672EC;
+  --accent-hover:   #4383EE;
+  --accent-pressed: #1D5CC8;
+
+  /* Rôles */
+  --destructive: #E81123;       /* close survolé, action destructive */
+  --warning:     #FF8C00;
+
+  /* Bureau : un APLAT (le seul style sans aucun dégradé) */
+  --desktop: #1B4F82;
+
+  /* ========================================================
+     2. SÉMANTIQUES — recettes propres à Metro + alias de
+     contrat requis par le spike (mêmes noms que luna_xp).
+     ======================================================== */
+  --surface-window: var(--mt-white);
+  --text-primary:   var(--mt-ink);
+  --text-soft:      var(--mt-ink-soft);
+  --text-disabled:  var(--mt-ink-disabled);
+  --selection-bg:   var(--accent);
+  --selection-text: #FFFFFF;
+  --window-border:  var(--accent);      /* la bordure ÉPAISSE colorée */
+  --window-border-inactive: #B9B9B9;
+  --tooltip-bg: #FFFFFF;
+  --tooltip-border: #767676;
+  --tooltip-fg: var(--mt-ink);
+
+  /* Alias de contrat manquants dans le charter d'origine : Metro n'a
+     qu'UNE seule surface (tout est blanc, style plat, pas de "panneau"
+     ou de "champ" visuellement distincts) — on la réutilise partout où
+     le contrat attend une surface différente, sauf le bureau qui a sa
+     propre couleur d'aplat. */
+  --surface-field:   var(--mt-white);
+  --surface-desktop: var(--desktop);
+  --surface-panel:   var(--mt-white);
+  --surface-tooltip: var(--tooltip-bg);
+  --text-inverse:    var(--mt-white);   /* texte du survol inversé (fond noir → texte blanc) */
+
+  /* Le titre ne change pas de couleur avec l'état actif/inactif dans la
+     doctrine Metro (seule la bordure de fenêtre le fait) ; on nuance
+     légèrement l'inactif via l'encre atténuée pour rester lisible. */
+  --title-active-text:   var(--text-primary);
+  --title-inactive-text: var(--mt-ink-faint);
+
+  /* Alias génériques consommés par resources/web/spike/*.css -- chaque
+     thème doit les définir (l'équivalent propre à sa propre charte),
+     pour que le CSS partagé ne code jamais en dur la palette d'un seul
+     thème. Traduits depuis le tableau des états de STYLE.md §7 : les
+     boutons tracent en encre (--mt-ink), les champs et groupes en gris
+     de structure (--mt-gray-line), les onglets n'ont AUCUNE bordure
+     dessinée (interdit #8) donc transparent — la hiérarchie des pivots
+     est typographique (Light 21px), jamais chromatique (interdit #5),
+     donc le "legend" reste de l'encre, pas de l'accent. */
+  --border-control:  var(--mt-ink);
+  --border-field:    var(--mt-gray-line);
+  --border-group:    var(--mt-gray-line);
+  --border-progress: var(--mt-gray-line);
+  --border-tab:      transparent;
+  --text-legend:     var(--text-primary);
+
+  /* ========================================================
+     3. LA TUILE — la signature du style : AUCUN dégradé nulle
+     part (interdit #2, y compris au bureau). Les propriétés
+     "background" attendues par le CSS partagé reçoivent donc
+     un dégradé 2 arrêts même couleur : syntaxiquement un
+     gradient, visuellement un aplat pur — le choix authentique
+     pour cette charte. Valeurs tirées du tableau d'états §7 :
+     repos = transparent, pressé = accent plein.
+     ======================================================== */
+  --plastic-raised:  linear-gradient(transparent, transparent);
+  --plastic-pressed: linear-gradient(var(--accent), var(--accent));
+
+  /* Barre de titre : blanche pure (§6.2) */
+  --gradient-title-active: linear-gradient(var(--mt-white), var(--mt-white));
+
+  /* Boutons de titre (captions) : AUCUN fond au repos, juste le
+     glyphe sur le blanc de la barre — le survol (gris/rouge) est
+     un état, pas ce token de base. */
+  --gradient-titlebtn:       linear-gradient(transparent, transparent);
+  --gradient-titlebtn-close: linear-gradient(transparent, transparent);
+
+  /* Jauge de progression : bloc plein accent, angles vifs (§9) */
+  --gradient-progress: linear-gradient(var(--accent), var(--accent));
+
+  /* ========================================================
+     4. OMBRES & LUEURS — Metro proscrit toute ombre hors
+     plaque de fenêtre et toute lueur de survol (interdit #3,
+     #4 : le survol INVERSE, il ne "voile" ni ne "brille").
+     ======================================================== */
+  --shadow-window: 0 10px 26px rgba(0,0,0,.30);
+  --shadow-window-inactive: 0 6px 14px rgba(0,0,0,.18);
+  --frame-shadow: var(--shadow-window);
+  --shadow-menu:  none;   /* §9 "Menus : ... sans ombre" */
+  --glow-hover:   none;   /* le survol est une inversion noir/blanc, pas une lueur */
+  --title-text-shadow: none;
+
+  /* ========================================================
+     5. TYPOGRAPHIE
+     ======================================================== */
+  --font-ui:    "Segoe UI", "Selawik", Tahoma, "Noto Sans", sans-serif;
+  --font-title: var(--font-ui);           /* titre de fenêtre : même famille, regular */
+  --font-mono:  Consolas, "Courier New", monospace;
+  --font-weight-light: 300;               /* pivots, titres de section, dialogue */
+  --font-size-base:  14px;
+  --font-size-title: 13px;                /* titre de fenêtre : CENTRÉ, regular */
+  --font-size-pivot: 21px;                /* Segoe UI Light */
+  --line-height: 1.45;
+
+  /* ========================================================
+     6. MÉTRIQUES & ESPACEMENT — grille stricte {2,4,8,12,16,24}
+     ======================================================== */
+  --unit: 4px;
+  --space-1: 2px; --space-2: 4px; --space-3: 8px;
+  --space-4: 12px; --space-5: 16px; --space-6: 24px;
+  --pad-body: 16px;
+
+  --control-height: 32px;
+  --field-height: 32px;          /* Metro uniformise : pas de hauteur réduite pour les champs */
+  --button-min-width: 88px;
+  --titlebar-height: 30px;
+  --caption-width: 34px;
+  --titlebar-btn: 29px;          /* captions 34×29 (§5) — hauteur retenue comme côté carré, tient sous les 30px de barre */
+  --checkbox-size: 20px;
+  --toggle-w: 44px; --toggle-h: 20px;
+  --scrollbar-size: 14px;
+  --icon-small: 16px;  --icon-large: 24px;   /* dans la grille {2,4,8,12,16,24} */
+
+  --radius: 0;                   /* le seul rond admis : la radio */
+  --radius-control: 0px;         /* interdit #1 : tout radius > 0 sauf la radio */
+  --radius-group:   0px;
+  --radius-window:  0px;
+
+  /* ========================================================
+     7. ÉTATS & MOUVEMENT
+     ======================================================== */
+  --transition-state: .12s ease;
+  --transition: var(--transition-state);        /* alias de contrat : fondu couleurs, 120ms */
+  --focus-ring: 2px dotted var(--mt-ink);        /* le pointillé Windows, offset 2 */
+  --focus-outline: var(--focus-ring);            /* alias de contrat */
+  --cursor-interactive: var(--cursor-default);
+
+  /* ========================================================
+     8. CURSEURS — mêmes 14 actions que toutes les chartes.
+     Matière Windows 8 : corps BLANCS ombrés, attente = l'ANNEAU
+     bleu du Démarrer. (copiés tels quels du charter d'origine)
+     ======================================================== */
+  --cur-img-default: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.2' transform='translate(1.5,1.5)'%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23fff' stroke='%23000' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-link: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.2' transform='translate(1.5,1.5)'%3E%3Cpolygon points='10,2 13,2 13,9 16,9 19,11 19,15 16,20 9,20 5,14 5,12 7,11 10,14' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='10,2 13,2 13,9 16,9 19,11 19,15 16,20 9,20 5,14 5,12 7,11 10,14' fill='%23fff' stroke='%23000' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpath d='M13.5 11v4M16 12v3' stroke='%23000' stroke-width='.9' stroke-linecap='round'/%3E%3C/svg%3E");
+  --cur-img-text: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg fill='none' stroke='%23fff' stroke-width='4.2' stroke-linecap='round'%3E%3Cpath d='M8 3h6M11 3v18M8 21h6'/%3E%3C/g%3E%3Cg fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round'%3E%3Cpath d='M8 3h6M11 3v18M8 21h6'/%3E%3C/g%3E%3C/svg%3E");
+  --cur-img-wait: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.2' transform='translate(1.5,1.5)'%3E%3Ccircle cx='12' cy='12' r='7.5' fill='none' stroke='%23000' stroke-width='5'/%3E%3C/g%3E%3Ccircle cx='12' cy='12' r='7.5' fill='none' stroke='%23fff' stroke-width='5.6'/%3E%3Ccircle cx='12' cy='12' r='7.5' fill='none' stroke='%232672EC' stroke-width='4'/%3E%3Cpath d='M12 4.5A7.5 7.5 0 0 1 19.5 12' fill='none' stroke='%239CC3F0' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E");
+  --cur-img-progress: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.2' transform='translate(1.5,1.5)'%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23000' stroke='%23000' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/g%3E%3Cg opacity='.2' transform='translate(1.5,1.5)'%3E%3Ccircle cx='17.5' cy='17.5' r='4.6' fill='none' stroke='%23000' stroke-width='3.4'/%3E%3C/g%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23fff' stroke='%23000' stroke-width='1.6' stroke-linejoin='round'/%3E%3Ccircle cx='17.5' cy='17.5' r='4.6' fill='none' stroke='%23fff' stroke-width='4.6'/%3E%3Ccircle cx='17.5' cy='17.5' r='4.6' fill='none' stroke='%232672EC' stroke-width='3'/%3E%3Cpath d='M17.5 12.9A4.6 4.6 0 0 1 22.1 17.5' fill='none' stroke='%239CC3F0' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E");
+  --cur-img-help: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.2' transform='translate(1.5,1.5)'%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23000' stroke='%23000' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23fff' stroke='%23000' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpath d='M14.5 6c0-2.6 6.5-2.6 6.5 0c0 2.2-3.2 2-3.2 4.4' fill='none' stroke='%23fff' stroke-width='3.8' stroke-linecap='round'/%3E%3Cpath d='M14.5 6c0-2.6 6.5-2.6 6.5 0c0 2.2-3.2 2-3.2 4.4' fill='none' stroke='%231D5CC8' stroke-width='1.8' stroke-linecap='round'/%3E%3Ccircle cx='17.9' cy='13.8' r='1.7' fill='%23fff'/%3E%3Ccircle cx='17.9' cy='13.8' r='1.1' fill='%231D5CC8'/%3E%3C/svg%3E");
+  --cur-img-crosshair: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg fill='none' stroke='%23fff' stroke-width='4.2'%3E%3Cpath d='M12 3v18M3 12h18'/%3E%3C/g%3E%3Cg fill='none' stroke='%23000' stroke-width='1.6'%3E%3Cpath d='M12 3v18M3 12h18'/%3E%3C/g%3E%3C/svg%3E");
+  --cur-img-not-allowed: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg fill='none' stroke='%23fff' stroke-width='5.4'%3E%3Ccircle cx='12' cy='12' r='8'/%3E%3Cpath d='M6.5 6.5l11 11'/%3E%3C/g%3E%3Cg fill='none' stroke='%23000' stroke-width='2.4'%3E%3Ccircle cx='12' cy='12' r='8'/%3E%3Cpath d='M6.5 6.5l11 11'/%3E%3C/g%3E%3C/svg%3E");
+  --cur-img-resize-v: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.2' transform='translate(1.5,1.5)'%3E%3Cpolygon points='12,1 17,7 14,7 14,17 17,17 12,23 7,17 10,17 10,7 7,7' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='12,1 17,7 14,7 14,17 17,17 12,23 7,17 10,17 10,7 7,7' fill='%23fff' stroke='%23000' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-resize-h: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.2' transform='translate(1.5,1.5)'%3E%3Cpolygon points='1,12 7,7 7,10 17,10 17,7 23,12 17,17 17,14 7,14 7,17' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='1,12 7,7 7,10 17,10 17,7 23,12 17,17 17,14 7,14 7,17' fill='%23fff' stroke='%23000' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-resize-nwse: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.2' transform='translate(1.5,1.5)'%3E%3Cpath d='M7 7l10 10' stroke='%23000' stroke-width='4.6'/%3E%3Cpolygon points='4,4 12,4 4,12' fill='%23000'/%3E%3Cpolygon points='20,20 12,20 20,12' fill='%23000'/%3E%3C/g%3E%3Cpath d='M7 7l10 10' stroke='%23fff' stroke-width='4'/%3E%3Cpath d='M7 7l10 10' stroke='%23000' stroke-width='1.8'/%3E%3Cpolygon points='4,4 12,4 4,12' fill='%23fff' stroke='%23000' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpolygon points='20,20 12,20 20,12' fill='%23fff' stroke='%23000' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-resize-nesw: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.2' transform='translate(1.5,1.5)'%3E%3Cpath d='M17 7L7 17' stroke='%23000' stroke-width='4.6'/%3E%3Cpolygon points='20,4 12,4 20,12' fill='%23000'/%3E%3Cpolygon points='4,20 12,20 4,12' fill='%23000'/%3E%3C/g%3E%3Cpath d='M17 7L7 17' stroke='%23fff' stroke-width='4'/%3E%3Cpath d='M17 7L7 17' stroke='%23000' stroke-width='1.8'/%3E%3Cpolygon points='20,4 12,4 20,12' fill='%23fff' stroke='%23000' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpolygon points='4,20 12,20 4,12' fill='%23fff' stroke='%23000' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-move: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.2' transform='translate(1.5,1.5)'%3E%3Cpolygon points='12,1 15,5 13,5 13,19 15,19 12,23 9,19 11,19 11,5 9,5' fill='%23000'/%3E%3Cpolygon points='1,12 5,9 5,11 19,11 19,9 23,12 19,15 19,13 5,13 5,15' fill='%23000'/%3E%3C/g%3E%3Cg fill='%23fff' stroke='%23000' stroke-width='1.6' stroke-linejoin='round'%3E%3Cpolygon points='12,1 15,5 13,5 13,19 15,19 12,23 9,19 11,19 11,5 9,5'/%3E%3Cpolygon points='1,12 5,9 5,11 19,11 19,9 23,12 19,15 19,13 5,13 5,15'/%3E%3C/g%3E%3Cpolygon points='12,1 15,5 13,5 13,19 15,19 12,23 9,19 11,19 11,5 9,5' fill='%23fff'/%3E%3Cpolygon points='1,12 5,9 5,11 19,11 19,9 23,12 19,15 19,13 5,13 5,15' fill='%23fff'/%3E%3C/svg%3E");
+  --cur-img-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.2' transform='translate(1.5,1.5)'%3E%3Cpolygon points='12,2 18,9 14,9 14,20 10,20 10,9 6,9' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='12,2 18,9 14,9 14,20 10,20 10,9 6,9' fill='%23fff' stroke='%23000' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+
+  /* Curseurs composés : image + point chaud + secours système */
+  --cursor-default:     var(--cur-img-default) 2 2, default;
+  --cursor-link:        var(--cur-img-link) 11 3, pointer;
+  --cursor-text:        var(--cur-img-text) 11 12, text;
+  --cursor-wait:        var(--cur-img-wait) 12 12, wait;
+  --cursor-progress:    var(--cur-img-progress) 2 2, progress;
+  --cursor-help:        var(--cur-img-help) 2 2, help;
+  --cursor-crosshair:   var(--cur-img-crosshair) 12 12, crosshair;
+  --cursor-not-allowed: var(--cur-img-not-allowed) 12 12, not-allowed;
+  --cursor-resize-v:    var(--cur-img-resize-v) 12 12, ns-resize;
+  --cursor-resize-h:    var(--cur-img-resize-h) 12 12, ew-resize;
+  --cursor-resize-nwse: var(--cur-img-resize-nwse) 12 12, nwse-resize;
+  --cursor-resize-nesw: var(--cur-img-resize-nesw) 12 12, nesw-resize;
+  --cursor-move:        var(--cur-img-move) 12 12, move;
+  --cursor-up:          var(--cur-img-up) 12 3, default;
+
+  /* ================================================== ICONS:BEGIN
+     9. ICÔNES — navigation & fichiers (14), tokenisées comme les
+     curseurs, silhouettes pleines #1E1E1E sur fond transparent
+     (copiées telles quelles du charter d'origine).
+     ======================================================== */
+  --icon-folder: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M2.6 5.6h6.6l2 2.5h10.2v10.7H2.6z' fill='%231E1E1E'/%3E%3C/svg%3E");
+  --icon-folder-open: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M2.6 5.6h6.6l2 2.5h6.4v2.5H2.6z' fill='%231E1E1E'/%3E%3Cpolygon points='4.9,11.8 21.4,11.8 19.2,18.8 2.6,18.8' fill='%231E1E1E'/%3E%3C/svg%3E");
+  --icon-file: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M6.2 2.8h7.6l4.4 4.4v14H6.2z M13.8 4.9v2.3h2.3z' fill='%231E1E1E' fill-rule='evenodd'/%3E%3C/svg%3E");
+  --icon-file-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M6.2 2.8h7.6l4.4 4.4v14H6.2z' fill='%231E1E1E'/%3E%3Ccircle cx='10.4' cy='11' r='1.5' fill='%23FFFFFF'/%3E%3Cpolygon points='8.2,17.8 10.8,14.4 12.5,16.5 13.8,14.9 16.2,17.8' fill='%23FFFFFF'/%3E%3C/svg%3E");
+  --icon-drive: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Crect x='3.2' y='8.8' width='17.6' height='6.6' fill='%231E1E1E'/%3E%3Ccircle cx='17.4' cy='12.1' r='1.3' fill='%23FFFFFF'/%3E%3C/svg%3E");
+  --icon-home: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M12 4.6l8 7h-2.2v7.6H6.2V11.6H4z' fill='%231E1E1E'/%3E%3C/svg%3E");
+  --icon-computer: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Crect x='3.6' y='4.2' width='16.8' height='11.4' fill='%231E1E1E'/%3E%3Crect x='5.4' y='6' width='13.2' height='7.8' fill='%23FFFFFF'/%3E%3Crect x='9.6' y='15.6' width='4.8' height='1.8' fill='%231E1E1E'/%3E%3Crect x='7.4' y='17.4' width='9.2' height='1.8' fill='%231E1E1E'/%3E%3C/svg%3E");
+  --icon-network: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M12 7.6L6.4 16M12 7.6l5.6 8.4M6.4 16h11.2' fill='none' stroke='%231E1E1E' stroke-width='1.8' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3Ccircle cx='12' cy='6.4' r='2.4' fill='%231E1E1E'/%3E%3Ccircle cx='5.6' cy='17' r='2.4' fill='%231E1E1E'/%3E%3Ccircle cx='18.4' cy='17' r='2.4' fill='%231E1E1E'/%3E%3C/svg%3E");
+  --icon-trash: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M6.8 6h10.4l-.9 13.6H7.7z' fill='%231E1E1E'/%3E%3Crect x='7.6' y='3.6' width='8.8' height='1.7' fill='%231E1E1E'/%3E%3C/svg%3E");
+  --icon-search: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='10.4' cy='10.4' r='4.9' fill='none' stroke='%231E1E1E' stroke-width='2.1'/%3E%3Cpath d='M14.2 14.2l5.2 5.2' fill='none' stroke='%231E1E1E' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-back: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='16.5,5 7,12 16.5,19 16.5,14.4 21,14.4 21,9.6 16.5,9.6' fill='%231E1E1E'/%3E%3C/svg%3E");
+  --icon-forward: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='7.5,5 17,12 7.5,19 7.5,14.4 3,14.4 3,9.6 7.5,9.6' fill='%231E1E1E'/%3E%3C/svg%3E");
+  --icon-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='5,11.5 12,4.5 19,11.5 14.6,11.5 14.6,20 9.4,20 9.4,11.5' fill='%231E1E1E'/%3E%3C/svg%3E");
+  --icon-refresh: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M19.9 4.4v5.4l-5.2-1.2z' fill='%231E1E1E'/%3E%3Cpath d='M18.6 8.2A7.6 7.6 0 1 0 19.6 14' fill='none' stroke='%231E1E1E' stroke-width='2.6' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3C/svg%3E");
+  /* ICONS:END */
+}
+
+/* DARK:BEGIN — thème sombre (phase 3). L'encre et le blanc s'ÉCHANGENT ;
+   toutes les propriétés "extras" ci-dessus référencent --mt-*/--accent/
+   --shadow-window en var(), elles se re-résolvent donc seules ici — pas
+   besoin de les répéter (même logique que luna_xp §2). */
+[data-theme="dark"] {
+  --mt-white: #1A1A1A;            /* le fond prend l'encre */
+  --mt-ink: #FFFFFF;
+  --mt-ink-soft: rgba(255,255,255,.62);
+  --mt-ink-faint: rgba(255,255,255,.45);
+  --mt-ink-disabled: rgba(255,255,255,.32);
+  --mt-gray-line: #3A3A3A;
+  --mt-gray-soft: #2E2E2E;
+  --mt-gray-hover: #333333;
+  --desktop: #101010;
+  --surface-window: #1A1A1A;
+  --window-border: #4A4A4A;
+  --window-border-inactive: #303030;
+  --tooltip-bg: #FFFFFF; --tooltip-fg: #1A1A1A; --tooltip-border: #FFFFFF;
+  --shadow-window: 0 10px 30px rgba(0,0,0,.7);
+  /* icônes surchargées pour le fond sombre */
+  --icon-folder: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M2.6 5.6h6.6l2 2.5h10.2v10.7H2.6z' fill='%23FFFFFF'/%3E%3C/svg%3E");
+  --icon-folder-open: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M2.6 5.6h6.6l2 2.5h6.4v2.5H2.6z' fill='%23FFFFFF'/%3E%3Cpolygon points='4.9,11.8 21.4,11.8 19.2,18.8 2.6,18.8' fill='%23FFFFFF'/%3E%3C/svg%3E");
+  --icon-file: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M6.2 2.8h7.6l4.4 4.4v14H6.2z M13.8 4.9v2.3h2.3z' fill='%23FFFFFF' fill-rule='evenodd'/%3E%3C/svg%3E");
+  --icon-file-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M6.2 2.8h7.6l4.4 4.4v14H6.2z' fill='%23FFFFFF'/%3E%3Ccircle cx='10.4' cy='11' r='1.5' fill='%231A1A1A'/%3E%3Cpolygon points='8.2,17.8 10.8,14.4 12.5,16.5 13.8,14.9 16.2,17.8' fill='%231A1A1A'/%3E%3C/svg%3E");
+  --icon-drive: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Crect x='3.2' y='8.8' width='17.6' height='6.6' fill='%23FFFFFF'/%3E%3Ccircle cx='17.4' cy='12.1' r='1.3' fill='%231A1A1A'/%3E%3C/svg%3E");
+  --icon-home: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M12 4.6l8 7h-2.2v7.6H6.2V11.6H4z' fill='%23FFFFFF'/%3E%3C/svg%3E");
+  --icon-computer: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Crect x='3.6' y='4.2' width='16.8' height='11.4' fill='%23FFFFFF'/%3E%3Crect x='5.4' y='6' width='13.2' height='7.8' fill='%231A1A1A'/%3E%3Crect x='9.6' y='15.6' width='4.8' height='1.8' fill='%23FFFFFF'/%3E%3Crect x='7.4' y='17.4' width='9.2' height='1.8' fill='%23FFFFFF'/%3E%3C/svg%3E");
+  --icon-network: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M12 7.6L6.4 16M12 7.6l5.6 8.4M6.4 16h11.2' fill='none' stroke='%23FFFFFF' stroke-width='1.8' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3Ccircle cx='12' cy='6.4' r='2.4' fill='%23FFFFFF'/%3E%3Ccircle cx='5.6' cy='17' r='2.4' fill='%23FFFFFF'/%3E%3Ccircle cx='18.4' cy='17' r='2.4' fill='%23FFFFFF'/%3E%3C/svg%3E");
+  --icon-trash: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M6.8 6h10.4l-.9 13.6H7.7z' fill='%23FFFFFF'/%3E%3Crect x='7.6' y='3.6' width='8.8' height='1.7' fill='%23FFFFFF'/%3E%3C/svg%3E");
+  --icon-back: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='16.5,5 7,12 16.5,19 16.5,14.4 21,14.4 21,9.6 16.5,9.6' fill='%23FFFFFF'/%3E%3C/svg%3E");
+  --icon-forward: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='7.5,5 17,12 7.5,19 7.5,14.4 3,14.4 3,9.6 7.5,9.6' fill='%23FFFFFF'/%3E%3C/svg%3E");
+  --icon-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='5,11.5 12,4.5 19,11.5 14.6,11.5 14.6,20 9.4,20 9.4,11.5' fill='%23FFFFFF'/%3E%3C/svg%3E");
+  --icon-refresh: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M19.9 4.4v5.4l-5.2-1.2z' fill='%23FFFFFF'/%3E%3Cpath d='M18.6 8.2A7.6 7.6 0 1 0 19.6 14' fill='none' stroke='%23FFFFFF' stroke-width='2.6' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3C/svg%3E");
+  --icon-search: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='10.4' cy='10.4' r='4.9' fill='none' stroke='%23FFFFFF' stroke-width='2.1'/%3E%3Cpath d='M14.2 14.2l5.2 5.2' fill='none' stroke='%23FFFFFF' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+/* DARK:END */
+
+/* HC:BEGIN — contraste élevé (phase 4) */
+[data-theme="hc"] {
+  --mt-white: #000000;
+  --mt-ink: #FFFFFF;
+  --mt-ink-soft: #B8B8B8;
+  --mt-ink-faint: #B8B8B8;
+  --mt-ink-disabled: #808080;
+  --mt-gray-line: #FFEE32;
+  --mt-gray-soft: #1A1A1A;
+  --mt-gray-hover: #333333;
+  --accent: #164FA8;
+  --accent-hover: #123F86;
+  --accent-pressed: #0E3268;
+  --destructive: #8E0000;
+  --selection-bg: #164FA8;
+  --selection-text: #FFFFFF;
+  --accent-text: #9DBEFF;
+  --warning: #E09000;
+  --window-border: #FFEE32;
+  --window-border-inactive: #808080;
+  --tooltip-bg: #000000; --tooltip-fg: #FFFFFF; --tooltip-border: #FFEE32;
+  --desktop: #000000;
+  --surface-window: #000000;
+  --shadow-window: 0 0 0 2px #FFEE32;
+  /* icônes en contraste élevé */
+  --icon-folder: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M2.6 5.6h6.6l2 2.5h10.2v10.7H2.6z' fill='%23FFFFFF'/%3E%3C/svg%3E");
+  --icon-folder-open: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M2.6 5.6h6.6l2 2.5h6.4v2.5H2.6z' fill='%23FFFFFF'/%3E%3Cpolygon points='4.9,11.8 21.4,11.8 19.2,18.8 2.6,18.8' fill='%23FFFFFF'/%3E%3C/svg%3E");
+  --icon-file: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M6.2 2.8h7.6l4.4 4.4v14H6.2z M13.8 4.9v2.3h2.3z' fill='%23FFFFFF' fill-rule='evenodd'/%3E%3C/svg%3E");
+  --icon-file-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M6.2 2.8h7.6l4.4 4.4v14H6.2z' fill='%23FFFFFF'/%3E%3Ccircle cx='10.4' cy='11' r='1.5' fill='%23000000'/%3E%3Cpolygon points='8.2,17.8 10.8,14.4 12.5,16.5 13.8,14.9 16.2,17.8' fill='%23000000'/%3E%3C/svg%3E");
+  --icon-drive: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Crect x='3.2' y='8.8' width='17.6' height='6.6' fill='%23FFFFFF'/%3E%3Ccircle cx='17.4' cy='12.1' r='1.3' fill='%23000000'/%3E%3C/svg%3E");
+  --icon-home: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M12 4.6l8 7h-2.2v7.6H6.2V11.6H4z' fill='%23FFFFFF'/%3E%3C/svg%3E");
+  --icon-computer: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Crect x='3.6' y='4.2' width='16.8' height='11.4' fill='%23FFFFFF'/%3E%3Crect x='5.4' y='6' width='13.2' height='7.8' fill='%23000000'/%3E%3Crect x='9.6' y='15.6' width='4.8' height='1.8' fill='%23FFFFFF'/%3E%3Crect x='7.4' y='17.4' width='9.2' height='1.8' fill='%23FFFFFF'/%3E%3C/svg%3E");
+  --icon-network: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M12 7.6L6.4 16M12 7.6l5.6 8.4M6.4 16h11.2' fill='none' stroke='%23FFFFFF' stroke-width='1.8' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3Ccircle cx='12' cy='6.4' r='2.4' fill='%23FFFFFF'/%3E%3Ccircle cx='5.6' cy='17' r='2.4' fill='%23FFFFFF'/%3E%3Ccircle cx='18.4' cy='17' r='2.4' fill='%23FFFFFF'/%3E%3C/svg%3E");
+  --icon-trash: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M6.8 6h10.4l-.9 13.6H7.7z' fill='%23FFFFFF'/%3E%3Crect x='7.6' y='3.6' width='8.8' height='1.7' fill='%23FFFFFF'/%3E%3C/svg%3E");
+  --icon-back: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='16.5,5 7,12 16.5,19 16.5,14.4 21,14.4 21,9.6 16.5,9.6' fill='%23FFFFFF'/%3E%3C/svg%3E");
+  --icon-forward: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='7.5,5 17,12 7.5,19 7.5,14.4 3,14.4 3,9.6 7.5,9.6' fill='%23FFFFFF'/%3E%3C/svg%3E");
+  --icon-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='5,11.5 12,4.5 19,11.5 14.6,11.5 14.6,20 9.4,20 9.4,11.5' fill='%23FFFFFF'/%3E%3C/svg%3E");
+  --icon-refresh: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M19.9 4.4v5.4l-5.2-1.2z' fill='%23FFFFFF'/%3E%3Cpath d='M18.6 8.2A7.6 7.6 0 1 0 19.6 14' fill='none' stroke='%23FFFFFF' stroke-width='2.6' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3C/svg%3E");
+  --icon-search: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='10.4' cy='10.4' r='4.9' fill='none' stroke='%23FFFFFF' stroke-width='2.1'/%3E%3Cpath d='M14.2 14.2l5.2 5.2' fill='none' stroke='%23FFFFFF' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+/* HC:END */
+
+/* --- Base recommandée (à copier dans l'app) ------------------------------ */
+/*
+body {
+  margin: 0;
+  background: var(--surface-desktop);
+  color: var(--text-primary);
+  font: 400 var(--font-size-base)/var(--line-height) var(--font-ui);
+  cursor: var(--cursor-default);
+}
+::selection { background: var(--selection-bg); color: var(--selection-text); }
+a { color: var(--accent); cursor: var(--cursor-link); }
+input[type=text], textarea { cursor: var(--cursor-text); }
+*/
+
+/* ==========================================================================
+   METRO — STRUCTURE — port de STYLE.md + components.html vers les
+   sélecteurs partagés de resources/web/spike/style.css. Chargé en dernier :
+   même spécificité que style.css, on gagne à l'ordre — pas de !important.
+   Doctrine : deux encres (noir trace / inverse au survol), un bleu accent
+   qui affirme, ZÉRO radius (hors radio), ZÉRO dégradé, ZÉRO ombre hors
+   plaque de fenêtre, ZÉRO gras pour hiérarchiser (la hiérarchie est Light
+   21 px), onglets en texte nu, curseur système jamais nu.
+   ========================================================================== */
+
+/* ---------- 1. Chrome de fenêtre ---------- */
+body {
+  border: 3px solid var(--window-border);
+}
+
+.titlebar {
+  padding: 0 0 0 12px;
+  border-radius: 0;
+}
+.titlebar-drag {
+  justify-content: center;
+  overflow: hidden;
+}
+.titlebar-title {
+  padding-left: 0;
+  font-weight: 400;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+.titlebar-buttons {
+  gap: 0;
+}
+
+.cap-btn {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--mt-ink);
+}
+.cap-btn:hover {
+  filter: none;
+  background: var(--mt-gray-hover);
+}
+.cap-btn:active {
+  filter: none;
+  background: #CACACA;
+}
+/* #CACACA est un gris clair fixe (copié tel quel du charter, qui ne le
+   surcharge pas non plus dans son propre bloc [data-theme="dark"]/"hc") :
+   contre lui, le glyphe en currentColor (--mt-ink) devient blanc en dark/hc
+   et tombe à ~1.6:1 de contraste — quasi invisible. On assombrit la plaque
+   pressée pour ces deux thèmes seulement (le clair garde la valeur du
+   charter). */
+[data-theme="dark"] .cap-btn:active:not(.cap-close),
+[data-theme="hc"] .cap-btn:active:not(.cap-close) {
+  background: #4A4A4A;
+}
+.cap-close {
+  background: transparent;
+  margin-left: 0;
+}
+.cap-close:hover {
+  background: var(--destructive);
+  color: #fff;
+}
+.cap-close:active {
+  background: #C00E1D;
+  color: #fff;
+}
+
+/* Glyphes recentrés (source : .g-min 10×2, .g-max 9×9 bordé 2px) —
+   on neutralise les offsets left/right/bottom hérités de style.css et on
+   recentre au milieu du bouton carré. */
+.cap-min span::before {
+  content: "";
+  position: absolute;
+  left: 50%; top: 50%; right: auto; bottom: auto;
+  width: 10px; height: 2px;
+  background: currentColor;
+  transform: translate(-50%, -50%);
+}
+.cap-max span::before {
+  content: "";
+  position: absolute;
+  left: 50%; top: 50%; right: auto; bottom: auto;
+  width: 9px; height: 9px;
+  border: 2px solid currentColor;
+  background: transparent;
+  transform: translate(-50%, -50%);
+}
+.cap-close span::before,
+.cap-close span::after {
+  content: "";
+  position: absolute;
+  left: 50%; top: 50%; right: auto; bottom: auto;
+  width: 12px; height: 1.6px;
+  background: currentColor;
+}
+.cap-close span::before { transform: translate(-50%, -50%) rotate(45deg); }
+.cap-close span::after  { transform: translate(-50%, -50%) rotate(-45deg); }
+
+/* ---------- 2. Pivots (les onglets sont du TEXTE, interdit #8) ---------- */
+.tabbar {
+  gap: var(--space-5);
+  padding: var(--space-4) var(--space-5) var(--space-3);
+  background: var(--surface-window);
+  border-bottom: none;
+  align-items: baseline;
+  overflow-x: auto;
+}
+.tab-btn {
+  min-width: 0;
+  height: auto;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  font: var(--font-weight-light) var(--font-size-pivot) / 1.2 var(--font-ui);
+  color: var(--mt-ink-faint);
+  cursor: var(--cursor-default);
+  transition: color var(--transition-state);
+}
+.tab-btn:hover:not(.active) {
+  filter: none;
+  color: var(--mt-ink-soft);
+}
+.tab-btn.active {
+  background: transparent;
+  font-weight: var(--font-weight-light);
+  color: var(--mt-ink);
+}
+
+/* ---------- 3. Boutons (repos tracé → survol INVERSE → appui accent) ---- */
+button {
+  min-width: var(--button-min-width);
+  height: var(--control-height);
+  padding: 0 18px;
+  border: 2px solid var(--border-control);
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  appearance: none;
+  -webkit-appearance: none;
+  box-shadow: none;
+  cursor: var(--cursor-interactive);
+  transition: background var(--transition-state), color var(--transition-state), border-color var(--transition-state);
+}
+button:not(:disabled):hover {
+  background: var(--mt-ink);
+  color: var(--text-inverse);
+}
+button:not(:disabled):active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--text-inverse);
+}
+button:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 2px;
+}
+button:disabled {
+  background: var(--mt-gray-soft);
+  border-color: var(--mt-gray-soft);
+  color: var(--text-disabled);
+  cursor: var(--cursor-default);
+}
+
+.start-btn {
+  background: var(--accent);
+  border: 2px solid var(--accent);
+  border-radius: var(--radius-control);
+  color: var(--text-inverse);
+  font-weight: 400;
+  box-shadow: none;
+}
+.start-btn:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+  box-shadow: none;
+}
+.start-btn:active {
+  background: var(--accent-pressed);
+  border-color: var(--accent-pressed);
+}
+
+/* Boutons de ligne (pause/suppr.) : même doctrine trace/inverse/accent,
+   gabarit compact — Metro n'a pas de bouton "en ligne" dédié, la recette
+   universelle §7 s'applique simplement à une taille réduite. */
+.row-actions button {
+  min-width: 0;
+  height: 24px;
+  padding: 0 10px;
+  border: 2px solid var(--border-control);
+  border-radius: 0;
+  background: transparent;
+  color: var(--text-primary);
+  box-shadow: none;
+}
+.row-actions button:hover {
+  background: var(--mt-ink);
+  color: var(--text-inverse);
+  box-shadow: none;
+}
+.row-actions button:active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--text-inverse);
+}
+
+/* ---------- 4. Champs (bordés 2px, plats — même hauteur que les boutons) */
+input[type="text"], input[type="number"], select, textarea, .search-input {
+  background: var(--surface-field);
+  border: 2px solid var(--border-field);
+  border-radius: var(--radius-control);
+  height: var(--field-height);
+  padding: 0 10px;
+  font: inherit;
+  color: var(--text-primary);
+  transition: border-color var(--transition-state);
+}
+textarea {
+  height: auto;
+  min-height: 72px;
+  padding: 6px 10px;
+  resize: none;
+}
+input[type="text"]:not(:disabled):hover,
+input[type="number"]:not(:disabled):hover,
+textarea:not(:disabled):hover,
+select:not(:disabled):hover,
+.search-input:not(:disabled):hover {
+  border-color: var(--mt-ink);
+}
+input[type="text"]:focus, input[type="number"]:focus, textarea:focus, select:focus, .search-input:focus {
+  border-color: var(--accent);
+  outline: var(--focus-ring);
+  outline-offset: 2px;
+}
+input:disabled, textarea:disabled, select:disabled {
+  background: var(--mt-gray-soft);
+  border-color: var(--mt-gray-soft);
+  color: var(--text-disabled);
+}
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 32px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Cpath d='M4 6l4 4 4-4' fill='none' stroke='%23171717' stroke-width='2'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 16px;
+}
+/* Chevron du select : encre #171717 fixe (copiée du charter, non surchargée
+   non plus dans son propre bloc dark/hc) contre un champ dont le fond SUIT
+   --mt-white → #1A1A1A en dark / #000000 en hc : glyphe quasi invisible.
+   Même trait, juste repeint en blanc pour ces deux thèmes. */
+[data-theme="dark"] select,
+[data-theme="hc"] select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Cpath d='M4 6l4 4 4-4' fill='none' stroke='%23fff' stroke-width='2'/%3E%3C/svg%3E");
+}
+
+/* ---------- 5. Cases à cocher (seule la radio serait ronde) ------------- */
+input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  margin: 0;
+  width: var(--checkbox-size);
+  height: var(--checkbox-size);
+  border: 2px solid var(--mt-ink);
+  border-radius: 0;
+  background: var(--mt-white);
+  display: inline-grid;
+  place-content: center;
+  vertical-align: middle;
+  transition: background var(--transition-state), border-color var(--transition-state);
+}
+input[type="checkbox"]:not(:disabled):hover {
+  background: #EDEDED;
+}
+input[type="checkbox"]:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+input[type="checkbox"]:checked::after {
+  content: "";
+  width: 12px; height: 12px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12'%3E%3Cpath d='M2 6.5l3 3 5-7' fill='none' stroke='%23fff' stroke-width='2'/%3E%3C/svg%3E") no-repeat center;
+}
+input[type="checkbox"]:disabled {
+  border-color: var(--mt-gray-soft);
+  background: var(--mt-gray-soft);
+}
+
+/* ---------- 6. Listes / lignes (sélection pleine accent bord à bord,
+   survol des CONTENEURS = inversion noire — la sélection cliquée garde
+   la priorité sur le survol via la spécificité déjà plus haute de
+   #downloadsList .row.selected dans style.css) ---------- */
+.listbox {
+  background: var(--mt-white);
+  border: 2px solid var(--mt-ink);
+  border-radius: 0;
+  padding: 0;
+}
+.row, .scan-row {
+  border-bottom: 1px solid var(--mt-gray-line);
+  padding: 7px 12px;
+  color: var(--text-primary);
+  transition: background var(--transition-state), color var(--transition-state);
+}
+.row:last-child, .scan-row:last-child { border-bottom: none; }
+.row:hover, .scan-row:hover {
+  background: var(--mt-ink);
+  color: var(--text-inverse);
+}
+/* .row-state/-rate/-eta/-category/-peers n'ont pas de recette propre dans
+   la charte : ils héritent la couleur de .row à dessein (pas de color: fixe
+   ici) pour rester lisibles pendant l'inversion noire au survol. */
+.row-name { font-weight: 600; }
+.downloads-row-header {
+  border-bottom: 2px solid var(--mt-ink);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.scan-path { color: var(--text-primary); }
+.scan-size { color: var(--text-soft); }
+
+/* ---------- 7. Groupes (fieldset bordé 2px encre, légende Light 18px) --- */
+.profile-group, .details-group {
+  background: var(--surface-panel);
+  border: 2px solid var(--mt-ink);
+  border-radius: 0;
+  padding: var(--space-5);
+}
+.profile-group h3, .details-group h3 {
+  font: var(--font-weight-light) 18px var(--font-ui);
+  color: var(--text-legend);
+  margin: 0 0 var(--space-3);
+}
+
+/* ---------- 8. Menu contextuel (panneau bordé 2px, sans ombre, survol =
+   inversion noire — PAS la sélection accent, ça c'est la doctrine liste) - */
+.context-menu {
+  background: var(--mt-white);
+  border: 2px solid var(--mt-ink);
+  border-radius: 0;
+  box-shadow: none;
+  padding: 4px 0;
+  min-width: 200px;
+}
+.context-menu-item {
+  padding: 7px 12px;
+  color: var(--text-primary);
+  cursor: var(--cursor-default);
+  transition: background var(--transition-state), color var(--transition-state);
+}
+.context-menu-item:hover {
+  background: var(--mt-ink);
+  color: var(--text-inverse);
+}
+.context-menu-separator {
+  height: 1px;
+  background: #CCCCCC;
+  margin: 4px 0;
+}
+
+/* ---------- 9. Dialogues (même plaque que la fenêtre : bordure 3px accent,
+   titre Light 21px, boutons-tuiles à droite) ---------- */
+.modal-overlay {
+  background: rgba(0, 0, 0, 0.45);
+}
+.modal-box {
+  background: var(--mt-white);
+  border: 3px solid var(--window-border);
+  border-radius: 0;
+  box-shadow: var(--shadow-window);
+  padding: 16px 18px 6px;
+}
+.modal-box h3 {
+  font: var(--font-weight-light) var(--font-size-pivot) / 1.25 var(--font-ui);
+  color: var(--text-primary);
+  margin: 0 0 8px;
+}
+
+/* ---------- 10. Défilement — pleine, carrée, flèches plates ------------ */
+::-webkit-scrollbar { width: var(--scrollbar-size); height: var(--scrollbar-size); }
+::-webkit-scrollbar-track { background: #F2F2F2; }
+::-webkit-scrollbar-thumb { background: #CDCDCD; border: 0; }
+::-webkit-scrollbar-thumb:hover { background: #A6A6A6; }
+::-webkit-scrollbar-button { background: #F2F2F2; height: 14px; width: 14px; }
+::-webkit-scrollbar-button:vertical:decrement {
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='6'%3E%3Cpath d='M4.5 0L9 6H0Z' fill='%23606060'/%3E%3C/svg%3E") center/9px 6px no-repeat, #F2F2F2;
+}
+::-webkit-scrollbar-button:vertical:increment {
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='6'%3E%3Cpath d='M4.5 6L0 0H9Z' fill='%23606060'/%3E%3C/svg%3E") center/9px 6px no-repeat, #F2F2F2;
+}
+::-webkit-scrollbar-corner { background: #F2F2F2; }
+
+/* ---------- 11. Jauge de progression — 6px, piste grise, angles vifs --- */
+canvas.tetris {
+  border: 2px solid var(--mt-gray-line);
+  border-radius: 0;
+  background: var(--mt-gray-soft);
+  box-shadow: none;
+}

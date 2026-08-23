@@ -1,0 +1,702 @@
+/* ==========================================================================
+   FRUTIGER AERO — tokens.css — v1.0 (web spike port)
+   Style : "Frutiger Aero (2004-2013)"
+   Rôle  : SOURCE DE VÉRITÉ des variables pour le port web. Ported from the
+   charter at resources/web/charters/Charte graphique/Frutiger Aero (2004-2013)/
+   (tokens.css + STYLE.md), following the structural contract of
+   resources/web/spike/themes/luna_xp/tokens.css (the working reference).
+   Le techno-optimisme des annees 2004-2013 : ciels degrades, prairies,
+   bulles et gouttes d'eau, capsules glossy au reflet blanc, verts de
+   nature et bleus d'aquarium — l'humanisme ensoleille d'avant le flat.
+   ========================================================================== */
+
+:root {
+
+  /* ========================================================
+     1. PRIMITIVES — palette Frutiger Aero
+     ======================================================== */
+  /* Le ciel et la prairie */
+  --fa-sky:      #EAF6FD;   /* la fenetre (ciel voile) */
+  --fa-white:    #FFFFFF;
+  --fa-ink:      #17364A;   /* texte bleu nuit doux */
+  --fa-soft:     #5A7A8E;
+  --fa-line:     #B9D9EC;   /* filets d'eau */
+  --fa-disabled: #9DB6C4;
+  --fa-desktop:  #7EC8F2;   /* stop du haut de --fa-aurora, pour un fond bureau uni */
+
+  --fa-blue:      #4FC3F7;  /* bleu d'aquarium */
+  --fa-blue-deep: #1B7FD4;  /* bleu profond (selection, liens) */
+  --fa-green:     #7CB93E;  /* vert prairie */
+  --fa-green-deep:#4E8F1F;  /* vert profond (defaut presse) */
+  --fa-red:       #E85D5D;
+  --fa-red-deep:  #C43A3A;  /* rouge doux profond (fermer, echec) */
+
+  --fa-aurora: linear-gradient(180deg, #7EC8F2 0%, #A8D8E8 55%, #BFE28A 100%);
+  --fa-titlebar: linear-gradient(180deg,#DDF1FC,#CBE8F8);
+  --fa-titlebar-off: linear-gradient(180deg,#E6F2FA,#DCEBF5);
+  --fa-face: linear-gradient(180deg,#FFFFFF,#EAF4FB);
+  --fa-press: #D6EEFA;
+  --fa-face-off: #F2F8FC;
+  --fa-line-off: #D4E4EE;
+  --fa-track: rgba(185,217,236,.38);
+  --fa-thumb: linear-gradient(180deg,rgba(255,255,255,.9),rgba(214,238,250,.9));
+  --fa-thumb-flat: #9CD1EE;
+  --fa-toggle-track: linear-gradient(180deg,#DDEBF4,#CFE3F0);
+  --tooltip-bg: #FFFFFF;
+  --tooltip-fg: var(--fa-ink);
+
+  /* ========================================================
+     2. SÉMANTIQUES
+     ======================================================== */
+  --surface-window:  var(--fa-sky);
+  --surface-field:   var(--fa-white);
+  --surface-desktop: var(--fa-desktop);
+  --surface-tooltip: var(--tooltip-bg);
+  --surface-panel:   var(--fa-white);
+
+  --text-primary:   var(--fa-ink);
+  --text-soft:      var(--fa-soft);
+  --text-disabled:  var(--fa-disabled);
+  /* Fixe (pas var(--fa-white)) : ce texte se pose sur des accents saturés
+     (fa-green/fa-blue/fa-blue-deep) qui NE changent PAS en mode sombre --
+     --fa-white lui, devient la surface sombre en mode sombre, ce qui
+     rendait ce texte illisible (encre sur accent au lieu de blanc). */
+  --text-inverse:   #FFFFFF;
+
+  --selection-bg:   var(--fa-blue-deep);
+  --selection-text: var(--text-inverse);
+
+  --title-active-text:   var(--fa-ink);   /* barre de titre CLAIRE : encre bleu nuit, pas de blanc */
+  --title-inactive-text: var(--fa-soft);  /* "le titre passe en douce" */
+
+  /* Generic aliases consumed by resources/web/spike/*.css -- every theme
+     must define these. Frutiger n'a qu'UN seul concept de bordure ("filet
+     d'eau", --fa-line) partage par tous les controles au repos -- pas de
+     jeu de gris distincts comme Luna -- donc les cinq alias pointent tous
+     vers la meme primitive, fidele a la doctrine "rien n'est gris". */
+  --border-control:  var(--fa-line);
+  --border-field:    var(--fa-line);
+  --border-group:    var(--fa-line);
+  --border-progress: var(--fa-line);
+  --border-tab:      var(--fa-line);
+  --text-legend:     var(--fa-blue-deep);  /* accent bleu profond, comme les liens */
+
+  /* ========================================================
+     3. LA GOUTTE — la signature du style.
+     Chaque controle engage porte son reflet (--gloss, moitie haute
+     blanche qui s'arrete net a 52%) par-dessus sa matiere -- jamais de
+     dégradé arbitraire, jamais de biseau gris a la Win95.
+     ======================================================== */
+  --gloss: linear-gradient(180deg, rgba(255,255,255,.85) 0%, rgba(255,255,255,.25) 46%, rgba(255,255,255,0) 52%);
+  --gloss-soft: linear-gradient(180deg, rgba(255,255,255,.6) 0%, rgba(255,255,255,.15) 50%, rgba(255,255,255,0) 55%);
+  --shadow-drop: 0 6px 18px rgba(27,127,212,.22);
+
+  /* Relief "plastique" (boutons, contrôles) -- ici la CAPSULE d'eau :
+     le reflet --gloss superpose a la face du controle. Au repos, la
+     capsule blanche a filet d'eau porte sa goutte de lumiere ; pressee,
+     "le reflet s'eteint" (doctrine §7) -- fond plat bleu pale, sans
+     dégradé arbitraire (2 arrêts de la même couleur = remplissage plat,
+     toujours du type gradient attendu par l'appli). */
+  --plastic-raised:  var(--gloss), var(--fa-face);
+  --plastic-pressed: linear-gradient(var(--fa-press), var(--fa-press));
+
+  /* Barre de titre : ciel voile clair (pas de bleu royal saturé). */
+  --gradient-title-active: var(--fa-titlebar);
+
+  /* Boutons de titre (les trois GOUTTES glossy) : capsule radiale a
+     reflet blanc, dans les couleurs des accents de nature -- bleu
+     d'aquarium (reduire/agrandir), rouge doux (fermer). */
+  --gradient-titlebtn:       radial-gradient(circle at 30% 25%, var(--fa-white), var(--fa-blue) 55%, var(--fa-blue-deep) 100%);
+  --gradient-titlebtn-close: radial-gradient(circle at 30% 25%, var(--fa-white), var(--fa-red) 55%, var(--fa-red-deep) 100%);
+
+  /* Jauge de progression — LA SEVE : remplissage vert prairie glossy
+     (le defaut de ce style est VERT, jamais bleu). */
+  --gradient-progress: var(--gloss), linear-gradient(180deg, var(--fa-green), var(--fa-green-deep));
+
+  /* ========================================================
+     4. OMBRES — douces et BLEUTEES, jamais noires ni seches.
+     ======================================================== */
+  --shadow-window: 0 10px 30px rgba(27,127,212,.28);
+  --shadow-window-inactive: 0 6px 18px rgba(27,127,212,.14);
+  --shadow-menu: 0 8px 22px rgba(27,127,212,.25);
+
+  /* Cadre de fenêtre : ce style n'a pas de biseau inset (≠ Luna) -- son
+     "cadre" EST l'ombre bleutee genereuse qui porte la fenetre. */
+  --frame-shadow: var(--shadow-window);
+
+  /* Survol : "le filet passe au bleu d'aquarium, l'ombre bleutee
+     s'etend" -- une ombre bleu d'aquarium qui s'etend + un anneau
+     interne qui simule le filet devenu bleu. */
+  --glow-hover: 0 6px 20px rgba(79,195,247,.4), inset 0 0 0 1px var(--fa-blue);
+
+  /* Titre : encre sur ciel clair -- un discret reflet blanc sous le
+     texte (verre glace), pas d'ombre noire. */
+  --title-text-shadow: 0 1px 0 rgba(255,255,255,.7);
+
+  /* ========================================================
+     5. TYPOGRAPHIE
+     ======================================================== */
+  --font-ui: "Segoe UI", Frutiger, Calibri, "Trebuchet MS", Tahoma,
+             sans-serif;
+  --font-title: var(--font-ui);   /* pas de police d'affichage dediee (STYLE.md) */
+  --font-mono:  Consolas, "Courier New", monospace;  /* la monospace canonique de l'ere Vista/Office 2007 */
+  --font-size-base: 13.5px;
+  --font-size-title: 14px;
+  --line-height: 1.55;
+
+  /* ========================================================
+     6. MÉTRIQUES & ESPACEMENT
+     ======================================================== */
+  --unit: var(--space-2);
+  --space-1: 2px; --space-2: 4px; --space-3: 8px;
+  --space-4: 12px; --space-5: 16px; --space-6: 24px;
+  --pad-body: 16px;
+
+  --control-height: 30px;
+  --field-height: var(--control-height);  /* une seule echelle de hauteur de controle */
+  --button-min-width: 100px;
+  --titlebar-height: 38px;
+  --titlebar-btn: var(--wm-size);         /* les trois gouttes de titre */
+  --wm-size: 17px;                        /* les gouttes */
+  --scrollbar-size: 12px;
+  --checkbox-size: 16px;
+  --icon-small: var(--checkbox-size);
+  --icon-large: calc(var(--checkbox-size) * 2);
+  --toggle-w: 48px; --toggle-h: 22px;
+
+  --radius-window: 12px;
+  --radius-control: 999px;            /* la capsule */
+  --radius-field: 8px;
+  --radius-group: var(--radius-field);  /* plaques/panneaux : meme rayon que les champs */
+
+  /* ========================================================
+     7. ÉTATS & MOUVEMENT
+     ======================================================== */
+  --transition-state: .16s ease;
+  --transition: var(--transition-state);
+  --focus-ring: 2px solid var(--fa-blue);
+  --focus-outline: var(--focus-ring);
+  --cursor-interactive: var(--cursor-default);
+
+  /* ========================================================
+     8. CURSEURS — mêmes 14 actions que toutes les chartes.
+     Pointeur blanc a contour bleu nuit ; l'attente est
+     l'anneau CIEL-PRAIRIE (bleu sur vert) ; « ? » bleu profond.
+     ======================================================== */
+  --cur-img-default: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.35' transform='translate(1.5,1.5)'%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23FFFFFF' stroke='%2317364A' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-link: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.35' transform='translate(1.5,1.5)'%3E%3Cpolygon points='10,2 13,2 13,9 16,9 19,11 19,15 16,20 9,20 5,14 5,12 7,11 10,14' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='10,2 13,2 13,9 16,9 19,11 19,15 16,20 9,20 5,14 5,12 7,11 10,14' fill='%23FFFFFF' stroke='%2317364A' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpath d='M13.5 11v4M16 12v3' stroke='%2317364A' stroke-width='.9' stroke-linecap='round'/%3E%3C/svg%3E");
+  --cur-img-text: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg fill='none' stroke='%23fff' stroke-width='4.2' stroke-linecap='round'%3E%3Cpath d='M8 3h6M11 3v18M8 21h6'/%3E%3C/g%3E%3Cg fill='none' stroke='%2317364A' stroke-width='1.6' stroke-linecap='round'%3E%3Cpath d='M8 3h6M11 3v18M8 21h6'/%3E%3C/g%3E%3C/svg%3E");
+  --cur-img-wait: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.35' transform='translate(1.5,1.5)'%3E%3Ccircle cx='12' cy='12' r='7.5' fill='none' stroke='%23000' stroke-width='5'/%3E%3C/g%3E%3Ccircle cx='12' cy='12' r='7.5' fill='none' stroke='%23fff' stroke-width='5.6'/%3E%3Ccircle cx='12' cy='12' r='7.5' fill='none' stroke='%234FC3F7' stroke-width='4'/%3E%3Cpath d='M12 4.5A7.5 7.5 0 0 1 19.5 12' fill='none' stroke='%237CB93E' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E");
+  --cur-img-progress: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.35' transform='translate(1.5,1.5)'%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23000' stroke='%23000' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/g%3E%3Cg opacity='.35' transform='translate(1.5,1.5)'%3E%3Ccircle cx='17.5' cy='17.5' r='4.6' fill='none' stroke='%23000' stroke-width='3.4'/%3E%3C/g%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23FFFFFF' stroke='%2317364A' stroke-width='1.6' stroke-linejoin='round'/%3E%3Ccircle cx='17.5' cy='17.5' r='4.6' fill='none' stroke='%23fff' stroke-width='4.6'/%3E%3Ccircle cx='17.5' cy='17.5' r='4.6' fill='none' stroke='%234FC3F7' stroke-width='3'/%3E%3Cpath d='M17.5 12.9A4.6 4.6 0 0 1 22.1 17.5' fill='none' stroke='%237CB93E' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E");
+  --cur-img-help: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.35' transform='translate(1.5,1.5)'%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23000' stroke='%23000' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23FFFFFF' stroke='%2317364A' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpath d='M14.5 6c0-2.6 6.5-2.6 6.5 0c0 2.2-3.2 2-3.2 4.4' fill='none' stroke='%23fff' stroke-width='3.8' stroke-linecap='round'/%3E%3Cpath d='M14.5 6c0-2.6 6.5-2.6 6.5 0c0 2.2-3.2 2-3.2 4.4' fill='none' stroke='%231B7FD4' stroke-width='1.8' stroke-linecap='round'/%3E%3Ccircle cx='17.9' cy='13.8' r='1.7' fill='%23fff'/%3E%3Ccircle cx='17.9' cy='13.8' r='1.1' fill='%231B7FD4'/%3E%3C/svg%3E");
+  --cur-img-crosshair: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg fill='none' stroke='%23fff' stroke-width='4.2'%3E%3Cpath d='M12 3v18M3 12h18'/%3E%3C/g%3E%3Cg fill='none' stroke='%2317364A' stroke-width='1.6'%3E%3Cpath d='M12 3v18M3 12h18'/%3E%3C/g%3E%3C/svg%3E");
+  --cur-img-not-allowed: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg fill='none' stroke='%23fff' stroke-width='5.4'%3E%3Ccircle cx='12' cy='12' r='8'/%3E%3Cpath d='M6.5 6.5l11 11'/%3E%3C/g%3E%3Cg fill='none' stroke='%2317364A' stroke-width='2.4'%3E%3Ccircle cx='12' cy='12' r='8'/%3E%3Cpath d='M6.5 6.5l11 11'/%3E%3C/g%3E%3C/svg%3E");
+  --cur-img-resize-v: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.35' transform='translate(1.5,1.5)'%3E%3Cpolygon points='12,1 17,7 14,7 14,17 17,17 12,23 7,17 10,17 10,7 7,7' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='12,1 17,7 14,7 14,17 17,17 12,23 7,17 10,17 10,7 7,7' fill='%23FFFFFF' stroke='%2317364A' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-resize-h: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.35' transform='translate(1.5,1.5)'%3E%3Cpolygon points='1,12 7,7 7,10 17,10 17,7 23,12 17,17 17,14 7,14 7,17' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='1,12 7,7 7,10 17,10 17,7 23,12 17,17 17,14 7,14 7,17' fill='%23FFFFFF' stroke='%2317364A' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-resize-nwse: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.35' transform='translate(1.5,1.5)'%3E%3Cpath d='M7 7l10 10' stroke='%23000' stroke-width='4.6'/%3E%3Cpolygon points='4,4 12,4 4,12' fill='%23000'/%3E%3Cpolygon points='20,20 12,20 20,12' fill='%23000'/%3E%3C/g%3E%3Cpath d='M7 7l10 10' stroke='%23fff' stroke-width='4'/%3E%3Cpath d='M7 7l10 10' stroke='%2317364A' stroke-width='1.8'/%3E%3Cpolygon points='4,4 12,4 4,12' fill='%23FFFFFF' stroke='%2317364A' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpolygon points='20,20 12,20 20,12' fill='%23FFFFFF' stroke='%2317364A' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-resize-nesw: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.35' transform='translate(1.5,1.5)'%3E%3Cpath d='M17 7L7 17' stroke='%23000' stroke-width='4.6'/%3E%3Cpolygon points='20,4 12,4 20,12' fill='%23000'/%3E%3Cpolygon points='4,20 12,20 4,12' fill='%23000'/%3E%3C/g%3E%3Cpath d='M17 7L7 17' stroke='%23fff' stroke-width='4'/%3E%3Cpath d='M17 7L7 17' stroke='%2317364A' stroke-width='1.8'/%3E%3Cpolygon points='20,4 12,4 20,12' fill='%23FFFFFF' stroke='%2317364A' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpolygon points='4,20 12,20 4,12' fill='%23FFFFFF' stroke='%2317364A' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-move: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.35' transform='translate(1.5,1.5)'%3E%3Cpolygon points='12,1 15,5 13,5 13,19 15,19 12,23 9,19 11,19 11,5 9,5' fill='%23000'/%3E%3Cpolygon points='1,12 5,9 5,11 19,11 19,9 23,12 19,15 19,13 5,13 5,15' fill='%23000'/%3E%3C/g%3E%3Cg fill='%23FFFFFF' stroke='%2317364A' stroke-width='1.6' stroke-linejoin='round'%3E%3Cpolygon points='12,1 15,5 13,5 13,19 15,19 12,23 9,19 11,19 11,5 9,5'/%3E%3Cpolygon points='1,12 5,9 5,11 19,11 19,9 23,12 19,15 19,13 5,13 5,15'/%3E%3C/g%3E%3Cpolygon points='12,1 15,5 13,5 13,19 15,19 12,23 9,19 11,19 11,5 9,5' fill='%23FFFFFF'/%3E%3Cpolygon points='1,12 5,9 5,11 19,11 19,9 23,12 19,15 19,13 5,13 5,15' fill='%23FFFFFF'/%3E%3C/svg%3E");
+  --cur-img-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.35' transform='translate(1.5,1.5)'%3E%3Cpolygon points='12,2 18,9 14,9 14,20 10,20 10,9 6,9' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='12,2 18,9 14,9 14,20 10,20 10,9 6,9' fill='%23FFFFFF' stroke='%2317364A' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+
+  /* Curseurs composés : image + point chaud + secours système */
+  --cursor-default: var(--cur-img-default) 2 2, default;
+  --cursor-link: var(--cur-img-link) 11 3, pointer;
+  --cursor-text: var(--cur-img-text) 11 12, text;
+  --cursor-wait: var(--cur-img-wait) 12 12, wait;
+  --cursor-progress: var(--cur-img-progress) 2 2, progress;
+  --cursor-help: var(--cur-img-help) 2 2, help;
+  --cursor-crosshair: var(--cur-img-crosshair) 12 12, crosshair;
+  --cursor-not-allowed: var(--cur-img-not-allowed) 12 12, not-allowed;
+  --cursor-resize-v: var(--cur-img-resize-v) 12 12, ns-resize;
+  --cursor-resize-h: var(--cur-img-resize-h) 12 12, ew-resize;
+  --cursor-resize-nwse: var(--cur-img-resize-nwse) 12 12, nwse-resize;
+  --cursor-resize-nesw: var(--cur-img-resize-nesw) 12 12, nesw-resize;
+  --cursor-move: var(--cur-img-move) 12 12, move;
+  --cursor-up: var(--cur-img-up) 12 3, default;
+
+  /* ================================================== ICONS:BEGIN
+     9. ICÔNES — navigation & fichiers (14), tokenisées
+     comme les curseurs : SVG data-URI dessinés dans la
+     matière du style. À consommer en background-image :
+     background: var(--icon-folder) center/contain no-repeat;
+     Jamais d'image externe, jamais d'emoji.
+     Note de port : la version charter source imbriquait par erreur
+     chaque icône dans un second url("data:...") au lieu de son SVG --
+     un artefact de copier-coller qui rendait l'icône invisible. Les
+     valeurs ci-dessous sont le SVG intérieur (déjà valide) extrait de
+     cette enveloppe corrompue, sans aucun changement de tracé/couleur.
+     ======================================================== */
+  --icon-folder: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M2.5 6h6.5l2 2.5h10.5v11h-19z' fill='%234FC3F7' stroke='%231B7FD4' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M2.5 6h6.5l2 2.5h-9z' fill='%237CB93E' stroke='%231B7FD4' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-folder-open: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M2.5 6h6.5l2 2.5h9.5v3h-18z' fill='%237CB93E' stroke='%231B7FD4' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M4.8 11.5h16.7l-2.6 8H2.5z' fill='%234FC3F7' stroke='%231B7FD4' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-file: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M6 2.5h8l4.5 4.5v14.5h-12.5z' fill='%23FFFFFF' stroke='%231B7FD4' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M14 2.5v4.5h4.5z' fill='%23B9D9EC' stroke='%231B7FD4' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-file-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M6 2.5h8l4.5 4.5v14.5h-12.5z' fill='%23FFFFFF' stroke='%231B7FD4' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M14 2.5v4.5h4.5z' fill='%23B9D9EC' stroke='%231B7FD4' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Ccircle cx='10' cy='11' r='1.5' fill='%237CB93E'/%3E%3Cpath d='M8 18l2.7-3.6 1.9 2.3 1.5-1.9 2.4 3.2z' fill='%237CB93E'/%3E%3C/svg%3E");
+  --icon-drive: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M3 9h18v6.5H3z' fill='%23FFFFFF' stroke='%231B7FD4' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Ccircle cx='17.3' cy='12.2' r='1.2' fill='%237CB93E'/%3E%3Cpath d='M6 12.2h6' fill='none' stroke='%231B7FD4' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-home: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M5.5 11.5h13v8.5h-13z' fill='%23FFFFFF' stroke='%231B7FD4' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M12 3.2L21.2 11H2.8z' fill='%237CB93E' stroke='%231B7FD4' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M10.3 20v-4.8h3.4V20z' fill='%23B9D9EC'/%3E%3C/svg%3E");
+  --icon-computer: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M3.5 4.5h17v11h-17z' fill='%23FFFFFF' stroke='%231B7FD4' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M5.5 6.5h13v7h-13z' fill='%237CB93E'/%3E%3Cpath d='M12 15.5v3M8.5 19.5h7' fill='none' stroke='%231B7FD4' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-network: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M4 3.5h6v5H4z' fill='%23FFFFFF' stroke='%231B7FD4' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M14 3.5h6v5H14z' fill='%23FFFFFF' stroke='%231B7FD4' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M9 15.5h6v5H9z' fill='%237CB93E' stroke='%231B7FD4' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M7 8.5v3.5h10V8.5M12 12v3.5' fill='none' stroke='%231B7FD4' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-trash: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M6.7 8.5h10.6l-1 12h-8.6z' fill='%23FFFFFF' stroke='%231B7FD4' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M4.8 6h14.4v2.5H4.8z' fill='%237CB93E' stroke='%231B7FD4' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M9.4 6V3.8h5.2V6z' fill='%23FFFFFF' stroke='%231B7FD4' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M10.3 11v6.5M13.7 11v6.5' fill='none' stroke='%231B7FD4' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-search: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Ccircle cx='10.4' cy='10.4' r='5.6' fill='none' stroke='%231B7FD4' stroke-width='1.4'/%3E%3Cpath d='M14.7 14.7L20 20' fill='none' stroke='%231B7FD4' stroke-width='1.7' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-back: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M14.5 5.5L8 12l6.5 6.5' fill='none' stroke='%231B7FD4' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-forward: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M9.5 5.5L16 12l-6.5 6.5' fill='none' stroke='%231B7FD4' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M12 19.5V6M6.5 11.5L12 6l5.5 5.5' fill='none' stroke='%231B7FD4' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M5.5 21h13' fill='none' stroke='%231B7FD4' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-refresh: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M18.9 13a7 7 0 1 1-1.8-6.3' fill='none' stroke='%231B7FD4' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M19.4 3.6v4.9h-4.9' fill='none' stroke='%231B7FD4' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  /* ICONS:END */
+
+  /* P2TOK:BEGIN */
+  --p2-thumb-face: #FFFFFF;
+  --p2-red-deep: #C43A3A;
+  /* P2TOK:END */
+}
+
+/* DARK:BEGIN — thème sombre (phase 3) */
+[data-theme="dark"] {
+  --fa-sky: #132836;               /* nuit d'été */
+  --fa-white: #1B3646;
+  --fa-ink: #DCEFF8;
+  --fa-soft: #9FC2D4;
+  --fa-line: #2E5468;
+  --fa-disabled: #547082;
+  --fa-desktop: #0A1A28;           /* stop du haut de --fa-aurora en nuit */
+  --fa-aurora: linear-gradient(180deg, #0A1A28 0%, #10303E 55%, #1E3A20 100%);
+  --gloss: linear-gradient(180deg, rgba(255,255,255,.28) 0%, rgba(255,255,255,.09) 46%, rgba(255,255,255,0) 52%);
+  --gloss-soft: linear-gradient(180deg, rgba(255,255,255,.18) 0%, rgba(255,255,255,.06) 50%, rgba(255,255,255,0) 55%);
+  --shadow-drop: 0 6px 18px rgba(0,0,0,.5);
+  --shadow-window: 0 10px 30px rgba(0,0,0,.55);
+  --shadow-window-inactive: 0 6px 18px rgba(0,0,0,.3);
+  --shadow-menu: 0 8px 22px rgba(0,0,0,.5);
+  --tooltip-bg: #1B3646;
+  --fa-titlebar: linear-gradient(180deg,#1E4258,#16374A);
+  --fa-titlebar-off: linear-gradient(180deg,#1A3242,#152B39);
+  --fa-face: linear-gradient(180deg,#24455C,#1B3646);
+  --fa-press: #10222E;
+  --fa-face-off: #16303E;
+  --fa-line-off: #24455A;
+  --fa-track: rgba(10,30,45,.55);
+  --fa-thumb: linear-gradient(180deg,rgba(120,170,200,.9),rgba(70,115,145,.9));
+  --fa-thumb-flat: #3E7A9E;
+  --fa-toggle-track: linear-gradient(180deg,#1C3A4C,#152E3D);
+  --p2-thumb-face: #1B3646;        /* plaques P2 (accordéon, toasts) et goutte du slider */
+
+  /* Titre : texte clair sur verre sombre -- le reflet blanc sous le
+     texte n'a plus de sens (il disparaîtrait sur fond clair), on passe
+     a une légère ombre portée sombre pour ancrer le texte clair. */
+  --title-text-shadow: 0 1px 3px rgba(0,0,0,.6);
+
+  /* icônes surchargées pour le fond sombre (même correctif d'enveloppe
+     imbriquée qu'en clair — voir la note du bloc ICONS ci-dessus). */
+  --icon-folder: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M2.5 6h6.5l2 2.5h10.5v11h-19z' fill='%234FC3F7' stroke='%237ED4FA' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M2.5 6h6.5l2 2.5h-9z' fill='%237CB93E' stroke='%237ED4FA' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-folder-open: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M2.5 6h6.5l2 2.5h9.5v3h-18z' fill='%237CB93E' stroke='%237ED4FA' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M4.8 11.5h16.7l-2.6 8H2.5z' fill='%234FC3F7' stroke='%237ED4FA' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-file: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M6 2.5h8l4.5 4.5v14.5h-12.5z' fill='%2316303E' stroke='%237ED4FA' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M14 2.5v4.5h4.5z' fill='%233E7A9E' stroke='%237ED4FA' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-file-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M6 2.5h8l4.5 4.5v14.5h-12.5z' fill='%2316303E' stroke='%237ED4FA' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M14 2.5v4.5h4.5z' fill='%233E7A9E' stroke='%237ED4FA' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Ccircle cx='10' cy='11' r='1.5' fill='%237CB93E'/%3E%3Cpath d='M8 18l2.7-3.6 1.9 2.3 1.5-1.9 2.4 3.2z' fill='%237CB93E'/%3E%3C/svg%3E");
+  --icon-drive: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M3 9h18v6.5H3z' fill='%2316303E' stroke='%237ED4FA' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Ccircle cx='17.3' cy='12.2' r='1.2' fill='%237CB93E'/%3E%3Cpath d='M6 12.2h6' fill='none' stroke='%237ED4FA' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-home: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M5.5 11.5h13v8.5h-13z' fill='%2316303E' stroke='%237ED4FA' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M12 3.2L21.2 11H2.8z' fill='%237CB93E' stroke='%237ED4FA' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M10.3 20v-4.8h3.4V20z' fill='%233E7A9E'/%3E%3C/svg%3E");
+  --icon-computer: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M3.5 4.5h17v11h-17z' fill='%2316303E' stroke='%237ED4FA' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M5.5 6.5h13v7h-13z' fill='%237CB93E'/%3E%3Cpath d='M12 15.5v3M8.5 19.5h7' fill='none' stroke='%237ED4FA' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-network: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M4 3.5h6v5H4z' fill='%2316303E' stroke='%237ED4FA' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M14 3.5h6v5H14z' fill='%2316303E' stroke='%237ED4FA' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M9 15.5h6v5H9z' fill='%237CB93E' stroke='%237ED4FA' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M7 8.5v3.5h10V8.5M12 12v3.5' fill='none' stroke='%237ED4FA' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-trash: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M6.7 8.5h10.6l-1 12h-8.6z' fill='%2316303E' stroke='%237ED4FA' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M4.8 6h14.4v2.5H4.8z' fill='%237CB93E' stroke='%237ED4FA' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M9.4 6V3.8h5.2V6z' fill='%2316303E' stroke='%237ED4FA' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M10.3 11v6.5M13.7 11v6.5' fill='none' stroke='%237ED4FA' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-search: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Ccircle cx='10.4' cy='10.4' r='5.6' fill='none' stroke='%237ED4FA' stroke-width='1.4'/%3E%3Cpath d='M14.7 14.7L20 20' fill='none' stroke='%237ED4FA' stroke-width='1.7' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-back: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M14.5 5.5L8 12l6.5 6.5' fill='none' stroke='%237ED4FA' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-forward: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M9.5 5.5L16 12l-6.5 6.5' fill='none' stroke='%237ED4FA' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M12 19.5V6M6.5 11.5L12 6l5.5 5.5' fill='none' stroke='%237ED4FA' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M5.5 21h13' fill='none' stroke='%237ED4FA' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-refresh: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M18.9 13a7 7 0 1 1-1.8-6.3' fill='none' stroke='%237ED4FA' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M19.4 3.6v4.9h-4.9' fill='none' stroke='%237ED4FA' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+/* DARK:END */
+
+/* HC:BEGIN — contraste élevé (phase 4) */
+[data-theme="hc"] {
+  --fa-soft: #33495A;        /* 7.6 sur le ciel */
+  --fa-blue-deep: #0B4E8C;   /* 8.5 sous blanc */
+  --fa-green-deep: #245808;  /* 8.0 sous blanc */
+  --fa-red-deep: #8E2424;    /* 7.8 sous blanc */
+  --fa-disabled: #5A7A8E;    /* l'ancienne douce */
+  --fa-line: #8FB4CC;        /* filets d'eau plus fermes */
+  --text-soft: #33495A;
+  --text-disabled: #5A7A8E;
+  --p2-red-deep: #8E2424;
+
+  /* AAA sur le texte : pas de dégradé de lisibilité derrière les
+     glyphes -- les gouttes/reflets restent (purement décoratifs). */
+  --title-text-shadow: none;
+}
+/* HC:END */
+
+/* --- Base recommandée (à copier dans l'app) ------------------------------ */
+/*
+body {
+  margin: 0;
+  background: var(--fa-aurora);
+  color: var(--text-primary);
+  font: 400 var(--font-size-base)/var(--line-height) var(--font-ui);
+  cursor: var(--cursor-default);
+}
+::selection { background: var(--selection-bg); color: var(--selection-text); }
+a { color: var(--fa-blue-deep); cursor: var(--cursor-link); }
+input[type=text], textarea { cursor: var(--cursor-text); }
+*/
+
+/* ==========================================================================
+   STRUCTURE — composition réelle (v1.0)
+   Adapte la structure des composants du spécimen de référence
+   Frutiger Aero (components.html) sur la grille partagée de l'appli --
+   pas de substitution de couleur sur une forme générique. Ce fichier
+   étant chargé en dernier (voir index.html), les sélecteurs ci-dessous
+   l'emportent sur style.css par l'ordre normal de la cascade -- aucun
+   besoin de !important. Tous les états dark/hc se re-résolvent seuls
+   via les tokens déjà surchargés plus haut dans ce fichier.
+   ========================================================================== */
+
+/* ---------- Chrome de fenêtre : les trois GOUTTES ---------- */
+.titlebar {
+  background: var(--gloss-soft), var(--gradient-title-active);
+  border-bottom: 1px solid var(--fa-line);
+}
+.titlebar-buttons { gap: 7px; padding-right: 4px; }
+
+.cap-btn {
+  width: var(--wm-size);
+  height: var(--wm-size);
+  border-radius: 50%;
+  border: 1px solid rgba(23, 54, 74, .25);
+  /* La goutte : MÊME reflet --gloss (moitié haute, arrêt net) que tout autre
+     contrôle engagé -- pas un dégradé radial à part, qui romprait la
+     doctrine "chaque contrôle engagé porte SON reflet" (checklist §11.4)
+     et recopie exactement .wm de components.html. Bleue par défaut : Réduire. */
+  background: var(--gloss), var(--fa-blue);
+  box-shadow: 0 2px 5px rgba(27, 127, 212, .3);
+  transition: filter var(--transition-state);
+}
+.cap-btn:hover { filter: brightness(1.08); }
+.cap-btn:active { filter: brightness(.92); }
+.cap-max { background: var(--gloss), var(--fa-green); }
+.cap-close { background: var(--gloss), var(--fa-red); margin-left: 0; }
+
+/* Doctrine (§2, §7) : la goutte se distingue par sa COULEUR, jamais par un
+   glyphe -- le spécimen neutralise explicitement l'icône de ses boutons de
+   titre (".wm::before{content:none}") au profit des trois teintes seules. */
+.cap-min span::before,
+.cap-max span::before,
+.cap-close span::before,
+.cap-close span::after {
+  content: none;
+}
+
+/* ---------- Onglets : capsules soudées dans une piste d'eau ---------- */
+.tabbar {
+  background: var(--fa-track);
+  border-bottom: none;
+  border-radius: 999px;
+  padding: 3px;
+  margin: var(--space-3) 0 var(--space-3) var(--space-4);
+  gap: 4px;
+  width: fit-content;
+}
+.tab-btn {
+  background: none;
+  border: none;
+  border-radius: 999px;
+  padding: 5px 16px;
+  color: var(--text-soft);
+  font-weight: 400;
+}
+.tab-btn:hover:not(.active) {
+  filter: none;
+  background: none;
+  color: var(--fa-blue-deep);
+}
+.tab-btn.active {
+  background: var(--gloss), var(--fa-white);
+  border: 1px solid var(--fa-line);
+  color: var(--text-primary);
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(27, 127, 212, .18);
+}
+
+/* ---------- Boutons : la capsule d'eau ---------- */
+button {
+  min-width: var(--button-min-width);
+  height: var(--control-height);
+  padding: 0 18px;
+  background: var(--plastic-raised);
+  border: 1px solid var(--fa-line);
+  border-radius: var(--radius-control);
+  color: var(--text-primary);
+  font: 600 13px var(--font-ui);
+  box-shadow: 0 2px 6px rgba(27, 127, 212, .14);
+  cursor: var(--cursor-interactive);
+  transition: border-color var(--transition-state), box-shadow var(--transition-state);
+}
+button:not(:disabled):hover {
+  border-color: var(--fa-blue);
+  box-shadow: var(--shadow-drop);
+}
+button:not(:disabled):active {
+  background: var(--plastic-pressed);
+  box-shadow: none;
+}
+button:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 2px;
+}
+button:disabled {
+  background: var(--fa-face-off);
+  border-color: var(--fa-line-off);
+  color: var(--text-disabled);
+  box-shadow: none;
+  cursor: var(--cursor-default);
+}
+
+/* Le défaut est VERT prairie glossy (doctrine §7/§10.5) -- jamais bleu. */
+.start-btn {
+  background: var(--gloss), linear-gradient(180deg, var(--fa-green), var(--fa-green-deep));
+  border: 1px solid var(--fa-green-deep);
+  border-radius: var(--radius-control);
+  padding: 0 24px;
+  color: var(--text-inverse);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, .18);
+}
+.start-btn:not(:disabled):hover {
+  border-color: var(--fa-green-deep);
+  box-shadow: 0 6px 18px rgba(78, 143, 31, .3);
+}
+.start-btn:not(:disabled):active {
+  background: var(--fa-green-deep);
+  box-shadow: none;
+}
+
+/* Actions de ligne : capsules miniatures, même geste que les boutons. */
+.row-actions button {
+  min-width: 0;
+  height: 24px;
+  padding: 0 10px;
+  font: 600 12px var(--font-ui);
+  border-radius: var(--radius-control);
+}
+
+/* ---------- Champs : filet d'eau, carrés à 8px (≠ la capsule) ---------- */
+input[type="text"],
+input[type="number"],
+textarea,
+.search-input {
+  height: var(--control-height);
+  padding: 0 12px;
+  background: var(--fa-white);
+  border: 1px solid var(--fa-line);
+  border-radius: var(--radius-field);
+  color: var(--text-primary);
+  font: 400 13.5px var(--font-ui);
+  cursor: var(--cursor-text);
+}
+textarea { height: auto; padding: 8px 12px; }
+input[type="text"]:not(:disabled):hover,
+input[type="number"]:not(:disabled):hover,
+textarea:not(:disabled):hover,
+.search-input:not(:disabled):hover {
+  border-color: var(--fa-blue);
+}
+input[type="text"]:focus,
+input[type="number"]:focus,
+textarea:focus,
+.search-input:focus {
+  outline: var(--focus-ring);
+  outline-offset: 1px;
+  border-color: var(--fa-blue);
+}
+input[type="text"]:disabled,
+input[type="number"]:disabled,
+textarea:disabled {
+  background: var(--fa-face-off);
+  color: var(--text-disabled);
+}
+
+/* Le select reste une capsule -- c'est un déclencheur cliquable, à la
+   différence des champs de saisie : nuance authentique de components.html. */
+select {
+  height: var(--control-height);
+  padding: 0 30px 0 12px;
+  background-color: var(--fa-white);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%231B7FD4' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 11px center;
+  border: 1px solid var(--fa-line);
+  border-radius: var(--radius-control);
+  color: var(--text-primary);
+  font: 400 13.5px var(--font-ui);
+  cursor: var(--cursor-interactive);
+  appearance: none;
+}
+select:not(:disabled):hover { border-color: var(--fa-blue); }
+select:focus {
+  outline: var(--focus-ring);
+  outline-offset: 1px;
+  border-color: var(--fa-blue);
+}
+
+/* ---------- Cases : galet vert glossy · radios : goutte bleue ---------- */
+input[type="checkbox"],
+input[type="radio"] {
+  appearance: none;
+  width: var(--checkbox-size);
+  height: var(--checkbox-size);
+  background: var(--fa-face);
+  border: 1px solid var(--fa-line);
+  border-radius: 5px;
+  margin: 0 6px 0 0;
+  position: relative;
+  cursor: var(--cursor-interactive);
+  vertical-align: middle;
+}
+input[type="radio"] { border-radius: 50%; }
+input[type="checkbox"]:not(:disabled):hover,
+input[type="radio"]:not(:disabled):hover {
+  border-color: var(--fa-blue);
+}
+input[type="checkbox"]:checked {
+  background: var(--gloss), linear-gradient(180deg, var(--fa-green), var(--fa-green-deep));
+  border-color: var(--fa-green-deep);
+}
+input[type="checkbox"]:checked::after {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 2px;
+  width: 4px;
+  height: 8px;
+  border: solid var(--text-inverse);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+input[type="radio"]:checked {
+  background: var(--gloss), var(--fa-blue);
+  border-color: var(--fa-blue-deep);
+}
+input[type="radio"]:checked::after {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  border-radius: 50%;
+  background: var(--text-inverse);
+}
+input[type="checkbox"]:focus-visible,
+input[type="radio"]:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 2px;
+}
+input[type="checkbox"]:disabled,
+input[type="radio"]:disabled {
+  background: var(--fa-face-off);
+  border-color: var(--fa-line-off);
+}
+
+/* ---------- Listes / lignes : plaque blanche, survol et sélection bleus ---------- */
+.listbox {
+  background: var(--fa-white);
+  border: 1px solid var(--fa-line);
+  border-radius: 10px;
+}
+.row { border-bottom: 1px solid var(--fa-line); }
+.row:hover { background: rgba(79, 195, 247, .16); }
+.row-name { color: var(--text-primary); font-weight: 600; }
+.row-state { color: var(--text-soft); }
+.row-rate, .row-eta, .row-category, .row-peers { color: var(--text-soft); }
+
+/* La sélection "roule en capsule bleue profonde" (doctrine phase 2) plutôt
+   que de courir bord à bord comme sur la grille générique. */
+#downloadsList .row.selected {
+  background: var(--gloss-soft), var(--fa-blue-deep);
+  color: var(--selection-text);
+  border-radius: var(--radius-field);
+}
+
+.downloads-row-header {
+  background: var(--gloss-soft), var(--surface-window);
+  color: var(--fa-blue-deep);
+  font-weight: 600;
+  border-bottom: 1px solid var(--fa-line);
+  border-radius: 10px 10px 0 0;
+}
+
+.scan-row { border-bottom: 1px solid var(--fa-line); }
+.scan-row:hover { background: rgba(79, 195, 247, .16); }
+.scan-path { color: var(--text-primary); }
+.scan-size { color: var(--text-soft); }
+
+/* ---------- Group box : plaque à filet d'eau, légende bleu profond ---------- */
+.profile-group,
+.details-group {
+  background: var(--fa-white);
+  border: 1px solid var(--fa-line);
+  border-radius: var(--radius-field);
+}
+.profile-group h3,
+.details-group h3 {
+  color: var(--fa-blue-deep);
+  font-weight: 600;
+  font-size: 12.5px;
+}
+
+/* ---------- Menu contextuel : blanc à rayon 10, capsule bleu profond ---------- */
+.context-menu {
+  background: var(--fa-white);
+  border: 1px solid var(--fa-line);
+  border-radius: 10px;
+  box-shadow: var(--shadow-menu);
+  padding: 5px;
+}
+.context-menu-item {
+  padding: 5px 12px;
+  border-radius: 999px;
+  color: var(--text-primary);
+}
+.context-menu-item:hover {
+  background: var(--gloss-soft), var(--fa-blue-deep);
+  color: var(--selection-text);
+}
+.context-menu-separator {
+  background: var(--fa-line);
+  margin: 5px 8px;
+}
+
+/* ---------- Dialogues : ciel à rayon 12, ombre bleutée ---------- */
+.modal-box {
+  background: var(--fa-sky);
+  border: 1px solid var(--fa-line);
+  border-radius: var(--radius-window);
+  box-shadow: var(--shadow-window);
+}
+.modal-box h3 {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* ---------- Défilement : pouce-capsule bleu pâle, sans flèches ---------- */
+::-webkit-scrollbar {
+  width: var(--scrollbar-size);
+  height: var(--scrollbar-size);
+}
+::-webkit-scrollbar-track {
+  background: var(--fa-track);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--fa-thumb);
+  border: 1px solid var(--fa-line);
+  border-radius: 999px;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover { border-color: var(--fa-blue); }
+::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+::-webkit-scrollbar-corner { background: transparent; }
+
+/* ---------- Scrim modal : voile bleuté, jamais noir sec (interdit §10.4) ---------- */
+.modal-overlay {
+  background: rgba(23, 54, 74, .35);
+}
+
+/* ---------- Cadre de la jauge Tetris : piste d'eau, ombre bleutée ----------
+   Le canevas peint ses propres pixels en plein (voir tetris.js), donc seul
+   le cadre CSS autour de lui est composable ici -- pas d'arrière-plan visible
+   sous les pixels dessinés. */
+canvas.tetris {
+  border: 1px solid var(--fa-line);
+  border-radius: 999px;
+  box-shadow: var(--shadow-drop);
+}

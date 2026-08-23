@@ -1,0 +1,10 @@
+/* Profile tab -- "Automation" group. Reuses .form-grid/.field-row/
+   .field-label/.status-line/.start-btn from style.css; this file only adds
+   the sub-section heading style, which nothing else in the app needed yet. */
+.automation-heading {
+  margin: var(--space-3) 0 0 0;
+  font-size: var(--font-size-base);
+  font-weight: bold;
+  color: var(--text-primary);
+}
+.automation-heading:first-child { margin-top: 0; }

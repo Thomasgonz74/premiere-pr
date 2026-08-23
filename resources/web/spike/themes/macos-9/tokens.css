@@ -1,0 +1,707 @@
+/* ==========================================================================
+   MACOS-9 — tokens.css — v1.5
+   Style : "Mac OS 9 (Platinum)"
+   Rôle  : SOURCE DE VÉRITÉ des variables. À importer tel quel.
+   Lire  : STYLE.md (règles & interdits) · components.html (référence visuelle)
+   Port structurel vers le contrat partagé (voir luna_xp/tokens.css) : platine
+   strié, boutons de fenêtre ÉCLATÉS, sélection Lavande à encre noire, aucun
+   survol (1999). Ce fichier ajoute les alias --surface-* /--border-* /etc.
+   attendus par le CSS partagé de l'app SANS modifier la charte d'origine.
+   ========================================================================== */
+
+:root {
+
+  /* ========================================================
+     1. PRIMITIVES — palette Platinum
+     ======================================================== */
+  /* Platine */
+  --os9-face:   #DDDDDD;    /* fenêtre, boutons, gadgets */
+  --os9-face-hi:#E8E8E8;
+  --os9-view:   #FFFFFF;
+  --os9-bevel-light: #FFFFFF;
+  --os9-bevel-dark:  #8E8E8E;
+  --os9-frame:  #000000;    /* le trait noir Platinum */
+  --os9-line:   #A6A6A6;
+  --os9-ink:    #000000;
+  --os9-ink-soft: #666666;
+  --os9-ink-disabled: #9E9E9E;
+
+  /* Lavande (le surlignage par défaut de Mac OS 9) */
+  --os9-lav:     #8B9CE8;   /* pouce, jauge */
+  --os9-lav-soft:#B9C3F0;   /* sélection de listes/texte (encre noire) */
+  --os9-lav-dk:  #4D5FC0;
+  --menu-hl:     #4062C8;   /* bande des menus, texte blanc */
+
+  --tooltip-bg: #FFFFC6;    /* bulles d'aide jaunes */
+  --tooltip-border: #000000;
+  --desktop: #7A93B8;       /* aplat bureau */
+
+  --menu-ink: #FFFFFF;
+  --link: #8B9CE8;
+  --btn-press: #666666;
+
+  /* ========================================================
+     2. SÉMANTIQUES & RECETTES
+     ======================================================== */
+  --surface-window:  var(--os9-face);
+  --surface-field:   var(--os9-view);        /* vues & champs = blanc cerné de noir */
+  --surface-desktop: var(--desktop);
+  --surface-tooltip: var(--tooltip-bg);
+  --surface-panel:   var(--os9-face-hi);     /* plateau légèrement relevé des pages d'onglets */
+
+  --text-primary:   var(--os9-ink);
+  --text-soft:      var(--os9-ink-soft);
+  --text-disabled:  var(--os9-ink-disabled);
+  --text-inverse:   var(--menu-ink);         /* blanc, texte sur bande de menu / sélection foncée */
+  --selection-bg:   var(--os9-lav-soft);
+  --selection-text: #000000;
+
+  /* Barre de titre : pas de dégradé bleu comme Luna — le titre reste noir,
+     encadré des rayures, que la fenêtre soit active ou non (seul le corps
+     de la fenêtre se dévitalise). */
+  --title-active-text:   var(--os9-ink);
+  --title-inactive-text: var(--os9-ink-soft);
+
+  /* Alias génériques consommés par le CSS partagé (resources/web/spike/*.css) --
+     Platinum n'a qu'UN SEUL trait : le cadre noir --os9-frame. Aucune charte
+     de bordures distinctes par contrôle : boutons, champs, group box, jauge et
+     onglets partagent le même trait 1 px noir (STYLE.md §10.6). */
+  --border-control:  var(--os9-frame);
+  --border-field:    var(--os9-frame);
+  --border-group:    var(--os9-frame);
+  --border-progress: var(--os9-frame);
+  --border-tab:      var(--os9-frame);
+  /* Pas d'accent coloré pour les group box : la hiérarchie Platinum se fait
+     au gras seul (STYLE.md §4), donc le texte de légende reste l'encre noire. */
+  --text-legend:     var(--os9-ink);
+
+  /* Recettes (les seuls dégradés admis) */
+  --title-stripes: repeating-linear-gradient(180deg,
+                   #8E8E8E 0 1px, #DCDCDC 1px 3px);
+  --thumb-lav: linear-gradient(90deg, #A8B6F0, #8B9CE8 45%, #7182D8 55%, #98A8EC);
+  --barber-lav: repeating-linear-gradient(-45deg, #8B9CE8 0 6px, #6377D6 6px 12px);
+  --bevel-out: inset 1px 1px 0 var(--os9-bevel-light),
+               inset -1px -1px 0 var(--os9-bevel-dark);
+  --bevel-in:  inset 1px 1px 0 var(--os9-bevel-dark),
+               inset -1px -1px 0 var(--os9-bevel-light);
+
+  /* ========================================================
+     3. LE PLATINE STRIÉ — la signature du style.
+     Des plateaux PLATINE cernés d'un TRAIT NOIR d'un pixel,
+     relevés d'un biseau fin (--bevel-out) — et des RAYURES
+     horizontales qui signent la barre de titre, de part et
+     d'autre d'un titre centré gras. Les boutons de fenêtre
+     sont ÉCLATÉS : Fermer à GAUCHE, Réduire et Agrandir à
+     DROITE — unique dans la collection. La couleur est un
+     accord : la LAVANDE surligne (listes, pouce, jauge), le
+     bleu --menu-hl ne sert qu'aux menus. Le bouton par défaut
+     porte son ANNEAU NOIR. Aucun survol (1999).
+     ======================================================== */
+  /* Platinum n'a pas de relief en dégradé (le volume vient du --bevel-out/-in
+     posé en box-shadow) : le plateau lui-même est un aplat. On l'exprime en
+     dégradé 2 arrêts de même teinte pour rester du type CSS attendu par le
+     site d'usage, sans forcer un relief qui n'existe pas dans la charte. */
+  --plastic-raised:  linear-gradient(var(--os9-face-hi), var(--os9-face-hi));
+  --plastic-pressed: linear-gradient(var(--btn-press), var(--btn-press));
+
+  /* La barre de titre Platinum n'est pas un dégradé bleu : c'est le motif de
+     rayures lui-même qui la signe de part et d'autre du titre — on le réutilise
+     tel quel comme fond de titre. */
+  --gradient-title-active: var(--title-stripes);
+  /* Gadgets de titre : plateaux platine creux, jamais glossy. Fermer n'est
+     JAMAIS rouge en Platinum (STYLE.md §10.9) : même plateau que les autres. */
+  --gradient-titlebtn:       linear-gradient(var(--os9-face-hi), var(--os9-face-hi));
+  --gradient-titlebtn-close: linear-gradient(var(--os9-face-hi), var(--os9-face-hi));
+  /* Jauge de progression : remplissage lavande — on réutilise --thumb-lav,
+     la recette déjà documentée pour "pouce, jauge" (§1). */
+  --gradient-progress: var(--thumb-lav);
+
+  /* ========================================================
+     4. OMBRES
+     ======================================================== */
+  --shadow-window: 1px 1px 0 rgba(0,0,0,.4), 4px 4px 10px rgba(0,0,0,.35);
+  --shadow-window-inactive: 2px 2px 6px rgba(0,0,0,.22);
+  --shadow-menu: 3px 3px 0 rgba(0,0,0,.30);
+  --frame-shadow: var(--shadow-window);
+  /* "Survolé : N'EXISTE PAS (1999)" (STYLE.md §7) — aucune lueur de survol. */
+  --glow-hover: none;
+
+  /* ========================================================
+     5. TYPOGRAPHIE
+     ======================================================== */
+  --font-ui: Charcoal, Chicago, Geneva, "Lucida Grande", Verdana, sans-serif;
+  --font-mono: Monaco, "Courier New", monospace;
+  --font-title: var(--font-ui);
+  --font-size-base: 12px;
+  --font-size-title: 12px;      /* CENTRÉ, GRAS, entre les rayures */
+  --line-height: 1.45;
+  /* Titre noir net, sans relief gravé (≠ Luna) : pas d'ombre portée. */
+  --title-text-shadow: none;
+
+  /* ========================================================
+     6. MÉTRIQUES & ESPACEMENT
+     ======================================================== */
+  --unit: 4px;
+  --space-1: 2px; --space-2: 4px; --space-3: 6px;
+  --space-4: 8px; --space-5: 12px; --space-6: 16px;
+  --pad-body: 12px;
+  --control-height: 22px;
+  --field-height: 20px;          /* champs légèrement plus bas que les boutons */
+  --button-min-width: 74px;
+  --titlebar-height: 20px;
+  --titlebar-btn: var(--gadget-size);
+  --gadget-size: 13px;
+  --checkbox-size: 14px;
+  --icon-small: 16px;  --icon-large: 32px;
+  --toggle-w: 40px; --toggle-h: 18px;   /* adaptation, voir STYLE.md */
+  --scrollbar-size: 16px;
+  --radius-control: 5px;       /* boutons Platinum légèrement ronds */
+  --radius-window: 0px;
+  --radius-group: 0px;         /* group box, champs, listes : CARRÉS */
+
+  /* ========================================================
+     7. ÉTATS & MOUVEMENT
+     ======================================================== */
+  --transition-state: .12s ease;
+  --transition: var(--transition-state);
+  --focus-ring: 0 0 0 2px var(--os9-face), 0 0 0 4px var(--os9-frame);
+  /* Anneau noir permanent (STYLE.md §2/§7) traduit dans le type `outline`. */
+  --focus-outline: 2px solid var(--os9-frame);
+  --cursor-interactive: var(--cursor-default);
+
+  /* ========================================================
+     8. CURSEURS — mêmes 14 actions que toutes les chartes.
+     Matière Mac classique : corps NOIRS pixelisés (crispEdges),
+     attente = la MONTRE.
+     ======================================================== */
+  --cur-img-default: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' shape-rendering='crispEdges'%3E%3Cg opacity='.25' transform='translate(1.5,1.5)'%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%231A1A1A' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-link: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' shape-rendering='crispEdges'%3E%3Cg opacity='.25' transform='translate(1.5,1.5)'%3E%3Cpolygon points='10,2 13,2 13,9 16,9 19,11 19,15 16,20 9,20 5,14 5,12 7,11 10,14' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='10,2 13,2 13,9 16,9 19,11 19,15 16,20 9,20 5,14 5,12 7,11 10,14' fill='%231A1A1A' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpath d='M13.5 11v4M16 12v3' stroke='%23fff' stroke-width='.9' stroke-linecap='round'/%3E%3C/svg%3E");
+  --cur-img-text: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' shape-rendering='crispEdges'%3E%3Cg fill='none' stroke='%23fff' stroke-width='4.2' stroke-linecap='round'%3E%3Cpath d='M8 3h6M11 3v18M8 21h6'/%3E%3C/g%3E%3Cg fill='none' stroke='%231A1A1A' stroke-width='1.6' stroke-linecap='round'%3E%3Cpath d='M8 3h6M11 3v18M8 21h6'/%3E%3C/g%3E%3C/svg%3E");
+  --cur-img-wait: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' shape-rendering='crispEdges'%3E%3Cg opacity='.25' transform='translate(1.5,1.5)'%3E%3Ccircle cx='12' cy='13' r='8' fill='%23000'/%3E%3C/g%3E%3Crect x='10.4' y='1.6' width='3.2' height='3.2' rx='1' fill='%231A1A1A'/%3E%3Ccircle cx='12' cy='13' r='8' fill='%23fff' stroke='%231A1A1A' stroke-width='1.8'/%3E%3Cpath d='M12 13V7.4M12 13L17.4 14.6' stroke='%231A1A1A' stroke-width='1.7' stroke-linecap='round' fill='none'/%3E%3C/svg%3E");
+  --cur-img-progress: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' shape-rendering='crispEdges'%3E%3Cg opacity='.25' transform='translate(1.5,1.5)'%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23000' stroke='%23000' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/g%3E%3Cg opacity='.25' transform='translate(1.5,1.5)'%3E%3Ccircle cx='17.5' cy='17.5' r='4.8' fill='%23000'/%3E%3C/g%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%231A1A1A' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'/%3E%3Crect x='15.9' y='9.299999999999999' width='3.2' height='3.2' rx='1' fill='%231A1A1A'/%3E%3Ccircle cx='17.5' cy='17.5' r='4.8' fill='%23fff' stroke='%231A1A1A' stroke-width='1.8'/%3E%3Cpath d='M17.5 17.5V15.1M17.5 17.5L19.7 19.1' stroke='%231A1A1A' stroke-width='1.7' stroke-linecap='round' fill='none'/%3E%3C/svg%3E");
+  --cur-img-help: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' shape-rendering='crispEdges'%3E%3Cg opacity='.25' transform='translate(1.5,1.5)'%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23000' stroke='%23000' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%231A1A1A' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpath d='M14.5 6c0-2.6 6.5-2.6 6.5 0c0 2.2-3.2 2-3.2 4.4' fill='none' stroke='%23fff' stroke-width='3.8' stroke-linecap='round'/%3E%3Cpath d='M14.5 6c0-2.6 6.5-2.6 6.5 0c0 2.2-3.2 2-3.2 4.4' fill='none' stroke='%234D5FC0' stroke-width='1.8' stroke-linecap='round'/%3E%3Ccircle cx='17.9' cy='13.8' r='1.7' fill='%23fff'/%3E%3Ccircle cx='17.9' cy='13.8' r='1.1' fill='%234D5FC0'/%3E%3C/svg%3E");
+  --cur-img-crosshair: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' shape-rendering='crispEdges'%3E%3Cg fill='none' stroke='%23fff' stroke-width='4.2'%3E%3Cpath d='M12 3v18M3 12h18'/%3E%3C/g%3E%3Cg fill='none' stroke='%231A1A1A' stroke-width='1.6'%3E%3Cpath d='M12 3v18M3 12h18'/%3E%3C/g%3E%3C/svg%3E");
+  --cur-img-not-allowed: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' shape-rendering='crispEdges'%3E%3Cg fill='none' stroke='%23fff' stroke-width='5.4'%3E%3Ccircle cx='12' cy='12' r='8'/%3E%3Cpath d='M6.5 6.5l11 11'/%3E%3C/g%3E%3Cg fill='none' stroke='%231A1A1A' stroke-width='2.4'%3E%3Ccircle cx='12' cy='12' r='8'/%3E%3Cpath d='M6.5 6.5l11 11'/%3E%3C/g%3E%3C/svg%3E");
+  --cur-img-resize-v: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' shape-rendering='crispEdges'%3E%3Cg opacity='.25' transform='translate(1.5,1.5)'%3E%3Cpolygon points='12,1 17,7 14,7 14,17 17,17 12,23 7,17 10,17 10,7 7,7' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='12,1 17,7 14,7 14,17 17,17 12,23 7,17 10,17 10,7 7,7' fill='%231A1A1A' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-resize-h: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' shape-rendering='crispEdges'%3E%3Cg opacity='.25' transform='translate(1.5,1.5)'%3E%3Cpolygon points='1,12 7,7 7,10 17,10 17,7 23,12 17,17 17,14 7,14 7,17' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='1,12 7,7 7,10 17,10 17,7 23,12 17,17 17,14 7,14 7,17' fill='%231A1A1A' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-resize-nwse: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' shape-rendering='crispEdges'%3E%3Cg opacity='.25' transform='translate(1.5,1.5)'%3E%3Cpath d='M7 7l10 10' stroke='%23000' stroke-width='4.6'/%3E%3Cpolygon points='4,4 12,4 4,12' fill='%23000'/%3E%3Cpolygon points='20,20 12,20 20,12' fill='%23000'/%3E%3C/g%3E%3Cpath d='M7 7l10 10' stroke='%23fff' stroke-width='4'/%3E%3Cpath d='M7 7l10 10' stroke='%231A1A1A' stroke-width='1.8'/%3E%3Cpolygon points='4,4 12,4 4,12' fill='%231A1A1A' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpolygon points='20,20 12,20 20,12' fill='%231A1A1A' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-resize-nesw: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' shape-rendering='crispEdges'%3E%3Cg opacity='.25' transform='translate(1.5,1.5)'%3E%3Cpath d='M17 7L7 17' stroke='%23000' stroke-width='4.6'/%3E%3Cpolygon points='20,4 12,4 20,12' fill='%23000'/%3E%3Cpolygon points='4,20 12,20 4,12' fill='%23000'/%3E%3C/g%3E%3Cpath d='M17 7L7 17' stroke='%23fff' stroke-width='4'/%3E%3Cpath d='M17 7L7 17' stroke='%231A1A1A' stroke-width='1.8'/%3E%3Cpolygon points='20,4 12,4 20,12' fill='%231A1A1A' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpolygon points='4,20 12,20 4,12' fill='%231A1A1A' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-move: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' shape-rendering='crispEdges'%3E%3Cg opacity='.25' transform='translate(1.5,1.5)'%3E%3Cpolygon points='12,1 15,5 13,5 13,19 15,19 12,23 9,19 11,19 11,5 9,5' fill='%23000'/%3E%3Cpolygon points='1,12 5,9 5,11 19,11 19,9 23,12 19,15 19,13 5,13 5,15' fill='%23000'/%3E%3C/g%3E%3Cg fill='%231A1A1A' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'%3E%3Cpolygon points='12,1 15,5 13,5 13,19 15,19 12,23 9,19 11,19 11,5 9,5'/%3E%3Cpolygon points='1,12 5,9 5,11 19,11 19,9 23,12 19,15 19,13 5,13 5,15'/%3E%3C/g%3E%3Cpolygon points='12,1 15,5 13,5 13,19 15,19 12,23 9,19 11,19 11,5 9,5' fill='%231A1A1A'/%3E%3Cpolygon points='1,12 5,9 5,11 19,11 19,9 23,12 19,15 19,13 5,13 5,15' fill='%231A1A1A'/%3E%3C/svg%3E");
+  --cur-img-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' shape-rendering='crispEdges'%3E%3Cg opacity='.25' transform='translate(1.5,1.5)'%3E%3Cpolygon points='12,2 18,9 14,9 14,20 10,20 10,9 6,9' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='12,2 18,9 14,9 14,20 10,20 10,9 6,9' fill='%231A1A1A' stroke='%23fff' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cursor-default: var(--cur-img-default) 2 2, default;
+  --cursor-link: var(--cur-img-link) 11 3, pointer;
+  --cursor-text: var(--cur-img-text) 11 12, text;
+  --cursor-wait: var(--cur-img-wait) 12 12, wait;
+  --cursor-progress: var(--cur-img-progress) 2 2, progress;
+  --cursor-help: var(--cur-img-help) 2 2, help;
+  --cursor-crosshair: var(--cur-img-crosshair) 12 12, crosshair;
+  --cursor-not-allowed: var(--cur-img-not-allowed) 12 12, not-allowed;
+  --cursor-resize-v: var(--cur-img-resize-v) 12 12, ns-resize;
+  --cursor-resize-h: var(--cur-img-resize-h) 12 12, ew-resize;
+  --cursor-resize-nwse: var(--cur-img-resize-nwse) 12 12, nwse-resize;
+  --cursor-resize-nesw: var(--cur-img-resize-nesw) 12 12, nesw-resize;
+  --cursor-move: var(--cur-img-move) 12 12, move;
+  --cursor-up: var(--cur-img-up) 12 3, default;
+
+  /* ================================================== ICONS:BEGIN
+     9. ICÔNES — navigation & fichiers (14), tokenisées
+     comme les curseurs : SVG data-URI dessinés dans la
+     matière du style. À consommer en background-image :
+     background: var(--icon-folder) center/contain no-repeat;
+     Jamais d'image externe, jamais d'emoji.
+     ======================================================== */
+  --icon-folder: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cdefs%3E%3ClinearGradient id='f9' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23C0CCE8'/%3E%3Cstop offset='1' stop-color='%2398A8D0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M3 7.4Q3 6.2 4.2 6.2h4.9l1.8 2.2h9Q21 8.4 21 9.6v8.8q0 1.2-1.2 1.2H4.2Q3 19.6 3 18.4z' fill='url(%23f9)' stroke='%2331315A' stroke-width='1.1' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-folder-open: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cdefs%3E%3ClinearGradient id='f9o' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23C0CCE8'/%3E%3Cstop offset='1' stop-color='%2398A8D0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M3 7.4Q3 6.2 4.2 6.2h4.9l1.8 2.2h9Q21 8.4 21 9.6v3H3z' fill='%2398A8D0' stroke='%2331315A' stroke-width='1.1' stroke-linejoin='round'/%3E%3Cpath d='M4.9 11.4h16.2q1 0 .7 1l-1.8 6.4q-.3 1-1.3 1H3.5q-1 0-.7-1l1.8-6.4q.3-1 1.3-1z' fill='url(%23f9o)' stroke='%2331315A' stroke-width='1.1' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-file: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M6 2.5h8l4.5 4.5v14.5H6z' fill='%23FFFFFF' stroke='%2331315A' stroke-width='1.1' stroke-linejoin='round'/%3E%3Cpath d='M14 2.5v4.5h4.5z' fill='%23C8C8D4' stroke='%2331315A' stroke-width='0.9900000000000001' stroke-linejoin='round'/%3E%3Cpath d='M8.4 11h7.6' fill='none' stroke='%23B0B0C0' stroke-width='1' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3Cpath d='M8.4 13.6h7.6' fill='none' stroke='%23B0B0C0' stroke-width='1' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3Cpath d='M8.4 16.2h5.2' fill='none' stroke='%23B0B0C0' stroke-width='1' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3C/svg%3E");
+  --icon-file-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M6 2.5h8l4.5 4.5v14.5H6z' fill='%23FFFFFF' stroke='%2331315A' stroke-width='1.1' stroke-linejoin='round'/%3E%3Cpath d='M14 2.5v4.5h4.5z' fill='%23C8C8D4' stroke='%2331315A' stroke-width='0.9900000000000001' stroke-linejoin='round'/%3E%3Ccircle cx='10.2' cy='11.2' r='1.5' fill='%23D9BC55'/%3E%3Cpolygon points='8,18.4 10.8,14.6 12.6,16.9 14,15.1 16.4,18.4' fill='%237080B8'/%3E%3C/svg%3E");
+  --icon-drive: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='4,10 7,7 21,7 18,10' fill='%23EAEAE4' stroke='%2331315A' stroke-width='1.1' stroke-linejoin='round'/%3E%3Crect x='4' y='10' width='14' height='6.4' fill='%23D4D4CC' stroke='%2331315A' stroke-width='1.1'/%3E%3Cpath d='M18 10l3-3v6.4l-3 3z' fill='%23EAEAE4' stroke='%2331315A' stroke-width='1.1' stroke-linejoin='round'/%3E%3Ccircle cx='15.6' cy='13.2' r='1' fill='%235A9E5A'/%3E%3C/svg%3E");
+  --icon-home: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='3.6,11.6 12,4.4 20.4,11.6' fill='%238B9CE8' stroke='%2331315A' stroke-width='1.2' stroke-linejoin='round'/%3E%3Crect x='5.8' y='11.6' width='12.4' height='7.8' fill='%23D4D4CC' stroke='%2331315A' stroke-width='1.2'/%3E%3Crect x='10.4' y='14.4' width='3.2' height='5' fill='%238B9CE8' stroke='%2331315A' stroke-width='0.96'/%3E%3C/svg%3E");
+  --icon-computer: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Crect x='5' y='3' width='14' height='17.4' fill='%23DCDCD4' rx='1.5' stroke='%234A4A55' stroke-width='1.3'/%3E%3Crect x='7' y='5' width='10' height='7.4' fill='%233355AA' stroke='%234A4A55' stroke-width='1'/%3E%3Crect x='8.6' y='15.6' width='6.8' height='1.3' fill='%23B8B8B0' stroke='%234A4A55' stroke-width='0.8'/%3E%3C/svg%3E");
+  --icon-network: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Crect x='2.6' y='3.4' width='8.4' height='6.6' fill='%23DCDCD4' stroke='%2331315A' stroke-width='1.1'/%3E%3Crect x='4.0' y='4.7' width='5.6' height='4' fill='%233355AA'/%3E%3Crect x='5.4' y='10.0' width='2.8' height='1.2' fill='%23DCDCD4' stroke='%2331315A' stroke-width='0.8800000000000001'/%3E%3Crect x='13' y='12.6' width='8.4' height='6.6' fill='%23DCDCD4' stroke='%2331315A' stroke-width='1.1'/%3E%3Crect x='14.4' y='13.9' width='5.6' height='4' fill='%233355AA'/%3E%3Crect x='15.8' y='19.2' width='2.8' height='1.2' fill='%23DCDCD4' stroke='%2331315A' stroke-width='0.8800000000000001'/%3E%3Cpath d='M10.6 8.4L14 14.2' fill='none' stroke='%2331315A' stroke-width='1.4000000000000001' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3C/svg%3E");
+  --icon-trash: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Crect x='7.6' y='4' width='8.8' height='1.8' fill='%23B9B9B1' stroke='%2331315A' stroke-width='1.2'/%3E%3Crect x='10.2' y='2.6' width='3.6' height='1.4' fill='%23B9B9B1' stroke='%2331315A' stroke-width='0.96'/%3E%3Cpath d='M6.6 5.8h10.8l-1.1 14.4H7.7z' fill='%23C9C9C1' stroke='%2331315A' stroke-width='1.2' stroke-linejoin='round'/%3E%3Cpath d='M10 8.2l.3 9.6M14 8.2l-.3 9.6M12 8.2v9.6' fill='none' stroke='%2331315A' stroke-width='0.84' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3C/svg%3E");
+  --icon-search: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='10.4' cy='10.4' r='4.9' fill='none' stroke='%2331315A' stroke-width='2.1'/%3E%3Cpath d='M14.2 14.2l5.2 5.2' fill='none' stroke='%2331315A' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-back: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='16.5,5 7,12 16.5,19 16.5,14.4 21,14.4 21,9.6 16.5,9.6' fill='%2331315A'/%3E%3C/svg%3E");
+  --icon-forward: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='7.5,5 17,12 7.5,19 7.5,14.4 3,14.4 3,9.6 7.5,9.6' fill='%2331315A'/%3E%3C/svg%3E");
+  --icon-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='5,11.5 12,4.5 19,11.5 14.6,11.5 14.6,20 9.4,20 9.4,11.5' fill='%2331315A'/%3E%3C/svg%3E");
+  --icon-refresh: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M19.9 4.4v5.4l-5.2-1.2z' fill='%2331315A'/%3E%3Cpath d='M18.6 8.2A7.6 7.6 0 1 0 19.6 14' fill='none' stroke='%2331315A' stroke-width='2.6' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3C/svg%3E");
+  /* ICONS:END */
+}
+/* DARK:BEGIN — thème sombre (phase 3) */
+[data-theme="dark"] {
+  --os9-face: #3C4048;
+  --os9-face-hi: #4A4F58;
+  --os9-view: #22262C;
+  --os9-bevel-light: #5C6270;
+  --os9-bevel-dark: #17191E;
+  --os9-frame: #0E1013;
+  --os9-line: #4A505A;
+  --os9-ink: #ECEEF2;
+  --os9-ink-soft: #B4BAC4;
+  --os9-ink-disabled: #6E7580;
+  --os9-lav: #A8B6F0;
+  --os9-lav-soft: rgba(168,182,240,.25);
+  --os9-lav-dk: #8B9CE8;
+  --menu-hl: #8B9CE8;
+  --selection-text: #F0F2FA;  /* le voile lavande reste translucide sur la nuit */
+  --title-stripes: repeating-linear-gradient(180deg,#33363C 0 1px,#4E525C 1px 3px);
+  --desktop: #191C22;
+  --tooltip-bg: #FFF9C8; --tooltip-border: #8A8250;
+  --shadow-window: 2px 2px 0 rgba(0,0,0,.55);
+  --shadow-menu: 2px 2px 0 rgba(0,0,0,.5);
+  /* icônes surchargées pour le fond sombre */
+  --icon-back: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='16.5,5 7,12 16.5,19 16.5,14.4 21,14.4 21,9.6 16.5,9.6' fill='%23D8DEF2'/%3E%3C/svg%3E");
+  --icon-forward: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='7.5,5 17,12 7.5,19 7.5,14.4 3,14.4 3,9.6 7.5,9.6' fill='%23D8DEF2'/%3E%3C/svg%3E");
+  --icon-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='5,11.5 12,4.5 19,11.5 14.6,11.5 14.6,20 9.4,20 9.4,11.5' fill='%23D8DEF2'/%3E%3C/svg%3E");
+  --icon-refresh: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M19.9 4.4v5.4l-5.2-1.2z' fill='%23D8DEF2'/%3E%3Cpath d='M18.6 8.2A7.6 7.6 0 1 0 19.6 14' fill='none' stroke='%23D8DEF2' stroke-width='2.6' stroke-linecap='butt' stroke-linejoin='miter'/%3E%3C/svg%3E");
+  --icon-search: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='10.4' cy='10.4' r='4.9' fill='none' stroke='%23D8DEF2' stroke-width='2.1'/%3E%3Cpath d='M14.2 14.2l5.2 5.2' fill='none' stroke='%23D8DEF2' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+/* DARK:END */
+
+/* HC:BEGIN — contraste élevé (phase 4) */
+[data-theme="hc"] {
+  --os9-face: #FFFFFF;
+  --os9-face-hi: #FFFFFF;
+  --os9-view: #FFFFFF;
+  --os9-bevel-light: #000000;
+  --os9-bevel-dark: #000000;
+  --os9-frame: #000000;
+  --os9-line: #000000;
+  --os9-ink: #000000;
+  --os9-ink-soft: #333333;
+  --os9-ink-disabled: #767676;
+  --os9-lav: #A8B6F0;
+  --os9-lav-soft: rgba(168,182,240,.45);
+  --os9-lav-dk: #8B9CE8;
+  --menu-hl: #A8B6F0;
+  --selection-text: #000000;
+  --title-stripes: repeating-linear-gradient(180deg,#000000 0 1px,#FFFFFF 1px 3px);
+  --menu-ink: #000000;
+  --link: #2A3E9E;
+  --btn-press: #333333;
+  --desktop: #E8E8E8;
+  --shadow-window: 2px 2px 0 #000000;
+  --shadow-menu: 2px 2px 0 #000000;
+}
+/* HC:END */
+
+
+
+/* --- Base recommandée (à copier dans l'app) ------------------------------ */
+/*
+body {
+  margin: 0;
+  background: var(--surface-desktop);
+  color: var(--text-primary);
+  font: 400 var(--font-size-base)/var(--line-height) var(--font-ui);
+  cursor: var(--cursor-default);
+}
+::selection { background: var(--selection-bg); color: var(--selection-text); }
+a { color: var(--os9-lav-dk); cursor: var(--cursor-link); }
+input[type=text], textarea { cursor: var(--cursor-text); }
+*/
+
+/* ==========================================================================
+   STRUCTURAL COMPOSITION -- Platinum's real component shapes, ported from
+   this folder's own components.html (not a color reskin of style.css's
+   generic grid). Loaded last in index.html's link order, so plain selectors
+   here beat style.css's same-specificity rules by cascade order alone -- no
+   !important anywhere below. Where a style.css rule has HIGHER specificity
+   (an extra class), that exact selector is repeated here so the override
+   actually lands. Per STYLE.md interdit #3, this section adds ZERO new
+   hover behaviour -- every hover selector below either restores the
+   resting-state value (neutralising style.css's own hover rule, since 1999
+   pre-lights nothing) or belongs to the one documented exception, the menu
+   pointer band (--menu-hl), which OS9's own state table lists separately
+   from "Survolé : N'EXISTE PAS".
+   ========================================================================== */
+
+/* ---------- Chrome de fenêtre : gadgets ECLATES -- Fermer (creux, vide) a
+   GAUCHE hors flux (position absolue dans .titlebar), Reduire+Agrandir a
+   DROITE dans le flux -- CARRES (radius 0, contrairement aux boutons),
+   plateau + trait noir + biseau fin. Le titre reste sur une plaque pleine,
+   jamais raye lui-meme -- seul le fond du bandeau porte les rayures. ---------- */
+.titlebar {
+  position: relative;
+  padding: 0 5px;
+  background: var(--title-stripes);
+  border-bottom: 1px solid var(--os9-frame);
+  border-radius: 0;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.titlebar-drag {
+  justify-content: center;
+  padding-left: 22px;   /* degage le gadget Fermer, positionne hors flux */
+}
+.titlebar-title {
+  flex: 0 1 auto;
+  min-width: 0;
+  padding: 0 6px;
+  background: var(--os9-face);
+  color: var(--title-active-text);
+  font-weight: 700;
+  text-align: center;
+  text-shadow: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.titlebar-buttons { gap: 6px; }
+.cap-btn {
+  width: var(--gadget-size);
+  height: var(--gadget-size);
+  min-width: 0;
+  border-radius: 0;
+  border: 1px solid var(--os9-frame);
+  background: var(--os9-face-hi);
+  box-shadow: var(--bevel-out);
+  filter: none;
+}
+.cap-btn:hover { filter: none; }
+.cap-btn:active { background: #8E8E8E; box-shadow: var(--bevel-in); filter: none; }
+.cap-close {
+  position: absolute;
+  left: 5px;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-left: 0;
+  background: var(--os9-face-hi);
+}
+/* Reduire : la barre 7x2 (.g-collapse du specimen) */
+.cap-min span::before {
+  content: "";
+  position: absolute; left: 50%; top: 50%;
+  width: 7px; height: 2px;
+  background: var(--os9-frame);
+  border-radius: 0;
+  transform: translate(-50%, -50%);
+}
+/* Agrandir : le carre creux 6x6 (.g-zoom du specimen) */
+.cap-max span::before {
+  content: "";
+  position: absolute; left: 50%; top: 50%;
+  width: 6px; height: 6px;
+  background: none;
+  border: 1px solid var(--os9-frame);
+  border-radius: 0;
+  transform: translate(-50%, -50%);
+}
+/* Fermer : gadget CREUX -- une plaque vide, jamais de glyphe */
+.cap-close span::before, .cap-close span::after { content: none; }
+
+/* ---------- Onglets Platinum : plateaux biseautes attaches, l'actif efface
+   son trait bas et fusionne avec le panneau (la fusion EST la distinction,
+   pas le gras) ---------- */
+.tabbar {
+  gap: 2px;
+  border-bottom: 1px solid var(--os9-frame);
+  margin-bottom: -1px;
+  position: relative;
+  z-index: 2;
+}
+.tab-btn {
+  min-width: 0;
+  height: 22px;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  background: var(--os9-face);
+  border: 1px solid var(--os9-frame);
+  border-radius: 5px 5px 0 0;
+  box-shadow: var(--bevel-out);
+  font: inherit;
+  font-weight: 400;
+  color: var(--text-primary);
+}
+.tab-btn:hover:not(.active) { filter: none; }
+.tab-btn.active {
+  background: var(--os9-face-hi);
+  border-bottom-color: var(--os9-face-hi);
+  box-shadow: inset 1px 1px 0 var(--os9-bevel-light);
+  font-weight: 400;
+}
+
+/* ---------- Boutons : plateau + trait noir + biseau fin, radius 5px --
+   aucune lueur au survol, presse = fond #666 encre blanche, biseau inverse ---------- */
+button {
+  min-width: var(--button-min-width);
+  height: var(--control-height);
+  padding: 0 14px;
+  border: 1px solid var(--os9-frame);
+  border-radius: var(--radius-control);
+  background: var(--os9-face-hi);
+  box-shadow: var(--bevel-out);
+  font: inherit;
+  color: var(--text-primary);
+  cursor: var(--cursor-default);
+  user-select: none;
+}
+button:not(:disabled):active {
+  background: var(--btn-press);
+  color: #fff;
+  box-shadow: var(--bevel-in);
+}
+button:focus-visible {
+  outline: none;
+  box-shadow: var(--bevel-out), var(--focus-ring);
+}
+button:disabled {
+  color: var(--text-disabled);
+  border-color: #9E9E9E;
+  box-shadow: none;
+}
+
+/* Le bouton par defaut Platinum porte son ANNEAU NOIR en PERMANENCE (pas
+   seulement au focus) -- c'est la signature du style, pas une lueur XP */
+.start-btn {
+  min-width: var(--button-min-width);
+  height: var(--control-height);
+  padding: 0 20px;
+  border: 1px solid var(--os9-frame);
+  border-radius: var(--radius-control);
+  background: var(--os9-face-hi);
+  box-shadow: var(--bevel-out), var(--focus-ring);
+  font: inherit;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.start-btn:hover { box-shadow: var(--bevel-out), var(--focus-ring); }
+.start-btn:active {
+  background: var(--btn-press);
+  color: #fff;
+  box-shadow: var(--bevel-in);
+}
+
+.row-actions button {
+  min-width: 0;
+  height: auto;
+  padding: 2px 10px;
+  border: 1px solid var(--os9-frame);
+  border-radius: var(--radius-control);
+  background: var(--os9-face-hi);
+  box-shadow: var(--bevel-out);
+}
+.row-actions button:hover { box-shadow: var(--bevel-out); }
+.row-actions button:not(:disabled):active {
+  background: var(--btn-press);
+  color: #fff;
+  box-shadow: var(--bevel-in);
+}
+.row-actions button:disabled {
+  color: var(--text-disabled);
+  border-color: #9E9E9E;
+  box-shadow: none;
+  background: var(--os9-face-hi);
+}
+
+/* ---------- Champs : blancs, carres, cernes de noir, ombre interne haute --
+   le select fait EXCEPTION et prend la matiere du BOUTON (plateau, biseau,
+   radius) : c'est un menu local, pas un champ de saisie (STYLE.md §5,
+   components.html §2) ---------- */
+input[type="text"], input[type="number"], textarea, .search-input {
+  background: var(--os9-view);
+  border: 1px solid var(--os9-frame);
+  border-radius: 0;
+  box-shadow: inset 1px 1px 0 #B9B9B9;
+  font: inherit;
+  color: var(--text-primary);
+  height: var(--control-height);
+  padding: 0 6px;
+}
+.form-grid input[type="text"], .form-grid input[type="number"] {
+  background: var(--os9-view);
+  border: 1px solid var(--os9-frame);
+  border-radius: 0;
+  height: var(--control-height);
+  padding: 0 6px;
+}
+textarea { height: auto; min-height: 58px; padding: 3px 6px; resize: none; }
+input[type="text"]:not(:disabled), textarea:not(:disabled) { cursor: var(--cursor-text); }
+input[type="text"]:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: var(--os9-lav-dk);
+  box-shadow: inset 1px 1px 0 #B9B9B9, 0 0 0 1px var(--os9-lav-dk);
+}
+input:disabled, textarea:disabled {
+  background: #F0F0F0;
+  color: var(--text-disabled);
+  border-color: #9E9E9E;
+}
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='6'%3E%3Cpath d='M4.5 6L0 0H9Z' fill='%23000'/%3E%3C/svg%3E") right 8px center/9px 6px no-repeat, var(--os9-face-hi);
+  border: 1px solid var(--os9-frame);
+  border-radius: var(--radius-control);
+  box-shadow: var(--bevel-out);
+  font: inherit;
+  color: var(--text-primary);
+  height: var(--control-height);
+  padding: 0 26px 0 6px;
+}
+
+/* ---------- Cases a cocher : plateau 14px biseaute, coche NOIRE (jamais de
+   plein) -- aucun survol ---------- */
+input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  margin: 0;
+  vertical-align: middle;
+  width: var(--checkbox-size);
+  height: var(--checkbox-size);
+  border: 1px solid var(--os9-frame);
+  border-radius: 2px;
+  background: #fff;
+  box-shadow: var(--bevel-out);
+  display: inline-grid;
+  place-content: center;
+}
+input[type="checkbox"]:checked::after {
+  content: "";
+  width: 10px;
+  height: 10px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10'%3E%3Cpath d='M1.5 5.5l2.6 2.6L8.5 2' fill='none' stroke='%23000' stroke-width='2'/%3E%3C/svg%3E") no-repeat center;
+}
+input[type="checkbox"]:disabled {
+  box-shadow: none;
+  border-color: #9E9E9E;
+  background: #F0F0F0;
+}
+
+/* ---------- Listes / lignes : la grille de l'app est tabulaire -- on
+   reprend le hairline gris du composant Table etendu (--os9-line), pas le
+   trait noir du plateau, et on retire le double-gouttiere du listbox blanc
+   (les lignes portent deja leur propre padding). L'etat vient de --menu-hl
+   pour reprendre le badge doctrinal "etat" en colonne (STYLE.md P2 §Table). ---------- */
+.listbox {
+  background: var(--os9-view);
+  border: 1px solid var(--os9-frame);
+  border-radius: 0;
+  box-shadow: inset 1px 1px 0 #B9B9B9;
+  padding: 0;
+}
+.row { border-bottom: 1px solid var(--os9-line); }
+.row-state {
+  justify-self: start;
+  padding: 1px 8px;
+  background: var(--os9-view);
+  border: 1px solid var(--os9-line);
+  box-shadow: inset 1px 1px 0 #B9B9B9;
+  color: var(--os9-ink);
+}
+.downloads-row-header {
+  background: var(--os9-face);
+  box-shadow: var(--bevel-out);
+  border: 1px solid var(--os9-frame);
+  font-weight: 400;
+  color: var(--text-primary);
+}
+
+/* ---------- Group box : bordure fine grise, legende en gras, encre noire --
+   AUCUN accent de couleur (STYLE.md §4 : hierarchie par le gras seul) ---------- */
+.profile-group, .details-group {
+  background: transparent;
+  border: 1px solid var(--os9-line);
+  border-radius: 3px;
+}
+.profile-group h3, .details-group h3 {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* ---------- Menu contextuel : plateau platine cerne noir, ombre pleine
+   decalee -- bande --menu-hl AU POINTEUR (seule exception documentee a
+   "aucun survol" : §7 separe "Survole" de "Menu au pointeur") ---------- */
+.context-menu {
+  background: var(--os9-face-hi);
+  border: 1px solid var(--os9-frame);
+  border-radius: 0;
+  box-shadow: var(--bevel-out), var(--shadow-menu);
+  padding: 3px 0;
+}
+.context-menu-item {
+  padding: 3px 12px;
+  color: var(--text-primary);
+}
+.context-menu-item:hover {
+  background: var(--menu-hl);
+  color: var(--menu-ink);
+}
+.context-menu-separator {
+  height: 1px;
+  background: var(--os9-line);
+  margin: 3px 1px;
+}
+
+/* ---------- Dialogue : plaque platine cernee noir, barre de titre SANS
+   gadgets, titre GRAS A GAUCHE (contrairement au titre de fenetre, centre --
+   STYLE.md §4) -- jamais de rouge : la confirmation protege ---------- */
+.modal-overlay { background: rgba(0, 0, 0, .35); }
+.modal-box {
+  background: var(--os9-face);
+  border: 1px solid var(--os9-frame);
+  border-radius: 0;
+  box-shadow: var(--bevel-out), var(--shadow-window);
+  padding: 0 var(--space-5) var(--space-5);
+  gap: var(--space-3);
+}
+.modal-box h3 {
+  margin: 0 calc(-1 * var(--space-5)) var(--space-3);
+  padding: 0 var(--space-4);
+  height: var(--titlebar-height);
+  line-height: var(--titlebar-height);
+  background: var(--os9-face);
+  border-bottom: 1px solid var(--os9-frame);
+  font: 700 var(--font-size-title) / 1 var(--font-ui);
+  color: var(--os9-ink);
+  text-align: left;
+}
+
+/* ---------- Ascenseur : gouttiere grise, pouce lavande strie, fleches
+   noires -- porte tel quel du specimen ---------- */
+::-webkit-scrollbar { width: var(--scrollbar-size); height: var(--scrollbar-size); }
+::-webkit-scrollbar-track { background: #CCCCCC; box-shadow: inset 1px 1px 0 #AFAFAF; }
+::-webkit-scrollbar-thumb {
+  background: var(--thumb-lav);
+  border: 1px solid var(--os9-frame);
+  box-shadow: inset 1px 1px 0 rgba(255,255,255,.6);
+}
+::-webkit-scrollbar-button {
+  background: var(--os9-face);
+  box-shadow: var(--bevel-out);
+  border: 1px solid var(--os9-frame);
+  height: 16px;
+  width: 16px;
+}
+::-webkit-scrollbar-button:vertical:decrement {
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='6'%3E%3Cpath d='M4.5 0L9 6H0Z' fill='%23000'/%3E%3C/svg%3E") center/9px 6px no-repeat, var(--os9-face);
+}
+::-webkit-scrollbar-button:vertical:increment {
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='6'%3E%3Cpath d='M4.5 6L0 0H9Z' fill='%23000'/%3E%3C/svg%3E") center/9px 6px no-repeat, var(--os9-face);
+}
+::-webkit-scrollbar-corner { background: var(--os9-face); }
+
+/* ---------- Jauge de progression (cadre du canvas Tetris) : piste blanche
+   en creux -- pas le vert Game Boy generique pose par defaut dans style.css ---------- */
+canvas.tetris {
+  border: 1px solid var(--os9-frame);
+  border-radius: 0;
+  background: var(--os9-view);
+  box-shadow: inset 1px 1px 0 #B9B9B9;
+}
+
+/* ---------- Correctif contraste sombre : la fleche du select et les fleches
+   des boutons d'ascenseur sont un SVG a encre NOIRE figee (%23000, fidele au
+   specimen de la charte), posee sur un plateau qui lui PASSE bien en sombre
+   via --os9-face(-hi) -- l'encre ne suit pas, illisible sur platine sombre.
+   On la reteinte dans la meme encre claire deja utilisee ci-dessus pour les
+   icones de nav surchargees en mode sombre (#D8DEF2), rien de nouveau. ---------- */
+[data-theme="dark"] select {
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='6'%3E%3Cpath d='M4.5 6L0 0H9Z' fill='%23D8DEF2'/%3E%3C/svg%3E") right 8px center/9px 6px no-repeat, var(--os9-face-hi);
+}
+[data-theme="dark"] ::-webkit-scrollbar-button:vertical:decrement {
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='6'%3E%3Cpath d='M4.5 0L9 6H0Z' fill='%23D8DEF2'/%3E%3C/svg%3E") center/9px 6px no-repeat, var(--os9-face);
+}
+[data-theme="dark"] ::-webkit-scrollbar-button:vertical:increment {
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='6'%3E%3Cpath d='M4.5 6L0 0H9Z' fill='%23D8DEF2'/%3E%3C/svg%3E") center/9px 6px no-repeat, var(--os9-face);
+}

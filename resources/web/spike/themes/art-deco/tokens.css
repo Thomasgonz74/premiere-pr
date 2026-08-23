@@ -1,0 +1,611 @@
+/* ==========================================================================
+   ART DÉCO — tokens.css — v1.0 (port)
+   Style : "Art déco (Paris 1925)"
+   Rôle  : SOURCE DE VÉRITÉ des variables. Port structurel du contrat Luna
+   (resources/web/spike/themes/luna_xp/tokens.css) vers la charte Art déco.
+   Lire  : Charte graphique/Art déco (Paris 1925)/STYLE.md · components.html
+   Le foyer d'un théâtre de 1925 : laque noire, filets d'or, ivoires, un
+   émeraude profond. Trois gestes : la ZIGGOURAT (coins en escalier, jamais
+   d'arrondi), le DOUBLE FILET de laiton, l'ÉVENTAIL rayonnant du titre.
+   Nativement nocturne (comme le foyer n'a pas de "mode clair") : pas de
+   bloc [data-theme="dark"] — voir note en bas de fichier.
+   ========================================================================== */
+
+:root {
+
+  /* ========================================================
+     1. PRIMITIVES — palette Art déco (reprise telle quelle du
+     charte source : Charte graphique/Art déco (Paris 1925)/tokens.css)
+     ======================================================== */
+  /* Laques et ivoires */
+  --ad-lacquer:    #14120E;   /* la fenêtre */
+  --ad-lacquer-hi: #1E1B15;   /* panneaux, champs */
+  --ad-ivory:      #F2EAD8;   /* textes */
+  --ad-ivory-dim:  #B8AE96;   /* textes doux */
+  --ad-disabled:   #6E6656;
+
+  /* Le laiton (trois états) et les rôles */
+  --ad-brass:    #D4AF37;     /* filets, glyphes, actions */
+  --ad-brass-hi: #E8C96A;     /* éveil */
+  --ad-brass-dk: #8A7126;     /* filets discrets */
+  --ad-emerald:  #0E3B2E;     /* la sélection */
+  --ad-red:      #C9524E;     /* laque rouge : le danger (texte, filet) */
+  --ad-red-deep: #7A1E1E;     /* laque rouge : le plein (irréversible) */
+
+  --ad-desktop: #0C0B08;
+  --tooltip-bg: var(--ad-lacquer-hi);
+  --tooltip-fg: var(--ad-ivory);
+
+  /* ========================================================
+     2. SÉMANTIQUES
+     ======================================================== */
+  --surface-desktop:  var(--ad-desktop);
+  --surface-window:   var(--ad-lacquer);
+  --surface-field:    var(--ad-lacquer-hi);
+  --surface-panel:    var(--ad-lacquer-hi);   /* plaques : même plate que les champs */
+  --surface-tooltip:  var(--tooltip-bg);
+
+  --text-primary:     var(--ad-ivory);
+  --text-soft:        var(--ad-ivory-dim);    /* nom natif de la charte, conservé */
+  --text-disabled:    var(--ad-disabled);
+  --text-inverse:     var(--ad-lacquer);      /* "encre de laque" sur fond laiton plein */
+
+  --title-active-text:   var(--ad-brass-hi);  /* .tb-title de la charte */
+  --title-inactive-text: var(--ad-ivory-dim); /* .window.is-inactive .tb-title */
+  --selection-bg:     var(--ad-emerald);
+  --selection-text:   var(--ad-ivory);
+
+  /* Alias génériques consommés par resources/web/spike/*.css -- pas du
+     vocabulaire propre à la charte Art déco (qui ne nomme pas ses bordures
+     "control/field/group/..."), donc dérivés ici des couleurs réelles de
+     components.html plutôt qu'inventés : tous les cadres de contrôle
+     (boutons, champs, group box, onglets, jauge) sont un même filet de
+     laiton discret --ad-brass-dk ; la légende (group box) est en laiton
+     plein --ad-brass, comme le veut `legend{color:var(--ad-brass)}`. */
+  --border-control:  var(--ad-brass-dk);
+  --border-field:    var(--ad-brass-dk);
+  --border-group:    var(--ad-brass-dk);
+  --border-progress: var(--ad-brass-dk);
+  --border-tab:      var(--ad-brass-dk);
+  --text-legend:     var(--ad-brass);
+
+  /* ========================================================
+     3. LA ZIGGOURAT — la signature du style (recettes natives
+     de la charte, tokenisées).
+     ======================================================== */
+  --brass: linear-gradient(180deg, #E8C96A, #B8923A);   /* l'UNIQUE dégradé autorisé */
+  --sunburst: repeating-conic-gradient(from 246deg at 50% 130%, transparent 0 7deg, rgba(212,175,55,.13) 7deg 8deg);
+  --zigg: polygon(0 10px, 5px 10px, 5px 5px, 10px 5px, 10px 0,
+    calc(100% - 10px) 0, calc(100% - 10px) 5px, calc(100% - 5px) 5px, calc(100% - 5px) 10px, 100% 10px,
+    100% calc(100% - 10px), calc(100% - 5px) calc(100% - 10px), calc(100% - 5px) calc(100% - 5px), calc(100% - 10px) calc(100% - 5px), calc(100% - 10px) 100%,
+    10px 100%, 10px calc(100% - 5px), 5px calc(100% - 5px), 5px calc(100% - 10px), 0 calc(100% - 10px));
+  --double-line: 0 0 0 1px var(--ad-brass-dk), inset 0 0 0 1px var(--ad-brass-dk);
+
+  /* Propriétés "extra" attendues par le CSS partagé (contrat structurel
+     de resources/web/spike/style.css) : traduites depuis la matière de
+     la charte, pas copiées de Luna. Cette charte n'a qu'UN dégradé légitime
+     (--brass, "le laiton seul a le droit de luire", interdit n°8) ; tout le
+     reste est du méplat (`background: var(--ad-lacquer-hi)` / plein
+     `var(--ad-brass)` en boutons dans components.html), d'où les fonds
+     "plats" ci-dessous écrits en dégradé 2 arrêts même couleur, comme le
+     permet le contrat pour une ère qui n'a pas de biseau. */
+  --plastic-raised:  linear-gradient(var(--ad-lacquer-hi), var(--ad-lacquer-hi));   /* repos : plaque plate */
+  --plastic-pressed: linear-gradient(var(--ad-brass), var(--ad-brass));            /* appui : plein laiton, "encre de laque" */
+
+  /* Barre de titre : l'éventail rayonne sur la laque (pas de dégradé
+     vertical façon Luna -- le geste doctrinal de ce style est le
+     sunburst conique défini plus haut). */
+  --gradient-title-active: var(--sunburst), linear-gradient(var(--ad-lacquer-hi), var(--ad-lacquer-hi));
+
+  /* Boutons de fenêtre (3 losanges) : Réduire/Agrandir sont un chevron et
+     un losange CREUX (non remplis, juste le glyphe) -> plaque plate ;
+     Fermer est le "losange PLEIN qui s'éclaire" -> le seul dégradé --brass,
+     comme le bouton "défaut" de la charte. Ni l'un ni l'autre n'est rouge :
+     la laque rouge est réservée au danger (interdit n°2), jamais au bouton
+     Fermer dans cette charte (components.html : .wm.is-close:hover passe
+     en --ad-brass-hi, pas en rouge). */
+  --gradient-titlebtn:       linear-gradient(var(--ad-lacquer-hi), var(--ad-lacquer-hi));
+  --gradient-titlebtn-close: var(--brass);
+
+  /* Jauge de progression : remplissage --brass (doctrine §7/§9). */
+  --gradient-progress: var(--brass);
+
+  /* ========================================================
+     4. OMBRES — natives de la charte + extras du contrat
+     ======================================================== */
+  --shadow-window:          0 18px 44px rgba(0,0,0,.6);   /* la seule ombre profonde de la collection nocturne */
+  --shadow-window-inactive: 0 10px 26px rgba(0,0,0,.45);
+  --shadow-menu:            0 12px 30px rgba(0,0,0,.55);  /* nom déjà natif à la charte : réutilisé tel quel */
+
+  /* Cadre de fenêtre = double filet de laiton + ombre profonde (anatomie
+     §6.1 : "fenêtre cadrée du double filet de laiton, ombre profonde"). */
+  --frame-shadow: var(--double-line), var(--shadow-window);
+
+  /* Pas de halo/glow au survol dans cette charte : l'état se lit par
+     l'éveil du laiton (couleur du filet et du texte), jamais par une
+     lueur — et l'infobulle est explicitement "sans halo" (règle §9).
+     "none" est le choix authentique ici (autorisé par le contrat). */
+  --glow-hover: none;
+
+  /* ========================================================
+     5. TYPOGRAPHIE
+     ======================================================== */
+  --font-ui: Didot, "Playfair Display", "Bodoni MT", "URW Palladio",
+             Georgia, serif;
+  --font-title: var(--font-ui);       /* même serif, en capitales espacées via --track-wide */
+  --font-mono: "Courier New", monospace;   /* pas de style natif propre à la charte ; secours neutre */
+  --font-size-base:  13.5px;
+  --font-size-title: 13px;            /* nom déjà natif à la charte */
+  --line-height: 1.55;
+  --track-wide: .16em;   /* titre, capitales centrées */
+  --track-soft: .09em;   /* boutons, onglets, légendes */
+  --title-text-shadow: none;   /* pas d'ombre portée sur le texte dans cette charte */
+
+  /* ========================================================
+     6. MÉTRIQUES & ESPACEMENT
+     ======================================================== */
+  --unit: 4px;
+  --space-1: 2px; --space-2: 4px; --space-3: 8px;
+  --space-4: 12px; --space-5: 16px; --space-6: 24px;
+  --pad-body: 18px;
+
+  --control-height: 32px;
+  --field-height: var(--control-height);   /* la charte ne distingue pas champ/bouton (32px partout) */
+  --button-min-width: 112px;
+  --titlebar-height: 38px;
+  --wm-size: 20px;                    /* les losanges, natif à la charte */
+  --titlebar-btn: var(--wm-size);
+  --scrollbar-size: 11px;
+  --checkbox-size: 16px;
+  --toggle-w: 48px; --toggle-h: 20px;
+  --icon-small: 16px; --icon-large: 32px;
+
+  --radius-window: 0px;    /* "rayons : 0 partout" -- les coins sont des ziggourats, pas des courbes */
+  --radius-control: 0px;
+  --radius-group: 0px;
+  --radius-field: 0px;
+
+  /* ========================================================
+     7. ÉTATS & MOUVEMENT
+     ======================================================== */
+  --transition-state: .16s ease;   /* nom natif à la charte */
+  --transition: var(--transition-state);
+  --focus-ring: 1.5px solid var(--ad-ivory);   /* nom natif à la charte */
+  --focus-outline: var(--focus-ring);
+  --cursor-interactive: var(--cursor-default);
+
+  /* ========================================================
+     8. CURSEURS — mêmes 14 actions que toutes les chartes.
+     Pointeur de LAITON à contour de laque ; l'attente est la
+     MONTRE d'or ; « ? » doré.
+     ======================================================== */
+  --cur-img-default: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.45' transform='translate(1.5,1.5)'%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23D4AF37' stroke='%2314120E' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-link: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.45' transform='translate(1.5,1.5)'%3E%3Cpolygon points='10,2 13,2 13,9 16,9 19,11 19,15 16,20 9,20 5,14 5,12 7,11 10,14' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='10,2 13,2 13,9 16,9 19,11 19,15 16,20 9,20 5,14 5,12 7,11 10,14' fill='%23D4AF37' stroke='%2314120E' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpath d='M13.5 11v4M16 12v3' stroke='%2314120E' stroke-width='.9' stroke-linecap='round'/%3E%3C/svg%3E");
+  --cur-img-text: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg fill='none' stroke='%23fff' stroke-width='4.2' stroke-linecap='round'%3E%3Cpath d='M8 3h6M11 3v18M8 21h6'/%3E%3C/g%3E%3Cg fill='none' stroke='%2314120E' stroke-width='1.6' stroke-linecap='round'%3E%3Cpath d='M8 3h6M11 3v18M8 21h6'/%3E%3C/g%3E%3C/svg%3E");
+  --cur-img-wait: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.45' transform='translate(1.5,1.5)'%3E%3Ccircle cx='12' cy='13' r='8' fill='%23000'/%3E%3C/g%3E%3Crect x='10.4' y='1.6' width='3.2' height='3.2' rx='1' fill='%23D4AF37'/%3E%3Ccircle cx='12' cy='13' r='8' fill='%23fff' stroke='%23D4AF37' stroke-width='1.8'/%3E%3Cpath d='M12 13V7.4M12 13L17.4 14.6' stroke='%23D4AF37' stroke-width='1.7' stroke-linecap='round' fill='none'/%3E%3C/svg%3E");
+  --cur-img-progress: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.45' transform='translate(1.5,1.5)'%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23000' stroke='%23000' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/g%3E%3Cg opacity='.45' transform='translate(1.5,1.5)'%3E%3Ccircle cx='17.5' cy='17.5' r='4.8' fill='%23000'/%3E%3C/g%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23D4AF37' stroke='%2314120E' stroke-width='1.6' stroke-linejoin='round'/%3E%3Crect x='15.9' y='9.299999999999999' width='3.2' height='3.2' rx='1' fill='%23D4AF37'/%3E%3Ccircle cx='17.5' cy='17.5' r='4.8' fill='%23fff' stroke='%23D4AF37' stroke-width='1.8'/%3E%3Cpath d='M17.5 17.5V15.1M17.5 17.5L19.7 19.1' stroke='%23D4AF37' stroke-width='1.7' stroke-linecap='round' fill='none'/%3E%3C/svg%3E");
+  --cur-img-help: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.45' transform='translate(1.5,1.5)'%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23000' stroke='%23000' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='2,2 2,17 6,13 9,20 12,19 9,12 14,12' fill='%23D4AF37' stroke='%2314120E' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpath d='M14.5 6c0-2.6 6.5-2.6 6.5 0c0 2.2-3.2 2-3.2 4.4' fill='none' stroke='%23fff' stroke-width='3.8' stroke-linecap='round'/%3E%3Cpath d='M14.5 6c0-2.6 6.5-2.6 6.5 0c0 2.2-3.2 2-3.2 4.4' fill='none' stroke='%23D4AF37' stroke-width='1.8' stroke-linecap='round'/%3E%3Ccircle cx='17.9' cy='13.8' r='1.7' fill='%23fff'/%3E%3Ccircle cx='17.9' cy='13.8' r='1.1' fill='%23D4AF37'/%3E%3C/svg%3E");
+  --cur-img-crosshair: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg fill='none' stroke='%23fff' stroke-width='4.2'%3E%3Cpath d='M12 3v18M3 12h18'/%3E%3C/g%3E%3Cg fill='none' stroke='%2314120E' stroke-width='1.6'%3E%3Cpath d='M12 3v18M3 12h18'/%3E%3C/g%3E%3C/svg%3E");
+  --cur-img-not-allowed: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg fill='none' stroke='%23fff' stroke-width='5.4'%3E%3Ccircle cx='12' cy='12' r='8'/%3E%3Cpath d='M6.5 6.5l11 11'/%3E%3C/g%3E%3Cg fill='none' stroke='%2314120E' stroke-width='2.4'%3E%3Ccircle cx='12' cy='12' r='8'/%3E%3Cpath d='M6.5 6.5l11 11'/%3E%3C/g%3E%3C/svg%3E");
+  --cur-img-resize-v: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.45' transform='translate(1.5,1.5)'%3E%3Cpolygon points='12,1 17,7 14,7 14,17 17,17 12,23 7,17 10,17 10,7 7,7' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='12,1 17,7 14,7 14,17 17,17 12,23 7,17 10,17 10,7 7,7' fill='%23D4AF37' stroke='%2314120E' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-resize-h: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.45' transform='translate(1.5,1.5)'%3E%3Cpolygon points='1,12 7,7 7,10 17,10 17,7 23,12 17,17 17,14 7,14 7,17' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='1,12 7,7 7,10 17,10 17,7 23,12 17,17 17,14 7,14 7,17' fill='%23D4AF37' stroke='%2314120E' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-resize-nwse: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.45' transform='translate(1.5,1.5)'%3E%3Cpath d='M7 7l10 10' stroke='%23000' stroke-width='4.6'/%3E%3Cpolygon points='4,4 12,4 4,12' fill='%23000'/%3E%3Cpolygon points='20,20 12,20 20,12' fill='%23000'/%3E%3C/g%3E%3Cpath d='M7 7l10 10' stroke='%23fff' stroke-width='4'/%3E%3Cpath d='M7 7l10 10' stroke='%2314120E' stroke-width='1.8'/%3E%3Cpolygon points='4,4 12,4 4,12' fill='%23D4AF37' stroke='%2314120E' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpolygon points='20,20 12,20 20,12' fill='%23D4AF37' stroke='%2314120E' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-resize-nesw: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.45' transform='translate(1.5,1.5)'%3E%3Cpath d='M17 7L7 17' stroke='%23000' stroke-width='4.6'/%3E%3Cpolygon points='20,4 12,4 20,12' fill='%23000'/%3E%3Cpolygon points='4,20 12,20 4,12' fill='%23000'/%3E%3C/g%3E%3Cpath d='M17 7L7 17' stroke='%23fff' stroke-width='4'/%3E%3Cpath d='M17 7L7 17' stroke='%2314120E' stroke-width='1.8'/%3E%3Cpolygon points='20,4 12,4 20,12' fill='%23D4AF37' stroke='%2314120E' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpolygon points='4,20 12,20 4,12' fill='%23D4AF37' stroke='%2314120E' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --cur-img-move: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.45' transform='translate(1.5,1.5)'%3E%3Cpolygon points='12,1 15,5 13,5 13,19 15,19 12,23 9,19 11,19 11,5 9,5' fill='%23000'/%3E%3Cpolygon points='1,12 5,9 5,11 19,11 19,9 23,12 19,15 19,13 5,13 5,15' fill='%23000'/%3E%3C/g%3E%3Cg fill='%23D4AF37' stroke='%2314120E' stroke-width='1.6' stroke-linejoin='round'%3E%3Cpolygon points='12,1 15,5 13,5 13,19 15,19 12,23 9,19 11,19 11,5 9,5'/%3E%3Cpolygon points='1,12 5,9 5,11 19,11 19,9 23,12 19,15 19,13 5,13 5,15'/%3E%3C/g%3E%3Cpolygon points='12,1 15,5 13,5 13,19 15,19 12,23 9,19 11,19 11,5 9,5' fill='%23D4AF37'/%3E%3Cpolygon points='1,12 5,9 5,11 19,11 19,9 23,12 19,15 19,13 5,13 5,15' fill='%23D4AF37'/%3E%3C/svg%3E");
+  --cur-img-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cg opacity='.45' transform='translate(1.5,1.5)'%3E%3Cpolygon points='12,2 18,9 14,9 14,20 10,20 10,9 6,9' fill='%23000' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/g%3E%3Cpolygon points='12,2 18,9 14,9 14,20 10,20 10,9 6,9' fill='%23D4AF37' stroke='%2314120E' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+
+  /* Curseurs composés : image + point chaud + secours système */
+  --cursor-default:     var(--cur-img-default) 2 2, default;
+  --cursor-link:        var(--cur-img-link) 11 3, pointer;
+  --cursor-text:        var(--cur-img-text) 11 12, text;
+  --cursor-wait:        var(--cur-img-wait) 12 12, wait;
+  --cursor-progress:    var(--cur-img-progress) 2 2, progress;
+  --cursor-help:        var(--cur-img-help) 2 2, help;
+  --cursor-crosshair:   var(--cur-img-crosshair) 12 12, crosshair;
+  --cursor-not-allowed: var(--cur-img-not-allowed) 12 12, not-allowed;
+  --cursor-resize-v:    var(--cur-img-resize-v) 12 12, ns-resize;
+  --cursor-resize-h:    var(--cur-img-resize-h) 12 12, ew-resize;
+  --cursor-resize-nwse: var(--cur-img-resize-nwse) 12 12, nwse-resize;
+  --cursor-resize-nesw: var(--cur-img-resize-nesw) 12 12, nesw-resize;
+  --cursor-move:        var(--cur-img-move) 12 12, move;
+  --cursor-up:          var(--cur-img-up) 12 3, default;
+
+  /* ================================================== ICONS:BEGIN
+     9. ICÔNES — navigation & fichiers (14), tokenisées comme les
+     curseurs. NB : les 5 icônes de navigation (search/back/forward/up/
+     refresh) portaient un double-enrobage `url("data:...url('data:...')...")`
+     dans le tokens.css source de la charte (bug de copier-coller) --
+     corrigé ici en gardant le SVG interne réel (même dessin, même laiton
+     %23D4AF37, un seul wrapper data-URI valide).
+     ======================================================== */
+  --icon-folder: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M2.5 6h6.5l2 2.5h10.5v11h-19z' fill='%231E1B15' stroke='%23D4AF37' stroke-width='1.2' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M2.5 6h6.5l2 2.5h-9z' fill='%23D4AF37' stroke='%23D4AF37' stroke-width='1.2' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-folder-open: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M2.5 6h6.5l2 2.5h9.5v3h-18z' fill='%23D4AF37' stroke='%23D4AF37' stroke-width='1.2' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M4.8 11.5h16.7l-2.6 8H2.5z' fill='%231E1B15' stroke='%23D4AF37' stroke-width='1.2' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-file: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M6 2.5h8l4.5 4.5v14.5h-12.5z' fill='%231E1B15' stroke='%23D4AF37' stroke-width='1.2' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M14 2.5v4.5h4.5z' fill='%238A7126' stroke='%23D4AF37' stroke-width='1.2' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-file-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M6 2.5h8l4.5 4.5v14.5h-12.5z' fill='%231E1B15' stroke='%23D4AF37' stroke-width='1.2' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M14 2.5v4.5h4.5z' fill='%238A7126' stroke='%23D4AF37' stroke-width='1.2' stroke-linejoin='round' stroke-linecap='round'/%3E%3Ccircle cx='10' cy='11' r='1.5' fill='%23D4AF37'/%3E%3Cpath d='M8 18l2.7-3.6 1.9 2.3 1.5-1.9 2.4 3.2z' fill='%23D4AF37'/%3E%3C/svg%3E");
+  --icon-drive: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M3 9h18v6.5H3z' fill='%231E1B15' stroke='%23D4AF37' stroke-width='1.2' stroke-linejoin='round' stroke-linecap='round'/%3E%3Ccircle cx='17.3' cy='12.2' r='1.2' fill='%23D4AF37'/%3E%3Cpath d='M6 12.2h6' fill='none' stroke='%23D4AF37' stroke-width='1.2' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-home: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M5.5 11.5h13v8.5h-13z' fill='%231E1B15' stroke='%23D4AF37' stroke-width='1.2' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M12 3.2L21.2 11H2.8z' fill='%23D4AF37' stroke='%23D4AF37' stroke-width='1.2' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M10.3 20v-4.8h3.4V20z' fill='%238A7126'/%3E%3C/svg%3E");
+  --icon-computer: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M3.5 4.5h17v11h-17z' fill='%231E1B15' stroke='%23D4AF37' stroke-width='1.2' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M5.5 6.5h13v7h-13z' fill='%23D4AF37'/%3E%3Cpath d='M12 15.5v3M8.5 19.5h7' fill='none' stroke='%23D4AF37' stroke-width='1.2' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-network: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M4 3.5h6v5H4z' fill='%231E1B15' stroke='%23D4AF37' stroke-width='1.2' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M14 3.5h6v5H14z' fill='%231E1B15' stroke='%23D4AF37' stroke-width='1.2' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M9 15.5h6v5H9z' fill='%23D4AF37' stroke='%23D4AF37' stroke-width='1.2' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M7 8.5v3.5h10V8.5M12 12v3.5' fill='none' stroke='%23D4AF37' stroke-width='1.2' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-trash: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M6.7 8.5h10.6l-1 12h-8.6z' fill='%231E1B15' stroke='%23D4AF37' stroke-width='1.2' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M4.8 6h14.4v2.5H4.8z' fill='%23D4AF37' stroke='%23D4AF37' stroke-width='1.2' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M9.4 6V3.8h5.2V6z' fill='%231E1B15' stroke='%23D4AF37' stroke-width='1.2' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M10.3 11v6.5M13.7 11v6.5' fill='none' stroke='%23D4AF37' stroke-width='1.2' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-search: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Ccircle cx='10.4' cy='10.4' r='5.6' fill='none' stroke='%23D4AF37' stroke-width='1.3'/%3E%3Cpath d='M14.7 14.7L20 20' fill='none' stroke='%23D4AF37' stroke-width='1.6' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-back: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M14.5 5.5L8 12l6.5 6.5' fill='none' stroke='%23D4AF37' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-forward: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M9.5 5.5L16 12l-6.5 6.5' fill='none' stroke='%23D4AF37' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M12 19.5V6M6.5 11.5L12 6l5.5 5.5' fill='none' stroke='%23D4AF37' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M5.5 21h13' fill='none' stroke='%23D4AF37' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --icon-refresh: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M18.9 13a7 7 0 1 1-1.8-6.3' fill='none' stroke='%23D4AF37' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M19.4 3.6v4.9h-4.9' fill='none' stroke='%23D4AF37' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  /* ICONS:END */
+}
+
+/* Pas de bloc [data-theme="dark"] : cette charte est "nativement nocturne"
+   (STYLE.md, en-tête -- même identité que le foyer de théâtre décrit dans
+   la charte source, qui ne définit elle-même aucun bloc dark). Le
+   :root ci-dessus EST déjà la nuit de laque ; activer data-theme="dark"
+   sur cette charte retombe simplement sur les mêmes valeurs, ce qui est
+   le comportement correct plutôt qu'un dédoublement inventé. */
+
+/* HC:BEGIN — contraste élevé (phase 4), repris tel quel de la charte
+   source (Charte graphique/Art déco (Paris 1925)/tokens.css) : le foyer
+   en pleine lumière -- filets remontés au laiton plein, ivoires blanchis,
+   laque rouge éclaircie pour rester lisible sur la nuit. Tout le reste
+   (bordures, légende, plastique, ombres) recascade automatiquement via
+   var() puisque ces 5 primitives suffisent à tout retendre. */
+[data-theme="hc"] {
+  --ad-ivory: #FFFFFF;
+  --ad-ivory-dim: #D8CEB8;
+  --ad-disabled: #8A8062;
+  --ad-brass-dk: #D4AF37;
+  --ad-red: #FF8A80;
+}
+/* HC:END */
+
+
+/* --- Base recommandée (à copier dans l'app) ------------------------------ */
+/*
+body {
+  margin: 0;
+  background: var(--ad-desktop);
+  color: var(--text-primary);
+  font: 400 var(--font-size-base)/var(--line-height) var(--font-ui);
+  cursor: var(--cursor-default);
+}
+::selection { background: var(--selection-bg); color: var(--selection-text); }
+a { color: var(--ad-brass-hi); cursor: var(--cursor-link); }
+input[type=text], textarea { cursor: var(--cursor-text); }
+*/
+
+/* ==========================================================================
+   STRUCTURE — port structurel des composants (phase "la charte prime sur
+   la grille"). Composé depuis les recettes réelles de components.html --
+   pas une réinterprétation générique. Charge APRÈS style.css dans l'ordre
+   des <link>, donc ces sélecteurs (même spécificité, même cascade) gagnent
+   naturellement sans !important. Portée : restyler les sélecteurs déjà
+   présents dans le HTML/JS partagé -- aucune balise ajoutée, seuls des
+   pseudo-éléments CSS (::before/::after, déjà le langage natif de la
+   charte pour les glyphes) composent le losange-insigne, les trois
+   losanges de fenêtre et le gemme des group box/dialogues.
+   ========================================================================== */
+
+/* ---------- Barre de titre : l'éventail, le titre centré, le gemme ------ */
+.titlebar {
+  position: relative;
+  border-bottom: 1px solid var(--ad-brass-dk);
+  padding: 0 var(--space-4);
+}
+.titlebar-drag {
+  gap: 10px;
+}
+.titlebar-drag::before {
+  content: "";
+  width: 12px;
+  height: 12px;
+  flex: 0 0 auto;
+  transform: rotate(45deg);
+  background: var(--brass);
+  border: 1px solid var(--ad-brass-dk);
+}
+.titlebar-title {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  right: auto;
+  bottom: auto;
+  transform: translate(-50%, -50%);
+  padding-left: 0;
+  max-width: calc(100% - 150px);
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: var(--track-wide);
+  pointer-events: none;
+}
+.titlebar-buttons {
+  gap: 8px;
+}
+
+/* ---------- Boutons de fenêtre : les TROIS LOSANGES --------------------- */
+.cap-btn {
+  width: var(--wm-size);
+  height: var(--wm-size);
+  min-width: 0;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  transition: transform var(--transition-state);
+}
+.cap-btn:hover { filter: none; transform: scale(1.15); }
+.cap-btn:active { filter: none; transform: scale(.95); }
+.cap-close { background: none; margin-left: 0; }
+
+/* Réduire : un chevron (pas de losange -- seul Agrandir/Fermer le sont). */
+.cap-min span::before {
+  content: "";
+  position: absolute;
+  left: 50%; top: 50%; right: auto; bottom: auto;
+  width: 0; height: 0;
+  transform: translate(-50%, -40%);
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid var(--ad-brass);
+  background: none;
+}
+.cap-min span::after { content: none; }
+
+/* Agrandir : le losange CREUX (contour seul). */
+.cap-max span::before {
+  content: "";
+  position: absolute;
+  left: 50%; top: 50%; right: auto; bottom: auto;
+  width: 8px; height: 8px;
+  transform: translate(-50%, -50%) rotate(45deg);
+  border: 1.5px solid var(--ad-brass);
+  background: none;
+}
+.cap-max span::after { content: none; }
+
+/* Fermer : le losange PLEIN qui s'éclaire -- jamais rouge dans cette
+   charte, la laque rouge est réservée au danger (interdit n°2/§7). */
+.cap-close span::before {
+  content: "";
+  position: absolute;
+  left: 50%; top: 50%; right: auto; bottom: auto;
+  width: 8px; height: 8px;
+  transform: translate(-50%, -50%) rotate(45deg);
+  background: var(--brass);
+  border: 1px solid var(--ad-brass-dk);
+}
+.cap-close span::after { content: none; }
+.cap-close:hover span::before { background: var(--ad-brass-hi); }
+
+/* ---------- Onglets : soudés à filets, l'actif s'éclaire ---------------- */
+.tabbar {
+  gap: 0;
+  padding: var(--space-2) var(--space-4) 0;
+  border-bottom: 1px solid var(--ad-brass-dk);
+}
+.tab-btn {
+  background: var(--ad-lacquer-hi);
+  border: 1px solid var(--ad-brass-dk);
+  border-right: none;
+  border-radius: 0;
+  padding: 7px 18px;
+  color: var(--ad-ivory-dim);
+  text-transform: uppercase;
+  letter-spacing: var(--track-soft);
+  font-size: 12px;
+}
+.tab-btn:last-child { border-right: 1px solid var(--ad-brass-dk); }
+.tab-btn:hover:not(.active) { filter: none; color: var(--ad-brass-hi); }
+.tab-btn.active {
+  background: var(--ad-lacquer-hi);
+  border-color: var(--ad-brass);
+  color: var(--ad-brass-hi);
+  font-weight: 700;
+  box-shadow: inset 0 0 0 1px var(--ad-brass-dk);
+}
+
+/* ---------- Boutons : la ziggourat ---------------------------------------
+   (--zigg s'applique aussi au bouton par défaut et aux petites actions de
+   ligne -- une seule recette de coin dans toute la charte, interdit n°1.) */
+button {
+  min-width: var(--button-min-width);
+  height: var(--control-height);
+  padding: 0 18px;
+  background: var(--ad-lacquer-hi);
+  border: 1px solid var(--ad-brass-dk);
+  border-radius: 0;
+  clip-path: var(--zigg);
+  color: var(--text-primary);
+  font: 600 12px var(--font-ui);
+  text-transform: uppercase;
+  letter-spacing: var(--track-soft);
+  cursor: var(--cursor-interactive);
+  transition: color var(--transition-state), border-color var(--transition-state);
+}
+button:not(:disabled):hover { border-color: var(--ad-brass-hi); color: var(--ad-brass-hi); }
+button:not(:disabled):active { background: var(--ad-brass); border-color: var(--ad-brass); color: var(--ad-lacquer); }
+button:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
+button:disabled { border-color: var(--ad-disabled); color: var(--text-disabled); cursor: var(--cursor-default); }
+
+/* Démarrer / Démarrer le partage : le bouton "défaut" -- le seul dégradé
+   --brass hors filet, encre de laque (STYLE.md §7 "Défaut"). */
+.start-btn {
+  background: var(--brass);
+  border-color: var(--ad-brass);
+  color: var(--ad-lacquer);
+  box-shadow: var(--double-line);
+}
+.start-btn:hover { border-color: var(--ad-brass-hi); color: #0A0906; }
+.start-btn:active { background: var(--ad-brass-dk); color: var(--ad-ivory); }
+
+/* Actions de ligne (pause/suppression) : même ziggourat, taille réduite --
+   pas de min-width, l'espace de la ligne est compté. */
+.row-actions button {
+  min-width: 0;
+  height: 24px;
+  padding: 0 10px;
+  font-size: 11px;
+}
+
+/* ---------- Champs : laque plate, miroir droit (pas de ziggourat) ------- */
+input[type="text"], input[type="number"], select, textarea, .search-input {
+  height: var(--control-height);
+  padding: 0 12px;
+  background: var(--ad-lacquer-hi);
+  border: 1px solid var(--ad-brass-dk);
+  border-radius: 0;
+  color: var(--text-primary);
+  font: 400 13.5px var(--font-ui);
+  caret-color: var(--ad-brass);
+  cursor: var(--cursor-text);
+}
+textarea { height: auto; padding: 10px 12px; resize: vertical; }
+input[type="text"]:not(:disabled):hover,
+input[type="number"]:not(:disabled):hover,
+textarea:not(:disabled):hover,
+select:not(:disabled):hover,
+.search-input:not(:disabled):hover { border-color: var(--ad-brass); }
+input[type="text"]:focus, input[type="number"]:focus, textarea:focus,
+select:focus, .search-input:focus {
+  outline: var(--focus-ring);
+  outline-offset: 2px;
+  border-color: var(--ad-brass);
+}
+input:disabled, textarea:disabled, select:disabled { border-color: var(--ad-disabled); color: var(--text-disabled); }
+input::placeholder, textarea::placeholder { color: var(--ad-ivory-dim); }
+select {
+  cursor: var(--cursor-interactive);
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23D4AF37' stroke-width='1.6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 30px;
+}
+
+/* ---------- Cases : le losange doré -------------------------------------- */
+input[type="checkbox"] {
+  appearance: none;
+  width: var(--checkbox-size);
+  height: var(--checkbox-size);
+  background: var(--ad-lacquer-hi);
+  border: 1px solid var(--ad-brass-dk);
+  border-radius: 0;
+  margin: 0 6px 0 0;
+  position: relative;
+  cursor: var(--cursor-interactive);
+}
+input[type="checkbox"]:not(:disabled):hover { border-color: var(--ad-brass); }
+input[type="checkbox"]:checked::after {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  transform: rotate(45deg);
+  background: var(--brass);
+}
+input[type="checkbox"]:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
+input[type="checkbox"]:disabled { border-color: var(--ad-disabled); }
+
+/* ---------- Registres (listes de torrents) : bandeau émeraude ----------- */
+.listbox {
+  background: var(--ad-lacquer-hi);
+  border: 1px solid var(--ad-brass-dk);
+  border-radius: 0;
+}
+.row, .scan-row { border-bottom: 1px solid var(--ad-brass-dk); }
+.row:hover { color: var(--ad-brass-hi); }
+.row-name { font-weight: 700; }
+.row-state, .row-category {
+  color: var(--ad-ivory-dim);
+  text-transform: uppercase;
+  letter-spacing: var(--track-soft);
+  font-size: .92em;
+}
+.row-rate, .row-eta, .row-peers { color: var(--ad-ivory-dim); }
+.downloads-row-header {
+  background: var(--ad-lacquer-hi);
+  border-bottom: 2px solid var(--ad-brass);
+  color: var(--ad-brass);
+  text-transform: uppercase;
+  letter-spacing: var(--track-soft);
+  font-size: 11.5px;
+}
+.scan-path { color: var(--text-primary); }
+.scan-size { color: var(--ad-ivory-dim); }
+
+/* ---------- Group box (Profil, détails) : filet double, légende laiton -- */
+.profile-group, .details-group {
+  background: var(--ad-lacquer-hi);
+  border: 1px solid var(--ad-brass-dk);
+  border-radius: 0;
+  box-shadow: inset 0 0 0 1px rgba(212, 175, 55, .18);
+}
+.profile-group h3, .details-group h3 {
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--ad-brass-dk);
+  color: var(--ad-brass);
+  text-transform: uppercase;
+  letter-spacing: var(--track-soft);
+  font-size: 11.5px;
+}
+
+/* ---------- Menu contextuel : plaque à filet double, survol émeraude --- */
+.context-menu {
+  background: var(--ad-lacquer-hi);
+  border: 1px solid var(--ad-brass);
+  border-radius: 0;
+  box-shadow: var(--double-line), var(--shadow-menu);
+  padding: 5px 0;
+}
+.context-menu-item {
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: var(--track-soft);
+  font-size: 12px;
+}
+.context-menu-item:hover {
+  background: var(--ad-emerald);
+  color: var(--selection-text);
+}
+.context-menu-separator { background: var(--ad-brass-dk); }
+
+/* ---------- Boîtes de dialogue : ziggourat + gemme + titre centré ------- */
+.modal-overlay { background: rgba(0, 0, 0, .55); }
+.modal-box {
+  background: var(--ad-lacquer);
+  border: 1px solid var(--ad-brass);
+  border-radius: 0;
+  clip-path: var(--zigg);
+  box-shadow: var(--double-line), var(--shadow-window);
+}
+.modal-box h3 {
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: var(--track-wide);
+  font-size: var(--font-size-title);
+  color: var(--ad-brass-hi);
+}
+.modal-box h3::before {
+  content: "";
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 8px;
+  vertical-align: middle;
+  transform: translateY(-1px) rotate(45deg);
+  background: var(--brass);
+}
+
+/* ---------- Défilement : pouce discret, laiton au survol, sans flèches - */
+::-webkit-scrollbar { width: var(--scrollbar-size); height: var(--scrollbar-size); }
+::-webkit-scrollbar-track { background: var(--ad-lacquer-hi); }
+::-webkit-scrollbar-thumb { background: var(--ad-brass-dk); border-radius: 0; }
+::-webkit-scrollbar-thumb:hover { background: var(--ad-brass); }
+::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+::-webkit-scrollbar-corner { background: transparent; }
+
+/* ---------- Jauge Tetris : le cadre laqué (les pixels restent au canvas) */
+canvas.tetris {
+  border: 1px solid var(--ad-brass-dk);
+  border-radius: 0;
+  box-shadow: var(--double-line);
+  background: var(--ad-lacquer-hi);
+}
