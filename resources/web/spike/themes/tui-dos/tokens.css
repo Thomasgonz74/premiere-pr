@@ -348,7 +348,7 @@ input[type=text], textarea { cursor: var(--cursor-text); }
   width: 26px;           /* .wm-close du spécimen : 26×20, pas un carré */
   margin-left: 0;
 }
-.cap-close:active { background: var(--dos-green); }  /* .wm-close:active du spécimen */
+.cap-close:not(:disabled):active { background: var(--dos-green); }  /* .wm-close:active du spécimen */
 .cap-close span::before, .cap-close span::after { content: none; }
 .cap-close span::before {
   content: "■";           /* le vrai glyphe Turbo Vision : un bloc plein, pas un X */
@@ -465,7 +465,7 @@ input[type="text"]:focus, input[type="number"]:focus, textarea:focus, select:foc
   outline: var(--focus-ring);
   outline-offset: 1px;
 }
-input:disabled, textarea:disabled, select:disabled { background: var(--dos-gray-dk); color: #9E9E9E; }
+input:disabled, textarea:disabled, select:disabled { background: var(--dos-gray-dk); color: var(--text-disabled); }
 select {
   appearance: none; -webkit-appearance: none;
   color: var(--dos-yellow);

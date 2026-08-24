@@ -50,6 +50,10 @@
   <div class="content-row">
   <main class="body">
     <section class="page" id="page-downloads">
+      <div id="downloadsSuggestionBanner" class="suggestion-banner" hidden>
+        <span id="downloadsSuggestionMessage" class="suggestion-banner-message"></span>
+        <button type="button" id="downloadsSuggestionCloseBtn" class="suggestion-banner-close" aria-label="Fermer">✕</button>
+      </div>
       <input type="text" id="downloadsSearchInput" class="search-input" placeholder="Rechercher...">
       <div class="downloads-row-header row downloads-row">
         <span>Nom</span>
@@ -57,7 +61,7 @@
         <span>Temps restant</span>
         <span>↓ Vitesse</span>
         <span>↑ Vitesse</span>
-        <span>Pairs</span>
+        <span>Pairs<span class="info-hint" tabindex="0" data-tooltip="Nombre de pairs connectés. Le nombre entre parenthèses est celui des « seeds » (graines) : des pairs qui possèdent déjà le fichier complet et ne font que l'envoyer.">?</span></span>
         <span>État</span>
         <span>Catégorie</span>
         <span>Action</span>
@@ -69,6 +73,11 @@
       <div class="details-group" id="downloadsDetails">
         <h3>Détails du torrent sélectionné</h3>
         <p class="field-note" id="downloadsDetailsTracker">Tracker actuel : —</p>
+        <p class="field-note" id="downloadsDetailsAllocated">Espace occupé sur le disque : —</p>
+        <div class="field-row">
+          <button id="downloadsDetailsExplainSlowBtn">Pourquoi c'est lent ?</button>
+        </div>
+        <div id="downloadsDetailsSlowness" class="field-note" style="display: none;"></div>
         <div class="field-row">
           <button id="downloadsDetailsPauseBtn">Pause</button>
           <button id="downloadsDetailsResumeBtn">Reprendre</button>
@@ -81,7 +90,16 @@
         <label class="field-row">
           <input type="checkbox" id="downloadsDetailsSequential">
           <span>Téléchargement séquentiel (pour lecture en streaming)</span>
+          <span class="info-hint" tabindex="0" data-tooltip="Télécharge les morceaux du fichier dans l'ordre plutôt qu'en fonction de leur disponibilité, pour pouvoir commencer la lecture avant la fin du téléchargement.">?</span>
         </label>
+        <div class="field-row">
+          <label class="field-label inline" for="downloadsDetailsDeadlineInput">Échéance</label>
+          <input type="datetime-local" id="downloadsDetailsDeadlineInput">
+          <span class="info-hint" tabindex="0" data-tooltip="Fixez une date/heure cible : ce torrent est automatiquement remonté dans la file d'attente à mesure que l'échéance approche (moins de 24h restantes).">?</span>
+          <button id="downloadsDetailsDeadlineSetBtn">Définir</button>
+          <button id="downloadsDetailsDeadlineClearBtn">Effacer</button>
+        </div>
+        <p class="field-note" id="downloadsDetailsDeadlineRemaining"></p>
         <div id="downloadsDetailsTrackerEditor"></div>
       </div>
     </section>
@@ -95,11 +113,23 @@
         </div>
         <label class="field-label" for="addMagnetInput">Lien magnet</label>
         <input type="text" id="addMagnetInput" placeholder="magnet:?xt=urn:btih:...">
+        <label class="field-label" for="addIntentSelect">Je télécharge…</label>
+        <select id="addIntentSelect">
+          <option value="">— Choisir (optionnel) —</option>
+          <option value="movie">Un film/épisode</option>
+          <option value="software">Un logiciel</option>
+          <option value="document">Un document</option>
+          <option value="other">Autre</option>
+        </select>
         <label class="field-label" for="addDestInput">Destination</label>
         <div class="field-row">
           <input type="text" id="addDestInput">
           <button id="addDestBrowseBtn">Parcourir…</button>
         </div>
+        <label class="field-label" for="addCategoryInput">Catégorie</label>
+        <input type="text" id="addCategoryInput" list="addCategoryList">
+        <datalist id="addCategoryList"></datalist>
+        <p class="field-note" id="addSharePolicyNote"></p>
         <div class="field-row">
           <button id="addAnalyzeBtn">Analyser</button>
           <label class="field-label inline" for="addThresholdInput">Seuil d'exclusion auto.</label>
@@ -139,7 +169,8 @@
           <input type="number" id="shareTimeLimitInput" min="0" max="999" value="0" style="width: 60px;">
           <label class="field-label inline">Données (Mo)</label>
           <input type="number" id="shareDataLimitInput" min="0" max="1000000" value="0" style="width: 80px;">
-          <label class="field-label inline">Ratio</label>
+          <label class="field-label inline" for="shareRatioLimitInput">Ratio</label>
+          <span class="info-hint" tabindex="0" data-tooltip="Rapport entre les données envoyées et les données reçues (envoi ÷ réception). Le partage s'arrête automatiquement une fois ce ratio atteint. 0 = pas de limite.">?</span>
           <input type="number" id="shareRatioLimitInput" min="0" max="100" step="0.1" value="0" style="width: 60px;">
         </div>
         <p class="status-line" id="shareStatus"></p>
@@ -181,9 +212,11 @@
   <script src="format.js"></script>
   <script src="tetris.js"></script>
   <script src="modal.js"></script>
+  <script src="tooltip.js"></script>
   <script src="contextmenu.js"></script>
   <script src="theme_switcher.js"></script>
   <script src="app.js"></script>
+  <script src="identicon.js"></script>
   <script src="downloads.js"></script>
   <script src="add.js"></script>
   <script src="share.js"></script>
@@ -197,6 +230,9 @@
   <script src="file_priority.js"></script>
   <script src="peer_list.js"></script>
   <script src="speed_graph_dialog.js"></script>
+  <script src="piece_map_dialog.js"></script>
+  <script src="swarm_constellation.js"></script>
+  <script src="storage_sunburst_dialog.js"></script>
   <script src="create_torrent.js"></script>
   <script src="tracker_editor.js"></script>
   <script src="tabs.js"></script>

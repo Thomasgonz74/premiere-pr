@@ -7,6 +7,45 @@ const LEVEL_LABELS = { SAFE: "Sûr", LOW: "Faible", MEDIUM: "Moyen", HIGH: "Éle
 
 let addSelectedPath = null;
 let addLastScan = null; // { fileRisks, threshold }
+let addDefaultDestination = ""; // captured once from the bridge, used to tell "a routing rule matched" from "no match, same default"
+
+// Intent-guided preset: purely a prefill convenience over existing mechanics
+// (torrent_categories.py's free-text category, routing_rules.py's
+// resolve_destination(), and the share-policy defaults ShareLimitService
+// already reads from Settings) -- see bridge_add.py. Nothing here is
+// validated or enforced; every prefilled field stays freely editable.
+// "other" has no keyword list on purpose: no plausible category to guess,
+// so picking it only surfaces the share-policy note, if any.
+const ADD_INTENT_CATEGORY_GUESSES = {
+  movie: { fallback: "Films", keywords: ["film", "vidéo", "video", "série", "serie", "épisode", "episode"] },
+  software: { fallback: "Logiciels", keywords: ["logiciel", "app", "programme", "soft"] },
+  document: { fallback: "Documents", keywords: ["document", "doc", "livre", "ebook"] },
+};
+
+function addGuessCategory(intent, existingCategories) {
+  const spec = ADD_INTENT_CATEGORY_GUESSES[intent];
+  if (!spec) return ""; // "other" or unknown -- no invented mapping
+  const existing = existingCategories.find((c) => spec.keywords.some((k) => c.toLowerCase().includes(k)));
+  return existing || spec.fallback;
+}
+
+function addApplyIntentPreset(intent) {
+  const addBridge = window.bridge.add;
+  addBridge.defaultSharePolicyNote((note) => {
+    document.getElementById("addSharePolicyNote").textContent = note;
+  });
+  if (!intent) return;
+  addBridge.listCategories((categories) => {
+    const category = addGuessCategory(intent, categories);
+    if (!category) return;
+    document.getElementById("addCategoryInput").value = category;
+    addBridge.resolveDestination(category, (dest) => {
+      if (dest && dest !== addDefaultDestination) {
+        document.getElementById("addDestInput").value = dest;
+      }
+    });
+  });
+}
 
 function addRenderScan(scan) {
   addLastScan = scan;
@@ -78,6 +117,9 @@ function addResetForm() {
   addSelectedPath = null;
   document.getElementById("addSelectedFile").textContent = "";
   document.getElementById("addMagnetInput").value = "";
+  document.getElementById("addIntentSelect").value = "";
+  document.getElementById("addCategoryInput").value = "";
+  document.getElementById("addSharePolicyNote").textContent = "";
   addClearScanList();
   addLastScan = null;
 }
@@ -100,10 +142,24 @@ function wireAddPage() {
   const dialogs = window.bridge.dialogs;
 
   addBridge.defaultDestination((dest) => {
+    addDefaultDestination = dest;
     document.getElementById("addDestInput").value = dest;
   });
   addBridge.defaultThreshold((threshold) => {
     document.getElementById("addThresholdInput").value = threshold;
+  });
+  addBridge.listCategories((categories) => {
+    const datalist = document.getElementById("addCategoryList");
+    datalist.replaceChildren();
+    categories.forEach((c) => {
+      const option = document.createElement("option");
+      option.value = c;
+      datalist.appendChild(option);
+    });
+  });
+
+  document.getElementById("addIntentSelect").addEventListener("change", (e) => {
+    addApplyIntentPreset(e.target.value);
   });
 
   document.getElementById("addBrowseBtn").addEventListener("click", () => {
@@ -149,7 +205,8 @@ function wireAddPage() {
   document.getElementById("addStartBtn").addEventListener("click", () => {
     const dest = document.getElementById("addDestInput").value;
     const magnet = document.getElementById("addMagnetInput").value;
-    addBridge.startTorrent(dest, magnet, addExcludedIndices(), (result) => {
+    const category = document.getElementById("addCategoryInput").value;
+    addBridge.startTorrent(dest, magnet, category, addExcludedIndices(), (result) => {
       document.getElementById("addStatus").textContent = result.error || "";
     });
   });

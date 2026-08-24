@@ -4,10 +4,16 @@ detection via libtorrent's own duplicate_is_error exception, disk-space
 check before a file-based add, the magnet-needs-two-clicks-of-Demarrer
 quirk) rather than reinventing any of it.
 
-Deliberately NOT ported (ponytail: a convenience prefill, not behavior --
-skipping it doesn't break anything, the user just types the destination
-manually like they always could): AddTorrentTab's routing-rule auto-prefill
-of dest_input from the torrent's name/tracker (routing_rules.py).
+AddTorrentTab's own routing-rule auto-prefill of dest_input from the
+torrent's name/tracker is still NOT ported (it fires on every analysis,
+unconditionally). What IS exposed here is narrower: listCategories/
+resolveDestination/defaultSharePolicyNote back the intent-guided preset
+selector in add.js, which only ever prefills the category/destination
+fields (still freely editable) when the user explicitly picks a preset --
+each one reuses an existing engine mechanism (torrent_categories.py's
+free-text category, routing_rules.py's resolve_destination(), and the
+Settings fields ShareLimitService already reads for its default policy)
+rather than adding a new one.
 """
 
 from PySide6.QtCore import QObject, Signal, Slot
@@ -15,6 +21,7 @@ from PySide6.QtCore import QObject, Signal, Slot
 from torrent2000.config.settings import Settings
 from torrent2000.danger_scanner import FileRisk, ScanResult, scan_files
 from torrent2000.engine.disk_space_monitor import free_space_mb
+from torrent2000.engine.routing_rules import RoutingRuleStore, resolve_destination
 from torrent2000.engine.session_manager import SessionManager
 from torrent2000.engine.torrent_files import files_from_torrent_path
 from torrent2000.ui.web.dropped_file import save_dropped_bytes_to_temp_file
@@ -47,10 +54,17 @@ class AddBridge(QObject):
     started = Signal()
     blockedByTheme = Signal()
 
-    def __init__(self, session_manager: SessionManager, settings: Settings, parent=None) -> None:
+    def __init__(
+        self,
+        session_manager: SessionManager,
+        settings: Settings,
+        routing_rule_store: RoutingRuleStore,
+        parent=None,
+    ) -> None:
         super().__init__(parent)
         self._session_manager = session_manager
         self._settings = settings
+        self._routing_rule_store = routing_rule_store
         self._torrent_path: str | None = None
         self._pending_magnet_hash: str | None = None
         self._threshold = settings.danger_auto_exclude_threshold
@@ -68,6 +82,49 @@ class AddBridge(QObject):
     @Slot(int)
     def setThreshold(self, value: int) -> None:
         self._threshold = value
+
+    @Slot(result="QVariantList")
+    def listCategories(self) -> list:
+        """Same distinct-categories-in-use list DownloadsBridge.listCategories
+        exposes -- reused here so the intent preset can prefer a category the
+        user already uses over inventing a new near-duplicate name."""
+        return self._session_manager.list_categories()
+
+    @Slot(str, result=str)
+    def resolveDestination(self, category: str) -> str:
+        """Reuses routing_rules.resolve_destination() unchanged, with the
+        preset's guessed category standing in for the torrent name -- the
+        only signal available before a file/magnet has necessarily been
+        analyzed yet. Returns the configured default destination unchanged
+        (same as any other resolve_destination() caller) when no rule's
+        pattern matches."""
+        return resolve_destination(
+            self._routing_rule_store.list_rules(), self._settings.default_download_dir, name=category
+        )
+
+    @Slot(result=str)
+    def defaultSharePolicyNote(self) -> str:
+        """Informational only: share_limits.py has no per-add-time or
+        per-category default, tracking always starts once a torrent reaches
+        SEEDING (see ShareLimitService.apply_default_policy_if_enabled).
+        Surfaces the already-configured default in the same units it's
+        stored in, so the preset can tell the user what will happen
+        automatically without adding a field tied to no real mechanism."""
+        if not self._settings.default_share_policy_enabled:
+            return ""
+        parts = []
+        if self._settings.default_share_time_limit_hours:
+            parts.append(f"{self._settings.default_share_time_limit_hours} h")
+        if self._settings.default_share_data_limit_mb:
+            parts.append(f"{self._settings.default_share_data_limit_mb} Mo")
+        if self._settings.default_share_ratio_limit:
+            parts.append(f"ratio {self._settings.default_share_ratio_limit:g}")
+        if not parts:
+            return ""
+        return (
+            "Politique de partage par défaut active (" + " / ".join(parts) + ") — "
+            "appliquée automatiquement une fois le partage commencé."
+        )
 
     @Slot(str)
     def selectTorrentFile(self, path: str) -> None:
@@ -114,14 +171,17 @@ class AddBridge(QObject):
         self.scanReady.emit(_scan_result_to_dict(result, self._threshold))
         self.statusChanged.emit(f"{len(files)} fichier(s) analysé(s).")
 
-    @Slot(str, str, "QVariantList", result="QVariantMap")
-    def startTorrent(self, dest_path: str, magnet_uri: str, excluded_indices) -> dict:
+    @Slot(str, str, str, "QVariantList", result="QVariantMap")
+    def startTorrent(self, dest_path: str, magnet_uri: str, category: str, excluded_indices) -> dict:
         excluded = {int(i) for i in excluded_indices}
         dest_path = (dest_path or "").strip() or self._settings.default_download_dir
+        category = (category or "").strip()
 
         if self._pending_magnet_hash and not self._torrent_path:
             if excluded:
                 self._session_manager.exclude_files(self._pending_magnet_hash, excluded)
+            if category:
+                self._session_manager.set_torrent_category(self._pending_magnet_hash, category)
             self._session_manager.start_after_analysis(self._pending_magnet_hash)
             self._reset()
             self.started.emit()
@@ -137,9 +197,11 @@ class AddBridge(QObject):
             if free_mb is not None and free_mb < total_size / (1024 * 1024):
                 return {"ok": False, "error": "Espace disque insuffisant sur le volume de destination."}
             try:
-                self._session_manager.add_torrent_from_file(self._torrent_path, dest_path, excluded)
+                info_hash = self._session_manager.add_torrent_from_file(self._torrent_path, dest_path, excluded)
             except Exception:
                 return {"ok": False, "error": "Ce torrent est déjà présent."}
+            if category:
+                self._session_manager.set_torrent_category(info_hash, category)
             self._reset()
             self.started.emit()
             return {"ok": True}

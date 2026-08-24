@@ -4,7 +4,11 @@
 
 const PEER_LIST_HEADERS = ["IP", "Client", "Progression", "↓ Vitesse", "↑ Vitesse"];
 
-function _peerListRenderRows(list, peers) {
+// Opt-in (Settings.peer_reputation_enabled, see engine/peer_reputation.py) --
+// column only gets added when bridge.peerList.isReputationEnabled() says so.
+const PEER_REPUTATION_LABELS = { good: "Bonne", neutral: "Neutre", bad: "Mauvaise" };
+
+function _peerListRenderRows(list, peers, reputationScores) {
   list.replaceChildren();
 
   if (peers.length === 0) {
@@ -43,6 +47,14 @@ function _peerListRenderRows(list, peers) {
     upEl.textContent = formatRate(peer.upSpeed);
     row.appendChild(upEl);
 
+    if (reputationScores) {
+      const score = reputationScores[peer.ip] || "neutral";
+      const repEl = document.createElement("div");
+      repEl.className = `reputation-badge reputation-${score}`;
+      repEl.textContent = PEER_REPUTATION_LABELS[score] || PEER_REPUTATION_LABELS.neutral;
+      row.appendChild(repEl);
+    }
+
     list.appendChild(row);
   });
 }
@@ -53,22 +65,35 @@ function openPeerListDialog(infoHash, torrentName) {
   const header = document.createElement("div");
   header.className = "row";
   header.style.fontWeight = "bold";
-  PEER_LIST_HEADERS.forEach((text) => {
-    const cell = document.createElement("div");
-    cell.textContent = text;
-    header.appendChild(cell);
-  });
   contentEl.appendChild(header);
 
   const list = document.createElement("div");
   list.className = "listbox";
   contentEl.appendChild(list);
 
-  const refresh = () => {
-    window.bridge.peerList.getPeers(infoHash, (peers) => _peerListRenderRows(list, peers));
-  };
-  refresh();
-  const timer = setInterval(refresh, 2000);
+  window.bridge.peerList.isReputationEnabled((reputationEnabled) => {
+    const headers = reputationEnabled ? [...PEER_LIST_HEADERS, "Réputation"] : PEER_LIST_HEADERS;
+    headers.forEach((text) => {
+      const cell = document.createElement("div");
+      cell.textContent = text;
+      header.appendChild(cell);
+    });
 
-  openModal(`Pairs — ${torrentName}`, contentEl, () => clearInterval(timer));
+    const refresh = () => {
+      window.bridge.peerList.getPeers(infoHash, (peers) => {
+        if (!reputationEnabled || peers.length === 0) {
+          _peerListRenderRows(list, peers, null);
+          return;
+        }
+        window.bridge.peerList.getReputationScores(
+          peers.map((p) => p.ip),
+          (scores) => _peerListRenderRows(list, peers, scores)
+        );
+      });
+    };
+    refresh();
+    const timer = setInterval(refresh, 2000);
+
+    openModal(`Pairs — ${torrentName}`, contentEl, () => clearInterval(timer));
+  });
 }

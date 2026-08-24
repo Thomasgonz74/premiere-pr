@@ -203,6 +203,8 @@
   "notifications.share_paused_message": "{name} -- {reason}",
   "notifications.tracker_error_title": "Erreur de tracker",
   "notifications.tracker_error_message": "{name} -- {message}",
+  "notifications.file_error_title": "Erreur disque/fichier",
+  "notifications.file_error_message": "{name} -- {message}",
   "notifications.limit_reason_time": "limite de temps atteinte",
   "notifications.limit_reason_data": "limite de données atteinte",
   "notifications.limit_reason_generic": "limite atteinte",

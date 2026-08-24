@@ -392,7 +392,7 @@ input[type=text], textarea { cursor: var(--cursor-text); }
   cursor: var(--cursor-default);
   transition: background var(--transition-state), color var(--transition-state);
 }
-.cap-btn:hover { filter: none; background: #CFD3D6; }
+.cap-btn:not(:disabled):hover { filter: none; background: #CFD3D6; }
 /* Dark mode : le disque de survol clair #CFD3D6 est proche du blanc, or le
    glyphe (currentColor = --text-primary) devient lui aussi quasi blanc en
    sombre -- glyphe blanc sur disque presque blanc = illisible. On reprend
@@ -401,8 +401,8 @@ input[type=text], textarea { cursor: var(--cursor-text); }
    s'applique qu'en [data-theme="dark"] : HC garde le #CFD3D6 d'origine
    (encre noire dessus, deja lisible). */
 [data-theme="dark"] .cap-btn:hover { background: var(--bz-border); }
-.cap-btn:active { background: var(--accent); color: #fff; }
-.cap-close:hover { background: var(--bz-close); color: #fff; }
+.cap-btn:not(:disabled):active { background: var(--accent); color: #fff; }
+.cap-close:not(:disabled):hover { background: var(--bz-close); color: #fff; }
 
 /* Chevrons fins (Réduire = bas, Agrandir = haut) via le coin de bordure
    classique tourné à 45° -- même geste que le glyphe X ci-dessous, sans

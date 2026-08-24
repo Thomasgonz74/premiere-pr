@@ -365,9 +365,19 @@ input[type=text], textarea { cursor: var(--cursor-text); }
   transition: filter var(--transition-state);
 }
 .cap-btn:hover { filter: brightness(1.08); }
-.cap-btn:active { filter: brightness(.92); }
+/* :not(:disabled) porte la specificite de la regle :active a (0,3,0),
+   necessaire pour battre la regle generique button:not(:disabled):active
+   (0,2,1) plus bas dans ce fichier, qui fixe elle aussi "background" --
+   sans ca (et sans redeclarer "background" ici), l'etat presse passait
+   silencieusement au bleu pale generique (--plastic-pressed) au lieu de
+   garder SA propre couleur assombrie (meme bug deja corrige sur cccp_soviet
+   et win7_aero). Le survol n'est pas concerne : la regle generique n'y
+   fixe que border-color/box-shadow, jamais background. */
+.cap-btn:not(:disabled):active { filter: brightness(.92); background: var(--gloss), var(--fa-blue); }
 .cap-max { background: var(--gloss), var(--fa-green); }
+.cap-max:not(:disabled):active { background: var(--gloss), var(--fa-green); }
 .cap-close { background: var(--gloss), var(--fa-red); margin-left: 0; }
+.cap-close:not(:disabled):active { background: var(--gloss), var(--fa-red); }
 
 /* Doctrine (§2, §7) : la goutte se distingue par sa COULEUR, jamais par un
    glyphe -- le spécimen neutralise explicitement l'icône de ses boutons de

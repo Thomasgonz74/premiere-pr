@@ -334,8 +334,8 @@ body.is-inactive .titlebar {
   color: var(--z-metal);
   box-shadow: none;
 }
-.cap-btn:hover { border-color: var(--z-steel-hi); color: var(--z-cream); filter: none; }
-.cap-btn:active { background: #0A121D; filter: none; }
+.cap-btn:not(:disabled):hover { border-color: var(--z-steel-hi); color: var(--z-cream); filter: none; }
+.cap-btn:not(:disabled):active { background: #0A121D; filter: none; }
 .cap-close { background: var(--z-field); }
 .cap-close:not(:disabled):hover {
   background: var(--z-red);

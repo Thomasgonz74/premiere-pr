@@ -109,8 +109,8 @@
   --gradient-titlebtn-close: radial-gradient(circle at 30% 25%, #F7B49B, #E0552E 60%, #B23310);
 
   /* Cases & radios */
-  --gradient-check:         linear-gradient(135deg,#DCDCD7,#FFFFFF);
-  --gradient-check-pressed: linear-gradient(135deg,#B0B0A7,#E3E1D2);
+  --gradient-check:         linear-gradient(180deg,#DCDCD7,#FFFFFF);
+  --gradient-check-pressed: linear-gradient(180deg,#B0B0A7,#E3E1D2);
 
   /* Jauge de progression : blocs verts (masque blanc 2px toutes les 10px) */
   --gradient-progress:
@@ -307,7 +307,7 @@
   --plastic-tab: linear-gradient(180deg,#414A5A,#303845);
   --gradient-panel: linear-gradient(180deg,#2E3540,#262C36);
   --gradient-title-active: linear-gradient(180deg,#2E4258,#14202E 8%,#121E2C 40%,#1A2A3C 88%,#1A2A3C 93%,#162434 95%,#0E1826 96%,#0A1420);
-  --gradient-check: linear-gradient(135deg,#2C3542,#4A586C);
+  --gradient-check: linear-gradient(180deg,#2C3542,#4A586C);
   --gradient-scroll-track-v: linear-gradient(90deg,#1C2129,#242A34);
   --gradient-scroll-track-h: linear-gradient(180deg,#1C2129,#242A34);
   --frame-shadow: 0 6px 20px rgba(0,0,0,.6);
@@ -404,11 +404,21 @@ input[type=text], textarea { cursor: var(--cursor-text); }
   border-color: #fff;           /* liseré blanc franc, pas une bordure translucide */
   box-shadow: inset 0 1px 1px rgba(255,255,255,.55), inset 0 -7px 8px -6px rgba(0,10,90,.6);
 }
-.cap-btn:hover { box-shadow: inset 0 1px 1px rgba(255,255,255,.7), inset 0 -7px 8px -6px rgba(0,10,90,.5); }
+/* :not(:disabled) raises specificity to (0,3,0), needed to beat the generic
+   button:not(:disabled):hover rule below (itself (0,2,1)) -- without it these
+   buttons silently lose their own box-shadow to --glow-hover (same bug as
+   already fixed on cccp_soviet/win7_aero's caption buttons). */
+.cap-btn:not(:disabled):hover { box-shadow: inset 0 1px 1px rgba(255,255,255,.7), inset 0 -7px 8px -6px rgba(0,10,90,.5); }
+/* Same :not(:disabled) reasoning as :hover above, needed to beat the generic
+   button:not(:disabled):active rule (background: var(--plastic-pressed);
+   box-shadow: none) two blocks below -- without it, pressing a caption
+   button replaced the glossy inset with a flat gray fill. */
+.cap-btn:not(:disabled):active { background: transparent; box-shadow: inset 0 1px 3px rgba(0,10,90,.75), inset 0 1px 1px rgba(255,255,255,.3); }
 .cap-close {
   box-shadow: inset 0 1px 1px rgba(255,255,255,.55), inset 0 -7px 8px -6px rgba(90,10,0,.6);
 }
-.cap-close:hover { box-shadow: inset 0 1px 1px rgba(255,255,255,.7), inset 0 -7px 8px -6px rgba(90,10,0,.5); }
+.cap-close:not(:disabled):hover { box-shadow: inset 0 1px 1px rgba(255,255,255,.7), inset 0 -7px 8px -6px rgba(90,10,0,.5); }
+.cap-close:not(:disabled):active { background: transparent; box-shadow: inset 0 1px 3px rgba(90,10,0,.75), inset 0 1px 1px rgba(255,255,255,.3); }
 /* Réduire : simple barre 8x3, comme .g-min du spécimen */
 .cap-min span::before {
   left: 50%; right: auto; bottom: auto; top: 50%; height: 3px; width: 8px;

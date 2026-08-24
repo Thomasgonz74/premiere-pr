@@ -87,27 +87,29 @@
 
   /* ========================================================
      3. LA TUILE — la signature du style : AUCUN dégradé nulle
-     part (interdit #2, y compris au bureau). Les propriétés
+     part (interdit #2, y compris au bureau -- la fonction CSS
+     de dégradé ne doit apparaître nulle part). Les propriétés
      "background" attendues par le CSS partagé reçoivent donc
-     un dégradé 2 arrêts même couleur : syntaxiquement un
-     gradient, visuellement un aplat pur — le choix authentique
-     pour cette charte. Valeurs tirées du tableau d'états §7 :
-     repos = transparent, pressé = accent plein.
+     des APLATS PURS (jamais cette fonction, même à 2 arrêts
+     identiques) : le contrat structurel n'exige qu'une valeur
+     `background` valide, une couleur plate le satisfait tout
+     autant. Valeurs tirées du tableau d'états §7 : repos =
+     transparent, pressé = accent plein.
      ======================================================== */
-  --plastic-raised:  linear-gradient(transparent, transparent);
-  --plastic-pressed: linear-gradient(var(--accent), var(--accent));
+  --plastic-raised:  transparent;
+  --plastic-pressed: var(--accent);
 
   /* Barre de titre : blanche pure (§6.2) */
-  --gradient-title-active: linear-gradient(var(--mt-white), var(--mt-white));
+  --gradient-title-active: var(--mt-white);
 
   /* Boutons de titre (captions) : AUCUN fond au repos, juste le
      glyphe sur le blanc de la barre — le survol (gris/rouge) est
      un état, pas ce token de base. */
-  --gradient-titlebtn:       linear-gradient(transparent, transparent);
-  --gradient-titlebtn-close: linear-gradient(transparent, transparent);
+  --gradient-titlebtn:       transparent;
+  --gradient-titlebtn-close: transparent;
 
   /* Jauge de progression : bloc plein accent, angles vifs (§9) */
-  --gradient-progress: linear-gradient(var(--accent), var(--accent));
+  --gradient-progress: var(--accent);
 
   /* ========================================================
      4. OMBRES & LUEURS — Metro proscrit toute ombre hors
@@ -359,11 +361,11 @@ body {
   background: transparent;
   color: var(--mt-ink);
 }
-.cap-btn:hover {
+.cap-btn:not(:disabled):hover {
   filter: none;
   background: var(--mt-gray-hover);
 }
-.cap-btn:active {
+.cap-btn:not(:disabled):active {
   filter: none;
   background: #CACACA;
 }
@@ -381,11 +383,11 @@ body {
   background: transparent;
   margin-left: 0;
 }
-.cap-close:hover {
+.cap-close:not(:disabled):hover {
   background: var(--destructive);
   color: #fff;
 }
-.cap-close:active {
+.cap-close:not(:disabled):active {
   background: #C00E1D;
   color: #fff;
 }
@@ -638,7 +640,10 @@ input[type="checkbox"]:disabled {
 /* .row-state/-rate/-eta/-category/-peers n'ont pas de recette propre dans
    la charte : ils héritent la couleur de .row à dessein (pas de color: fixe
    ici) pour rester lisibles pendant l'inversion noire au survol. */
-.row-name { font-weight: 600; }
+/* Pas de gras pour hiérarchiser (interdit #5) : la charte réserve le bold
+   à l'inline rare, jamais à une colonne entière -- on annule explicitement
+   le "font-weight: bold" par défaut de style.css. */
+.row-name { font-weight: 400; }
 .downloads-row-header {
   border-bottom: 2px solid var(--mt-ink);
   font-weight: 600;

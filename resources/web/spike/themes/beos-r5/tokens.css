@@ -375,8 +375,8 @@ body {
   display: grid;
   place-items: center;
 }
-.cap-btn:hover { filter: none; background: var(--be-yellow-hi); }
-.cap-btn:active { filter: none; box-shadow: inset 1px 1px 0 var(--be-yellow-dk); }
+.cap-btn:not(:disabled):hover { filter: none; background: var(--be-yellow-hi); }
+.cap-btn:not(:disabled):active { filter: none; box-shadow: inset 1px 1px 0 var(--be-yellow-dk); }
 .cap-close { background: var(--be-yellow); margin-left: 0; }
 /* Fermer (components.html) est une plaque NUE, sans glyphe dessiné dedans —
    seule sa position + son aria-label la distinguent. */

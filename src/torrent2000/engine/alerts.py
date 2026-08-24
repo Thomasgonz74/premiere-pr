@@ -52,6 +52,7 @@ class AlertDispatcher:
         on_torrent_removed: Callable[[str], None],
         on_torrent_added: Callable[["lt.torrent_handle"], None],
         on_storage_moved: Callable[[str, str], None],
+        on_file_error: Callable[[str, str], None],
     ) -> None:
         self._on_state_update = on_state_update
         self._on_metadata_received = on_metadata_received
@@ -61,6 +62,7 @@ class AlertDispatcher:
         self._on_torrent_removed = on_torrent_removed
         self._on_torrent_added = on_torrent_added
         self._on_storage_moved = on_storage_moved
+        self._on_file_error = on_file_error
 
     def dispatch_all(self, alerts: list) -> None:
         # One handler raising (e.g. a race between an async torrent removal
@@ -93,6 +95,12 @@ class AlertDispatcher:
                 self._on_torrent_added(alert.handle)
         elif isinstance(alert, lt.storage_moved_alert):
             self._on_storage_moved(_hash_of(alert.handle), alert.storage_path)
+        elif isinstance(alert, lt.file_error_alert):
+            # alert.message() is libtorrent's own composed description
+            # (torrent name + which file + the underlying OS error, e.g. "the
+            # device is not ready") -- more useful to the user than alert.error
+            # alone, which is just the raw OS error text with no file context.
+            self._on_file_error(_hash_of(alert.handle), str(alert.message()))
 
 
 def _hash_of(handle: "lt.torrent_handle") -> str:

@@ -475,15 +475,15 @@ input[type=text], textarea { cursor: var(--cursor-text); }
    charte clair (comme le "#fff" de :active juste en dessous, déjà en dur pour
    la même raison) -- sinon un glyphe éclairci pour le mode sombre redeviendrait
    invisible une fois posé sur ce disque clair au survol. */
-.cap-btn:not(:disabled):hover { background: var(--wm-hover-bg); color: #404040; }
-.cap-btn:not(:disabled):active { background: var(--wm-active-bg); color: #fff; }
+.cap-btn:not(:disabled):hover { background: var(--wm-hover-bg); color: #404040; filter: none; }
+.cap-btn:not(:disabled):active { background: var(--wm-active-bg); color: #fff; filter: none; }
 .cap-close {
   background: var(--close-bg);
   color: var(--close-glyph);
   margin-left: 2px;
 }
-.cap-close:not(:disabled):hover { background: var(--close-hover); }
-.cap-close:not(:disabled):active { background: var(--close-pressed); }
+.cap-close:not(:disabled):hover { background: var(--close-hover); filter: none; }
+.cap-close:not(:disabled):active { background: var(--close-pressed); filter: none; }
 
 /* Glyphes recentrés au milieu du disque de 24 px (le CSS partagé les colle
    aux bords via left/right:6px) -- tailles calquées sur .g-min/.g-max/

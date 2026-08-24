@@ -276,10 +276,10 @@ input[type=text], textarea { cursor: var(--cursor-text); }
   color: var(--bp-line);
   transition: border-color var(--transition-state);
 }
-.cap-btn:hover { border-color: var(--bp-line); border-width: 2px; filter: none; }
-.cap-btn:active { background: var(--hatch); filter: none; }
+.cap-btn:not(:disabled):hover { border-color: var(--bp-line); border-width: 2px; filter: none; }
+.cap-btn:not(:disabled):active { background: var(--hatch); filter: none; }
 .cap-close { background: none; margin-left: 0; }
-.cap-close:hover { border-color: var(--bp-red); color: var(--bp-red); }
+.cap-close:not(:disabled):hover { border-color: var(--bp-red); color: var(--bp-red); }
 
 /* Gadgets dessines au trait : le span porte le glyphe (pas de fond) */
 .cap-min span, .cap-max span, .cap-close span { position: absolute; inset: 0; }

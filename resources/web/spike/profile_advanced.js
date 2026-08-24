@@ -285,6 +285,21 @@ function arRefreshProfileCombo(selectName) {
   const hasProfiles = arProfiles.length > 0;
   document.getElementById("apApplyBtn").disabled = !hasProfiles;
   document.getElementById("apDeleteBtn").disabled = !hasProfiles;
+
+  // The network-profile-switch section (below) picks a profile from the
+  // same list -- kept in sync here rather than duplicating the reload call,
+  // guarded since this runs before that section exists on the very first
+  // page build.
+  const anpSelect = document.getElementById("anpProfileSelect");
+  if (anpSelect) {
+    anpSelect.replaceChildren();
+    arProfiles.forEach((profile) => {
+      const opt = document.createElement("option");
+      opt.value = profile.name;
+      opt.textContent = profile.name;
+      anpSelect.appendChild(opt);
+    });
+  }
 }
 
 function arReloadProfiles(selectName) {
@@ -369,10 +384,135 @@ function arBuildProfilesSection(container) {
   container.appendChild(section);
 }
 
+// ------------------------------------------------- network profile auto-switch
+
+let anpAssociations = [];
+
+function anpRenderAssociations(list) {
+  const box = document.getElementById("anpList");
+  box.replaceChildren();
+  if (!list.length) {
+    const note = document.createElement("p");
+    note.className = "empty-note";
+    note.textContent = "Aucune association réseau -> profil pour l'instant.";
+    box.appendChild(note);
+    return;
+  }
+  list.forEach((assoc) => {
+    const row = document.createElement("div");
+    row.className = "row";
+
+    const ssidEl = document.createElement("span");
+    ssidEl.className = "row-name";
+    ssidEl.textContent = assoc.ssid;
+    ssidEl.title = assoc.ssid;
+    row.appendChild(ssidEl);
+
+    const profileEl = document.createElement("span");
+    profileEl.textContent = assoc.profileName;
+    profileEl.title = assoc.profileName;
+    row.appendChild(profileEl);
+
+    const actions = document.createElement("div");
+    actions.className = "row-actions";
+    const removeBtn = document.createElement("button");
+    removeBtn.textContent = "✕";
+    removeBtn.addEventListener("click", () => {
+      window.bridge.profileAdvanced.deleteNetworkProfileAssociation(assoc.ssid);
+      anpReloadAssociations();
+    });
+    actions.appendChild(removeBtn);
+    row.appendChild(actions);
+
+    box.appendChild(row);
+  });
+}
+
+function anpReloadAssociations() {
+  window.bridge.profileAdvanced.listNetworkProfileAssociations((list) => {
+    anpAssociations = list;
+    anpRenderAssociations(list);
+  });
+}
+
+function anpBuildSection(container) {
+  const section = document.createElement("div");
+  section.className = "profile-section";
+  section.appendChild(arSectionHeading("Bascule automatique de profil selon le réseau Wi-Fi"));
+
+  const intro = document.createElement("p");
+  intro.className = "field-note";
+  intro.textContent =
+    "Associez un réseau Wi-Fi (SSID) à un profil de réglages ci-dessus : dès que ce réseau est détecté, " +
+    "le profil correspondant est appliqué automatiquement (proxy, chiffrement, notifications, limites de " +
+    "débit, restriction DHT/PEX/LSD). Désactivé par défaut.";
+  section.appendChild(intro);
+
+  const { row: enabledRow, check: enabledCheck } = paCheckboxRow(
+    "anpEnabled",
+    "Activer la bascule automatique de profil réseau"
+  );
+  section.appendChild(enabledRow);
+  enabledCheck.addEventListener("change", () => {
+    window.bridge.profileAdvanced.setNetworkProfileSwitchEnabled(enabledCheck.checked, () => {});
+  });
+  window.bridge.profileAdvanced.getNetworkProfileSwitchSettings((values) => {
+    enabledCheck.checked = values.enabled;
+  });
+
+  const addRow = document.createElement("div");
+  addRow.className = "field-row";
+  const ssidInput = document.createElement("input");
+  ssidInput.type = "text";
+  ssidInput.id = "anpSsidInput";
+  ssidInput.placeholder = "Nom du réseau Wi-Fi (SSID)";
+  addRow.appendChild(ssidInput);
+
+  const profileSelect = document.createElement("select");
+  profileSelect.id = "anpProfileSelect";
+  addRow.appendChild(profileSelect);
+
+  const addBtn = document.createElement("button");
+  addBtn.textContent = "Associer";
+  addRow.appendChild(addBtn);
+  section.appendChild(addRow);
+
+  const addStatus = document.createElement("p");
+  addStatus.className = "status-line";
+  addStatus.id = "anpAddStatus";
+  section.appendChild(addStatus);
+
+  const list = document.createElement("div");
+  list.id = "anpList";
+  list.className = "listbox";
+  section.appendChild(list);
+
+  addBtn.addEventListener("click", () => {
+    const ssid = ssidInput.value.trim();
+    const profileName = profileSelect.value;
+    window.bridge.profileAdvanced.saveNetworkProfileAssociation(ssid, profileName, (result) => {
+      addStatus.textContent = result.error || "";
+      if (result.ok) {
+        ssidInput.value = "";
+        anpReloadAssociations();
+      }
+    });
+  });
+
+  container.appendChild(section);
+
+  // Populated for real once arReloadProfiles() (called from
+  // wireProfileAdvanced, after this section is built) resolves -- see
+  // arRefreshProfileCombo, which keeps this <select> in sync with the
+  // settings-profile list from then on.
+}
+
 function wireProfileAdvanced() {
   const container = document.getElementById("profileAdvancedContainer");
   arBuildRulesSection(container);
   arBuildProfilesSection(container);
+  anpBuildSection(container);
   arReloadRules();
   arReloadProfiles();
+  anpReloadAssociations();
 }

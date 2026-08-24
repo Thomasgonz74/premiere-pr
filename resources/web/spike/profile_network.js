@@ -18,11 +18,12 @@ function pnSectionHeading(text) {
   return h;
 }
 
-function pnLabeledField(labelText, field, forId) {
+function pnLabeledField(labelText, field, forId, tooltipText) {
   const label = document.createElement("label");
   label.className = "field-label";
   label.textContent = labelText;
   if (forId) label.htmlFor = forId;
+  if (tooltipText) label.appendChild(makeInfoHint(tooltipText));
   const wrap = document.createElement("div");
   wrap.className = "form-grid";
   wrap.appendChild(label);
@@ -30,7 +31,7 @@ function pnLabeledField(labelText, field, forId) {
   return wrap;
 }
 
-function pnCheckboxRow(labelText, id) {
+function pnCheckboxRow(labelText, id, tooltipText) {
   const row = document.createElement("div");
   row.className = "field-row";
   const input = document.createElement("input");
@@ -40,6 +41,7 @@ function pnCheckboxRow(labelText, id) {
   label.className = "field-label inline";
   label.textContent = labelText;
   label.htmlFor = id;
+  if (tooltipText) label.appendChild(makeInfoHint(tooltipText));
   row.appendChild(input);
   row.appendChild(label);
   return { row, input };
@@ -81,7 +83,8 @@ function buildNetworkPrivacySection(container, bridge) {
 
   const restrictRow = pnCheckboxRow(
     "Restreindre la découverte (DHT/LSD) aux pairs du tracker",
-    "pnRestrictDiscovery"
+    "pnRestrictDiscovery",
+    "DHT et LSD permettent de trouver des pairs même sans tracker actif (recherche décentralisée sur Internet et sur le réseau local). Cocher cette option limite la découverte aux seuls pairs annoncés par le tracker, au prix de pairs potentiellement moins nombreux."
   );
   form.appendChild(restrictRow.row);
 
@@ -127,7 +130,12 @@ function buildNetworkPrivacySection(container, bridge) {
   form.appendChild(pnLabeledField("Interface réseau", interfaceInput, "pnNetworkInterface"));
 
   const encryptionSelect = pnSelect("pnEncryptionMode", ENCRYPTION_MODE_LABELS);
-  form.appendChild(pnLabeledField("Chiffrement du protocole", encryptionSelect, "pnEncryptionMode"));
+  form.appendChild(pnLabeledField(
+    "Chiffrement du protocole",
+    encryptionSelect,
+    "pnEncryptionMode",
+    "Chiffre le trafic BitTorrent pour le rendre plus difficile à repérer par un pare-feu ou un FAI qui bride ce type de trafic. « Forcé » refuse toute connexion non chiffrée ; « Désactivé » n'en propose aucune."
+  ));
 
   const saveBtn = document.createElement("button");
   saveBtn.className = "start-btn";

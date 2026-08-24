@@ -30,6 +30,7 @@ from torrent2000.ui.web.bridge_auto_shutdown import AutoShutdownBridge
 from torrent2000.ui.web.bridge_create_torrent import CreateTorrentBridge
 from torrent2000.ui.web.bridge_downloads import DownloadsBridge
 from torrent2000.ui.web.bridge_file_priority import FilePriorityBridge
+from torrent2000.ui.web.bridge_known_disk import KnownDiskBridge
 from torrent2000.ui.web.bridge_peer_list import PeerListBridge
 from torrent2000.ui.web.bridge_profile_advanced import ProfileAdvancedBridge
 from torrent2000.ui.web.bridge_profile_automation import ProfileAutomationBridge
@@ -40,6 +41,8 @@ from torrent2000.ui.web.bridge_profile_stats import ProfileStatsBridge
 from torrent2000.ui.web.bridge_rss import RssBridge
 from torrent2000.ui.web.bridge_share import ShareBridge
 from torrent2000.ui.web.bridge_speed_graph import SpeedGraphBridge
+from torrent2000.ui.web.bridge_storage_sunburst import StorageSunburstBridge
+from torrent2000.ui.web.bridge_swarm_constellation import SwarmConstellationBridge
 from torrent2000.ui.web.bridge_tracker_editor import TrackerEditorBridge
 from torrent2000.ui.web.bridge_update import UpdateBridge
 from torrent2000.ui.web.dialog_bridge import DialogBridge
@@ -78,6 +81,10 @@ class SpikeWindow(QMainWindow):
         auto_shutdown_service,
         anthem_player,
         update_checker,
+        known_disk_store,
+        known_disk_service,
+        network_profile_store,
+        decision_journal_service,
         parent=None,
         debug: bool = False,
     ) -> None:
@@ -134,8 +141,8 @@ class SpikeWindow(QMainWindow):
         self._window_bridge = WindowBridge(self, settings, anthem_player, self)
         self._auto_shutdown_bridge = AutoShutdownBridge(auto_shutdown_service, self)
         self._auto_shutdown_bridge.countdownStarted.connect(self._on_shutdown_countdown_started)
-        self._downloads_bridge = DownloadsBridge(session_manager, self)
-        self._add_bridge = AddBridge(session_manager, settings, self)
+        self._downloads_bridge = DownloadsBridge(session_manager, bandwidth_scheduler, self)
+        self._add_bridge = AddBridge(session_manager, settings, routing_rule_store, self)
         self._share_bridge = ShareBridge(session_manager, share_limit_service, settings, self)
         self._dialog_bridge = DialogBridge(self, self)
         self._rss_bridge = RssBridge(session_manager, rss_feed_service, settings, self)
@@ -143,19 +150,22 @@ class SpikeWindow(QMainWindow):
         self._profile_general_bridge.volumeChanged.connect(anthem_player.set_volume)
         self._profile_network_bridge = ProfileNetworkBridge(session_manager, settings, remote_access_server, self)
         self._profile_automation_bridge = ProfileAutomationBridge(
-            settings, bandwidth_scheduler, disk_space_monitor, self
+            settings, bandwidth_scheduler, disk_space_monitor, decision_journal_service, self
         )
         self._profile_security_bridge = ProfileSecurityBridge(settings, self)
         self._profile_advanced_bridge = ProfileAdvancedBridge(
-            session_manager, settings, routing_rule_store, settings_profile_store, self
+            session_manager, settings, routing_rule_store, settings_profile_store, network_profile_store, self
         )
         self._profile_stats_bridge = ProfileStatsBridge(stats_service, history_service, self)
         self._file_priority_bridge = FilePriorityBridge(session_manager, self)
-        self._peer_list_bridge = PeerListBridge(session_manager, self)
+        self._peer_list_bridge = PeerListBridge(session_manager, settings, self)
         self._speed_graph_bridge = SpeedGraphBridge(session_manager, self)
+        self._swarm_constellation_bridge = SwarmConstellationBridge(session_manager, self)
+        self._storage_sunburst_bridge = StorageSunburstBridge(session_manager, self)
         self._create_torrent_bridge = CreateTorrentBridge(self)
         self._tracker_editor_bridge = TrackerEditorBridge(session_manager, self)
         self._update_bridge = UpdateBridge(update_checker, settings, self, self)
+        self._known_disk_bridge = KnownDiskBridge(known_disk_store, known_disk_service, self)
         self._channel.registerObject("windowBridge", self._window_bridge)
         self._channel.registerObject("autoShutdown", self._auto_shutdown_bridge)
         self._channel.registerObject("downloads", self._downloads_bridge)
@@ -172,9 +182,12 @@ class SpikeWindow(QMainWindow):
         self._channel.registerObject("filePriority", self._file_priority_bridge)
         self._channel.registerObject("peerList", self._peer_list_bridge)
         self._channel.registerObject("speedGraph", self._speed_graph_bridge)
+        self._channel.registerObject("swarmConstellation", self._swarm_constellation_bridge)
+        self._channel.registerObject("storageSunburst", self._storage_sunburst_bridge)
         self._channel.registerObject("createTorrent", self._create_torrent_bridge)
         self._channel.registerObject("trackerEditor", self._tracker_editor_bridge)
         self._channel.registerObject("update", self._update_bridge)
+        self._channel.registerObject("knownDisk", self._known_disk_bridge)
         self._view.page().setWebChannel(self._channel)
 
         index_path = resource_path("resources/web/spike/index.html")

@@ -7,13 +7,35 @@ write-to-disk-only-applies-on-next-launch for import).
 
 import json
 from dataclasses import asdict
+from datetime import datetime
 from pathlib import Path
 
 from PySide6.QtCore import QObject, QUrl, Slot
 from PySide6.QtGui import QDesktopServices
 
-from torrent2000.config.paths import get_config_path, get_logs_dir
+from torrent2000.config.paths import get_config_backups_dir, get_config_path, get_logs_dir
 from torrent2000.config.settings import BandwidthSchedule, ProxySettings, RssFeedSubscription, Settings, _from_dict
+
+_MAX_CONFIG_BACKUPS = 5
+
+
+def _backup_current_config() -> None:
+    """Best-effort timestamped snapshot of the config file as it stands right
+    before an import overwrites it, so a bad/regretted import is recoverable.
+    Silently skipped if there's nothing to back up yet (first-ever launch) --
+    this is a safety net for imports, not a general backup feature."""
+    config_path = get_config_path()
+    if not config_path.exists():
+        return
+    backups_dir = get_config_backups_dir()
+    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    try:
+        (backups_dir / f"config-{stamp}.json").write_bytes(config_path.read_bytes())
+    except OSError:
+        return
+    existing = sorted(backups_dir.glob("config-*.json"))
+    for stale in existing[:-_MAX_CONFIG_BACKUPS]:
+        stale.unlink(missing_ok=True)
 
 
 def _is_valid_settings_payload(data: object) -> bool:
@@ -104,6 +126,10 @@ class ProfileSecurityBridge(QObject):
             return {"ok": False, "error": str(exc)}
         if not _is_valid_settings_payload(data):
             return {"ok": False, "error": "Le fichier ne correspond pas à une configuration Torrent 2000 valide."}
+        # Snapshot whatever's currently on disk before overwriting it, so a
+        # bad or regretted import can be recovered by hand from
+        # config_backups/ -- best-effort, never blocks the import itself.
+        _backup_current_config()
         # Written straight to the real config file, same as native -- applies
         # fully on next launch, no attempt to hot-reload the running Settings.
         try:

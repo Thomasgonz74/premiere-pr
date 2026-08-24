@@ -7,13 +7,15 @@ no push signal, no server-side timer to manage.
 
 from PySide6.QtCore import QObject, Slot
 
+from torrent2000.config.settings import Settings
 from torrent2000.engine.session_manager import SessionManager
 
 
 class PeerListBridge(QObject):
-    def __init__(self, session_manager: SessionManager, parent=None) -> None:
+    def __init__(self, session_manager: SessionManager, settings: Settings, parent=None) -> None:
         super().__init__(parent)
         self._session_manager = session_manager
+        self._settings = settings
 
     @Slot(str, result="QVariantList")
     def getPeers(self, info_hash: str) -> list:
@@ -28,3 +30,16 @@ class PeerListBridge(QObject):
             }
             for p in peers
         ]
+
+    # Opt-in (see Settings.peer_reputation_enabled / engine/peer_reputation.py).
+    @Slot(result=bool)
+    def isReputationEnabled(self) -> bool:
+        return self._settings.peer_reputation_enabled
+
+    @Slot("QVariantList", result="QVariantMap")
+    def getReputationScores(self, ips: list) -> dict:
+        """ips: the "address:port" strings from a prior getPeers() call.
+        Returns {ip: "good"|"neutral"|"bad"}."""
+        if not self._settings.peer_reputation_enabled:
+            return {}
+        return {ip: self._session_manager.get_peer_reputation_score(ip) for ip in ips}

@@ -310,9 +310,11 @@ input[type=text], textarea { cursor: var(--cursor-text); }
    Principe unique (STYLE.md §2) : biseau 2 px --bevel-out au repos, inversé
    --bevel-in à l'appui, creusé --well pour les champs. AUCUN survol nulle
    part (interdit #3) -- chaque annulation de :hover ci-dessous neutralise
-   un effet natif de style.css (filter/brightness), pas une lueur de teinte
-   (--glow-hover vaut déjà "none" et neutralise seul les box-shadow:hover
-   déjà posés par style.css sur .row-actions/.start-btn).
+   soit un effet natif de style.css (filter/brightness sur .cap-btn/.tab-btn),
+   soit son box-shadow:hover (var(--glow-hover), qui vaut "none" et donc
+   EFFACERAIT le biseau de repos si on ne le recouvrait pas d'une valeur
+   identique explicite -- voir .start-btn:hover et .row-actions button:hover
+   ci-dessous, qui répètent le biseau de repos pour rester invisibles).
    ========================================================================== */
 
 /* ---------- Chrome de fenêtre : plateaux mauves biseautés 18 px ----------
@@ -425,6 +427,11 @@ button:disabled { color: var(--text-disabled); box-shadow: none; }
   box-shadow: var(--bevel-out);
   color: var(--text-primary);
 }
+/* Interdit #3 : le survol N'EXISTE PAS -- sans cette ligne, le
+   ".row-actions button:hover{box-shadow:var(--glow-hover)}" générique de
+   style.css (0-2-1, non neutralisé par --glow-hover:none seul) effacerait
+   le biseau au survol. Même geste que .start-btn:hover ci-dessus. */
+.row-actions button:hover { box-shadow: var(--bevel-out); }
 .row-actions button:not(:disabled):active { background: var(--plastic-pressed); box-shadow: var(--bevel-in); }
 
 /* ---------- Champs : puits blancs creusés --well, carrés (§2 "creusé en

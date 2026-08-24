@@ -526,10 +526,10 @@
   color: var(--text-primary);
   transition: background var(--transition-state), color var(--transition-state);
 }
-.cap-btn:hover { background: var(--caption-hover); filter: none; }
-.cap-btn:active { background: var(--caption-pressed); filter: none; }
-.cap-close:hover { background: var(--caption-close-hover); color: #fff; }
-.cap-close:active { background: var(--caption-close-pressed); color: #fff; }
+.cap-btn:not(:disabled):hover { background: var(--caption-hover); filter: none; }
+.cap-btn:not(:disabled):active { background: var(--caption-pressed); filter: none; }
+.cap-close:not(:disabled):hover { background: var(--caption-close-hover); color: #fff; }
+.cap-close:not(:disabled):active { background: var(--caption-close-pressed); color: #fff; }
 
 /* Glyphs redrawn centered + in currentColor, so they turn black-to-white
    with the Close button's own color flip above instead of a hardcoded

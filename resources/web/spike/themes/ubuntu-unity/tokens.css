@@ -368,10 +368,16 @@ input[type=text], textarea { cursor: var(--cursor-text); }
   border-radius: 50%;     /* cercle, pas de rectangle arrondi -- interdit #2 */
   border-color: #2E2D29;
 }
-.cap-btn:hover { filter: none; background: var(--u-wm-hi); }
+/* :not(:disabled) porte la specificite a (0,3,0), necessaire pour battre la
+   regle generique button:not(:disabled):hover ((0,2,1) plus haute que le nu
+   (0,2,0) de .cap-btn:hover/.cap-close:hover) -- sans ca ces cercles
+   repassent silencieusement au fond de survol generique (--btn-hover, blanc)
+   au lieu de leur propre teinte Unity (meme bug deja corrige sur
+   cccp_soviet et win7_aero lors de l'audit des boutons de titre). */
+.cap-btn:not(:disabled):hover { filter: none; background: var(--u-wm-hi); }
 .cap-btn:active { filter: none; }
 .cap-close { order: -1; border-color: var(--u-close-dk); }  /* Fermer en tete, a gauche */
-.cap-close:hover { filter: none; background: var(--u-close); }
+.cap-close:not(:disabled):hover { filter: none; background: var(--u-close); }
 /* Reduire : simple barre horizontale creme, centree */
 .cap-min span::before {
   content: "";

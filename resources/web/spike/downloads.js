@@ -22,6 +22,9 @@ const DOWNLOADS_STATE_LABELS = {
 const downloadsRows = new Map(); // infoHash -> { el, tetris, record }
 let downloadsLastClickedHash = null;
 let downloadsDetailsTrackerEditorFor = null;
+let downloadsDetailsAllocatedFor = null;
+let downloadsDetailsSlownessFor = null;
+let downloadsDetailsDeadlineFor = null;
 
 function downloadsRowOrder() {
   return [...document.querySelectorAll("#downloadsList .row")];
@@ -37,6 +40,25 @@ function downloadsClearSelection() {
   document.querySelectorAll("#downloadsList .row.selected").forEach((r) => r.classList.remove("selected"));
 }
 
+// Builds the removal-impact preview passed to confirmAndRemove() -- looked
+// up fresh from downloadsRows (not captured earlier), and from data already
+// held client-side (record.totalSize/numSeeds/numPeers/state), so this never
+// costs a bridge round-trip. Per-file counts would need an async
+// bridge.filePriority.getFiles() call (metadata not always loaded yet); that
+// round-trip is deliberately skipped here to avoid a visible delay before
+// the confirmation dialog appears -- see modal.js's confirmAndRemove doc.
+function downloadsRemovalImpact(hashes) {
+  const records = hashes.map((h) => downloadsRows.get(h)?.record).filter(Boolean);
+  const totalSize = records.reduce((sum, r) => sum + (r.totalSize || 0), 0);
+  const impact = { count: hashes.length, totalSize };
+  if (records.length === 1) {
+    impact.numSeeds = records[0].numSeeds;
+    impact.numPeers = records[0].numPeers;
+    impact.stateLabel = DOWNLOADS_STATE_LABELS[records[0].state] || records[0].state;
+  }
+  return impact;
+}
+
 function downloadsEta(record) {
   // Mirrors downloads_tab.py's _eta_text() exactly.
   if (record.downloadRate > 0 && record.progress < 1.0) {
@@ -44,6 +66,26 @@ function downloadsEta(record) {
     return formatEta(remainingBytes / record.downloadRate);
   }
   return formatEta(null);
+}
+
+// ------------------------------------------------------------- deadline
+
+// epoch seconds -> the local "YYYY-MM-DDTHH:mm" string <input
+// type="datetime-local"> expects. Not toISOString() (that's UTC) -- built
+// from the local getters so it round-trips through new Date(value) (which
+// parses a timezone-less datetime-local string as local time) back to the
+// same epoch second.
+function downloadsEpochToDatetimeLocal(epochSeconds) {
+  const d = new Date(epochSeconds * 1000);
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function downloadsDeadlineRemainingText(record) {
+  if (!record.deadline) return "Aucune échéance définie.";
+  const remaining = record.deadline - Date.now() / 1000;
+  if (remaining <= 0) return "Échéance dépassée !";
+  return `Temps restant avant l'échéance : ${formatEta(remaining)}`;
 }
 
 function downloadsEnsureRow(record) {
@@ -59,9 +101,43 @@ function downloadsEnsureRow(record) {
   el.className = "row downloads-row";
   el.dataset.infoHash = record.infoHash;
 
+  // Name column holds two children (identicon + name text) but stays a
+  // single grid item -- .downloads-row's 9-column grid must keep matching
+  // the 9-column header, so the identicon nests inside here rather than
+  // becoming its own top-level grid child.
+  const nameCell = document.createElement("div");
+  nameCell.className = "row-name-cell";
+  el.appendChild(nameCell);
+
+  // Pin toggle: unlike the locked/private glyphs (plain text prefixes on
+  // the name, below), this one is interactive -- a small always-present
+  // button so pinning doesn't require opening the context menu.
+  const pinBtn = document.createElement("button");
+  pinBtn.type = "button";
+  pinBtn.className = "row-pin-btn";
+  pinBtn.textContent = "\u{1F4CC}"; // 📌
+  nameCell.appendChild(pinBtn);
+  pinBtn.addEventListener("click", (event) => {
+    event.stopPropagation(); // don't trigger row selection
+    const current = downloadsRows.get(record.infoHash);
+    if (!current) return;
+    if (current.record.pinned) {
+      window.bridge.downloads.unpinTorrent(record.infoHash);
+    } else {
+      window.bridge.downloads.pinTorrent(record.infoHash);
+    }
+  });
+
+  const identiconEl = document.createElement("canvas");
+  identiconEl.className = "identicon";
+  identiconEl.width = 20;
+  identiconEl.height = 20;
+  nameCell.appendChild(identiconEl);
+  drawIdenticon(identiconEl, record.infoHash); // fixed per torrent, drawn once
+
   const nameEl = document.createElement("div");
   nameEl.className = "row-name";
-  el.appendChild(nameEl);
+  nameCell.appendChild(nameEl);
 
   const canvas = document.createElement("canvas");
   canvas.className = "tetris";
@@ -118,9 +194,11 @@ function downloadsEnsureRow(record) {
     }
   });
   removeBtn.addEventListener("click", () => {
+    const hash = record.infoHash;
     confirmAndRemove(
-      () => window.bridge.downloads.removeTorrent(record.infoHash, false),
-      () => window.bridge.downloads.removeTorrent(record.infoHash, true)
+      () => window.bridge.downloads.removeTorrent(hash, false),
+      () => window.bridge.downloads.removeTorrent(hash, true),
+      downloadsRemovalImpact([hash])
     );
   });
 
@@ -129,18 +207,55 @@ function downloadsEnsureRow(record) {
   return entry;
 }
 
+// Pinned rows always sort before unpinned ones, in whatever order they were
+// pinned. Rather than re-sorting the whole table on every status tick, this
+// only moves a row the moment its pinned flag actually flips -- everything
+// else keeps its current DOM position (see downloadsRenderRecord below).
+function downloadsPlaceRow(el, pinned) {
+  const list = document.getElementById("downloadsList");
+  el.classList.toggle("pinned", pinned);
+  if (pinned) {
+    const firstUnpinned = list.querySelector(".row:not(.pinned)");
+    list.insertBefore(el, firstUnpinned || null);
+  } else {
+    list.appendChild(el); // moves to the end, after all still-pinned rows
+  }
+}
+
 function downloadsRenderRecord(record) {
+  const wasPinned = downloadsRows.get(record.infoHash)?.record.pinned ?? false;
   const entry = downloadsEnsureRow(record);
   entry.record = record;
   entry.el.dataset.lastState = record.state;
   entry.el.dataset.health = record.healthStatus || "";
+  if (!!record.pinned !== wasPinned) {
+    downloadsPlaceRow(entry.el, !!record.pinned);
+  }
+  const pinBtn = entry.el.querySelector(".row-pin-btn");
+  pinBtn.classList.toggle("active", !!record.pinned);
+  pinBtn.title = record.pinned ? "Désépingler" : "Épingler en tête de liste";
 
   const nameEl = entry.el.querySelector(".row-name");
-  const displayName = record.isPrivate ? `\u{1F512} ${record.name}` : record.name;
+  // Two distinct glyphs so a torrent that's both private and archived
+  // doesn't read as a single doubled-up padlock: \u{1F510} (locked+key) for
+  // the archive lock, \u{1F512} (plain padlock) for is_private, unchanged.
+  const icons = [];
+  if (record.locked) icons.push("\u{1F510}");
+  if (record.isPrivate) icons.push("\u{1F512}");
+  const displayName = icons.length ? `${icons.join(" ")} ${record.name}` : record.name;
   nameEl.textContent = displayName; // safe: DOM property assignment, not HTML parsing
-  nameEl.title = record.isPrivate
-    ? `${record.name}\n\nTorrent privé : DHT, PEX et LSD restent désactivés pour ce torrent, quels que soient vos réglages de confidentialité globaux.`
-    : record.name;
+  const tooltipParts = [record.name];
+  if (record.locked) {
+    tooltipParts.push(
+      "Archivé (lecture seule) : les fichiers de ce torrent sont verrouillés en écriture sur le disque."
+    );
+  }
+  if (record.isPrivate) {
+    tooltipParts.push(
+      "Torrent privé : DHT, PEX et LSD restent désactivés pour ce torrent, quels que soient vos réglages de confidentialité globaux."
+    );
+  }
+  nameEl.title = tooltipParts.length > 1 ? tooltipParts.join("\n\n") : record.name;
 
   entry.el.querySelector(".row-eta").textContent = downloadsEta(record);
   const rateEls = entry.el.querySelectorAll(".row-rate");
@@ -208,6 +323,9 @@ function downloadsUpdateDetailsPanel() {
   if (!entry) {
     panel.style.display = "none";
     downloadsDetailsTrackerEditorFor = null;
+    downloadsDetailsAllocatedFor = null;
+    downloadsDetailsSlownessFor = null;
+    downloadsDetailsDeadlineFor = null;
     return;
   }
 
@@ -215,9 +333,48 @@ function downloadsUpdateDetailsPanel() {
   const infoHash = selected[0];
   const record = entry.record;
   document.getElementById("downloadsDetailsTracker").textContent = `Tracker actuel : ${record.currentTracker || "—"}`;
+
+  // Stale "why is it slow" result from a previously-selected torrent would
+  // be misleading left on screen -- clear it the moment selection changes.
+  // Not re-fetched automatically on the new torrent: on-demand only, per
+  // the button below.
+  if (downloadsDetailsSlownessFor !== infoHash) {
+    downloadsDetailsSlownessFor = infoHash;
+    const slownessEl = document.getElementById("downloadsDetailsSlowness");
+    slownessEl.textContent = "";
+    slownessEl.style.display = "none";
+  }
+  // A real disk syscall per file on the Python side -- fetched on demand
+  // each time the selected torrent changes, not part of the constant
+  // status-tick push (see bridge_downloads.py::getAllocatedSize).
+  if (downloadsDetailsAllocatedFor !== infoHash) {
+    downloadsDetailsAllocatedFor = infoHash;
+    const allocatedEl = document.getElementById("downloadsDetailsAllocated");
+    allocatedEl.textContent = "Espace occupé sur le disque : calcul...";
+    window.bridge.downloads.getAllocatedSize(infoHash, (allocatedBytes) => {
+      if (downloadsDetailsAllocatedFor !== infoHash) return; // selection changed while awaiting the reply
+      const logicalText = formatSize(record.totalSize);
+      const allocatedText = formatSize(allocatedBytes);
+      allocatedEl.textContent = allocatedBytes === record.totalSize
+        ? `Espace occupé sur le disque : ${allocatedText} (identique à la taille annoncée)`
+        : `Espace occupé sur le disque : ${allocatedText} (taille annoncée : ${logicalText})`;
+    });
+  }
+
   const queueText = record.queuePosition >= 0 ? `position ${record.queuePosition + 1}` : "actif (pas en attente)";
   document.getElementById("downloadsDetailsQueue").textContent = `File d'attente : ${queueText}`;
   document.getElementById("downloadsDetailsSequential").checked = record.sequentialDownload;
+
+  // Only reset the deadline input when the selected torrent actually
+  // changes -- like the tracker editor below, re-writing it on every status
+  // tick would blow away a date the user is mid-picking.
+  if (downloadsDetailsDeadlineFor !== infoHash) {
+    downloadsDetailsDeadlineFor = infoHash;
+    document.getElementById("downloadsDetailsDeadlineInput").value = record.deadline
+      ? downloadsEpochToDatetimeLocal(record.deadline)
+      : "";
+  }
+  document.getElementById("downloadsDetailsDeadlineRemaining").textContent = downloadsDeadlineRemainingText(record);
 
   // Only rebuild the tracker editor when the selected torrent actually
   // changes -- rebuilding on every status tick would blow away whatever the
@@ -225,6 +382,42 @@ function downloadsUpdateDetailsPanel() {
   if (downloadsDetailsTrackerEditorFor !== infoHash) {
     downloadsDetailsTrackerEditorFor = infoHash;
     renderTrackerEditor(document.getElementById("downloadsDetailsTrackerEditor"), infoHash);
+  }
+}
+
+// Renders bridge.downloads.explainSlowness()'s result -- built via safe DOM
+// methods (not innerHTML): cause text can embed a tracker URL, which comes
+// from the .torrent file/magnet and is untrusted external input.
+function downloadsRenderSlownessResult(result) {
+  const box = document.getElementById("downloadsDetailsSlowness");
+  box.textContent = "";
+  box.style.display = "block";
+
+  if (!result.applicable) {
+    const p = document.createElement("p");
+    p.textContent = "Cette analyse ne s'applique qu'aux torrents activement en téléchargement.";
+    box.appendChild(p);
+    return;
+  }
+
+  if (result.causes.length === 0) {
+    const p = document.createElement("p");
+    p.textContent = "Aucune cause identifiée parmi les critères vérifiables (seeds, tracker, bande passante).";
+    box.appendChild(p);
+  } else {
+    const list = document.createElement("ul");
+    result.causes.forEach((cause) => {
+      const li = document.createElement("li");
+      li.textContent = cause.text;
+      list.appendChild(li);
+    });
+    box.appendChild(list);
+  }
+
+  if (result.note) {
+    const note = document.createElement("p");
+    note.textContent = result.note;
+    box.appendChild(note);
   }
 }
 
@@ -266,12 +459,32 @@ function downloadsBuildSingleMenu(infoHash) {
   const name = record ? record.name : infoHash;
   const items = [];
 
+  items.push({
+    label: record && record.pinned ? "Désépingler" : "Épingler",
+    onClick: () => {
+      if (record && record.pinned) {
+        window.bridge.downloads.unpinTorrent(infoHash);
+      } else {
+        window.bridge.downloads.pinTorrent(infoHash);
+      }
+    },
+  });
   if (record && record.state === "PAUSED") {
     items.push({ label: "Reprendre", onClick: () => window.bridge.downloads.resumeTorrent(infoHash) });
   } else {
     items.push({ label: "Pause", onClick: () => window.bridge.downloads.pauseTorrent(infoHash) });
   }
   items.push({ label: "Revérifier", onClick: () => window.bridge.downloads.recheckTorrent(infoHash) });
+  items.push({
+    label: record && record.locked ? "Déverrouiller" : "Verrouiller (archive)",
+    onClick: () => {
+      if (record && record.locked) {
+        window.bridge.downloads.unlockTorrent(infoHash);
+      } else {
+        window.bridge.downloads.lockTorrent(infoHash);
+      }
+    },
+  });
   items.push({
     label: "Déplacer les fichiers…",
     onClick: () => {
@@ -303,13 +516,17 @@ function downloadsBuildSingleMenu(infoHash) {
   items.push({ label: "Modifier les fichiers…", onClick: () => openFilePriorityDialog(infoHash, name) });
   items.push({ label: "Voir les pairs", onClick: () => openPeerListDialog(infoHash, name) });
   items.push({ label: "Voir le graphique de vitesse", onClick: () => openSpeedGraphDialog(infoHash, name) });
+  items.push({ label: "Voir la mosaïque des morceaux", onClick: () => openPieceMapDialog(infoHash, name) });
+  items.push({ label: "Voir la constellation de l'essaim", onClick: () => openSwarmConstellationDialog(infoHash, name) });
+  items.push({ label: "Voir la répartition du stockage", onClick: () => openStorageSunburstDialog(infoHash, name) });
   items.push({ separator: true });
   items.push({
     label: "Retirer",
     onClick: () =>
       confirmAndRemove(
         () => window.bridge.downloads.removeTorrent(infoHash, false),
-        () => window.bridge.downloads.removeTorrent(infoHash, true)
+        () => window.bridge.downloads.removeTorrent(infoHash, true),
+        downloadsRemovalImpact([infoHash])
       ),
   });
   return items;
@@ -331,7 +548,8 @@ function downloadsBuildMultiMenu(hashes) {
       onClick: () =>
         confirmAndRemove(
           () => hashes.forEach((h) => window.bridge.downloads.removeTorrent(h, false)),
-          () => hashes.forEach((h) => window.bridge.downloads.removeTorrent(h, true))
+          () => hashes.forEach((h) => window.bridge.downloads.removeTorrent(h, true)),
+          downloadsRemovalImpact(hashes)
         ),
     },
   ];
@@ -381,6 +599,55 @@ function downloadsOpenCategoryDialog(infoHash, currentCategory) {
   });
 }
 
+// ------------------------------------------------------- suggestion banner
+// Discrete "what should I do next" banner above the search bar. Reuses
+// signals already wired elsewhere (disk_space_monitor's lowSpaceWarning via
+// bridge_profile_automation.py, share_limit_service's "reached" field on
+// share.recordUpdated via bridge_share.py) -- no new Python-side detection.
+// Single banner: the latest event replaces whatever was showing, no queue.
+
+const SUGGESTION_BANNER_AUTOHIDE_MS = 15000;
+let suggestionBannerTimer = null;
+// ponytail: per-infoHash "already notified" set, session-lifetime only (not
+// cleared on torrent removal or reached->false). Good enough for a spike
+// banner meant to fire once per torrent hitting its limit; revisit with a
+// real reached-state cache if a torrent needs to re-notify after reset.
+const shareReachedNotified = new Set();
+
+function showSuggestionBanner(message) {
+  document.getElementById("downloadsSuggestionMessage").textContent = message;
+  document.getElementById("downloadsSuggestionBanner").hidden = false;
+  if (suggestionBannerTimer) clearTimeout(suggestionBannerTimer);
+  suggestionBannerTimer = setTimeout(hideSuggestionBanner, SUGGESTION_BANNER_AUTOHIDE_MS);
+}
+
+function hideSuggestionBanner() {
+  document.getElementById("downloadsSuggestionBanner").hidden = true;
+  if (suggestionBannerTimer) {
+    clearTimeout(suggestionBannerTimer);
+    suggestionBannerTimer = null;
+  }
+}
+
+function wireSuggestionBanner() {
+  document.getElementById("downloadsSuggestionCloseBtn").addEventListener("click", hideSuggestionBanner);
+
+  window.bridge.profileAutomation.lowSpaceWarning.connect((savePath, message) => {
+    showSuggestionBanner(`${message} Envisagez de déplacer ou de supprimer un torrent terminé.`);
+  });
+
+  window.bridge.share.recordUpdated.connect((row) => {
+    if (!row.reached || shareReachedNotified.has(row.infoHash)) return;
+    shareReachedNotified.add(row.infoHash);
+    const count = shareReachedNotified.size;
+    showSuggestionBanner(
+      count === 1
+        ? "1 torrent a atteint sa limite de partage — pensez à l'arrêter ou l'ajuster dans l'onglet Partage."
+        : `${count} torrents ont atteint leur limite de partage — pensez à les arrêter ou les ajuster dans l'onglet Partage.`
+    );
+  });
+}
+
 // -------------------------------------------------------------------- wire
 
 function wireDownloadsPage() {
@@ -399,6 +666,18 @@ function wireDownloadsPage() {
     const sel = downloadsSelectedHashes();
     if (sel.length === 1) window.bridge.downloads.resumeTorrent(sel[0]);
   });
+  document.getElementById("downloadsDetailsExplainSlowBtn").addEventListener("click", () => {
+    const sel = downloadsSelectedHashes();
+    if (sel.length !== 1) return;
+    const infoHash = sel[0];
+    const box = document.getElementById("downloadsDetailsSlowness");
+    box.textContent = "Analyse en cours…";
+    box.style.display = "block";
+    window.bridge.downloads.explainSlowness(infoHash, (result) => {
+      if (downloadsDetailsSlownessFor !== infoHash) return; // selection changed while awaiting the reply
+      downloadsRenderSlownessResult(result);
+    });
+  });
   document.getElementById("downloadsDetailsQueueUpBtn").addEventListener("click", () => {
     const sel = downloadsSelectedHashes();
     if (sel.length === 1) window.bridge.downloads.moveQueueUp(sel[0]);
@@ -411,6 +690,19 @@ function wireDownloadsPage() {
     const sel = downloadsSelectedHashes();
     if (sel.length === 1) window.bridge.downloads.setSequentialDownload(sel[0], event.target.checked);
   });
+  document.getElementById("downloadsDetailsDeadlineSetBtn").addEventListener("click", () => {
+    const sel = downloadsSelectedHashes();
+    const value = document.getElementById("downloadsDetailsDeadlineInput").value;
+    if (sel.length !== 1 || !value) return;
+    window.bridge.downloads.setDeadline(sel[0], new Date(value).getTime() / 1000);
+  });
+  document.getElementById("downloadsDetailsDeadlineClearBtn").addEventListener("click", () => {
+    const sel = downloadsSelectedHashes();
+    if (sel.length !== 1) return;
+    document.getElementById("downloadsDetailsDeadlineInput").value = "";
+    window.bridge.downloads.setDeadline(sel[0], 0);
+  });
 
   downloadsUpdateDetailsPanel(); // starts hidden -- nothing selected yet
+  wireSuggestionBanner();
 }

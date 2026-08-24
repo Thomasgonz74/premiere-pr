@@ -438,10 +438,21 @@ input[type=text], textarea { cursor: var(--cursor-text); }
   position: relative;
 }
 /* Pas de survol (interdit #5) : seul :active change l'état, biseau inversé +
-   glyphe décalé de 1 px, comme .tb-btn:active du spécimen. */
+   glyphe décalé de 1 px, comme .tb-btn:active du spécimen. `filter: none` est
+   nécessaire ici : le générique .cap-btn:hover/:active de style.css (spike,
+   non modifiable) pose un filter:brightness(...) -- comme cette feuille ne
+   définissait jusqu'ici aucune règle :hover et ne touchait pas `filter` sur
+   :active, cette propriété restait seule gagnante par défaut (résolution
+   CSS par propriété, pas par règle) malgré la spécificité 0-3-0 déjà
+   suffisante ci-dessous pour box-shadow/padding -- d'où un flash de survol
+   et un assombrissement au clic qui contredisaient "Pas de survol". */
+.cap-btn:not(:disabled):hover {
+  filter: none;
+}
 .cap-btn:not(:disabled):active {
   box-shadow: var(--bevel-pressed);
   padding: 0;
+  filter: none;
 }
 .cap-btn:not(:disabled):active span {
   transform: translate(1px, 1px);
@@ -561,8 +572,8 @@ button:disabled {
      un seul CTA par page active, cohérent avec §7/§9. */
   box-shadow: var(--bevel-raised-default);
   font: inherit;
-  font-weight: var(--font-weight-bold);
-  cursor: var(--cursor-default);
+  cursor: var(--cursor-default); /* pas de gras : l'anneau seul distingue le défaut,
+     comme button.is-default dans components.html (interdit #7 : gras hors §4) */
 }
 .start-btn:not(:disabled):active {
   box-shadow: 0 0 0 1px var(--w95-black), var(--bevel-pressed);

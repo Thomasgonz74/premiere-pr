@@ -19,15 +19,23 @@ class HistoryService(QObject):
         super().__init__(parent)
         self._store = store
         self._last_known: dict[str, TorrentRecord] = {}
+        # Set by MemoryPressureGovernor (see engine/memory_pressure_governor.py)
+        # while system memory usage is over its configured threshold -- skips
+        # the disk write below (but still drops the popped record, so
+        # _last_known can't grow unbounded while paused either).
+        self._paused = False
         session_manager.torrent_status_updated.connect(self._on_status_updated)
         session_manager.torrent_removed.connect(self._on_torrent_removed)
+
+    def set_paused(self, paused: bool) -> None:
+        self._paused = paused
 
     def _on_status_updated(self, info_hash: str, record: TorrentRecord) -> None:
         self._last_known[info_hash] = record
 
     def _on_torrent_removed(self, info_hash: str) -> None:
         record = self._last_known.pop(info_hash, None)
-        if record is None:
+        if record is None or self._paused:
             return
         self._store.add_entry(
             HistoryEntry(

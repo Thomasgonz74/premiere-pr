@@ -434,7 +434,7 @@ button:disabled { border-color: var(--ad-disabled); color: var(--text-disabled);
   color: var(--ad-lacquer);
   box-shadow: var(--double-line);
 }
-.start-btn:hover { border-color: var(--ad-brass-hi); color: #0A0906; }
+.start-btn:hover { border-color: var(--ad-brass-hi); color: var(--ad-lacquer); }
 .start-btn:active { background: var(--ad-brass-dk); color: var(--ad-ivory); }
 
 /* Actions de ligne (pause/suppression) : même ziggourat, taille réduite --

@@ -4,11 +4,21 @@ every action (add/edit/delete/reorder a routing rule; apply/save-as/delete a
 settings profile) hits its store directly and, for "apply profile", the same
 live session_manager calls as SettingsProfilesSection's Apply button -- no
 batched save, same live-apply-only convention as the native sections.
+
+Also backs the (new, no native equivalent) network-profile auto-switch
+group: SSID->settings-profile associations live here rather than in
+bridge_profile_automation.py because they reference settings profiles by
+name, and this is where those profiles already live. The actual live-apply
+logic runs in engine/network_profile_switcher.py's NetworkProfileSwitcherService
+on its own timer -- this bridge only manages the on/off flag and the
+association list, same "store CRUD, no batched save" convention as this
+file's other two sections.
 """
 
 from PySide6.QtCore import QObject, Slot
 
 from torrent2000.config.settings import Settings
+from torrent2000.engine.network_profile_switcher import NetworkProfileAssociation, NetworkProfileStore
 from torrent2000.engine.routing_rules import RoutingRule, RoutingRuleStore
 from torrent2000.engine.session_manager import SessionManager
 from torrent2000.engine.settings_profiles import SettingsProfile, SettingsProfileStore
@@ -36,6 +46,10 @@ def _profile_to_dict(profile: SettingsProfile) -> dict:
     }
 
 
+def _network_profile_to_dict(association: NetworkProfileAssociation) -> dict:
+    return {"ssid": association.ssid, "profileName": association.profile_name}
+
+
 class ProfileAdvancedBridge(QObject):
     def __init__(
         self,
@@ -43,6 +57,7 @@ class ProfileAdvancedBridge(QObject):
         settings: Settings,
         routing_rule_store: RoutingRuleStore,
         settings_profile_store: SettingsProfileStore,
+        network_profile_store: NetworkProfileStore,
         parent=None,
     ) -> None:
         super().__init__(parent)
@@ -50,6 +65,7 @@ class ProfileAdvancedBridge(QObject):
         self._settings = settings
         self._routing_rule_store = routing_rule_store
         self._settings_profile_store = settings_profile_store
+        self._network_profile_store = network_profile_store
 
     # ------------------------------------------------------------ routing rules
 
@@ -103,3 +119,34 @@ class ProfileAdvancedBridge(QObject):
     @Slot(str)
     def deleteSettingsProfile(self, name: str) -> None:
         self._settings_profile_store.delete(name)
+
+    # ------------------------------------------- network profile auto-switch
+
+    @Slot(result="QVariantMap")
+    def getNetworkProfileSwitchSettings(self) -> dict:
+        return {"enabled": self._settings.network_profile_auto_switch_enabled}
+
+    @Slot(bool, result="QVariantMap")
+    def setNetworkProfileSwitchEnabled(self, enabled: bool) -> dict:
+        self._settings.network_profile_auto_switch_enabled = bool(enabled)
+        self._settings.save()
+        return {"ok": True}
+
+    @Slot(result="QVariantList")
+    def listNetworkProfileAssociations(self) -> list:
+        return [_network_profile_to_dict(a) for a in self._network_profile_store.list_associations()]
+
+    @Slot(str, str, result="QVariantMap")
+    def saveNetworkProfileAssociation(self, ssid: str, profile_name: str) -> dict:
+        ssid = (ssid or "").strip()
+        profile_name = (profile_name or "").strip()
+        if not ssid:
+            return {"ok": False, "error": "Le nom du réseau (SSID) est requis."}
+        if not profile_name:
+            return {"ok": False, "error": "Un profil de réglages doit être sélectionné."}
+        self._network_profile_store.save_association(NetworkProfileAssociation(ssid=ssid, profile_name=profile_name))
+        return {"ok": True}
+
+    @Slot(str)
+    def deleteNetworkProfileAssociation(self, ssid: str) -> None:
+        self._network_profile_store.delete(ssid)

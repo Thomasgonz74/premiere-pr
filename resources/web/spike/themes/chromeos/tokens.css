@@ -481,11 +481,11 @@ input[type=text], textarea { cursor: var(--cursor-text); }
   box-shadow: none;
   transition: background var(--transition-state);
 }
-.cap-btn:hover { background: var(--wm-hover); filter: none; }
-.cap-btn:active { background: var(--wm-pressed); filter: none; }
+.cap-btn:not(:disabled):hover { background: var(--wm-hover); filter: none; }
+.cap-btn:not(:disabled):active { background: var(--wm-pressed); filter: none; }
 .cap-close { background: transparent; margin-left: 2px; }
-.cap-close:hover { background: var(--wm-hover); }
-.cap-close:active { background: var(--wm-pressed); }
+.cap-close:not(:disabled):hover { background: var(--wm-hover); }
+.cap-close:not(:disabled):active { background: var(--wm-pressed); }
 
 /* Glyphes nus (gris, jamais blancs) -- Fermer reste le meme gris que
    Reduire/Agrandir : STYLE.md interdit #4, "Fermer en rouge". */

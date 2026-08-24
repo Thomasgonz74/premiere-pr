@@ -84,3 +84,22 @@ class TorrentRecord:
     queue_position: int = -1
     is_private: bool = False
     category: str = ""
+    # Archive mode (see SessionManager.lock_torrent/unlock_torrent): files
+    # on disk are chmod'd read-only. Not re-derived from the filesystem on
+    # restart -- like is_private, it's a plain in-memory field, reset to
+    # False on the next launch even though the actual chmod persists.
+    locked: bool = False
+    # Set once, the first time _on_torrent_finished processes this torrent
+    # (see SessionManager._on_torrent_finished) -- not re-derived from disk,
+    # so like is_private/locked it resets to None on the next launch even for
+    # an already-complete restored torrent.
+    completed_at: float | None = None
+    # User-facing "pin to top of the list" flag (see
+    # SessionManager.pin_torrent/unpin_torrent). Plain in-memory field like
+    # locked/completed_at -- resets to False on the next launch.
+    pinned: bool = False
+    # User-set target completion time (Unix timestamp), see
+    # SessionManager.set_deadline/_apply_deadline_priorities. Plain in-memory
+    # field like pinned/locked/completed_at -- resets to None on the next
+    # launch (the user has to re-set it, same as re-pinning).
+    deadline: float | None = None

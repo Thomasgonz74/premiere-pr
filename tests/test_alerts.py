@@ -21,6 +21,7 @@ def callbacks():
         "on_torrent_removed": MagicMock(),
         "on_torrent_added": MagicMock(),
         "on_storage_moved": MagicMock(),
+        "on_file_error": MagicMock(),
     }
 
 
@@ -35,6 +36,7 @@ def dispatcher(callbacks):
         on_torrent_removed=callbacks["on_torrent_removed"],
         on_torrent_added=callbacks["on_torrent_added"],
         on_storage_moved=callbacks["on_storage_moved"],
+        on_file_error=callbacks["on_file_error"],
     )
 
 
@@ -175,6 +177,18 @@ def test_storage_moved_alert_forwards_hash_and_path(dispatcher, callbacks):
     dispatcher.dispatch(alert)
 
     callbacks["on_storage_moved"].assert_called_once_with("hash2", "D:/new/location")
+
+
+def test_file_error_alert_extracts_hash_and_message(dispatcher, callbacks):
+    alert = MagicMock(spec=lt.file_error_alert)
+    alert.handle = _handle_with_hash("hash3")
+    alert.message.return_value = "torrent: file (path/file.bin): the device is not ready"
+
+    dispatcher.dispatch(alert)
+
+    callbacks["on_file_error"].assert_called_once_with(
+        "hash3", "torrent: file (path/file.bin): the device is not ready"
+    )
 
 
 def test_unrecognized_alert_type_triggers_no_callback(dispatcher, callbacks):

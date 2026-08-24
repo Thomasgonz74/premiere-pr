@@ -67,6 +67,16 @@ class BandwidthScheduler(QObject):
             return schedule.limited_download_kbps, schedule.limited_upload_kbps
         return self._settings.download_rate_limit_kbps, self._settings.upload_rate_limit_kbps
 
+    def current_download_limit_kbps(self) -> int:
+        """The download limit (KB/s, 0 = unlimited) from the base setting or
+        the active schedule window, whichever applies right now. Public
+        wrapper around _current_limits() so callers outside this module
+        (e.g. the "why is this slow" explainer) don't need to reach into a
+        private method. Note: doesn't reflect turtle mode -- set_turtle_mode
+        applies its rate directly without recording it here, and nothing in
+        this codebase currently calls set_turtle_mode."""
+        return self._current_limits()[0]
+
     def settings_changed(self) -> None:
         """Call after the user edits schedule/rate-limit settings so a
         currently-active window re-evaluates against the new values

@@ -44,13 +44,33 @@ function closeModal() {
 // Mirrors table_helpers.py's confirm_and_remove(): a 3-way choice (remove
 // only / remove + delete files / cancel), used everywhere a torrent/
 // subscription can be removed -- never a plain single-click delete.
-function confirmAndRemove(onRemoveOnly, onRemoveWithFiles) {
+//
+// `impact` is an optional preview of what's about to be removed, gathered by
+// the caller (never fetched here -- this function only ever displays data
+// the caller already has on hand, e.g. from downloadsRows' cached records):
+//   { count, totalSize, numSeeds, numPeers, stateLabel }
+// numSeeds/numPeers/stateLabel are only meaningful for a single item (mixing
+// peer counts/states across a multi-selection isn't a useful figure), so
+// downloadsRemovalImpact() only sets them when exactly one record is removed.
+function confirmAndRemove(onRemoveOnly, onRemoveWithFiles, impact) {
   const content = document.createElement("div");
   content.className = "form-grid";
 
   const message = document.createElement("p");
-  message.textContent = "Voulez-vous vraiment retirer cet élément ?";
+  message.textContent = impact && impact.count > 1
+    ? `Voulez-vous vraiment retirer ces ${impact.count} éléments ?`
+    : "Voulez-vous vraiment retirer cet élément ?";
   content.appendChild(message);
+
+  if (impact) {
+    const details = document.createElement("p");
+    details.className = "field-note";
+    const parts = [`Taille totale : ${formatSize(impact.totalSize)}`];
+    if (impact.stateLabel) parts.push(`État : ${impact.stateLabel}`);
+    if (impact.numSeeds !== undefined) parts.push(`${impact.numSeeds} seeds / ${impact.numPeers} pairs`);
+    details.textContent = parts.join(" — "); // safe: DOM property assignment, not HTML parsing
+    content.appendChild(details);
+  }
 
   const buttonRow = document.createElement("div");
   buttonRow.className = "modal-close-row";

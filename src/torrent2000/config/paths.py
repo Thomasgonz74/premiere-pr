@@ -29,6 +29,12 @@ def get_config_path() -> Path:
     return get_app_data_dir() / "config.json"
 
 
+def get_config_backups_dir() -> Path:
+    backups_dir = get_app_data_dir() / "config_backups"
+    backups_dir.mkdir(parents=True, exist_ok=True)
+    return backups_dir
+
+
 def get_stats_db_path() -> Path:
     return get_app_data_dir() / "stats.sqlite3"
 
@@ -59,6 +65,26 @@ def get_settings_profiles_path() -> Path:
 
 def get_routing_rules_path() -> Path:
     return get_config_path().parent / "routing_rules.json"
+
+
+def get_known_disks_path() -> Path:
+    return get_config_path().parent / "known_disks.json"
+
+
+def get_network_profiles_path() -> Path:
+    return get_config_path().parent / "network_profiles.json"
+
+
+def get_peer_reputation_path() -> Path:
+    return get_config_path().parent / "peer_reputation.json"
+
+
+def get_lan_peer_cache_path() -> Path:
+    return get_config_path().parent / "lan_peer_cache.json"
+
+
+def get_decision_journal_path() -> Path:
+    return get_config_path().parent / "decision_journal.jsonl"
 
 
 def get_default_download_dir() -> Path:

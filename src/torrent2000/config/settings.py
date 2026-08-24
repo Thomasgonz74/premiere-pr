@@ -97,6 +97,14 @@ class Settings:
     disk_space_warning_enabled: bool = True
     disk_space_warning_threshold_mb: int = 1024  # warn when free space at a destination drops below this
 
+    # Off by default -- the pause itself (SessionManager._on_file_error, on a
+    # file_error_alert e.g. an external drive dropping out mid-write) always
+    # happens regardless of this setting; this only controls whether the
+    # torrent is automatically RESUMED once that same drive (matched by
+    # volume serial number, not drive letter) reappears. See
+    # engine/disk_reconnect_service.py.
+    auto_resume_on_disk_reconnect: bool = False
+
     # libtorrent enc_policy: 0=forced, 1=enabled, 2=disabled (default "enabled"
     # already prefers encryption but allows a plaintext fallback so it can
     # still reach peers that don't support it -- "forced" refuses plaintext
@@ -151,6 +159,74 @@ class Settings:
     # been acknowledged, so it only ever shows on the very first launch.
     first_launch_seen: bool = False
 
+    # Off by default -- only takes effect once the user explicitly enables it
+    # in the Profile tab. When a torrent finishes, writes a
+    # "<info_hash>.provenance.json" manifest (info hash, name, completion
+    # date, trackers, total size) next to the downloaded files. See
+    # engine/session_manager.py's _on_torrent_finished.
+    provenance_manifest_enabled: bool = False
+
+    # Off by default -- only takes effect once the user explicitly enables it
+    # in the Profile tab. See engine/memory_pressure_governor.py: while system
+    # memory usage stays at or above memory_governor_threshold_percent,
+    # temporarily halves max_active_downloads and pauses RSS feed checks/
+    # history writes, restoring both once usage drops back below it.
+    memory_governor_enabled: bool = False
+    memory_governor_threshold_percent: int = 90  # 0-100
+
+    # Off by default -- only takes effect once the user explicitly enables it
+    # in the Profile tab. See engine/idle_activity_service.py: once the user
+    # has been away from the whole machine (system-wide input idle time, not
+    # just idle inside this app) for idle_bandwidth_reduction_minutes,
+    # engages BandwidthScheduler's turtle mode; any input activity disables
+    # it again immediately.
+    idle_bandwidth_reduction_enabled: bool = False
+    idle_bandwidth_reduction_minutes: int = 15
+
+    # Off by default -- only takes effect once the user explicitly enables it
+    # in the Profile tab. See engine/known_disk_service.py: while enabled,
+    # periodically checks psutil.disk_partitions() for a newly-inserted disk
+    # whose volume LABEL (not drive letter, which can be reassigned) matches
+    # one the user has registered (see engine/known_disk_service.py's
+    # KnownDiskStore). This only ever emits a confirmation-request signal
+    # carrying the disk info and the registered action string -- it NEVER
+    # copies/moves/executes anything on its own, no matter how large the
+    # associated action implies; the actual confirmation dialog and running
+    # the action are a UI/bridge concern.
+    known_disk_automation_enabled: bool = False
+
+    # Off by default -- only takes effect once the user explicitly enables it
+    # in the Profile tab. See engine/network_profile_switcher.py: while
+    # enabled, periodically checks the currently-connected Wi-Fi SSID (via
+    # `netsh wlan show interfaces`) against SSID->settings-profile
+    # associations the user registered (engine/network_profile_switcher.py's
+    # NetworkProfileStore) and, on a match, replays the exact live-apply
+    # chain bridge_profile_advanced.py's applyProfile uses for a manual
+    # profile switch -- not just SettingsProfileStore.apply_to_settings(),
+    # which alone only mutates this Settings object in memory.
+    network_profile_auto_switch_enabled: bool = False
+
+    # Off by default -- only takes effect once the user explicitly enables it
+    # in the Profile tab. See engine/peer_reputation.py: while enabled, every
+    # SessionManager.get_peer_info() call journals each peer IP's connection
+    # stability (average seconds connected before it's observed to drop) and
+    # data received from it to a local peer_reputation.json, and the peer
+    # list UI shows a per-IP good/neutral/bad badge (bridge_peer_list.py's
+    # getReputationScores). Purely local bookkeeping -- never sent anywhere,
+    # never affects choking/connection decisions.
+    peer_reputation_enabled: bool = False
+
+    # Off by default -- only takes effect once the user explicitly enables it
+    # in the Profile tab. See engine/lan_peer_cache.py: while enabled, every
+    # SessionManager.get_peer_info() call remembers each peer IP that falls
+    # inside an RFC1918 private range (10.0.0.0/8, 172.16.0.0/12,
+    # 192.168.0.0/16 -- never anything routable/public), keyed by info_hash,
+    # to a local lan_peer_cache.json (entries older than 48h are dropped
+    # lazily). Re-adding a torrent already seen on this LAN tries to
+    # reconnect those remembered peers immediately via handle.connect_peer(),
+    # ahead of tracker/DHT/LSD rediscovering them on their own.
+    lan_peer_cache_enabled: bool = False
+
     @staticmethod
     def load() -> "Settings":
         path = get_config_path()
@@ -178,6 +254,24 @@ class Settings:
 
     def save(self) -> None:
         path = get_config_path()
+        # Read whatever's on disk *before* overwriting it, so the diff-based
+        # history log (settings_history.py) can journal only what changed.
+        # None on first-ever save (no prior state to diff against) or if the
+        # existing file is unreadable -- either way, nothing gets journaled.
+        old_data = None
+        if path.exists():
+            try:
+                old_data = json.loads(path.read_text(encoding="utf-8"))
+            except (json.JSONDecodeError, OSError):
+                old_data = None
+        new_data = asdict(self)
         tmp_path = path.with_suffix(path.suffix + ".tmp")
-        tmp_path.write_text(json.dumps(asdict(self), indent=2, ensure_ascii=False), encoding="utf-8")
+        tmp_path.write_text(json.dumps(new_data, indent=2, ensure_ascii=False), encoding="utf-8")
         os.replace(tmp_path, path)
+        if old_data is not None:
+            # Local import: settings_history imports Settings/_from_dict back
+            # for restore_settings_snapshot, so this stays a lazy call-time
+            # import to avoid a circular import at module load.
+            from torrent2000.config.settings_history import record_settings_change
+
+            record_settings_change(old_data, new_data)

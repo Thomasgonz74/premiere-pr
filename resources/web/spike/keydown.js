@@ -28,7 +28,8 @@ function shortcutRemoveSelectedDownload() {
   if (!infoHash) return;
   confirmAndRemove(
     () => window.bridge.downloads.removeTorrent(infoHash, false),
-    () => window.bridge.downloads.removeTorrent(infoHash, true)
+    () => window.bridge.downloads.removeTorrent(infoHash, true),
+    downloadsRemovalImpact([infoHash])
   );
 }
 

@@ -24,6 +24,7 @@ class FakeRecord:
 class FakeSessionManager(QObject):
     torrent_finished = Signal(str)
     tracker_error = Signal(str, str)
+    file_error = Signal(str, str)
     torrent_removed = Signal(str)
 
     def __init__(self) -> None:

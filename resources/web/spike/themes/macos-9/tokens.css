@@ -358,7 +358,7 @@ input[type=text], textarea { cursor: var(--cursor-text); }
   filter: none;
 }
 .cap-btn:hover { filter: none; }
-.cap-btn:active { background: #8E8E8E; box-shadow: var(--bevel-in); filter: none; }
+.cap-btn:not(:disabled):active { background: #8E8E8E; box-shadow: var(--bevel-in); filter: none; }
 .cap-close {
   position: absolute;
   left: 5px;
@@ -602,7 +602,7 @@ input[type="checkbox"]:disabled {
 .profile-group, .details-group {
   background: transparent;
   border: 1px solid var(--os9-line);
-  border-radius: 3px;
+  border-radius: 0;
 }
 .profile-group h3, .details-group h3 {
   font-weight: 700;

@@ -34,6 +34,7 @@ class NotificationService(QObject):
         self._settings = settings
         self._tray_icon = None
         self._notified_tracker_errors: set[str] = set()
+        self._notified_file_errors: set[str] = set()
 
         if QSystemTrayIcon.isSystemTrayAvailable():
             icon_path = resource_path("assets/icon.ico")
@@ -52,6 +53,7 @@ class NotificationService(QObject):
         session_manager.torrent_finished.connect(self._on_torrent_finished)
         share_limit_service.limit_reached.connect(self._on_limit_reached)
         session_manager.tracker_error.connect(self._on_tracker_error)
+        session_manager.file_error.connect(self._on_file_error)
         session_manager.torrent_removed.connect(self._on_torrent_removed)
 
     def _on_tray_activated(self, reason: QSystemTrayIcon.ActivationReason) -> None:
@@ -89,5 +91,20 @@ class NotificationService(QObject):
             tr("notifications.tracker_error_message", name=name, message=message),
         )
 
+    def _on_file_error(self, info_hash: str, message: str) -> None:
+        # Same "one toast per episode" suppression as tracker errors, and the
+        # same reason: no file-error-recovered event exists to reset on, so
+        # removal is the only reset point available.
+        if info_hash in self._notified_file_errors:
+            return
+        self._notified_file_errors.add(info_hash)
+        record = self._session_manager.get_record(info_hash)
+        name = record.name if record is not None else info_hash[:12]
+        self._notify(
+            tr("notifications.file_error_title"),
+            tr("notifications.file_error_message", name=name, message=message),
+        )
+
     def _on_torrent_removed(self, info_hash: str) -> None:
         self._notified_tracker_errors.discard(info_hash)
+        self._notified_file_errors.discard(info_hash)

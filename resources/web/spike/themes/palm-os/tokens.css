@@ -277,7 +277,7 @@ input[type=text], textarea { cursor: var(--cursor-text); }
   color: var(--pm-lcd);
 }
 .cap-btn:hover { filter: none; }             /* interdit #2 : le stylet ne survole pas */
-.cap-btn:active { filter: none; background: var(--pm-lcd); color: var(--pm-ink); }
+.cap-btn:not(:disabled):active { filter: none; background: var(--pm-lcd); color: var(--pm-ink); }
 .cap-close { background: none; margin-left: 2px; }
 /* Reduire/Fermer : barres pleines en currentColor -- s'inversent avec .cap-btn:active */
 .cap-min span::before,

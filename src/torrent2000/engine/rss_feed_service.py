@@ -178,6 +178,11 @@ class RssFeedService(QObject):
         self._settings = settings
         self._seen_store = seen_store
         self._routing_store = RoutingRuleStore()
+        # Set by MemoryPressureGovernor (see engine/memory_pressure_governor.py)
+        # while system memory usage is over its configured threshold -- skips
+        # feed checks entirely until pressure eases, rather than skipping
+        # individual steps of an in-flight check.
+        self._paused = False
 
         self._signals = _RunnableSignals()
         self._signals.feed_fetched.connect(self._on_feed_fetched)
@@ -189,10 +194,15 @@ class RssFeedService(QObject):
 
     # ------------------------------------------------------------------ API
 
+    def set_paused(self, paused: bool) -> None:
+        self._paused = paused
+
     def check_now(self) -> None:
         """Fetch every enabled feed. Safe to call repeatedly (e.g. from a
         "Vérifier maintenant" button) -- each feed's fetch runs on a
         threadpool worker so this returns immediately."""
+        if self._paused:
+            return
         for feed in self._settings.rss_feeds:
             if not feed.enabled or not feed.url:
                 continue

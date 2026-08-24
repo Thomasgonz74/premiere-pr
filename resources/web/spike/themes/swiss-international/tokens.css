@@ -317,11 +317,11 @@ input[type=text], textarea { cursor: var(--cursor-text); }
   box-shadow: none;
   color: var(--sw-ink);
 }
-.cap-btn:hover { background: var(--sw-ink); color: var(--selection-text); filter: none; }
-.cap-btn:active { background: var(--sw-gray); color: var(--selection-text); filter: none; }
+.cap-btn:not(:disabled):hover { background: var(--sw-ink); color: var(--selection-text); filter: none; }
+.cap-btn:not(:disabled):active { background: var(--sw-gray); color: var(--selection-text); filter: none; }
 .cap-close { background: none; margin-left: 0; }
-.cap-close:hover { background: var(--sw-red); color: #FFFFFF; }
-.cap-close:active { background: var(--sw-red-press); color: #FFFFFF; }
+.cap-close:not(:disabled):hover { background: var(--sw-red); color: #FFFFFF; }
+.cap-close:not(:disabled):active { background: var(--sw-red-press); color: #FFFFFF; }
 
 /* Les gadgets sont TYPOGRAPHIQUES (interdit 9) : le span redevient un cadre
    de centrage neutre, et chaque glyphe est un caractere, pas une forme

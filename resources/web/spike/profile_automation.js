@@ -144,6 +144,122 @@ function wireProfileAutomation() {
   );
   grid.appendChild(batteryEnabledRow);
 
+  // -- Manifeste de provenance ----------------------------------------------
+  grid.appendChild(paHeading("Manifeste de provenance"));
+  const { row: provenanceEnabledRow, check: provenanceEnabledCheck } = paCheckboxRow(
+    "paProvenanceEnabled",
+    "Écrire un manifeste de provenance à la fin de chaque téléchargement"
+  );
+  grid.appendChild(provenanceEnabledRow);
+
+  // -- Gouverneur de pression mémoire ---------------------------------------
+  grid.appendChild(paHeading("Gouverneur de pression mémoire"));
+  const { row: memoryGovernorEnabledRow, check: memoryGovernorEnabledCheck } = paCheckboxRow(
+    "paMemoryGovernorEnabled",
+    "Réduire temporairement l'activité si la mémoire système sature"
+  );
+  grid.appendChild(memoryGovernorEnabledRow);
+  const memoryGovernorThreshold = paNumberInput("paMemoryGovernorThreshold", 1, 100, "70px");
+  grid.appendChild(paFieldRow("Seuil de déclenchement (% mémoire utilisée)", memoryGovernorThreshold));
+
+  // -- Mode tortue sur inactivité --------------------------------------------
+  grid.appendChild(paHeading("Mode tortue sur inactivité"));
+  const { row: idleEnabledRow, check: idleEnabledCheck } = paCheckboxRow(
+    "paIdleEnabled",
+    "Réduire la bande passante quand l'ordinateur est inactif"
+  );
+  grid.appendChild(idleEnabledRow);
+  const idleMinutes = paNumberInput("paIdleMinutes", 1, 1440, "70px");
+  grid.appendChild(paFieldRow("Délai d'inactivité avant activation (minutes)", idleMinutes));
+
+  // -- Disque connu -----------------------------------------------------------
+  // Note: contrairement aux sections ci-dessus, la liste des disques connus
+  // n'est PAS batchée derrière le bouton "Enregistrer" -- ajout/suppression
+  // s'appliquent immédiatement (mêmes bridge.knownDisk.saveDisk/deleteDisk),
+  // même convention que la liste de flux RSS (rss.js). Seule la case
+  // d'activation ci-dessous fait partie du lot enregistré par ce formulaire.
+  grid.appendChild(paHeading("Action automatique à l'insertion d'un disque connu"));
+  const { row: knownDiskEnabledRow, check: knownDiskEnabledCheck } = paCheckboxRow(
+    "paKnownDiskEnabled",
+    "Proposer une action quand un disque enregistré est inséré"
+  );
+  grid.appendChild(knownDiskEnabledRow);
+
+  const knownDiskNote = document.createElement("p");
+  knownDiskNote.className = "field-note";
+  knownDiskNote.textContent =
+    "Rien ne s'exécute automatiquement : une confirmation est toujours demandée avant toute copie.";
+  grid.appendChild(knownDiskNote);
+
+  const knownDiskLabelInput = document.createElement("input");
+  knownDiskLabelInput.type = "text";
+  knownDiskLabelInput.id = "paKnownDiskLabel";
+  knownDiskLabelInput.placeholder = "Label du volume (ex : BACKUP_USB)";
+  const knownDiskActionInput = document.createElement("input");
+  knownDiskActionInput.type = "text";
+  knownDiskActionInput.id = "paKnownDiskAction";
+  knownDiskActionInput.placeholder = "Action associée (ex : copier vers D:\\Backups)";
+  const knownDiskAddBtn = document.createElement("button");
+  knownDiskAddBtn.id = "paKnownDiskAddBtn";
+  knownDiskAddBtn.textContent = "Ajouter";
+  const knownDiskAddRow = document.createElement("div");
+  knownDiskAddRow.className = "field-row";
+  knownDiskAddRow.appendChild(knownDiskLabelInput);
+  knownDiskAddRow.appendChild(knownDiskActionInput);
+  knownDiskAddRow.appendChild(knownDiskAddBtn);
+  grid.appendChild(knownDiskAddRow);
+
+  const knownDiskAddStatus = document.createElement("p");
+  knownDiskAddStatus.className = "status-line";
+  knownDiskAddStatus.id = "paKnownDiskAddStatus";
+  grid.appendChild(knownDiskAddStatus);
+
+  const knownDiskList = document.createElement("div");
+  knownDiskList.className = "listbox";
+  knownDiskList.id = "paKnownDiskList";
+  grid.appendChild(knownDiskList);
+
+  // -- Journal des décisions automatiques ------------------------------------
+  // Lecture seule : historique de ce que les services d'automatisation ont
+  // fait tout seuls (pause sur erreur disque, alerte espace disque, disque
+  // connu détecté...), pas ce que l'utilisateur a fait à la main. Pas de
+  // pagination/filtre -- juste les 100 dernières entrées, la plus récente en
+  // premier (voir engine/decision_journal.py).
+  grid.appendChild(paHeading("Journal des décisions automatiques"));
+  const journalList = document.createElement("div");
+  journalList.className = "listbox";
+  journalList.id = "paDecisionJournalList";
+  grid.appendChild(journalList);
+
+  function renderDecisionJournal(entries) {
+    journalList.replaceChildren();
+    if (!entries.length) {
+      const note = document.createElement("p");
+      note.className = "empty-note";
+      note.textContent = "Aucune décision automatique enregistrée.";
+      journalList.appendChild(note);
+      return;
+    }
+    entries.forEach((entry) => {
+      const row = document.createElement("div");
+      row.className = "row";
+
+      const timeEl = document.createElement("span");
+      timeEl.className = "row-name";
+      timeEl.textContent = entry.timestamp;
+      row.appendChild(timeEl);
+
+      const textEl = document.createElement("span");
+      textEl.textContent = entry.text;
+      textEl.title = entry.text;
+      row.appendChild(textEl);
+
+      journalList.appendChild(row);
+    });
+  }
+
+  bridge.getDecisionJournal(renderDecisionJournal);
+
   const status = document.createElement("p");
   status.className = "status-line";
   status.id = "paStatus";
@@ -169,9 +285,96 @@ function wireProfileAutomation() {
     shutdownActionSelect.value = values.shutdownAction;
     shutdownDelay.value = values.shutdownDelaySeconds;
     batteryEnabledCheck.checked = values.batteryPauseEnabled;
+    provenanceEnabledCheck.checked = values.provenanceManifestEnabled;
+    memoryGovernorEnabledCheck.checked = values.memoryGovernorEnabled;
+    memoryGovernorThreshold.value = values.memoryGovernorThresholdPercent;
+    idleEnabledCheck.checked = values.idleBandwidthReductionEnabled;
+    idleMinutes.value = values.idleBandwidthReductionMinutes;
+    knownDiskEnabledCheck.checked = values.knownDiskEnabled;
   }
 
   bridge.getSettings(populate);
+
+  const knownDiskBridge = window.bridge.knownDisk;
+
+  function renderKnownDisks(disks) {
+    knownDiskList.replaceChildren();
+    if (!disks.length) {
+      const note = document.createElement("p");
+      note.className = "empty-note";
+      note.textContent = "Aucun disque enregistré.";
+      knownDiskList.appendChild(note);
+      return;
+    }
+    disks.forEach((disk) => {
+      const row = document.createElement("div");
+      row.className = "row";
+
+      const labelEl = document.createElement("span");
+      labelEl.className = "row-name";
+      labelEl.textContent = disk.label;
+      labelEl.title = disk.label;
+      row.appendChild(labelEl);
+
+      const actionEl = document.createElement("span");
+      actionEl.textContent = disk.action;
+      actionEl.title = disk.action;
+      row.appendChild(actionEl);
+
+      const actions = document.createElement("div");
+      actions.className = "row-actions";
+      const removeBtn = document.createElement("button");
+      removeBtn.textContent = "✕";
+      removeBtn.addEventListener("click", () => {
+        knownDiskBridge.deleteDisk(disk.label);
+        reloadKnownDisks();
+      });
+      actions.appendChild(removeBtn);
+      row.appendChild(actions);
+
+      knownDiskList.appendChild(row);
+    });
+  }
+
+  function reloadKnownDisks() {
+    knownDiskBridge.listDisks(renderKnownDisks);
+  }
+
+  reloadKnownDisks();
+
+  knownDiskAddBtn.addEventListener("click", () => {
+    const label = knownDiskLabelInput.value.trim();
+    const action = knownDiskActionInput.value.trim();
+    knownDiskBridge.saveDisk(label, action, (result) => {
+      knownDiskAddStatus.textContent = result.error || "";
+      if (result.ok) {
+        knownDiskLabelInput.value = "";
+        knownDiskActionInput.value = "";
+        reloadKnownDisks();
+      }
+    });
+  });
+
+  // Le service ne fait jamais rien tout seul : ce signal ne fait qu'informer
+  // l'utilisateur qu'un disque connu vient d'apparaître et quelle action lui
+  // est associée. Aucun bouton "Confirmer" ci-dessous ne lance quoi que ce
+  // soit -- il n'existe encore aucun exécuteur d'action côté Python (voir
+  // known_disk_service.py / bridge_known_disk.py) ; câbler l'exécution réelle
+  // reste à faire.
+  knownDiskBridge.diskConfirmationRequested.connect((infoJson, action) => {
+    let info;
+    try {
+      info = JSON.parse(infoJson);
+    } catch (e) {
+      info = {};
+    }
+    alertModal(
+      "Disque connu détecté",
+      `Le disque "${info.label || "?"}" (${info.mountpoint || "?"}) est associé à l'action : ${action}. ` +
+        "Cette action n'est pas encore automatisée -- rien n'a été exécuté.",
+      "Fermer"
+    );
+  });
 
   watchBrowseBtn.addEventListener("click", () => {
     dialogs.browseFolder(watchPathInput.value, (path) => {
@@ -194,6 +397,12 @@ function wireProfileAutomation() {
       shutdownAction: shutdownActionSelect.value,
       shutdownDelaySeconds: parseInt(shutdownDelay.value, 10) || 0,
       batteryPauseEnabled: batteryEnabledCheck.checked,
+      provenanceManifestEnabled: provenanceEnabledCheck.checked,
+      memoryGovernorEnabled: memoryGovernorEnabledCheck.checked,
+      memoryGovernorThresholdPercent: parseInt(memoryGovernorThreshold.value, 10) || 90,
+      idleBandwidthReductionEnabled: idleEnabledCheck.checked,
+      idleBandwidthReductionMinutes: parseInt(idleMinutes.value, 10) || 15,
+      knownDiskEnabled: knownDiskEnabledCheck.checked,
     };
     bridge.saveSettings(values, (result) => {
       status.textContent = result.ok ? "Paramètres enregistrés." : result.error || "Erreur lors de l'enregistrement.";

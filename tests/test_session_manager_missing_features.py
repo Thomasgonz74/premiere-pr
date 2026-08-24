@@ -4,7 +4,11 @@ file-priority replacement (set_file_priorities vs. the one-way exclude_files).
 """
 
 import collections
+import json
 import os
+import stat
+import time
+from pathlib import Path
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
@@ -15,10 +19,17 @@ import pytest
 from PySide6.QtWidgets import QApplication
 
 from torrent2000.config.settings import Settings
+from torrent2000.danger_scanner.models import FileEntry
+from torrent2000.engine.peer_reputation import PeerReputationStore, PeerReputationTracker
 from torrent2000.engine.persistence import save_resume_params
-from torrent2000.engine.session_manager import FILE_PRIORITY_DEFAULT, FILE_PRIORITY_EXCLUDED, SessionManager
+from torrent2000.engine.session_manager import (
+    FILE_PRIORITY_DEFAULT,
+    FILE_PRIORITY_EXCLUDED,
+    SessionManager,
+    _write_provenance_manifest,
+)
 from torrent2000.engine.torrent_categories import TorrentCategoryService
-from torrent2000.engine.torrent_item import TorrentRecord
+from torrent2000.engine.torrent_item import TorrentRecord, TrackerInfo
 
 _MAGNET = "magnet:?xt=urn:btih:0123456789abcdef0123456789abcdef01234567&dn=test"
 
@@ -38,12 +49,15 @@ def _session_manager_with_mock_handles(**handles):
     sm._timer = MagicMock()
     sm._resume_save_timer = MagicMock()
     sm._session = MagicMock()
+    sm._settings = Settings()
     sm._handles = dict(handles)
     sm._records = {}
     sm._private_flag_checked = set()
     sm._categories = TorrentCategoryService()
     sm._speed_history = {}
     sm._pending_restore_confirmation = set()
+    sm._peer_reputation_store = PeerReputationStore()
+    sm._peer_reputation_tracker = PeerReputationTracker(sm._peer_reputation_store)
     sm.torrent_status_updated = MagicMock()
     sm.torrent_removed = MagicMock()
     sm.storage_moved = MagicMock()
@@ -289,3 +303,149 @@ def test_set_file_priorities_missing_handle_is_a_noop():
     sm = _session_manager_with_mock_handles()
 
     sm.set_file_priorities("unknown", {0})  # must not raise
+
+
+# --------------------------------------------------------------- archive lock
+
+
+def test_lock_torrent_removes_write_bit_and_sets_locked_flag(tmp_path):
+    file_path = tmp_path / "movie.mkv"
+    file_path.write_bytes(b"data")
+    sm = _session_manager_with_mock_handles()
+    sm._records["hash0"] = TorrentRecord(info_hash="hash0", save_path=str(tmp_path))
+    sm.get_torrent_files = lambda info_hash: [FileEntry(index=0, path="movie.mkv", size=4)]
+
+    sm.lock_torrent("hash0")
+
+    assert sm._records["hash0"].locked is True
+    assert not os.access(file_path, os.W_OK)
+
+
+def test_unlock_torrent_restores_write_bit_and_clears_locked_flag(tmp_path):
+    file_path = tmp_path / "movie.mkv"
+    file_path.write_bytes(b"data")
+    os.chmod(file_path, file_path.stat().st_mode & ~stat.S_IWUSR)
+    sm = _session_manager_with_mock_handles()
+    sm._records["hash0"] = TorrentRecord(info_hash="hash0", save_path=str(tmp_path), locked=True)
+    sm.get_torrent_files = lambda info_hash: [FileEntry(index=0, path="movie.mkv", size=4)]
+
+    sm.unlock_torrent("hash0")
+
+    assert sm._records["hash0"].locked is False
+    assert os.access(file_path, os.W_OK)
+
+
+def test_lock_torrent_missing_file_on_disk_is_defensive(tmp_path):
+    sm = _session_manager_with_mock_handles()
+    sm._records["hash0"] = TorrentRecord(info_hash="hash0", save_path=str(tmp_path))
+    sm.get_torrent_files = lambda info_hash: [FileEntry(index=0, path="ghost.mkv", size=4)]
+
+    sm.lock_torrent("hash0")  # must not raise despite the file not existing
+
+    assert sm._records["hash0"].locked is True
+
+
+def test_lock_and_unlock_torrent_unknown_hash_is_a_noop():
+    sm = _session_manager_with_mock_handles()
+
+    sm.lock_torrent("unknown")  # must not raise
+    sm.unlock_torrent("unknown")  # must not raise
+
+
+# --------------------------------------------------------------------- pin panel
+
+
+def test_pin_torrent_sets_pinned_flag():
+    sm = _session_manager_with_mock_handles()
+    sm._records["hash0"] = TorrentRecord(info_hash="hash0")
+
+    sm.pin_torrent("hash0")
+
+    assert sm._records["hash0"].pinned is True
+
+
+def test_unpin_torrent_clears_pinned_flag():
+    sm = _session_manager_with_mock_handles()
+    sm._records["hash0"] = TorrentRecord(info_hash="hash0", pinned=True)
+
+    sm.unpin_torrent("hash0")
+
+    assert sm._records["hash0"].pinned is False
+
+
+def test_pin_and_unpin_torrent_unknown_hash_is_a_noop():
+    sm = _session_manager_with_mock_handles()
+
+    sm.pin_torrent("unknown")  # must not raise
+    sm.unpin_torrent("unknown")  # must not raise
+
+
+# --------------------------------------------------------------- provenance manifest
+
+
+def test_on_torrent_finished_sets_completed_at_once():
+    sm = _session_manager_with_mock_handles()
+    sm._settings = Settings()
+    sm.torrent_finished = MagicMock()
+    sm._records["hash0"] = TorrentRecord(info_hash="hash0")
+
+    before = time.time()
+    sm._on_torrent_finished("hash0")
+    after = time.time()
+
+    completed_at = sm._records["hash0"].completed_at
+    assert completed_at is not None
+    assert before <= completed_at <= after
+    sm.torrent_finished.emit.assert_called_once_with("hash0")
+
+
+def test_on_torrent_finished_does_not_overwrite_existing_completed_at():
+    sm = _session_manager_with_mock_handles()
+    sm._settings = Settings()
+    sm.torrent_finished = MagicMock()
+    sm._records["hash0"] = TorrentRecord(info_hash="hash0", completed_at=123.0)
+
+    sm._on_torrent_finished("hash0")
+
+    assert sm._records["hash0"].completed_at == 123.0
+
+
+def test_on_torrent_finished_writes_provenance_manifest_when_enabled(tmp_path):
+    sm = _session_manager_with_mock_handles()
+    sm._settings = Settings(provenance_manifest_enabled=True)
+    sm.torrent_finished = MagicMock()
+    sm._records["hash0"] = TorrentRecord(
+        info_hash="hash0",
+        name="Some Movie",
+        save_path=str(tmp_path),
+        total_size=12345,
+        trackers=[TrackerInfo(url="udp://tracker.example:80")],
+    )
+
+    sm._on_torrent_finished("hash0")
+
+    manifest_path = tmp_path / "hash0.provenance.json"
+    assert manifest_path.exists()
+    data = json.loads(manifest_path.read_text(encoding="utf-8"))
+    assert data["info_hash"] == "hash0"
+    assert data["name"] == "Some Movie"
+    assert data["total_size"] == 12345
+    assert data["trackers"] == ["udp://tracker.example:80"]
+    assert "completed_at" in data
+
+
+def test_on_torrent_finished_skips_manifest_when_disabled(tmp_path):
+    sm = _session_manager_with_mock_handles()
+    sm._settings = Settings(provenance_manifest_enabled=False)
+    sm.torrent_finished = MagicMock()
+    sm._records["hash0"] = TorrentRecord(info_hash="hash0", save_path=str(tmp_path))
+
+    sm._on_torrent_finished("hash0")
+
+    assert not (tmp_path / "hash0.provenance.json").exists()
+
+
+def test_write_provenance_manifest_is_defensive_on_write_failure():
+    record = TorrentRecord(info_hash="hash0", save_path=str(Path("Z:/does/not/exist/at/all")))
+
+    _write_provenance_manifest(record)  # must not raise despite the bad save_path

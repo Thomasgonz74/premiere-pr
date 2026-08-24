@@ -19,7 +19,13 @@ from torrent2000.engine.antivirus_scan_service import AntivirusScanService
 from torrent2000.engine.auto_shutdown_service import AutoShutdownService
 from torrent2000.engine.battery_pause_service import BatteryPauseService
 from torrent2000.engine.bandwidth_scheduler import BandwidthScheduler
+from torrent2000.engine.decision_journal import DecisionJournalService
+from torrent2000.engine.disk_reconnect_service import DiskReconnectService
 from torrent2000.engine.disk_space_monitor import DiskSpaceMonitor
+from torrent2000.engine.idle_activity_service import IdleActivityService
+from torrent2000.engine.known_disk_service import KnownDiskService, KnownDiskStore
+from torrent2000.engine.memory_pressure_governor import MemoryPressureGovernor
+from torrent2000.engine.network_profile_switcher import NetworkProfileStore, NetworkProfileSwitcherService
 from torrent2000.engine.remote_server import RemoteAccessServer
 from torrent2000.engine.routing_rules import RoutingRuleStore
 from torrent2000.engine.rss_feed_service import RssFeedService
@@ -56,6 +62,7 @@ def main() -> int:
     share_limit_service = ShareLimitService(session_manager, settings)
     watch_folder_service = WatchFolderService(session_manager, settings)
     battery_pause_service = BatteryPauseService(session_manager, settings)
+    disk_reconnect_service = DiskReconnectService(session_manager, settings)
     antivirus_scan_service = AntivirusScanService(session_manager, settings)
     update_checker = UpdateChecker(settings)
 
@@ -65,7 +72,9 @@ def main() -> int:
     history_service = HistoryService(history_store, session_manager)
     rss_seen_store = RssSeenStore(get_rss_seen_db_path())
     rss_feed_service = RssFeedService(session_manager, settings, rss_seen_store)
+    memory_pressure_governor = MemoryPressureGovernor(session_manager, settings, rss_feed_service, history_service)
     bandwidth_scheduler = BandwidthScheduler(session_manager, settings)
+    idle_activity_service = IdleActivityService(bandwidth_scheduler, settings)
     disk_space_monitor = DiskSpaceMonitor(session_manager, settings)
     remote_access_server = RemoteAccessServer(session_manager, settings)
     if settings.remote_access_enabled:
@@ -74,6 +83,13 @@ def main() -> int:
     settings_profile_store = SettingsProfileStore()
     auto_shutdown_service = AutoShutdownService(session_manager, settings)
     anthem_player = AnthemPlayer(settings.audio_volume)
+    known_disk_store = KnownDiskStore()
+    known_disk_service = KnownDiskService(known_disk_store, settings)
+    network_profile_store = NetworkProfileStore()
+    network_profile_switcher_service = NetworkProfileSwitcherService(
+        session_manager, settings, network_profile_store, settings_profile_store
+    )
+    decision_journal_service = DecisionJournalService(session_manager, known_disk_service, disk_space_monitor)
 
     window = SpikeWindow(
         session_manager,
@@ -90,6 +106,10 @@ def main() -> int:
         auto_shutdown_service=auto_shutdown_service,
         anthem_player=anthem_player,
         update_checker=update_checker,
+        known_disk_store=known_disk_store,
+        known_disk_service=known_disk_service,
+        network_profile_store=network_profile_store,
+        decision_journal_service=decision_journal_service,
     )
     # Second-launch arguments arriving later, forwarded by SingleInstanceGuard
     # (empty when a later launch had none, e.g. the exe was just reopened).

@@ -292,11 +292,11 @@ input[type=text], textarea { cursor: var(--cursor-text); }
   filter: none;                 /* annule les brightness() du CSS partagé : pas de reflet */
   transition: border-color var(--transition-state), box-shadow var(--transition-state), color var(--transition-state);
 }
-.cap-btn:hover { border-color: var(--sy-cyan); color: var(--sy-cyan); box-shadow: var(--glow-cyan); filter: none; }
-.cap-btn:active { border-color: var(--sy-cyan); color: var(--sy-cyan); box-shadow: none; filter: none; }
+.cap-btn:not(:disabled):hover { border-color: var(--sy-cyan); color: var(--sy-cyan); box-shadow: var(--glow-cyan); filter: none; }
+.cap-btn:not(:disabled):active { border-color: var(--sy-cyan); color: var(--sy-cyan); box-shadow: none; filter: none; }
 .cap-close { background: none; margin-left: 2px; }
-.cap-close:hover { border-color: var(--sy-pink); color: var(--sy-pink); box-shadow: var(--glow-pink); }
-.cap-close:active { border-color: var(--sy-pink); color: var(--sy-pink); box-shadow: none; }
+.cap-close:not(:disabled):hover { border-color: var(--sy-pink); color: var(--sy-pink); box-shadow: var(--glow-pink); }
+.cap-close:not(:disabled):active { border-color: var(--sy-pink); color: var(--sy-pink); box-shadow: none; }
 /* Réduire : glyphe « – » en currentColor, centré dans le cercle */
 .cap-min span::before {
   content: "\2013";
