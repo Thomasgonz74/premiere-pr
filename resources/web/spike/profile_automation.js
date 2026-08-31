@@ -152,6 +152,22 @@ function wireProfileAutomation() {
   );
   grid.appendChild(provenanceEnabledRow);
 
+  // -- Réputation des pairs --------------------------------------------------
+  grid.appendChild(paHeading("Réputation des pairs"));
+  const { row: peerReputationEnabledRow, check: peerReputationEnabledCheck } = paCheckboxRow(
+    "paPeerReputationEnabled",
+    "Suivre la stabilité et l'historique de chaque pair (liste de pairs)"
+  );
+  grid.appendChild(peerReputationEnabledRow);
+
+  // -- Cache des pairs locaux (LAN) -------------------------------------------
+  grid.appendChild(paHeading("Cache des pairs locaux (LAN)"));
+  const { row: lanPeerCacheEnabledRow, check: lanPeerCacheEnabledCheck } = paCheckboxRow(
+    "paLanPeerCacheEnabled",
+    "Mémoriser les pairs du réseau local pour les reconnecter plus vite"
+  );
+  grid.appendChild(lanPeerCacheEnabledRow);
+
   // -- Gouverneur de pression mémoire ---------------------------------------
   grid.appendChild(paHeading("Gouverneur de pression mémoire"));
   const { row: memoryGovernorEnabledRow, check: memoryGovernorEnabledCheck } = paCheckboxRow(
@@ -286,6 +302,8 @@ function wireProfileAutomation() {
     shutdownDelay.value = values.shutdownDelaySeconds;
     batteryEnabledCheck.checked = values.batteryPauseEnabled;
     provenanceEnabledCheck.checked = values.provenanceManifestEnabled;
+    peerReputationEnabledCheck.checked = values.peerReputationEnabled;
+    lanPeerCacheEnabledCheck.checked = values.lanPeerCacheEnabled;
     memoryGovernorEnabledCheck.checked = values.memoryGovernorEnabled;
     memoryGovernorThreshold.value = values.memoryGovernorThresholdPercent;
     idleEnabledCheck.checked = values.idleBandwidthReductionEnabled;
@@ -355,12 +373,12 @@ function wireProfileAutomation() {
     });
   });
 
-  // Le service ne fait jamais rien tout seul : ce signal ne fait qu'informer
-  // l'utilisateur qu'un disque connu vient d'apparaître et quelle action lui
-  // est associée. Aucun bouton "Confirmer" ci-dessous ne lance quoi que ce
-  // soit -- il n'existe encore aucun exécuteur d'action côté Python (voir
-  // known_disk_service.py / bridge_known_disk.py) ; câbler l'exécution réelle
-  // reste à faire.
+  // Le service ne fait jamais rien tout seul : ce signal informe seulement
+  // l'utilisateur qu'un disque connu vient d'apparaître. `action` est un nom
+  // de catégorie de torrent (voir bridge_known_disk.py) -- rien ne bouge tant
+  // que l'utilisateur n'a pas cliqué sur "Confirmer et déplacer" ci-dessous,
+  // et le nombre de torrents + la taille totale concernés sont affichés
+  // avant ce clic.
   knownDiskBridge.diskConfirmationRequested.connect((infoJson, action) => {
     let info;
     try {
@@ -368,12 +386,47 @@ function wireProfileAutomation() {
     } catch (e) {
       info = {};
     }
-    alertModal(
-      "Disque connu détecté",
-      `Le disque "${info.label || "?"}" (${info.mountpoint || "?"}) est associé à l'action : ${action}. ` +
-        "Cette action n'est pas encore automatisée -- rien n'a été exécuté.",
-      "Fermer"
-    );
+    const category = action || "";
+    knownDiskBridge.previewCategoryMove(category, (impact) => {
+      const content = document.createElement("div");
+      content.className = "form-grid";
+
+      const message = document.createElement("p");
+      message.textContent = `Le disque "${info.label || "?"}" (${info.mountpoint || "?"}) est associé à la catégorie "${category}".`;
+      content.appendChild(message);
+
+      const details = document.createElement("p");
+      details.className = "field-note";
+      details.textContent = impact.count > 0
+        ? `${impact.count} torrent(s) de cette catégorie seront déplacés vers "${info.mountpoint || "?"}\\${category}" (taille totale : ${formatSize(impact.totalSize)}).`
+        : "Aucun torrent actif n'appartient à cette catégorie -- rien à déplacer.";
+      content.appendChild(details);
+
+      const buttonRow = document.createElement("div");
+      buttonRow.className = "modal-close-row";
+
+      const confirmBtn = document.createElement("button");
+      confirmBtn.textContent = "Confirmer et déplacer";
+      confirmBtn.disabled = impact.count === 0;
+      confirmBtn.addEventListener("click", () => {
+        closeModal();
+        knownDiskBridge.executeCategoryMove(category, info.mountpoint || "", (result) => {
+          const summary = result.errors.length
+            ? `${result.moved} torrent(s) déplacé(s), ${result.errors.length} échec(s) : ${result.errors.join("; ")}`
+            : `${result.moved} torrent(s) déplacé(s) avec succès.`;
+          alertModal("Déplacement terminé", summary, "Fermer");
+        });
+      });
+      buttonRow.appendChild(confirmBtn);
+
+      const cancelBtn = document.createElement("button");
+      cancelBtn.textContent = "Annuler";
+      cancelBtn.addEventListener("click", () => closeModal());
+      buttonRow.appendChild(cancelBtn);
+
+      content.appendChild(buttonRow);
+      openModal("Disque connu détecté", content);
+    });
   });
 
   watchBrowseBtn.addEventListener("click", () => {
@@ -398,6 +451,8 @@ function wireProfileAutomation() {
       shutdownDelaySeconds: parseInt(shutdownDelay.value, 10) || 0,
       batteryPauseEnabled: batteryEnabledCheck.checked,
       provenanceManifestEnabled: provenanceEnabledCheck.checked,
+      peerReputationEnabled: peerReputationEnabledCheck.checked,
+      lanPeerCacheEnabled: lanPeerCacheEnabledCheck.checked,
       memoryGovernorEnabled: memoryGovernorEnabledCheck.checked,
       memoryGovernorThresholdPercent: parseInt(memoryGovernorThreshold.value, 10) || 90,
       idleBandwidthReductionEnabled: idleEnabledCheck.checked,

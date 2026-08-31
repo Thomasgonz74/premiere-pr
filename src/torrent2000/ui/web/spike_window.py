@@ -165,7 +165,7 @@ class SpikeWindow(QMainWindow):
         self._create_torrent_bridge = CreateTorrentBridge(self)
         self._tracker_editor_bridge = TrackerEditorBridge(session_manager, self)
         self._update_bridge = UpdateBridge(update_checker, settings, self, self)
-        self._known_disk_bridge = KnownDiskBridge(known_disk_store, known_disk_service, self)
+        self._known_disk_bridge = KnownDiskBridge(known_disk_store, known_disk_service, session_manager, self)
         self._channel.registerObject("windowBridge", self._window_bridge)
         self._channel.registerObject("autoShutdown", self._auto_shutdown_bridge)
         self._channel.registerObject("downloads", self._downloads_bridge)

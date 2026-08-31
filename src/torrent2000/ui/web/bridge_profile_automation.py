@@ -59,6 +59,8 @@ class ProfileAutomationBridge(QObject):
             "idleBandwidthReductionEnabled": s.idle_bandwidth_reduction_enabled,
             "idleBandwidthReductionMinutes": s.idle_bandwidth_reduction_minutes,
             "knownDiskEnabled": s.known_disk_automation_enabled,
+            "peerReputationEnabled": s.peer_reputation_enabled,
+            "lanPeerCacheEnabled": s.lan_peer_cache_enabled,
         }
 
     @Slot("QVariantMap", result="QVariantMap")
@@ -100,6 +102,9 @@ class ProfileAutomationBridge(QObject):
         )
 
         s.known_disk_automation_enabled = bool(values.get("knownDiskEnabled", s.known_disk_automation_enabled))
+
+        s.peer_reputation_enabled = bool(values.get("peerReputationEnabled", s.peer_reputation_enabled))
+        s.lan_peer_cache_enabled = bool(values.get("lanPeerCacheEnabled", s.lan_peer_cache_enabled))
 
         s.save()
         # Disk-space monitor re-reads settings on its own timer tick, no
