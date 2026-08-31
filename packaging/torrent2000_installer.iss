@@ -20,7 +20,7 @@
 ;     task, e.g. desktopicon, at its default (selected).
 
 #define MyAppName "Torrent 2000"
-#define MyAppVersion "2.0.0"
+#define MyAppVersion "1.1.2"
 #define MyAppPublisher "Torrent 2000"
 #define MyAppExeName "Torrent2000.exe"
 
