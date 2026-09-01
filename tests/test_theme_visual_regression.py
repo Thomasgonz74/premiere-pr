@@ -28,6 +28,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 from pathlib import Path
 
 import pytest
+import shiboken6
 from PySide6.QtCore import QUrl
 from PySide6.QtGui import QImage
 from PySide6.QtTest import QTest
@@ -94,7 +95,19 @@ def view(app):
     )
 
     yield v
+
+    # QWebEngineView owns a Chromium subprocess; deleteLater() only *schedules*
+    # destruction on the next event-loop pass. If it never actually runs before
+    # the interpreter starts tearing down objects at process exit, the native
+    # Chromium/Qt WebEngine cleanup races the shutdown and segfaults (only
+    # reproduces with the full suite loaded -- see repo notes). Pump the event
+    # loop until shiboken confirms the C++ object is actually gone.
+    v.close()
     v.deleteLater()
+    waited = 0
+    while shiboken6.isValid(v) and waited < LOAD_TIMEOUT_MS:
+        QTest.qWait(50)
+        waited += 50
 
 
 def _sample_coords(length: int, grid: int) -> list[int]:
