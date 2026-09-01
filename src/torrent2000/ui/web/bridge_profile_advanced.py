@@ -101,7 +101,7 @@ class ProfileAdvancedBridge(QObject):
 
     @Slot(str, result="QVariantMap")
     def applyProfile(self, name: str) -> dict:
-        profile = next((p for p in self._settings_profile_store.list_profiles() if p.name == name), None)
+        profile = self._settings_profile_store.get_profile(name)
         if profile is None:
             return {"ok": False, "error": "Profil introuvable."}
         # Same live-apply calls, in the same order, as SettingsProfilesSection's

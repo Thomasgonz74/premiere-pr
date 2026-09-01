@@ -110,12 +110,16 @@ class SpikeWindow(QMainWindow):
         # live native drag-resize (see _begin_resize_freeze).
         self._view = QWebEngineView(self)
         self._view.setAttribute(Qt.WA_TranslucentBackground, True)
-        self._view.page().setBackgroundColor(QColor(0, 0, 0, 0))
         self._view.setGeometry(self.rect())
         if debug:
+            # Configure only the page that will actually be used -- calling
+            # self._view.page() first would lazily create a default
+            # QWebEnginePage just to immediately discard it via setPage().
             page = _ConsoleLoggingPage(self._view)
             page.setBackgroundColor(QColor(0, 0, 0, 0))
             self._view.setPage(page)
+        else:
+            self._view.page().setBackgroundColor(QColor(0, 0, 0, 0))
 
         # open_source() needs window.bridge.add to exist, which only happens
         # once the page has actually finished loading (setUrl() below is

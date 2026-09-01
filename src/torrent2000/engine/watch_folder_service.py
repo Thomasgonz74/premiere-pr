@@ -52,6 +52,11 @@ class WatchFolderService(QObject):
 
         processed_dir = folder / PROCESSED_SUBFOLDER
         failed_dir = folder / FAILED_SUBFOLDER
+        rules = self._routing_store.list_rules()
+        # _read_trackers() does a full lt.torrent_info() parse -- only worth
+        # it if some rule actually inspects trackers; resolve_destination()
+        # treats trackers=None exactly like an empty list otherwise.
+        needs_trackers = any(r.match_field == "tracker" and r.pattern for r in rules)
         # Non-recursive glob: files already moved into `processed`/`failed`
         # are never revisited, and neither pre-existing subfolder is
         # rescanned since it isn't itself named "*.torrent".
@@ -59,10 +64,10 @@ class WatchFolderService(QObject):
             if not torrent_path.is_file():
                 continue
             destination = resolve_destination(
-                self._routing_store.list_rules(),
+                rules,
                 self._settings.default_download_dir,
                 name=torrent_path.stem,
-                trackers=self._read_trackers(torrent_path),
+                trackers=self._read_trackers(torrent_path) if needs_trackers else None,
             )
             try:
                 self._session_manager.add_torrent_from_file(str(torrent_path), destination)

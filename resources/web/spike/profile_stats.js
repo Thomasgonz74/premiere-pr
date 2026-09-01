@@ -5,12 +5,20 @@
 
 const HISTORY_EVENT_LABELS = { removed: "Retiré" };
 
+// Cached once by buildProfileStatsSection() (called exactly once per page
+// load) so statsFormatSnapshot() -- driven by a signal pushed on every
+// stats update -- doesn't re-look these up by id each time.
+let statsLevelValueEl;
+let statsProgressFillEl;
+let statsProgressLabelEl;
+let statsTotalsLabelEl;
+
 function statsFormatSnapshot(snap) {
-  document.getElementById("statsLevelValue").textContent = `Niveau ${snap.level}`;
+  statsLevelValueEl.textContent = `Niveau ${snap.level}`;
   const percent = Math.round(snap.progressToNext * 100);
-  document.getElementById("statsProgressFill").style.width = `${percent}%`;
-  document.getElementById("statsProgressLabel").textContent = `${percent}%`;
-  document.getElementById("statsTotalsLabel").textContent =
+  statsProgressFillEl.style.width = `${percent}%`;
+  statsProgressLabelEl.textContent = `${percent}%`;
+  statsTotalsLabelEl.textContent =
     `Téléchargé : ${formatSize(snap.totalDownloaded)}  —  Envoyé : ${formatSize(snap.totalUploaded)}`;
 }
 
@@ -99,6 +107,11 @@ function buildProfileStatsSection() {
   totalsLabel.id = "statsTotalsLabel";
   totalsLabel.className = "field-label";
   levelGroup.appendChild(totalsLabel);
+
+  statsLevelValueEl = levelValue;
+  statsProgressFillEl = progressFill;
+  statsProgressLabelEl = progressLabel;
+  statsTotalsLabelEl = totalsLabel;
 
   container.appendChild(levelGroup);
 

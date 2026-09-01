@@ -13,6 +13,17 @@ from PySide6.QtCore import QObject, Qt, Slot
 # MainWindow._set_cccp_panel_active (ui/widgets/propaganda_panel.PANEL_WIDTH).
 _PROPAGANDA_PANEL_WIDTH = 220
 
+_RESIZE_EDGES = {
+    "top": Qt.Edge.TopEdge,
+    "bottom": Qt.Edge.BottomEdge,
+    "left": Qt.Edge.LeftEdge,
+    "right": Qt.Edge.RightEdge,
+    "top-left": Qt.Edge.TopEdge | Qt.Edge.LeftEdge,
+    "top-right": Qt.Edge.TopEdge | Qt.Edge.RightEdge,
+    "bottom-left": Qt.Edge.BottomEdge | Qt.Edge.LeftEdge,
+    "bottom-right": Qt.Edge.BottomEdge | Qt.Edge.RightEdge,
+}
+
 
 class WindowBridge(QObject):
     def __init__(self, window, settings, anthem_player, parent=None) -> None:
@@ -33,17 +44,7 @@ class WindowBridge(QObject):
         handle = self._window.windowHandle()
         if handle is None:
             return
-        edges = {
-            "top": Qt.Edge.TopEdge,
-            "bottom": Qt.Edge.BottomEdge,
-            "left": Qt.Edge.LeftEdge,
-            "right": Qt.Edge.RightEdge,
-            "top-left": Qt.Edge.TopEdge | Qt.Edge.LeftEdge,
-            "top-right": Qt.Edge.TopEdge | Qt.Edge.RightEdge,
-            "bottom-left": Qt.Edge.BottomEdge | Qt.Edge.LeftEdge,
-            "bottom-right": Qt.Edge.BottomEdge | Qt.Edge.RightEdge,
-        }
-        edge_flags = edges.get(edge)
+        edge_flags = _RESIZE_EDGES.get(edge)
         if edge_flags is not None:
             handle.startSystemResize(edge_flags)
 

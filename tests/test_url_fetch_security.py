@@ -14,9 +14,26 @@ from torrent2000.engine.url_fetch import FetchError, fetch_url
 
 
 def _fake_response(body: bytes = b"ok"):
+    # fetch_url() now reads in chunks via response.read(size) (see
+    # _read_response_body) rather than one no-arg response.read() call, so
+    # this needs to behave like a real file-like object: return up to `size`
+    # bytes per call, then b"" once exhausted -- not the same `body` forever,
+    # which would never signal EOF and would hang the caller's read loop
+    # until it hit the overall deadline.
+    import io
+
     context = MagicMock()
-    context.read.return_value = body
-    context.__enter__.return_value = context
+    buf = io.BytesIO(body)
+    context.read.side_effect = buf.read
+    # Some tests reuse the same mocked response across multiple fetch_url()
+    # calls (one shared `context`) -- reset the buffer's read position on
+    # each `with ... as response:` entry so every call sees the full body
+    # again, the way a fresh HTTP response would.
+    def _enter():
+        buf.seek(0)
+        return context
+
+    context.__enter__.side_effect = _enter
     context.__exit__.return_value = False
     return context
 
@@ -135,3 +152,49 @@ def test_socks5_without_force_proxy_falls_back_to_unproxied_with_warning(caplog)
 
     mock_urlopen.assert_called_once()
     assert any("SOCKS5" in record.message for record in caplog.records)
+
+
+# --------------------------------------------------------- response limits
+# Regression tests for a defensive pentest finding: fetch_url() used to
+# response.read() the entire body with no size cap and a per-socket-op
+# timeout that never bounded the whole transfer (a slow drip-feed server
+# could stall a caller indefinitely). See security_test/test_rss_attacks.py
+# and the published pentest report for the original PoC against a real
+# local malicious server.
+
+
+def test_oversized_response_is_rejected_without_buffering_it_all(monkeypatch):
+    import torrent2000.engine.url_fetch as url_fetch_module
+
+    monkeypatch.setattr(url_fetch_module, "_MAX_RESPONSE_BYTES", 10)
+    with patch(
+        "torrent2000.engine.url_fetch.urllib.request.urlopen",
+        return_value=_fake_response(b"this body is way more than ten bytes long"),
+    ):
+        with pytest.raises(FetchError, match="maximum allowed size"):
+            fetch_url("https://example.com", "UA/1.0", 5)
+
+
+def test_response_that_never_finishes_within_budget_times_out(monkeypatch):
+    """Each individual response.read() call returns promptly (so urlopen's
+    own per-operation timeout is never tripped), but the fake clock advances
+    past the overall deadline between calls -- reproducing a slow drip-feed
+    server without an real-time sleep in the test."""
+    import torrent2000.engine.url_fetch as url_fetch_module
+
+    fake_now = [0.0]
+
+    def fake_monotonic():
+        fake_now[0] += 1.0
+        return fake_now[0]
+
+    monkeypatch.setattr(url_fetch_module.time, "monotonic", fake_monotonic)
+
+    response = MagicMock()
+    response.read.return_value = b"x"  # always "makes progress", never reaches EOF
+    response.__enter__.return_value = response
+    response.__exit__.return_value = False
+
+    with patch("torrent2000.engine.url_fetch.urllib.request.urlopen", return_value=response):
+        with pytest.raises(FetchError, match="too long"):
+            fetch_url("https://example.com", "UA/1.0", timeout_seconds=5)

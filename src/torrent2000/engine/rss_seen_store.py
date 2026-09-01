@@ -30,11 +30,15 @@ class RssSeenStore:
         row = self._conn.execute("SELECT 1 FROM seen_items WHERE guid = ?", (guid,)).fetchone()
         return row is not None
 
-    def mark_seen(self, guid: str, feed_url: str = "", title: str = "") -> None:
+    def mark_seen(self, guid: str, feed_url: str = "", title: str = "", commit: bool = True) -> None:
         self._conn.execute(
             "INSERT OR IGNORE INTO seen_items (guid, feed_url, title, seen_at) VALUES (?, ?, ?, ?)",
             (guid, feed_url, title, datetime.now().isoformat(timespec="seconds")),
         )
+        if commit:
+            self._conn.commit()
+
+    def commit(self) -> None:
         self._conn.commit()
 
     def close(self) -> None:

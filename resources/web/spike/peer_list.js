@@ -8,55 +8,79 @@ const PEER_LIST_HEADERS = ["IP", "Client", "Progression", "↓ Vitesse", "↑ Vi
 // column only gets added when bridge.peerList.isReputationEnabled() says so.
 const PEER_REPUTATION_LABELS = { good: "Bonne", neutral: "Neutre", bad: "Mauvaise" };
 
-function _peerListRenderRows(list, peers, reputationScores) {
-  list.replaceChildren();
+function _peerListBuildRow(withReputation) {
+  const el = document.createElement("div");
+  el.className = "row";
 
+  const ip = document.createElement("div");
+  ip.className = "row-name";
+  el.appendChild(ip);
+
+  const client = document.createElement("div");
+  el.appendChild(client);
+
+  const progress = document.createElement("div");
+  progress.className = "row-rate";
+  el.appendChild(progress);
+
+  const down = document.createElement("div");
+  down.className = "row-rate";
+  el.appendChild(down);
+
+  const up = document.createElement("div");
+  up.className = "row-rate";
+  el.appendChild(up);
+
+  const rep = withReputation ? document.createElement("div") : null;
+  if (rep) el.appendChild(rep);
+
+  return { el, ip, client, progress, down, up, rep };
+}
+
+function _peerListRenderRows(list, peers, reputationEnabled) {
   if (peers.length === 0) {
+    list.replaceChildren();
     const note = document.createElement("p");
     note.className = "empty-note";
     note.textContent = "Aucun pair connecté.";
     list.appendChild(note);
+    list._peerRows = null;
     return;
   }
 
-  peers.forEach((peer) => {
-    const row = document.createElement("div");
-    row.className = "row";
+  // Reuses existing row nodes positionally (same order as `peers`, so the
+  // rendered result matches a full rebuild) instead of destroying and
+  // recreating every row on each 2s poll -- rows are only created the first
+  // time or removed if the peer count shrinks.
+  let rows = list._peerRows;
+  if (!rows) {
+    list.replaceChildren();
+    rows = [];
+    list._peerRows = rows;
+  }
 
-    const ipEl = document.createElement("div");
-    ipEl.className = "row-name";
-    ipEl.textContent = peer.ip;
-    row.appendChild(ipEl);
-
-    const clientEl = document.createElement("div");
-    clientEl.textContent = peer.client;
-    row.appendChild(clientEl);
-
-    const progressEl = document.createElement("div");
-    progressEl.className = "row-rate";
-    progressEl.textContent = `${Math.round(peer.progress * 100)}%`;
-    row.appendChild(progressEl);
-
-    const downEl = document.createElement("div");
-    downEl.className = "row-rate";
-    downEl.textContent = formatRate(peer.downSpeed);
-    row.appendChild(downEl);
-
-    const upEl = document.createElement("div");
-    upEl.className = "row-rate";
-    upEl.textContent = formatRate(peer.upSpeed);
-    row.appendChild(upEl);
-
-    if (reputationScores) {
-      const score = reputationScores[peer.ip] || "neutral";
-      const repEl = document.createElement("div");
-      repEl.className = `reputation-badge reputation-${score}`;
-      repEl.textContent = PEER_REPUTATION_LABELS[score] || PEER_REPUTATION_LABELS.neutral;
-      row.appendChild(repEl);
+  peers.forEach((peer, i) => {
+    let row = rows[i];
+    if (!row) {
+      row = _peerListBuildRow(reputationEnabled);
+      rows.push(row);
+      list.appendChild(row.el);
     }
-
-    list.appendChild(row);
+    row.ip.textContent = peer.ip;
+    row.client.textContent = peer.client;
+    row.progress.textContent = `${Math.round(peer.progress * 100)}%`;
+    row.down.textContent = formatRate(peer.downSpeed);
+    row.up.textContent = formatRate(peer.upSpeed);
+    if (reputationEnabled && row.rep) {
+      const score = peer.reputation || "neutral";
+      row.rep.className = `reputation-badge reputation-${score}`;
+      row.rep.textContent = PEER_REPUTATION_LABELS[score] || PEER_REPUTATION_LABELS.neutral;
+    }
   });
+
+  while (rows.length > peers.length) {
+    list.removeChild(rows.pop().el);
+  }
 }
 
 function openPeerListDialog(infoHash, torrentName) {
@@ -80,15 +104,11 @@ function openPeerListDialog(infoHash, torrentName) {
     });
 
     const refresh = () => {
+      // Reputation (when enabled) now comes back directly on each peer
+      // object from getPeers() -- a separate getReputationScores()
+      // round-trip is no longer needed.
       window.bridge.peerList.getPeers(infoHash, (peers) => {
-        if (!reputationEnabled || peers.length === 0) {
-          _peerListRenderRows(list, peers, null);
-          return;
-        }
-        window.bridge.peerList.getReputationScores(
-          peers.map((p) => p.ip),
-          (scores) => _peerListRenderRows(list, peers, scores)
-        );
+        _peerListRenderRows(list, peers, reputationEnabled);
       });
     };
     refresh();

@@ -33,6 +33,19 @@ function shuffle(arr) {
   return arr;
 }
 
+// Partial Fisher-Yates: only shuffles the first `count` positions instead of
+// the whole array before slicing -- the standard technique for drawing a
+// uniformly-random subset without replacement, statistically equivalent to
+// shuffle(arr).slice(0, count) but O(count) swaps instead of O(arr.length).
+function partialShuffle(arr, count) {
+  const n = Math.min(count, arr.length);
+  for (let i = 0; i < n; i++) {
+    const j = i + Math.floor(Math.random() * (arr.length - i));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr.slice(0, n);
+}
+
 class TetrisBoardModel {
   constructor(rows = BOARD_ROWS, cols = BOARD_COLS) {
     this.rows = rows;
@@ -110,8 +123,7 @@ class TetrisBoardModel {
   _collectEmptyCells(limit) {
     const empty = [];
     for (let r = 0; r < this.rows; r++) for (let c = 0; c < this.cols; c++) if (!this.grid[r][c]) empty.push([r, c]);
-    shuffle(empty);
-    return empty.slice(0, limit);
+    return partialShuffle(empty, limit);
   }
 
   _inFinishingMode() {

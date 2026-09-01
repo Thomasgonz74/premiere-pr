@@ -72,5 +72,26 @@ class StatsStore:
             )
         self._conn.commit()
 
+    def record_removal(
+        self, info_hash: str, delta_downloaded: int, delta_uploaded: int, last_downloaded: int, last_uploaded: int
+    ) -> None:
+        """Combines what used to be a separate add_totals()+set_torrent_counter()
+        call pair into a single commit -- same two writes, same final state,
+        just atomic (no risk of a crash between the two leaving totals and
+        the per-torrent counter out of sync)."""
+        if delta_downloaded > 0 or delta_uploaded > 0:
+            self._conn.execute(
+                "UPDATE totals SET total_downloaded = total_downloaded + ?, "
+                "total_uploaded = total_uploaded + ? WHERE id = 1",
+                (max(0, delta_downloaded), max(0, delta_uploaded)),
+            )
+        self._conn.execute(
+            "INSERT INTO torrent_counters (info_hash, last_downloaded, last_uploaded) VALUES (?, ?, ?) "
+            "ON CONFLICT(info_hash) DO UPDATE SET last_downloaded = excluded.last_downloaded, "
+            "last_uploaded = excluded.last_uploaded",
+            (info_hash, last_downloaded, last_uploaded),
+        )
+        self._conn.commit()
+
     def close(self) -> None:
         self._conn.close()

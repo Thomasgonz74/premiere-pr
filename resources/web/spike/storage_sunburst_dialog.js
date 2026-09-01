@@ -13,6 +13,7 @@
 const SUNBURST_CANVAS_SIZE = 320;
 const SUNBURST_HOLE_RADIUS = 40;
 const SUNBURST_RING_WIDTH = 55;
+const SUNBURST_PATH_SEP_RE = /[\\/]/;
 const SUNBURST_COLOR_DONE = "#4CAF50"; // fully downloaded -- same green as piece map's "have"
 const SUNBURST_COLOR_PARTIAL = "#E67E22"; // some bytes downloaded, not all
 const SUNBURST_COLOR_MISSING = "#C0392B"; // nothing downloaded yet
@@ -43,7 +44,7 @@ function _sunburstDrawArc(ctx, cx, cy, r0, r1, a0, a1, color) {
 function _sunburstGroupByFolder(files) {
   const folders = new Map();
   for (const f of files) {
-    const segments = f.path.split(/[\\/]/);
+    const segments = f.path.split(SUNBURST_PATH_SEP_RE);
     const name = segments.length > 1 ? segments[0] : "(racine)";
     let folder = folders.get(name);
     if (!folder) {
@@ -62,10 +63,16 @@ function _drawSunburst(ctx, canvas, files) {
   const cy = canvas.height / 2;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  const totalSize = files.reduce((sum, f) => sum + f.size, 0);
+  // Single pass computing both totalSize and hasNesting, instead of two
+  // separate reduce()/some() passes over the same array.
+  let totalSize = 0;
+  let hasNesting = false;
+  for (const f of files) {
+    totalSize += f.size;
+    if (!hasNesting && SUNBURST_PATH_SEP_RE.test(f.path)) hasNesting = true;
+  }
   if (totalSize === 0) return;
 
-  const hasNesting = files.some((f) => /[\\/]/.test(f.path));
   const r0 = SUNBURST_HOLE_RADIUS;
   const r1 = SUNBURST_HOLE_RADIUS + SUNBURST_RING_WIDTH;
 

@@ -148,6 +148,48 @@ def _build_session_settings(settings: Settings) -> dict:
     return base
 
 
+_DENIED_MOVE_ROOTS: list[Path] | None = None
+
+
+def _denied_move_roots() -> list[Path]:
+    """Sensitive system directories a torrent's files must never be
+    relocated into -- resolved once from the real environment (not
+    hardcoded drive letters, so this still works on a non-C: Windows
+    install). Cached at module scope since these never change during a
+    process's lifetime."""
+    global _DENIED_MOVE_ROOTS
+    if _DENIED_MOVE_ROOTS is None:
+        candidates = [
+            os.environ.get("SystemRoot"),
+            os.environ.get("ProgramFiles"),
+            os.environ.get("ProgramFiles(x86)"),
+            os.environ.get("ProgramData"),
+        ]
+        _DENIED_MOVE_ROOTS = [Path(c).resolve() for c in candidates if c]
+    return _DENIED_MOVE_ROOTS
+
+
+def is_safe_move_destination(new_path: str) -> bool:
+    """Defense in depth for move_storage(): the legitimate caller
+    (downloads.js) always gets new_path from a native folder picker, but
+    the web bridge slot it calls through has no way to tell a real user
+    choice from a compromised/malicious JS call -- refuse a bare drive
+    root, a UNC/network path, and a handful of sensitive system
+    directories regardless of who's asking."""
+    try:
+        resolved = Path(new_path).resolve()
+    except (OSError, ValueError):
+        return False
+    if str(resolved).startswith("\\\\"):
+        return False
+    if resolved.parent == resolved:  # a filesystem root has itself as parent
+        return False
+    for denied in _denied_move_roots():
+        if resolved == denied or denied in resolved.parents:
+            return False
+    return True
+
+
 class SessionManager(QObject):
     torrent_added = Signal(str)
     torrent_removed = Signal(str)
@@ -256,8 +298,11 @@ class SessionManager(QObject):
             # thing to finish.
             urgency = 1.0 - max(remaining, 0.0) / DEADLINE_URGENT_WINDOW_S
             steps = 1 + round(urgency * 4)  # 1..5 queue_position_up() calls this sweep
+            handle = self._handles.get(info_hash)
+            if handle is None:
+                continue
             for _ in range(steps):
-                self.move_queue_up(info_hash)
+                handle.queue_position_up()
 
     def _save_all_resume_data(self) -> None:
         for handle in self._handles.values():
@@ -678,21 +723,18 @@ class SessionManager(QObject):
             # See engine/lan_peer_cache.py: same chokepoint/reasoning as
             # peer reputation above -- only RFC1918 IPs actually get kept.
             self._lan_peer_cache_store.record_peers(info_hash, raw_peers)
-        peers = []
-        for p in raw_peers:
-            # lt.peer_info.ip is a (address, port) tuple in this build
-            # (2.0.13.0) -- verified via help(lt.peer_info)/get_peer_info.
-            ip, port = p.ip
-            peers.append(
-                PeerInfo(
-                    ip=f"{ip}:{port}",
-                    client=p.client,
-                    progress=p.progress,
-                    down_speed=p.payload_down_speed,
-                    up_speed=p.payload_up_speed,
-                )
+        # lt.peer_info.ip is a (address, port) tuple in this build (2.0.13.0)
+        # -- verified via help(lt.peer_info)/get_peer_info.
+        return [
+            PeerInfo(
+                ip=f"{p.ip[0]}:{p.ip[1]}",
+                client=p.client,
+                progress=p.progress,
+                down_speed=p.payload_down_speed,
+                up_speed=p.payload_up_speed,
             )
-        return peers
+            for p in raw_peers
+        ]
 
     def get_peer_reputation_score(self, display_ip: str) -> str:
         """"good" | "neutral" | "bad" for a peer IP as shown in the UI
@@ -741,6 +783,9 @@ class SessionManager(QObject):
             handle.force_recheck()
 
     def move_storage(self, info_hash: str, new_path: str) -> None:
+        if not is_safe_move_destination(new_path):
+            logger.warning("Refusing to move torrent %s to disallowed destination: %r", info_hash, new_path)
+            return
         handle = self._handles.get(info_hash)
         if handle is not None:
             handle.move_storage(new_path)
@@ -820,8 +865,6 @@ class SessionManager(QObject):
                 # real fast-resume, discarding all prior verified progress.
                 handle.save_resume_data(lt.torrent_handle.save_info_dict)
                 pending += 1
-
-        import time
 
         deadline = time.monotonic() + (timeout_ms / 1000)
         while pending > 0 and time.monotonic() < deadline:

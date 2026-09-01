@@ -101,8 +101,18 @@ class ProfileGeneralBridge(QObject):
             0, min(100, int(values.get("dangerAutoExcludeThreshold", s.danger_auto_exclude_threshold)))
         )
         s.notifications_enabled = bool(values.get("notificationsEnabled", s.notifications_enabled))
-        s.launch_at_startup = bool(values.get("launchAtStartup", s.launch_at_startup))
-        startup_registration.set_launch_at_startup(s.launch_at_startup)
+        new_launch_at_startup = bool(values.get("launchAtStartup", s.launch_at_startup))
+        if new_launch_at_startup != s.launch_at_startup:
+            # Only touch the registry when the checkbox actually changed --
+            # every Save in this section used to rewrite it unconditionally.
+            # Trade-off: set_launch_at_startup(True) also refreshes the
+            # stored launch command (sys.executable) whenever it runs, so an
+            # install manually moved to a new path only gets that implicit
+            # repair by explicitly toggling this checkbox again, not on
+            # every unrelated Save -- acceptable given the installer uses a
+            # fixed install path.
+            startup_registration.set_launch_at_startup(new_launch_at_startup)
+        s.launch_at_startup = new_launch_at_startup
         s.check_for_updates = bool(values.get("checkForUpdates", s.check_for_updates))
         s.minimize_to_tray = bool(values.get("minimizeToTray", s.minimize_to_tray))
         # theme/appearance_mode/language/audio_volume are intentionally NOT

@@ -51,8 +51,9 @@ function _showNextPropagandaMessage() {
     _propagandaOrder = _shuffledIndices(PROPAGANDA_MESSAGE_SPECS.length);
   }
   const [kind, message] = PROPAGANDA_MESSAGE_SPECS[_propagandaOrder[_propagandaPosition]];
-  document.getElementById("propagandaIcon").style.maskImage = `url("assets/propaganda/${kind}.png")`;
-  document.getElementById("propagandaIcon").style.webkitMaskImage = `url("assets/propaganda/${kind}.png")`;
+  const iconEl = document.getElementById("propagandaIcon");
+  iconEl.style.maskImage = `url("assets/propaganda/${kind}.png")`;
+  iconEl.style.webkitMaskImage = `url("assets/propaganda/${kind}.png")`;
   document.getElementById("propagandaMessage").textContent = message;
 }
 

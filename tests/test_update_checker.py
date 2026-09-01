@@ -54,9 +54,16 @@ def test_is_newer_version(remote, local, expected):
 
 
 def _fake_response(payload: dict):
+    # fetch_url() reads in chunks via response.read(size) (see
+    # url_fetch._read_response_body), so this needs real file-like read()
+    # semantics -- b"" once exhausted, not the same body returned forever
+    # regardless of the requested size.
+    import io
+
     body = json.dumps(payload).encode("utf-8")
     context = MagicMock()
-    context.read.return_value = body
+    buf = io.BytesIO(body)
+    context.read.side_effect = buf.read
     context.__enter__.return_value = context
     context.__exit__.return_value = False
     return context

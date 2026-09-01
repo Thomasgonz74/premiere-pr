@@ -7,16 +7,20 @@ Stdlib only -- xml.etree.ElementTree for parsing, urllib.request for
 fetching -- no feedparser/requests dependency added, per this project's
 intentionally small dependency footprint.
 
-Note on XML safety: per Python's own docs
-(https://docs.python.org/3/library/xml.html#xml-vulnerabilities),
+Note on XML safety (re-verified empirically against a real malicious local
+RSS server, not assumed from the docs alone -- see security_test/): per
+Python's own docs (https://docs.python.org/3/library/xml.html#xml-vulnerabilities),
 xml.etree.ElementTree does not resolve external entities or DTDs at all, so
-it is not vulnerable to XXE/SSRF-style attacks; it (like most stdlib XML
-parsers) remains vulnerable to entity-expansion DoS ("billion laughs")
-within a single crafted document. Feed URLs here are subscriptions the user
-explicitly configures, the same trust model as any RSS reader -- switching
-to a third-party hardened parser (e.g. defusedxml) would add a new
-dependency, which is out of scope here; flagged for the maintainer to
-weigh separately.
+it is not vulnerable to XXE/SSRF-style attacks -- confirmed: a crafted feed
+referencing a local file via an external entity fails with ParseError and
+never leaks the file's content. A "billion laughs" entity-expansion bomb
+also failed harmlessly here (<1s, no memory spike) because the libexpat
+this Python build links against (2.7.1) has shipped a built-in
+entity-amplification limit since 2021 -- this is a property of the linked
+expat version, not a guarantee of this module's own code, so it isn't
+something to rely on if this ever runs against an older Python/expat.
+Feed URLs here are subscriptions the user explicitly configures, the same
+trust model as any RSS reader.
 
 Network I/O (the feed fetch itself, and downloading a linked .torrent file)
 must never block the GUI thread, so both run inside a QRunnable submitted to
@@ -237,7 +241,7 @@ class RssFeedService(QObject):
 
             link = item.get("link", "")
             if link.startswith("magnet:"):
-                self._seen_store.mark_seen(guid, feed_url, item.get("title", ""))
+                self._seen_store.mark_seen(guid, feed_url, item.get("title", ""), commit=False)
                 try:
                     # add_torrent_from_magnet always adds paused/awaiting
                     # analysis by design (see AddTorrentTab's manual review
@@ -251,7 +255,7 @@ class RssFeedService(QObject):
                     continue
                 newly_added.append(item)
             elif link.startswith("http://") or link.startswith("https://"):
-                self._seen_store.mark_seen(guid, feed_url, item.get("title", ""))
+                self._seen_store.mark_seen(guid, feed_url, item.get("title", ""), commit=False)
                 runnable = _DownloadTorrentRunnable(
                     feed_url, item, save_path, self._signals, proxy=self._settings.proxy
                 )
@@ -259,6 +263,7 @@ class RssFeedService(QObject):
             else:
                 logger.warning("Skipping RSS item with unsupported link scheme: %s", _redact_url(link))
 
+        self._seen_store.commit()
         if newly_added:
             self.items_found.emit(feed_url, newly_added)
 

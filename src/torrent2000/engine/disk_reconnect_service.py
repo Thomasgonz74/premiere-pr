@@ -11,6 +11,7 @@ letter, since a letter can be reassigned to a different disk entirely.
 """
 
 import logging
+import os
 
 from PySide6.QtCore import QObject
 
@@ -64,9 +65,17 @@ class DiskReconnectService(QObject):
             return
 
         pending_paths = {path for path, _ in self._pending.values()}
+        # Deduplicated by drive root: get_volume_serial() itself only ever
+        # queries the root of whatever path it's given, so multiple torrents
+        # saved under the same drive would otherwise repeat the identical
+        # blocking ctypes call once per torrent, every tick.
+        serial_by_root: dict[str, int | None] = {}
         for record in self._session_manager.all_records():
             if record.save_path and record.save_path not in pending_paths:
-                serial = get_volume_serial(record.save_path)
+                root = os.path.splitdrive(record.save_path)[0]
+                if root not in serial_by_root:
+                    serial_by_root[root] = get_volume_serial(record.save_path)
+                serial = serial_by_root[root]
                 if serial is not None:
                     self._last_known_serial[record.save_path] = serial
 

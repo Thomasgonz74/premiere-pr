@@ -131,7 +131,8 @@ class ShareLimitService(QObject):
         limit = self._limits.get(info_hash)
         if limit is None or limit.reached:
             return
-        elapsed, uploaded = self.progress(info_hash, record)
+        elapsed = time.time() - limit.started_at
+        uploaded = max(0, record.all_time_uploaded - limit.uploaded_baseline)
 
         reason = None
         if limit.time_limit_seconds is not None and elapsed >= limit.time_limit_seconds:

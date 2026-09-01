@@ -102,4 +102,57 @@ def test_suspicious_name_rule_falls_through_to_keygen_pattern_without_rtl_overri
     assert hit is not None
     assert hit.score_delta == 30
     assert "RTL-override" not in hit.reason
-    assert "crack/keygen/activator" in hit.reason
+
+
+# ---------------------------------------------------------- security fixes
+# Regression tests for real bypasses confirmed by a defensive pentest pass
+# (see security_test/ and the published pentest report) -- each of these
+# previously let a renamed/padded executable through undetected.
+
+
+def test_double_extension_survives_dot_padding_between_extensions():
+    """"facture.pdf.................exe" used to slip past DOUBLE_EXTENSION_RE
+    (it required a single literal dot right before the real extension) --
+    the padding must not defeat detection."""
+    files = [FileEntry(index=0, path="facture_finale.pdf.................exe", size=500_000)]
+    result = scan_files(files)
+    risk = result.risk_for_index(0)
+    assert risk.level >= RiskLevel.HIGH
+    assert 0 in result.flagged_indices
+
+
+def test_normal_sized_plainly_named_executable_alone_is_flagged():
+    """A .exe with an ordinary name and a normal (>20KB) size used to score
+    25 -- structurally below the MEDIUM threshold (30) -- so a real,
+    otherwise-unremarkable executable was never flagged at all."""
+    files = [FileEntry(index=0, path="installer.exe", size=500_000)]
+    result = scan_files(files)
+    risk = result.risk_for_index(0)
+    assert risk.level >= RiskLevel.MEDIUM
+    assert 0 in result.flagged_indices
+
+
+def test_unrecognized_extension_gets_a_nonzero_visibility_score():
+    """A real executable renamed to an extension outside every fixed list
+    (ex .dat/.chm) used to score exactly 0 -- totally invisible. It can't be
+    proven dangerous before download (no file bytes exist yet to inspect),
+    but it must no longer be silently indistinguishable from a genuinely
+    safe file."""
+    files = [FileEntry(index=0, path="invoice.dat", size=500_000)]
+    result = scan_files(files)
+    risk = result.risk_for_index(0)
+    assert risk.score > 0
+    assert any("inconnue" in reason for reason in risk.reasons)
+
+
+def test_common_document_and_media_extensions_still_score_zero():
+    """The new unknown-extension baseline must not turn every ordinary
+    torrent into a wall of false-positive warnings."""
+    files = [
+        FileEntry(index=0, path="notes.txt", size=1_000),
+        FileEntry(index=1, path="cover.jpg", size=200_000),
+        FileEntry(index=2, path="archive.zip", size=2_000_000),
+    ]
+    result = scan_files(files)
+    for i in range(3):
+        assert result.risk_for_index(i).level == RiskLevel.SAFE

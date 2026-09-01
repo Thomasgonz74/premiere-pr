@@ -69,7 +69,8 @@ class RoutingRuleStore:
         than silently dropped."""
         by_name = {r.name: r for r in self._rules}
         reordered = [by_name[n] for n in names if n in by_name]
-        missing = [r for r in self._rules if r.name not in names]
+        names_set = set(names)
+        missing = [r for r in self._rules if r.name not in names_set]
         self._rules = reordered + missing
         self._save()
 
@@ -116,14 +117,16 @@ def resolve_destination(
     and, for match_field == "tracker", against at least one entry of
     `trackers` -- an empty list is treated the same as no match, same as
     None."""
+    name_lower = name.lower() if name else ""
+    trackers_lower = [t.lower() for t in trackers] if trackers else []
     for rule in rules:
         if not rule.pattern:
             continue
         needle = rule.pattern.lower()
         if rule.match_field == "name":
-            if name and needle in name.lower():
+            if name and needle in name_lower:
                 return rule.destination
         elif rule.match_field == "tracker":
-            if trackers and any(needle in tracker.lower() for tracker in trackers):
+            if trackers_lower and any(needle in t for t in trackers_lower):
                 return rule.destination
     return default_destination

@@ -53,10 +53,11 @@ def resume_data_is_complete(atp: "lt.add_torrent_params") -> bool:
     if not have_pieces:
         return False
     priorities = atp.piece_priorities
+    num_priorities = len(priorities)
     for index, has_piece in enumerate(have_pieces):
         if has_piece:
             continue
-        priority = priorities[index] if index < len(priorities) else FILE_PRIORITY_DEFAULT
+        priority = priorities[index] if index < num_priorities else FILE_PRIORITY_DEFAULT
         if priority != 0:
             return False
     return True

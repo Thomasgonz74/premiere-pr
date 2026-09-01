@@ -200,24 +200,25 @@ class _RemoteAccessHandler(BaseHTTPRequestHandler):
         # never the query string.
         logger.debug("remote_access %s - %s %s", self.address_string(), self.command, urlsplit(self.path).path)
 
-    def _token_is_valid(self) -> bool:
+    def _token_is_valid(self, split) -> bool:
         expected = self.server.settings.remote_access_token  # type: ignore[attr-defined]
         if not expected:
             return False  # feature not actually started/provisioned yet -- deny everything
-        query = parse_qs(urlsplit(self.path).query)
+        query = parse_qs(split.query)
         provided = query.get("token", [""])[0]
         return hmac.compare_digest(provided, expected)
 
-    def _require_token(self) -> bool:
-        if self._token_is_valid():
+    def _require_token(self, split) -> bool:
+        if self._token_is_valid(split):
             return True
         self._send_json(HTTPStatus.UNAUTHORIZED, {"error": "unauthorized"})
         return False
 
     def do_GET(self) -> None:  # noqa: N802 (BaseHTTPRequestHandler's own naming convention)
-        if not self._require_token():
+        split = urlsplit(self.path)
+        if not self._require_token(split):
             return
-        path = urlsplit(self.path).path
+        path = split.path
         if path == "/":
             self._send_html(_REMOTE_ACCESS_PAGE_HTML)
         elif path == "/api/torrents":
@@ -228,9 +229,10 @@ class _RemoteAccessHandler(BaseHTTPRequestHandler):
             self._send_json(HTTPStatus.NOT_FOUND, {"error": "not found"})
 
     def do_POST(self) -> None:  # noqa: N802
-        if not self._require_token():
+        split = urlsplit(self.path)
+        if not self._require_token(split):
             return
-        path = urlsplit(self.path).path
+        path = split.path
         parts = path.split("/")
         # ["", "api", "torrents", "<info_hash>", "pause"|"resume"]
         if len(parts) == 5 and parts[1] == "api" and parts[2] == "torrents" and parts[4] in ("pause", "resume"):

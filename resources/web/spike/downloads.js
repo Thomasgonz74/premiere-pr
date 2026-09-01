@@ -25,6 +25,11 @@ let downloadsDetailsTrackerEditorFor = null;
 let downloadsDetailsAllocatedFor = null;
 let downloadsDetailsSlownessFor = null;
 let downloadsDetailsDeadlineFor = null;
+// infoHash currently shown in the details panel, or null -- lets
+// downloadsRenderRecord() (called once per active torrent, every ~300ms
+// tick) skip rebuilding the panel entirely for torrents that aren't the one
+// currently displayed.
+let downloadsDetailsVisibleFor = null;
 
 function downloadsRowOrder() {
   return [...document.querySelectorAll("#downloadsList .row")];
@@ -202,7 +207,20 @@ function downloadsEnsureRow(record) {
     );
   });
 
-  entry = { el, tetris, record };
+  entry = {
+    el,
+    tetris,
+    record,
+    pinBtn,
+    nameEl,
+    etaEl,
+    downRateEl,
+    upRateEl,
+    peersEl,
+    stateEl,
+    categoryEl,
+    pauseResumeBtn,
+  };
   downloadsRows.set(record.infoHash, entry);
   return entry;
 }
@@ -231,11 +249,11 @@ function downloadsRenderRecord(record) {
   if (!!record.pinned !== wasPinned) {
     downloadsPlaceRow(entry.el, !!record.pinned);
   }
-  const pinBtn = entry.el.querySelector(".row-pin-btn");
+  const pinBtn = entry.pinBtn;
   pinBtn.classList.toggle("active", !!record.pinned);
   pinBtn.title = record.pinned ? "Désépingler" : "Épingler en tête de liste";
 
-  const nameEl = entry.el.querySelector(".row-name");
+  const nameEl = entry.nameEl;
   // Two distinct glyphs so a torrent that's both private and archived
   // doesn't read as a single doubled-up padlock: \u{1F510} (locked+key) for
   // the archive lock, \u{1F512} (plain padlock) for is_private, unchanged.
@@ -257,18 +275,23 @@ function downloadsRenderRecord(record) {
   }
   nameEl.title = tooltipParts.length > 1 ? tooltipParts.join("\n\n") : record.name;
 
-  entry.el.querySelector(".row-eta").textContent = downloadsEta(record);
-  const rateEls = entry.el.querySelectorAll(".row-rate");
-  rateEls[0].textContent = `↓ ${formatRate(record.downloadRate)}`;
-  rateEls[1].textContent = `↑ ${formatRate(record.uploadRate)}`;
-  entry.el.querySelector(".row-peers").textContent = `${record.numPeers} (${record.numSeeds} seeds)`;
-  entry.el.querySelector(".row-state").textContent = DOWNLOADS_STATE_LABELS[record.state] || record.state;
-  entry.el.querySelector(".row-category").textContent = record.category || "";
-  entry.el.querySelector('[data-action="pause-resume"]').textContent = record.state === "PAUSED" ? "▶" : "⏸";
+  entry.etaEl.textContent = downloadsEta(record);
+  entry.downRateEl.textContent = `↓ ${formatRate(record.downloadRate)}`;
+  entry.upRateEl.textContent = `↑ ${formatRate(record.uploadRate)}`;
+  entry.peersEl.textContent = `${record.numPeers} (${record.numSeeds} seeds)`;
+  entry.stateEl.textContent = DOWNLOADS_STATE_LABELS[record.state] || record.state;
+  entry.categoryEl.textContent = record.category || "";
+  entry.pauseResumeBtn.textContent = record.state === "PAUSED" ? "▶" : "⏸";
   entry.tetris.setProgress(record.progress);
 
-  downloadsUpdateDetailsPanel();
-  downloadsApplyFilter();
+  // Only the torrent currently shown in the details panel needs it rebuilt;
+  // direct callers (row click, context menu, action buttons) still call
+  // downloadsUpdateDetailsPanel() unconditionally and keep
+  // downloadsDetailsVisibleFor current on every selection change.
+  if (record.infoHash === downloadsDetailsVisibleFor) {
+    downloadsUpdateDetailsPanel();
+  }
+  downloadsSetRowVisibility(entry, downloadsCurrentFilterQuery());
 }
 
 function downloadsRemoveRecord(infoHash) {
@@ -321,6 +344,7 @@ function downloadsUpdateDetailsPanel() {
   const entry = selected.length === 1 ? downloadsRows.get(selected[0]) : null;
 
   if (!entry) {
+    downloadsDetailsVisibleFor = null;
     panel.style.display = "none";
     downloadsDetailsTrackerEditorFor = null;
     downloadsDetailsAllocatedFor = null;
@@ -331,6 +355,7 @@ function downloadsUpdateDetailsPanel() {
 
   panel.style.display = "flex";
   const infoHash = selected[0];
+  downloadsDetailsVisibleFor = infoHash;
   const record = entry.record;
   document.getElementById("downloadsDetailsTracker").textContent = `Tracker actuel : ${record.currentTracker || "—"}`;
 
@@ -385,6 +410,22 @@ function downloadsUpdateDetailsPanel() {
   }
 }
 
+// downloadsRenderRecord() only rebuilds the details panel for the currently
+// displayed torrent -- but the deadline countdown must keep ticking even
+// while THAT torrent produces no status update of its own (paused, stalled,
+// no peers), since post_torrent_updates() only reports torrents whose
+// status actually changed. A small dedicated interval (started once from
+// wireDownloadsPage) refreshes just this one text field, independent of
+// which torrent's status tick last fired.
+function downloadsRefreshDeadlineCountdown() {
+  if (!downloadsDetailsVisibleFor) return;
+  const entry = downloadsRows.get(downloadsDetailsVisibleFor);
+  if (!entry) return;
+  document.getElementById("downloadsDetailsDeadlineRemaining").textContent = downloadsDeadlineRemainingText(
+    entry.record
+  );
+}
+
 // Renders bridge.downloads.explainSlowness()'s result -- built via safe DOM
 // methods (not innerHTML): cause text can embed a tracker URL, which comes
 // from the .torrent file/magnet and is untrusted external input.
@@ -423,12 +464,21 @@ function downloadsRenderSlownessResult(result) {
 
 // ----------------------------------------------------------------- filter
 
+function downloadsCurrentFilterQuery() {
+  return document.getElementById("downloadsSearchInput").value.trim().toLowerCase();
+}
+
+function downloadsSetRowVisibility(entry, query) {
+  const name = (entry.record.name || "").toLowerCase();
+  entry.el.style.display = !query || name.includes(query) ? "" : "none";
+}
+
+// Full re-scan is only needed when the query itself changes (the 'input'
+// listener below) -- a per-torrent status tick only needs to reapply the
+// filter to that one row, via downloadsSetRowVisibility() directly.
 function downloadsApplyFilter() {
-  const query = document.getElementById("downloadsSearchInput").value.trim().toLowerCase();
-  downloadsRows.forEach((entry) => {
-    const name = (entry.record.name || "").toLowerCase();
-    entry.el.style.display = !query || name.includes(query) ? "" : "none";
-  });
+  const query = downloadsCurrentFilterQuery();
+  downloadsRows.forEach((entry) => downloadsSetRowVisibility(entry, query));
 }
 
 // ------------------------------------------------------------ context menu
@@ -705,4 +755,5 @@ function wireDownloadsPage() {
 
   downloadsUpdateDetailsPanel(); // starts hidden -- nothing selected yet
   wireSuggestionBanner();
+  setInterval(downloadsRefreshDeadlineCountdown, 1000);
 }

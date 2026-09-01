@@ -66,6 +66,7 @@ class AddBridge(QObject):
         self._settings = settings
         self._routing_rule_store = routing_rule_store
         self._torrent_path: str | None = None
+        self._torrent_files: list | None = None
         self._pending_magnet_hash: str | None = None
         self._threshold = settings.danger_auto_exclude_threshold
         session_manager.metadata_received.connect(self._on_metadata_received)
@@ -129,12 +130,18 @@ class AddBridge(QObject):
     @Slot(str)
     def selectTorrentFile(self, path: str) -> None:
         self._torrent_path = path
+        # Invalidated up front (not just repopulated on success) so a stale
+        # cache from a PREVIOUS successful selection is never reused if THIS
+        # file fails to parse -- keeps the cache valid only for the current
+        # self._torrent_path.
+        self._torrent_files = None
         self._pending_magnet_hash = None
         try:
             files = files_from_torrent_path(path)
         except Exception as exc:
             self.statusChanged.emit(f"Erreur de lecture du fichier torrent : {exc}")
             return
+        self._torrent_files = files
         result = scan_files(files)
         self.scanReady.emit(_scan_result_to_dict(result, self._threshold))
         self.statusChanged.emit(f"{len(files)} fichier(s) analysé(s).")
@@ -188,18 +195,24 @@ class AddBridge(QObject):
             return {"ok": True}
 
         if self._torrent_path:
-            try:
-                files = files_from_torrent_path(self._torrent_path)
-            except Exception as exc:
-                return {"ok": False, "error": str(exc)}
+            if self._torrent_files is not None:
+                files = self._torrent_files
+            else:
+                try:
+                    files = files_from_torrent_path(self._torrent_path)
+                except Exception as exc:
+                    return {"ok": False, "error": str(exc)}
             total_size = sum(f.size for f in files if f.index not in excluded)
             free_mb = free_space_mb(dest_path)
             if free_mb is not None and free_mb < total_size / (1024 * 1024):
                 return {"ok": False, "error": "Espace disque insuffisant sur le volume de destination."}
             try:
                 info_hash = self._session_manager.add_torrent_from_file(self._torrent_path, dest_path, excluded)
-            except Exception:
-                return {"ok": False, "error": "Ce torrent est déjà présent."}
+            except Exception as exc:
+                # Surfaces the real cause (e.g. a corrupted/malformed .torrent)
+                # instead of always claiming "already present", which used to
+                # mask genuine failures behind a misleading fixed message.
+                return {"ok": False, "error": str(exc) or "Ce torrent est déjà présent."}
             if category:
                 self._session_manager.set_torrent_category(info_hash, category)
             self._reset()
@@ -215,4 +228,5 @@ class AddBridge(QObject):
 
     def _reset(self) -> None:
         self._torrent_path = None
+        self._torrent_files = None
         self._pending_magnet_hash = None

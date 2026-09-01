@@ -16,9 +16,16 @@ function _pieceMapColor(have, availability) {
   return PIECE_MAP_COLOR_MISSING_COMMON;
 }
 
-function _drawPieceMap(ctx, canvas, cols, snapshot) {
+function _drawPieceMap(ctx, canvas, cols, snapshot, prevSnapshot) {
   const { numPieces, have, availability } = snapshot;
   for (let i = 0; i < numPieces; i++) {
+    // Skip repainting a cell whose color hasn't changed since the last
+    // poll -- most cells are stable between two polls (a "have" piece
+    // never reverts, and availability moves slowly), so this avoids
+    // thousands of redundant fillRect calls per refresh on a large torrent.
+    if (prevSnapshot && prevSnapshot.have[i] === have[i] && prevSnapshot.availability[i] === availability[i]) {
+      continue;
+    }
     const row = Math.floor(i / cols);
     const col = i % cols;
     ctx.fillStyle = _pieceMapColor(have[i], availability[i]);
@@ -71,6 +78,7 @@ function openPieceMapDialog(infoHash, torrentName) {
 
   const ctx = canvas.getContext("2d");
   let sizedForCount = -1;
+  let prevSnapshot = null;
 
   const refresh = () => {
     window.bridge.pieceMap.getPieceAvailability(infoHash, (snapshot) => {
@@ -83,8 +91,10 @@ function openPieceMapDialog(infoHash, torrentName) {
         canvas.height = rows * PIECE_MAP_CELL_PX;
         sizedForCount = numPieces;
         canvas.dataset.cols = cols;
+        prevSnapshot = null; // resizing clears the canvas -- force a full repaint
       }
-      _drawPieceMap(ctx, canvas, Number(canvas.dataset.cols), snapshot);
+      _drawPieceMap(ctx, canvas, Number(canvas.dataset.cols), snapshot, prevSnapshot);
+      prevSnapshot = snapshot;
     });
   };
   refresh();

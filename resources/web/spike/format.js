@@ -28,6 +28,20 @@ function formatEta(seconds) {
   return `${secs}s`;
 }
 
+// Shared by add.js/share.js's dropped-file handlers: converts a Uint8Array
+// to a binary string for btoa(), in chunks rather than one
+// String.fromCharCode() call per byte -- same output, far fewer function
+// calls/concatenations for a large .torrent's metadata. Still fully
+// synchronous (no yield between chunks), just much faster than per-byte.
+function bytesToBinaryString(bytes) {
+  const CHUNK = 0x8000; // well under every engine's Function.apply argument-count limit
+  let binary = "";
+  for (let i = 0; i < bytes.length; i += CHUNK) {
+    binary += String.fromCharCode.apply(null, bytes.subarray(i, i + CHUNK));
+  }
+  return binary;
+}
+
 function formatDuration(seconds) {
   seconds = Math.max(0, Math.floor(seconds));
   const h = Math.floor(seconds / 3600);

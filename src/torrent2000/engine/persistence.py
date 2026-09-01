@@ -29,6 +29,4 @@ def load_all_resume_params() -> list["lt.add_torrent_params"]:
 
 
 def delete_resume_file(info_hash: str) -> None:
-    path = resume_file_path(info_hash)
-    if path.exists():
-        path.unlink()
+    resume_file_path(info_hash).unlink(missing_ok=True)

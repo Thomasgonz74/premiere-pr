@@ -314,6 +314,7 @@ function wireProfileAutomation() {
   bridge.getSettings(populate);
 
   const knownDiskBridge = window.bridge.knownDisk;
+  let paKnownDisks = [];
 
   function renderKnownDisks(disks) {
     knownDiskList.replaceChildren();
@@ -345,7 +346,11 @@ function wireProfileAutomation() {
       removeBtn.textContent = "✕";
       removeBtn.addEventListener("click", () => {
         knownDiskBridge.deleteDisk(disk.label);
-        reloadKnownDisks();
+        // Fire-and-forget mutation with a deterministic result -- filter
+        // the locally-held list and re-render instead of a round-trip
+        // re-fetch of what was just removed.
+        paKnownDisks = paKnownDisks.filter((d) => d.label !== disk.label);
+        renderKnownDisks(paKnownDisks);
       });
       actions.appendChild(removeBtn);
       row.appendChild(actions);
@@ -355,7 +360,10 @@ function wireProfileAutomation() {
   }
 
   function reloadKnownDisks() {
-    knownDiskBridge.listDisks(renderKnownDisks);
+    knownDiskBridge.listDisks((disks) => {
+      paKnownDisks = disks;
+      renderKnownDisks(disks);
+    });
   }
 
   reloadKnownDisks();

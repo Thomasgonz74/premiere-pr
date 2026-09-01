@@ -133,27 +133,33 @@ class PeerReputationTracker:
 
     def __init__(self, store: PeerReputationStore) -> None:
         self._store = store
-        # (info_hash, ip) -> (first_seen_monotonic, last_total_download, last_num_hashfails)
-        self._active: dict[tuple[str, str], tuple[float, int, int]] = {}
+        # info_hash -> {ip: (first_seen_monotonic, last_total_download, last_num_hashfails)}
+        # Indexed by torrent first (rather than a flat (info_hash, ip) key)
+        # so observe() only ever has to scan the current torrent's own
+        # active peers to find who disconnected, not every active peer
+        # across every torrent inspected so far this session.
+        self._active: dict[str, dict[str, tuple[float, int, int]]] = {}
 
     def observe(self, info_hash: str, raw_peers) -> None:
         """raw_peers: the list returned by torrent_handle.get_peer_info() --
         duck-typed on .ip/.total_download/.num_hashfails rather than
         importing libtorrent here."""
         now = time.monotonic()
+        by_ip = self._active.setdefault(info_hash, {})
         seen_keys = set()
         for p in raw_peers:
             ip = _ip_key(p.ip)
             seen_keys.add(ip)
-            key = (info_hash, ip)
-            first_seen, _, _ = self._active.get(key, (now, 0, 0))
-            self._active[key] = (first_seen, p.total_download, p.num_hashfails)
+            first_seen, _, _ = by_ip.get(ip, (now, 0, 0))
+            by_ip[ip] = (first_seen, p.total_download, p.num_hashfails)
 
-        # any (info_hash, ip) active before this tick but absent now has disconnected
-        gone = [key for key in self._active if key[0] == info_hash and key[1] not in seen_keys]
-        for key in gone:
-            first_seen, total_download, num_hashfails = self._active.pop(key)
-            self._store.record_disconnect(key[1], now - first_seen, total_download, num_hashfails)
+        # any ip active for this torrent before this tick but absent now has disconnected
+        gone = [ip for ip in by_ip if ip not in seen_keys]
+        for ip in gone:
+            first_seen, total_download, num_hashfails = by_ip.pop(ip)
+            self._store.record_disconnect(ip, now - first_seen, total_download, num_hashfails)
+        if not by_ip:
+            del self._active[info_hash]
 
 
 def score_label(record: PeerReputationRecord | None) -> str:
@@ -218,7 +224,7 @@ def _demo() -> None:
         # different info_hash tracking the same IP shouldn't cross-contaminate disconnects
         tracker.observe("hashB", [_FakePeer("9.9.9.9", 6881, 10, 0)])
         tracker.observe("hashA", [])  # unrelated torrent's tick -- 9.9.9.9 on hashB must stay active
-        assert ("hashB", "9.9.9.9") in tracker._active
+        assert "9.9.9.9" in tracker._active.get("hashB", {})
 
         # ip_from_display strips the port even for an IPv6-shaped address
         assert ip_from_display("203.0.113.7:6881") == "203.0.113.7"

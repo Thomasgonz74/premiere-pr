@@ -83,7 +83,7 @@ def test_tracker_keys_active_streaks_per_torrent_not_globally():
 
     assert store.get("9.9.9.9") is not None  # hashA's streak did get folded in
     assert store.get("9.9.9.9").disconnect_count == 1
-    assert ("hashB", "9.9.9.9") in tracker._active  # hashB's streak is untouched
+    assert "9.9.9.9" in tracker._active.get("hashB", {})  # hashB's streak is untouched
 
 
 # ----------------------------------------------------------------------- score_label

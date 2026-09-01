@@ -127,9 +127,7 @@ function addResetForm() {
 async function addHandleDroppedFile(file) {
   const buffer = await file.arrayBuffer();
   const bytes = new Uint8Array(buffer);
-  let binary = "";
-  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
-  const base64 = btoa(binary);
+  const base64 = btoa(bytesToBinaryString(bytes));
   window.bridge.add.saveDroppedTorrent(file.name, base64, (path) => {
     addSelectedPath = path;
     document.getElementById("addSelectedFile").textContent = file.name;

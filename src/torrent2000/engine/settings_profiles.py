@@ -55,6 +55,9 @@ class SettingsProfileStore:
     def list_profiles(self) -> list[SettingsProfile]:
         return list(self._profiles)
 
+    def get_profile(self, name: str) -> SettingsProfile | None:
+        return next((p for p in self._profiles if p.name == name), None)
+
     def delete(self, name: str) -> None:
         self._profiles = [p for p in self._profiles if p.name != name]
         self._save()

@@ -20,16 +20,23 @@ class PeerListBridge(QObject):
     @Slot(str, result="QVariantList")
     def getPeers(self, info_hash: str) -> list:
         peers = self._session_manager.get_peer_info(info_hash)
-        return [
-            {
+        reputation_enabled = self._settings.peer_reputation_enabled
+        result = []
+        for p in peers:
+            entry = {
                 "ip": p.ip,
                 "client": p.client,
                 "progress": p.progress,
                 "downSpeed": p.down_speed,
                 "upSpeed": p.up_speed,
             }
-            for p in peers
-        ]
+            if reputation_enabled:
+                # Folded in here (O(1) lookup, no extra effect) instead of a
+                # separate getReputationScores() round-trip the page used to
+                # make right after every getPeers() poll.
+                entry["reputation"] = self._session_manager.get_peer_reputation_score(p.ip)
+            result.append(entry)
+        return result
 
     # Opt-in (see Settings.peer_reputation_enabled / engine/peer_reputation.py).
     @Slot(result=bool)

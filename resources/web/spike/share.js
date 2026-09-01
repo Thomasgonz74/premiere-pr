@@ -100,6 +100,18 @@ function shareEnsureRow(record) {
     ]);
   });
 
+  // Cached as plain properties on the element itself (rather than switching
+  // shareRows to store a wrapper object) so the 3 other places that read
+  // shareRows.get(infoHash) as the raw row element (.dataset.lastState in
+  // the pause handler above, .remove() in shareRemoveRow, and the search
+  // listener's forEach) keep working unchanged.
+  el._nameEl = nameEl;
+  el._rateEl = rateEl;
+  el._dataEl = dataEl;
+  el._timeEl = timeEl;
+  el._stateEl = stateEl;
+  el._pauseBtn = pauseBtn;
+
   shareRows.set(record.infoHash, el);
   return el;
 }
@@ -107,20 +119,19 @@ function shareEnsureRow(record) {
 function shareRenderRow(record) {
   const el = shareEnsureRow(record);
   el.dataset.lastState = record.state;
-  el.querySelector(".row-name").textContent = record.name;
-  el.querySelector(".row-name").title = record.name;
-  const rates = el.querySelectorAll(".row-rate");
-  rates[0].textContent = `↑ ${formatRate(record.uploadRate)}`;
-  rates[1].textContent =
+  el._nameEl.textContent = record.name;
+  el._nameEl.title = record.name;
+  el._rateEl.textContent = `↑ ${formatRate(record.uploadRate)}`;
+  el._dataEl.textContent =
     record.dataLimitBytes != null
       ? `${formatSize(record.uploadedBytes)} / ${formatSize(record.dataLimitBytes)}`
       : formatSize(record.uploadedBytes);
-  rates[2].textContent =
+  el._timeEl.textContent =
     record.timeLimitSeconds != null
       ? `${formatDuration(record.elapsedSeconds)} / ${formatDuration(record.timeLimitSeconds)}`
       : formatDuration(record.elapsedSeconds);
-  el.querySelector(".row-state").textContent = shareStateText(record);
-  el.querySelector('[data-action="pause-resume"]').textContent = record.state === "PAUSED" ? "▶" : "⏸";
+  el._stateEl.textContent = shareStateText(record);
+  el._pauseBtn.textContent = record.state === "PAUSED" ? "▶" : "⏸";
 }
 
 function shareRemoveRow(infoHash) {
@@ -140,9 +151,7 @@ function shareRemoveRow(infoHash) {
 async function shareHandleDroppedFile(file) {
   const buffer = await file.arrayBuffer();
   const bytes = new Uint8Array(buffer);
-  let binary = "";
-  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
-  const base64 = btoa(binary);
+  const base64 = btoa(bytesToBinaryString(bytes));
   window.bridge.share.saveDroppedTorrent(file.name, base64, (path) => {
     shareSelectedPath = path;
     document.getElementById("shareSelectedFile").textContent = file.name;

@@ -11,6 +11,7 @@ off the GUI thread too, right where the bytes already are.
 from __future__ import annotations
 
 import logging
+import time
 import urllib.error
 import urllib.request
 from typing import TYPE_CHECKING
@@ -23,10 +24,43 @@ logger = logging.getLogger(__name__)
 
 _ALLOWED_SCHEMES = {"http", "https"}
 
+# Generous for an RSS feed or an update-check response -- both are normally
+# KB-scale -- while still bounding how much memory a hostile/compromised
+# server can force this process to buffer.
+_MAX_RESPONSE_BYTES = 50 * 1024 * 1024
+_READ_CHUNK_BYTES = 65536
+
 
 class FetchError(Exception):
     """Raised by fetch_url() for any network/IO failure, so callers catch
     one exception type instead of urllib's several distinct classes."""
+
+
+def _read_response_body(response, deadline: float, max_bytes: int | None = None) -> bytes:
+    """response.read() alone buffers unboundedly and only respects urlopen's
+    per-socket-operation timeout, not how long the WHOLE transfer takes -- a
+    server that drip-feeds a handful of bytes at a time never trips that
+    timeout no matter how long it strings the caller along. This enforces a
+    hard size cap and a real wall-clock deadline across the entire read.
+
+    max_bytes defaults to the module-level cap, read fresh on each call
+    (rather than bound once at def time) so tests can monkeypatch
+    _MAX_RESPONSE_BYTES and have it actually take effect."""
+    if max_bytes is None:
+        max_bytes = _MAX_RESPONSE_BYTES
+    chunks: list[bytes] = []
+    total = 0
+    while True:
+        if time.monotonic() > deadline:
+            raise FetchError("Response took too long to read in full (exceeded overall fetch deadline)")
+        chunk = response.read(_READ_CHUNK_BYTES)
+        if not chunk:
+            break
+        total += len(chunk)
+        if total > max_bytes:
+            raise FetchError(f"Response exceeded the maximum allowed size ({max_bytes} bytes)")
+        chunks.append(chunk)
+    return b"".join(chunks)
 
 
 def fetch_url(
@@ -46,13 +80,17 @@ def fetch_url(
 
     request = urllib.request.Request(url, headers={"User-Agent": user_agent, **(extra_headers or {})})
     opener = _build_proxy_opener(proxy, url)
+    # timeout_seconds bounds the WHOLE operation (connect + full read) from
+    # here on, not just each individual socket recv() the way urlopen's own
+    # timeout= does -- see _read_response_body.
+    deadline = time.monotonic() + timeout_seconds
 
     try:
         if opener is not None:
             with opener.open(request, timeout=timeout_seconds) as response:
-                return response.read()
+                return _read_response_body(response, deadline)
         with urllib.request.urlopen(request, timeout=timeout_seconds) as response:
-            return response.read()
+            return _read_response_body(response, deadline)
     except (urllib.error.URLError, OSError, ValueError) as exc:
         raise FetchError(str(exc)) from exc
 

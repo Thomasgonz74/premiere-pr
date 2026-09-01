@@ -42,6 +42,16 @@ logger = logging.getLogger(__name__)
 
 MAX_AGE_SECONDS = 48 * 3600
 
+# record_peers() is driven by a peer-list/swarm-view poll (every ~2s while
+# that dialog stays open) and treats "at least one known LAN peer is still
+# connected" as changed=True even when nothing but last_seen actually moved
+# -- throttling just the disk write (never the in-memory update, which
+# reconnect_cached_peers/get_peers always read) avoids a JSON write + fsync
+# every poll tick. Trade-off: a brand-new peer seen right before a crash
+# within this window won't have reached disk yet -- acceptable given this
+# cache is already documented as best-effort with a 48h tolerance.
+_SAVE_MIN_INTERVAL_SECONDS = 30
+
 _RFC1918_NETWORKS = (
     ipaddress.ip_network("10.0.0.0/8"),
     ipaddress.ip_network("172.16.0.0/12"),
@@ -76,6 +86,7 @@ class LanPeerCacheStore:
     def __init__(self) -> None:
         # info_hash -> {ip: LanPeerRecord}
         self._entries: dict[str, dict[str, LanPeerRecord]] = {}
+        self._last_saved_at: float = 0.0
         self._load()
 
     def record_peers(self, info_hash: str, raw_peers) -> None:
@@ -96,7 +107,11 @@ class LanPeerCacheStore:
         if not changed:
             return
         self._purge_expired()
+        now_monotonic = time.monotonic()
+        if now_monotonic - self._last_saved_at < _SAVE_MIN_INTERVAL_SECONDS:
+            return
         self._save()
+        self._last_saved_at = now_monotonic
 
     def get_peers(self, info_hash: str) -> list[tuple[str, int]]:
         """(ip, port) pairs currently cached for this info_hash. Purges

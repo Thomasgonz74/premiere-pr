@@ -41,6 +41,7 @@ class StatsService(QObject):
     def _on_torrent_removed(self, info_hash: str) -> None:
         self._flush_one(info_hash)
         self._current.pop(info_hash, None)
+        self._last_seen.pop(info_hash, None)
 
     def _last_seen_for(self, info_hash: str) -> tuple[int, int]:
         if info_hash not in self._last_seen:
@@ -55,9 +56,7 @@ class StatsService(QObject):
         last_down, last_up = self._last_seen_for(info_hash)
         delta_down = max(0, current_down - last_down)
         delta_up = max(0, current_up - last_up)
-        if delta_down or delta_up:
-            self._store.add_totals(delta_down, delta_up)
-        self._store.set_torrent_counter(info_hash, current_down, current_up)
+        self._store.record_removal(info_hash, delta_down, delta_up, current_down, current_up)
         self._last_seen[info_hash] = (current_down, current_up)
 
     def flush(self) -> None:
@@ -67,9 +66,15 @@ class StatsService(QObject):
         for info_hash in list(self._current.keys()):
             current_down, current_up = self._current[info_hash]
             last_down, last_up = self._last_seen_for(info_hash)
-            total_delta_down += max(0, current_down - last_down)
-            total_delta_up += max(0, current_up - last_up)
-            torrent_counters[info_hash] = (current_down, current_up)
+            # Comparing the raw counters (not the clamped delta) also catches
+            # a reset (handle re-added, counters restart at 0 below
+            # last_seen) -- a clamped delta of 0 doesn't distinguish "nothing
+            # changed" from "just reset", and skipping the write on a reset
+            # would leave _last_seen stuck on the old high value forever.
+            if (current_down, current_up) != (last_down, last_up):
+                total_delta_down += max(0, current_down - last_down)
+                total_delta_up += max(0, current_up - last_up)
+                torrent_counters[info_hash] = (current_down, current_up)
             self._last_seen[info_hash] = (current_down, current_up)
         if torrent_counters:
             self._store.apply_flush(total_delta_down, total_delta_up, torrent_counters)

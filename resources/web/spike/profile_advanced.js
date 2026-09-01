@@ -95,16 +95,20 @@ function arReloadRules() {
 }
 
 function arMoveRule(from, to) {
-  const names = arRules.map((r) => r.name);
-  [names[from], names[to]] = [names[to], names[from]];
-  window.bridge.profileAdvanced.reorderRoutingRules(names);
-  arReloadRules();
+  // Mutation is fire-and-forget (no result= on this slot, so nothing to
+  // reject it) and the new order is already known locally -- updating
+  // arRules directly and re-rendering avoids a round-trip re-fetch of the
+  // same list this call just reordered.
+  [arRules[from], arRules[to]] = [arRules[to], arRules[from]];
+  window.bridge.profileAdvanced.reorderRoutingRules(arRules.map((r) => r.name));
+  arRenderRules();
 }
 
 function arDeleteRule(name) {
   if (!confirm(`Voulez-vous vraiment supprimer la règle « ${name} » ?`)) return;
   window.bridge.profileAdvanced.deleteRoutingRule(name);
-  arReloadRules();
+  arRules = arRules.filter((r) => r.name !== name);
+  arRenderRules();
 }
 
 function arOpenForm(rule) {
@@ -275,31 +279,24 @@ let arProfiles = [];
 function arRefreshProfileCombo(selectName) {
   const combo = document.getElementById("apProfileSelect");
   combo.replaceChildren();
+  // The network-profile-switch section (below) picks a profile from the
+  // same list -- kept in sync here rather than duplicating the reload call,
+  // guarded since this runs before that section exists on the very first
+  // page build. A single pass builds each <option> once and clones it into
+  // the second select instead of iterating arProfiles twice.
+  const anpSelect = document.getElementById("anpProfileSelect");
+  if (anpSelect) anpSelect.replaceChildren();
   arProfiles.forEach((profile) => {
     const opt = document.createElement("option");
     opt.value = profile.name;
     opt.textContent = profile.name;
     combo.appendChild(opt);
+    if (anpSelect) anpSelect.appendChild(opt.cloneNode(true));
   });
   if (selectName) combo.value = selectName;
   const hasProfiles = arProfiles.length > 0;
   document.getElementById("apApplyBtn").disabled = !hasProfiles;
   document.getElementById("apDeleteBtn").disabled = !hasProfiles;
-
-  // The network-profile-switch section (below) picks a profile from the
-  // same list -- kept in sync here rather than duplicating the reload call,
-  // guarded since this runs before that section exists on the very first
-  // page build.
-  const anpSelect = document.getElementById("anpProfileSelect");
-  if (anpSelect) {
-    anpSelect.replaceChildren();
-    arProfiles.forEach((profile) => {
-      const opt = document.createElement("option");
-      opt.value = profile.name;
-      opt.textContent = profile.name;
-      anpSelect.appendChild(opt);
-    });
-  }
 }
 
 function arReloadProfiles(selectName) {
@@ -386,8 +383,6 @@ function arBuildProfilesSection(container) {
 
 // ------------------------------------------------- network profile auto-switch
 
-let anpAssociations = [];
-
 function anpRenderAssociations(list) {
   const box = document.getElementById("anpList");
   box.replaceChildren();
@@ -419,7 +414,10 @@ function anpRenderAssociations(list) {
     removeBtn.textContent = "✕";
     removeBtn.addEventListener("click", () => {
       window.bridge.profileAdvanced.deleteNetworkProfileAssociation(assoc.ssid);
-      anpReloadAssociations();
+      // Fire-and-forget mutation with a known result -- filter the list
+      // this render already has (in closure) and re-render, instead of a
+      // round-trip re-fetch of what was just removed locally.
+      anpRenderAssociations(list.filter((a) => a.ssid !== assoc.ssid));
     });
     actions.appendChild(removeBtn);
     row.appendChild(actions);
@@ -430,7 +428,6 @@ function anpRenderAssociations(list) {
 
 function anpReloadAssociations() {
   window.bridge.profileAdvanced.listNetworkProfileAssociations((list) => {
-    anpAssociations = list;
     anpRenderAssociations(list);
   });
 }
