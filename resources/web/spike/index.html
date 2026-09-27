@@ -21,21 +21,22 @@
 <body>
   <div id="titlebar" class="titlebar">
     <div class="titlebar-drag" id="dragRegion">
-      <span class="titlebar-title">Torrent 2000 — spike Phase 1</span>
+      <span class="titlebar-title" data-i18n-key="web.chrome.titlebar_title">Torrent 2000 — spike Phase 1</span>
     </div>
     <div class="titlebar-buttons">
-      <button class="cap-btn cap-min" id="btnMin" aria-label="Réduire"><span></span></button>
-      <button class="cap-btn cap-max" id="btnMax" aria-label="Agrandir"><span></span></button>
-      <button class="cap-btn cap-close" id="btnClose" aria-label="Fermer"><span></span></button>
+      <button class="cap-btn cap-min" id="btnMin" aria-label="Réduire" data-i18n-aria-label="titlebar.minimize"><span></span></button>
+      <button class="cap-btn cap-max" id="btnMax" aria-label="Agrandir" data-i18n-aria-label="titlebar.maximize"><span></span></button>
+      <button class="cap-btn cap-close" id="btnClose" aria-label="Fermer" data-i18n-aria-label="titlebar.close"><span></span></button>
     </div>
   </div>
 
   <nav class="tabbar" id="tabbar">
-    <button class="tab-btn active" data-tab="add">Ajout / Analyse</button>
-    <button class="tab-btn" data-tab="downloads">Téléchargements</button>
-    <button class="tab-btn" data-tab="share">Partage</button>
-    <button class="tab-btn" data-tab="rss">RSS</button>
-    <button class="tab-btn" data-tab="profile">Profil</button>
+    <button class="tab-btn active" data-tab="add" data-i18n-key="tabs.add">Ajout / Analyse</button>
+    <button class="tab-btn" data-tab="downloads" data-i18n-key="tabs.downloads">Téléchargements</button>
+    <button class="tab-btn" data-tab="share" data-i18n-key="tabs.share">Partage</button>
+    <button class="tab-btn" data-tab="rss" data-i18n-key="tabs.rss">RSS</button>
+    <button class="tab-btn" data-tab="search" data-i18n-key="web.chrome.tab_search">Recherche</button>
+    <button class="tab-btn" data-tab="profile" data-i18n-key="tabs.profile">Profil</button>
   </nav>
 
   <div class="resize-edge resize-top" data-edge="top"></div>
@@ -52,52 +53,55 @@
     <section class="page" id="page-downloads">
       <div id="downloadsSuggestionBanner" class="suggestion-banner" hidden>
         <span id="downloadsSuggestionMessage" class="suggestion-banner-message"></span>
-        <button type="button" id="downloadsSuggestionCloseBtn" class="suggestion-banner-close" aria-label="Fermer">✕</button>
+        <button type="button" id="downloadsSuggestionCloseBtn" class="suggestion-banner-close" aria-label="Fermer" data-i18n-aria-label="titlebar.close">✕</button>
       </div>
-      <input type="text" id="downloadsSearchInput" class="search-input" placeholder="Rechercher...">
+      <div class="field-row">
+        <input type="text" id="downloadsSearchInput" class="search-input" placeholder="Rechercher..." data-i18n-placeholder="common.search_placeholder">
+        <select id="downloadsTagFilterSelect"><option value="" data-i18n-key="web.downloads.all_tags_option">Toutes les étiquettes</option></select>
+      </div>
       <div class="downloads-row-header row downloads-row">
-        <span>Nom</span>
-        <span>Progression</span>
-        <span>Temps restant</span>
-        <span>↓ Vitesse</span>
-        <span>↑ Vitesse</span>
-        <span>Pairs<span class="info-hint" tabindex="0" data-tooltip="Nombre de pairs connectés. Le nombre entre parenthèses est celui des « seeds » (graines) : des pairs qui possèdent déjà le fichier complet et ne font que l'envoyer.">?</span></span>
-        <span>État</span>
-        <span>Catégorie</span>
-        <span>Action</span>
+        <span data-i18n-key="downloads_tab.column_name">Nom</span>
+        <span data-i18n-key="downloads_tab.column_progress">Progression</span>
+        <span data-i18n-key="downloads_tab.column_eta">Temps restant</span>
+        <span data-i18n-key="downloads_tab.column_download_rate">↓ Vitesse</span>
+        <span data-i18n-key="downloads_tab.column_upload_rate">↑ Vitesse</span>
+        <span><span data-i18n-key="downloads_tab.column_peers">Pairs</span><span class="info-hint" tabindex="0" data-tooltip="Nombre de pairs connectés. Le nombre entre parenthèses est celui des « seeds » (graines) : des pairs qui possèdent déjà le fichier complet et ne font que l'envoyer.">?</span></span>
+        <span data-i18n-key="downloads_tab.column_state">État</span>
+        <span data-i18n-key="downloads_tab.column_category">Catégorie</span>
+        <span data-i18n-key="downloads_tab.column_action">Action</span>
       </div>
       <div class="listbox" id="downloadsList">
-        <p class="empty-note" id="emptyNote">Aucun torrent actif — ajoutez-en un depuis l'onglet Ajouter pour le voir apparaître ici en direct.</p>
+        <p class="empty-note" id="emptyNote" data-i18n-key="web.downloads.empty_note">Aucun torrent actif — ajoutez-en un depuis l'onglet Ajouter pour le voir apparaître ici en direct.</p>
       </div>
 
       <div class="details-group" id="downloadsDetails">
-        <h3>Détails du torrent sélectionné</h3>
+        <h3 data-i18n-key="downloads_tab.details_group">Détails du torrent sélectionné</h3>
         <p class="field-note" id="downloadsDetailsTracker">Tracker actuel : —</p>
         <p class="field-note" id="downloadsDetailsAllocated">Espace occupé sur le disque : —</p>
         <div class="field-row">
-          <button id="downloadsDetailsExplainSlowBtn">Pourquoi c'est lent ?</button>
+          <button id="downloadsDetailsExplainSlowBtn" data-i18n-key="web.downloads.explain_slow_button">Pourquoi c'est lent ?</button>
         </div>
         <div id="downloadsDetailsSlowness" class="field-note" style="display: none;"></div>
         <div class="field-row">
-          <button id="downloadsDetailsPauseBtn">Pause</button>
-          <button id="downloadsDetailsResumeBtn">Reprendre</button>
+          <button id="downloadsDetailsPauseBtn" data-i18n-key="common.pause">Pause</button>
+          <button id="downloadsDetailsResumeBtn" data-i18n-key="common.resume">Reprendre</button>
         </div>
         <div class="field-row">
           <span class="field-note" id="downloadsDetailsQueue">File d'attente : —</span>
-          <button id="downloadsDetailsQueueUpBtn">Monter la priorité</button>
-          <button id="downloadsDetailsQueueDownBtn">Baisser la priorité</button>
+          <button id="downloadsDetailsQueueUpBtn" data-i18n-key="downloads_tab.queue_up">Monter la priorité</button>
+          <button id="downloadsDetailsQueueDownBtn" data-i18n-key="downloads_tab.queue_down">Baisser la priorité</button>
         </div>
         <label class="field-row">
           <input type="checkbox" id="downloadsDetailsSequential">
-          <span>Téléchargement séquentiel (pour lecture en streaming)</span>
+          <span data-i18n-key="downloads_tab.sequential">Téléchargement séquentiel (pour lecture en streaming)</span>
           <span class="info-hint" tabindex="0" data-tooltip="Télécharge les morceaux du fichier dans l'ordre plutôt qu'en fonction de leur disponibilité, pour pouvoir commencer la lecture avant la fin du téléchargement.">?</span>
         </label>
         <div class="field-row">
-          <label class="field-label inline" for="downloadsDetailsDeadlineInput">Échéance</label>
+          <label class="field-label inline" for="downloadsDetailsDeadlineInput" data-i18n-key="web.downloads.deadline_label">Échéance</label>
           <input type="datetime-local" id="downloadsDetailsDeadlineInput">
           <span class="info-hint" tabindex="0" data-tooltip="Fixez une date/heure cible : ce torrent est automatiquement remonté dans la file d'attente à mesure que l'échéance approche (moins de 24h restantes).">?</span>
-          <button id="downloadsDetailsDeadlineSetBtn">Définir</button>
-          <button id="downloadsDetailsDeadlineClearBtn">Effacer</button>
+          <button id="downloadsDetailsDeadlineSetBtn" data-i18n-key="web.downloads.deadline_set_button">Définir</button>
+          <button id="downloadsDetailsDeadlineClearBtn" data-i18n-key="web.downloads.deadline_clear_button">Effacer</button>
         </div>
         <p class="field-note" id="downloadsDetailsDeadlineRemaining"></p>
         <div id="downloadsDetailsTrackerEditor"></div>
@@ -106,86 +110,90 @@
 
     <section class="page active" id="page-add">
       <div class="form-grid">
-        <div class="drop-zone" id="addDropZone">Déposez un fichier .torrent ici</div>
+        <div class="drop-zone" id="addDropZone" data-i18n-key="web.add_page.drop_zone">Déposez un fichier .torrent ici</div>
         <div class="field-row">
-          <button id="addBrowseBtn">Parcourir…</button>
+          <button id="addBrowseBtn" data-i18n-key="common.browse">Parcourir…</button>
           <span class="field-note" id="addSelectedFile"></span>
         </div>
-        <label class="field-label" for="addMagnetInput">Lien magnet</label>
-        <input type="text" id="addMagnetInput" placeholder="magnet:?xt=urn:btih:...">
-        <label class="field-label" for="addIntentSelect">Je télécharge…</label>
+        <label class="field-label" for="addMagnetInput" data-i18n-key="web.add_page.magnet_label">Lien magnet</label>
+        <input type="text" id="addMagnetInput" placeholder="magnet:?xt=urn:btih:..." data-i18n-placeholder="web.add_page.magnet_placeholder">
+        <label class="field-label" for="addIntentSelect" data-i18n-key="web.add_page.intent_label">Je télécharge…</label>
         <select id="addIntentSelect">
-          <option value="">— Choisir (optionnel) —</option>
-          <option value="movie">Un film/épisode</option>
-          <option value="software">Un logiciel</option>
-          <option value="document">Un document</option>
-          <option value="other">Autre</option>
+          <option value="" data-i18n-key="web.add_page.intent_choose_option">— Choisir (optionnel) —</option>
+          <option value="movie" data-i18n-key="web.add_page.intent_movie">Un film/épisode</option>
+          <option value="software" data-i18n-key="web.add_page.intent_software">Un logiciel</option>
+          <option value="document" data-i18n-key="web.add_page.intent_document">Un document</option>
+          <option value="other" data-i18n-key="web.add_page.intent_other">Autre</option>
         </select>
-        <label class="field-label" for="addDestInput">Destination</label>
+        <label class="field-label" for="addDestInput" data-i18n-key="add_tab.destination_group">Destination</label>
         <div class="field-row">
           <input type="text" id="addDestInput">
-          <button id="addDestBrowseBtn">Parcourir…</button>
+          <button id="addDestBrowseBtn" data-i18n-key="common.browse">Parcourir…</button>
         </div>
-        <label class="field-label" for="addCategoryInput">Catégorie</label>
+        <label class="field-label" for="addCategoryInput" data-i18n-key="downloads_tab.column_category">Catégorie</label>
         <input type="text" id="addCategoryInput" list="addCategoryList">
         <datalist id="addCategoryList"></datalist>
         <p class="field-note" id="addSharePolicyNote"></p>
         <div class="field-row">
-          <button id="addAnalyzeBtn">Analyser</button>
-          <label class="field-label inline" for="addThresholdInput">Seuil d'exclusion auto.</label>
+          <button id="addAnalyzeBtn" data-i18n-key="add_tab.analyze_button">Analyser</button>
+          <label class="field-label inline" for="addThresholdInput" data-i18n-key="web.add_page.threshold_label">Seuil d'exclusion auto.</label>
           <input type="number" id="addThresholdInput" min="0" max="100" style="width: 60px;">
-          <button id="addCreateTorrentBtn">Créer un torrent…</button>
+          <button id="addCreateTorrentBtn" data-i18n-key="add_tab.create_torrent_button">Créer un torrent…</button>
         </div>
         <p class="status-line" id="addStatus"></p>
       </div>
 
       <div class="scan-toolbar">
-        <button id="addCheckAllBtn">Tout cocher</button>
-        <button id="addUncheckAllBtn">Tout décocher</button>
+        <button id="addCheckAllBtn" data-i18n-key="add_tab.check_all">Tout cocher</button>
+        <button id="addUncheckAllBtn" data-i18n-key="add_tab.uncheck_all">Tout décocher</button>
       </div>
       <div class="listbox scan-list" id="addScanList">
-        <p class="empty-note">Aucune analyse pour l'instant.</p>
+        <p class="empty-note" data-i18n-key="web.add_page.no_scan_note">Aucune analyse pour l'instant.</p>
       </div>
 
-      <button class="start-btn" id="addStartBtn">Démarrer</button>
+      <button class="start-btn" id="addStartBtn" data-i18n-key="web.add_page.start_button">Démarrer</button>
     </section>
 
     <section class="page" id="page-share">
       <div class="form-grid">
-        <div class="drop-zone" id="shareDropZone">Déposez un fichier .torrent ici</div>
+        <div class="drop-zone" id="shareDropZone" data-i18n-key="web.add_page.drop_zone">Déposez un fichier .torrent ici</div>
         <div class="field-row">
-          <button id="shareBrowseBtn">Parcourir…</button>
+          <button id="shareBrowseBtn" data-i18n-key="common.browse">Parcourir…</button>
           <span class="field-note" id="shareSelectedFile"></span>
         </div>
-        <label class="field-label" for="shareMagnetInput">Lien magnet</label>
-        <input type="text" id="shareMagnetInput" placeholder="magnet:?xt=urn:btih:...">
-        <label class="field-label" for="shareDataDirInput">Dossier contenant déjà les fichiers</label>
+        <label class="field-label" for="shareMagnetInput" data-i18n-key="web.add_page.magnet_label">Lien magnet</label>
+        <input type="text" id="shareMagnetInput" placeholder="magnet:?xt=urn:btih:..." data-i18n-placeholder="web.add_page.magnet_placeholder">
+        <label class="field-label" for="shareDataDirInput" data-i18n-key="web.share_page.data_dir_label">Dossier contenant déjà les fichiers</label>
         <div class="field-row">
           <input type="text" id="shareDataDirInput">
-          <button id="shareDataDirBrowseBtn">Parcourir…</button>
+          <button id="shareDataDirBrowseBtn" data-i18n-key="common.browse">Parcourir…</button>
         </div>
         <div class="field-row limits-row">
-          <label class="field-label inline">Temps (h)</label>
+          <label class="field-label inline" data-i18n-key="web.share_page.time_limit_label">Temps (h)</label>
           <input type="number" id="shareTimeLimitInput" min="0" max="999" value="0" style="width: 60px;">
-          <label class="field-label inline">Données (Mo)</label>
+          <label class="field-label inline" data-i18n-key="web.share_page.data_limit_label">Données (Mo)</label>
           <input type="number" id="shareDataLimitInput" min="0" max="1000000" value="0" style="width: 80px;">
-          <label class="field-label inline" for="shareRatioLimitInput">Ratio</label>
+          <label class="field-label inline" for="shareRatioLimitInput" data-i18n-key="web.share_page.ratio_limit_label">Ratio</label>
           <span class="info-hint" tabindex="0" data-tooltip="Rapport entre les données envoyées et les données reçues (envoi ÷ réception). Le partage s'arrête automatiquement une fois ce ratio atteint. 0 = pas de limite.">?</span>
           <input type="number" id="shareRatioLimitInput" min="0" max="100" step="0.1" value="0" style="width: 60px;">
         </div>
         <p class="status-line" id="shareStatus"></p>
       </div>
 
-      <button class="start-btn" id="shareStartBtn">Démarrer le partage</button>
+      <button class="start-btn" id="shareStartBtn" data-i18n-key="share_tab.start_button">Démarrer le partage</button>
 
-      <input type="text" id="shareSearchInput" class="search-input" placeholder="Rechercher…">
+      <input type="text" id="shareSearchInput" class="search-input" placeholder="Rechercher…" data-i18n-placeholder="common.search_placeholder">
       <div class="listbox" id="shareList">
-        <p class="empty-note" id="shareEmptyNote">Aucun torrent partagé — ajoutez-en un ci-dessus pour le voir apparaître ici en direct.</p>
+        <p class="empty-note" id="shareEmptyNote" data-i18n-key="web.share_page.empty_note">Aucun torrent partagé — ajoutez-en un ci-dessus pour le voir apparaître ici en direct.</p>
       </div>
     </section>
 
     <section class="page" id="page-rss">
       <div id="rssContainer"></div>
+    </section>
+
+    <section class="page" id="page-search">
+      <div id="searchContainer"></div>
     </section>
 
     <section class="page" id="page-profile">
@@ -201,7 +209,7 @@
   </main>
 
   <aside id="cccpPropagandaPanel" class="cccp-propaganda-panel" hidden>
-    <h2 id="propagandaHeader" class="propaganda-header">RADIO KOLKHOZE</h2>
+    <h2 id="propagandaHeader" class="propaganda-header" data-i18n-key="cccp.propaganda.header">RADIO KOLKHOZE</h2>
     <div class="propaganda-divider"></div>
     <div id="propagandaIcon" class="propaganda-icon"></div>
     <p id="propagandaMessage" class="propaganda-message"></p>
@@ -209,6 +217,7 @@
   </div>
 
   <script src="qrc:///qtwebchannel/qwebchannel.js"></script>
+  <script src="i18n.js"></script>
   <script src="format.js"></script>
   <script src="tetris.js"></script>
   <script src="modal.js"></script>
@@ -221,6 +230,7 @@
   <script src="add.js"></script>
   <script src="share.js"></script>
   <script src="rss.js"></script>
+  <script src="search.js"></script>
   <script src="profile_general.js"></script>
   <script src="profile_network.js"></script>
   <script src="profile_automation.js"></script>

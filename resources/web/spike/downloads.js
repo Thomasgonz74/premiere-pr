@@ -8,15 +8,15 @@
 // confirm-before-remove (with an optional delete-files choice) everywhere a
 // torrent can be removed. Ported field-for-field from downloads_tab.py.
 
-const DOWNLOADS_STATE_LABELS = {
-  QUEUED: "En attente",
-  CHECKING_METADATA: "Récup. métadonnées...",
-  AWAITING_ANALYSIS: "En attente d'analyse",
-  DOWNLOADING: "Téléchargement",
-  PAUSED: "En pause",
-  SEEDING: "Partage (seed)",
-  FINISHED: "Terminé",
-  ERROR: "Erreur",
+const DOWNLOADS_STATE_KEYS = {
+  QUEUED: "downloads_tab.state_queued",
+  CHECKING_METADATA: "downloads_tab.state_checking_metadata",
+  AWAITING_ANALYSIS: "downloads_tab.state_awaiting_analysis",
+  DOWNLOADING: "downloads_tab.state_downloading",
+  PAUSED: "downloads_tab.state_paused",
+  SEEDING: "downloads_tab.state_seeding",
+  FINISHED: "downloads_tab.state_finished",
+  ERROR: "downloads_tab.state_error",
 };
 
 const downloadsRows = new Map(); // infoHash -> { el, tetris, record }
@@ -25,6 +25,13 @@ let downloadsDetailsTrackerEditorFor = null;
 let downloadsDetailsAllocatedFor = null;
 let downloadsDetailsSlownessFor = null;
 let downloadsDetailsDeadlineFor = null;
+// Catalogue idea "etiquettes multiples" -- infoHash -> string[], populated
+// lazily (fetched the first time a row is filtered/rendered while a tag
+// filter is active, or right after an add/remove) rather than up front for
+// every torrent on every render.
+const downloadsTagsCache = new Map();
+let downloadsTagFilterValue = "";
+
 // infoHash currently shown in the details panel, or null -- lets
 // downloadsRenderRecord() (called once per active torrent, every ~300ms
 // tick) skip rebuilding the panel entirely for torrents that aren't the one
@@ -59,7 +66,7 @@ function downloadsRemovalImpact(hashes) {
   if (records.length === 1) {
     impact.numSeeds = records[0].numSeeds;
     impact.numPeers = records[0].numPeers;
-    impact.stateLabel = DOWNLOADS_STATE_LABELS[records[0].state] || records[0].state;
+    impact.stateLabel = t(DOWNLOADS_STATE_KEYS[records[0].state]) || records[0].state;
   }
   return impact;
 }
@@ -87,10 +94,10 @@ function downloadsEpochToDatetimeLocal(epochSeconds) {
 }
 
 function downloadsDeadlineRemainingText(record) {
-  if (!record.deadline) return "Aucune échéance définie.";
+  if (!record.deadline) return t("web.downloads.deadline_none");
   const remaining = record.deadline - Date.now() / 1000;
-  if (remaining <= 0) return "Échéance dépassée !";
-  return `Temps restant avant l'échéance : ${formatEta(remaining)}`;
+  if (remaining <= 0) return t("web.downloads.deadline_passed");
+  return t("web.downloads.deadline_remaining", { eta: formatEta(remaining) });
 }
 
 function downloadsEnsureRow(record) {
@@ -251,7 +258,7 @@ function downloadsRenderRecord(record) {
   }
   const pinBtn = entry.pinBtn;
   pinBtn.classList.toggle("active", !!record.pinned);
-  pinBtn.title = record.pinned ? "Désépingler" : "Épingler en tête de liste";
+  pinBtn.title = record.pinned ? t("web.downloads.unpin_label") : t("web.downloads.pin_tooltip");
 
   const nameEl = entry.nameEl;
   // Two distinct glyphs so a torrent that's both private and archived
@@ -264,22 +271,18 @@ function downloadsRenderRecord(record) {
   nameEl.textContent = displayName; // safe: DOM property assignment, not HTML parsing
   const tooltipParts = [record.name];
   if (record.locked) {
-    tooltipParts.push(
-      "Archivé (lecture seule) : les fichiers de ce torrent sont verrouillés en écriture sur le disque."
-    );
+    tooltipParts.push(t("web.downloads.locked_tooltip"));
   }
   if (record.isPrivate) {
-    tooltipParts.push(
-      "Torrent privé : DHT, PEX et LSD restent désactivés pour ce torrent, quels que soient vos réglages de confidentialité globaux."
-    );
+    tooltipParts.push(t("downloads_tab.private_badge_tooltip"));
   }
   nameEl.title = tooltipParts.length > 1 ? tooltipParts.join("\n\n") : record.name;
 
   entry.etaEl.textContent = downloadsEta(record);
-  entry.downRateEl.textContent = `↓ ${formatRate(record.downloadRate)}`;
-  entry.upRateEl.textContent = `↑ ${formatRate(record.uploadRate)}`;
-  entry.peersEl.textContent = `${record.numPeers} (${record.numSeeds} seeds)`;
-  entry.stateEl.textContent = DOWNLOADS_STATE_LABELS[record.state] || record.state;
+  entry.downRateEl.textContent = t("main_window.status_download_rate", { rate: formatRate(record.downloadRate) });
+  entry.upRateEl.textContent = t("main_window.status_upload_rate", { rate: formatRate(record.uploadRate) });
+  entry.peersEl.textContent = t("downloads_tab.peers_seeds", { peers: record.numPeers, seeds: record.numSeeds });
+  entry.stateEl.textContent = t(DOWNLOADS_STATE_KEYS[record.state]) || record.state;
   entry.categoryEl.textContent = record.category || "";
   entry.pauseResumeBtn.textContent = record.state === "PAUSED" ? "▶" : "⏸";
   entry.tetris.setProgress(record.progress);
@@ -304,7 +307,7 @@ function downloadsRemoveRecord(infoHash) {
     const note = document.createElement("p");
     note.className = "empty-note";
     note.id = "emptyNote";
-    note.textContent = "Aucun torrent actif — ajoutez-en un depuis l'onglet Ajouter pour le voir apparaître ici en direct.";
+    note.textContent = t("web.downloads.empty_note");
     list.appendChild(note);
   }
   downloadsUpdateDetailsPanel();
@@ -357,7 +360,9 @@ function downloadsUpdateDetailsPanel() {
   const infoHash = selected[0];
   downloadsDetailsVisibleFor = infoHash;
   const record = entry.record;
-  document.getElementById("downloadsDetailsTracker").textContent = `Tracker actuel : ${record.currentTracker || "—"}`;
+  document.getElementById("downloadsDetailsTracker").textContent = t("downloads_tab.tracker_current", {
+    tracker: record.currentTracker || "—",
+  });
 
   // Stale "why is it slow" result from a previously-selected torrent would
   // be misleading left on screen -- clear it the moment selection changes.
@@ -375,19 +380,23 @@ function downloadsUpdateDetailsPanel() {
   if (downloadsDetailsAllocatedFor !== infoHash) {
     downloadsDetailsAllocatedFor = infoHash;
     const allocatedEl = document.getElementById("downloadsDetailsAllocated");
-    allocatedEl.textContent = "Espace occupé sur le disque : calcul...";
+    allocatedEl.textContent = t("web.downloads.allocated_calculating");
     window.bridge.downloads.getAllocatedSize(infoHash, (allocatedBytes) => {
       if (downloadsDetailsAllocatedFor !== infoHash) return; // selection changed while awaiting the reply
       const logicalText = formatSize(record.totalSize);
       const allocatedText = formatSize(allocatedBytes);
       allocatedEl.textContent = allocatedBytes === record.totalSize
-        ? `Espace occupé sur le disque : ${allocatedText} (identique à la taille annoncée)`
-        : `Espace occupé sur le disque : ${allocatedText} (taille annoncée : ${logicalText})`;
+        ? t("web.downloads.allocated_same", { allocated: allocatedText })
+        : t("web.downloads.allocated_different", { allocated: allocatedText, logical: logicalText });
     });
   }
 
-  const queueText = record.queuePosition >= 0 ? `position ${record.queuePosition + 1}` : "actif (pas en attente)";
-  document.getElementById("downloadsDetailsQueue").textContent = `File d'attente : ${queueText}`;
+  const queueText = record.queuePosition >= 0
+    ? t("downloads_tab.queue_position_value", { position: record.queuePosition + 1 })
+    : t("downloads_tab.queue_position_active");
+  document.getElementById("downloadsDetailsQueue").textContent = t("downloads_tab.queue_position", {
+    position: queueText,
+  });
   document.getElementById("downloadsDetailsSequential").checked = record.sequentialDownload;
 
   // Only reset the deadline input when the selected torrent actually
@@ -436,14 +445,14 @@ function downloadsRenderSlownessResult(result) {
 
   if (!result.applicable) {
     const p = document.createElement("p");
-    p.textContent = "Cette analyse ne s'applique qu'aux torrents activement en téléchargement.";
+    p.textContent = t("web.downloads.slowness_not_applicable");
     box.appendChild(p);
     return;
   }
 
   if (result.causes.length === 0) {
     const p = document.createElement("p");
-    p.textContent = "Aucune cause identifiée parmi les critères vérifiables (seeds, tracker, bande passante).";
+    p.textContent = t("web.downloads.slowness_no_cause");
     box.appendChild(p);
   } else {
     const list = document.createElement("ul");
@@ -470,7 +479,23 @@ function downloadsCurrentFilterQuery() {
 
 function downloadsSetRowVisibility(entry, query) {
   const name = (entry.record.name || "").toLowerCase();
-  entry.el.style.display = !query || name.includes(query) ? "" : "none";
+  const matchesQuery = !query || name.includes(query);
+  let matchesTag = true;
+  if (downloadsTagFilterValue) {
+    const cached = downloadsTagsCache.get(entry.record.infoHash);
+    if (cached === undefined) {
+      // Not fetched yet -- hide for now (avoids a false-positive "visible"
+      // flash) and refresh once the real tag list comes back.
+      matchesTag = false;
+      window.bridge.downloads.getTags(entry.record.infoHash, (tags) => {
+        downloadsTagsCache.set(entry.record.infoHash, tags);
+        downloadsSetRowVisibility(entry, downloadsCurrentFilterQuery());
+      });
+    } else {
+      matchesTag = cached.includes(downloadsTagFilterValue);
+    }
+  }
+  entry.el.style.display = matchesQuery && matchesTag ? "" : "none";
 }
 
 // Full re-scan is only needed when the query itself changes (the 'input'
@@ -510,7 +535,7 @@ function downloadsBuildSingleMenu(infoHash) {
   const items = [];
 
   items.push({
-    label: record && record.pinned ? "Désépingler" : "Épingler",
+    label: record && record.pinned ? t("web.downloads.unpin_label") : t("web.downloads.pin_label"),
     onClick: () => {
       if (record && record.pinned) {
         window.bridge.downloads.unpinTorrent(infoHash);
@@ -520,13 +545,13 @@ function downloadsBuildSingleMenu(infoHash) {
     },
   });
   if (record && record.state === "PAUSED") {
-    items.push({ label: "Reprendre", onClick: () => window.bridge.downloads.resumeTorrent(infoHash) });
+    items.push({ label: t("common.resume"), onClick: () => window.bridge.downloads.resumeTorrent(infoHash) });
   } else {
-    items.push({ label: "Pause", onClick: () => window.bridge.downloads.pauseTorrent(infoHash) });
+    items.push({ label: t("common.pause"), onClick: () => window.bridge.downloads.pauseTorrent(infoHash) });
   }
-  items.push({ label: "Revérifier", onClick: () => window.bridge.downloads.recheckTorrent(infoHash) });
+  items.push({ label: t("common.context_recheck"), onClick: () => window.bridge.downloads.recheckTorrent(infoHash) });
   items.push({
-    label: record && record.locked ? "Déverrouiller" : "Verrouiller (archive)",
+    label: record && record.locked ? t("web.downloads.unlock_label") : t("web.downloads.lock_label"),
     onClick: () => {
       if (record && record.locked) {
         window.bridge.downloads.unlockTorrent(infoHash);
@@ -536,7 +561,7 @@ function downloadsBuildSingleMenu(infoHash) {
     },
   });
   items.push({
-    label: "Déplacer les fichiers…",
+    label: t("common.context_move_storage"),
     onClick: () => {
       window.bridge.dialogs.browseFolder("", (path) => {
         if (path) window.bridge.downloads.moveStorage(infoHash, path);
@@ -545,33 +570,43 @@ function downloadsBuildSingleMenu(infoHash) {
   });
   items.push({ separator: true });
   items.push({
-    label: "Assigner une catégorie…",
+    label: t("common.context_assign_category"),
     onClick: () => downloadsOpenCategoryDialog(infoHash, record ? record.category : ""),
   });
   items.push({
-    label: "Copier le lien magnet",
+    label: t("web.downloads.manage_tags_label"),
+    onClick: () => downloadsOpenTagsDialog(infoHash, name),
+  });
+  items.push({
+    label: t("common.context_copy_magnet"),
     onClick: () => {
       window.bridge.downloads.getMagnetUri(infoHash, (uri) => {
         if (uri) {
           navigator.clipboard.writeText(uri);
         } else {
           alertModal(
-            "Lien magnet indisponible",
-            "Le lien magnet n'est pas encore disponible pour ce torrent : les métadonnées n'ont pas encore été reçues. Réessayez une fois le torrent analysé."
+            t("downloads_tab.magnet_not_available_title"),
+            t("downloads_tab.magnet_not_available_message")
           );
         }
       });
     },
   });
-  items.push({ label: "Modifier les fichiers…", onClick: () => openFilePriorityDialog(infoHash, name) });
-  items.push({ label: "Voir les pairs", onClick: () => openPeerListDialog(infoHash, name) });
-  items.push({ label: "Voir le graphique de vitesse", onClick: () => openSpeedGraphDialog(infoHash, name) });
-  items.push({ label: "Voir la mosaïque des morceaux", onClick: () => openPieceMapDialog(infoHash, name) });
-  items.push({ label: "Voir la constellation de l'essaim", onClick: () => openSwarmConstellationDialog(infoHash, name) });
-  items.push({ label: "Voir la répartition du stockage", onClick: () => openStorageSunburstDialog(infoHash, name) });
+  items.push({ label: t("common.context_edit_files"), onClick: () => openFilePriorityDialog(infoHash, name) });
+  items.push({ label: t("common.context_view_peers"), onClick: () => openPeerListDialog(infoHash, name) });
+  items.push({ label: t("common.context_view_speed_graph"), onClick: () => openSpeedGraphDialog(infoHash, name) });
+  items.push({ label: t("web.downloads.view_piece_map_label"), onClick: () => openPieceMapDialog(infoHash, name) });
+  items.push({
+    label: t("web.downloads.view_swarm_constellation_label"),
+    onClick: () => openSwarmConstellationDialog(infoHash, name),
+  });
+  items.push({
+    label: t("web.downloads.view_storage_sunburst_label"),
+    onClick: () => openStorageSunburstDialog(infoHash, name),
+  });
   items.push({ separator: true });
   items.push({
-    label: "Retirer",
+    label: t("common.remove"),
     onClick: () =>
       confirmAndRemove(
         () => window.bridge.downloads.removeTorrent(infoHash, false),
@@ -585,16 +620,16 @@ function downloadsBuildSingleMenu(infoHash) {
 function downloadsBuildMultiMenu(hashes) {
   return [
     {
-      label: "Mettre en pause la sélection",
+      label: t("common.context_pause_selection"),
       onClick: () => hashes.forEach((h) => window.bridge.downloads.pauseTorrent(h)),
     },
     {
-      label: "Reprendre la sélection",
+      label: t("common.context_resume_selection"),
       onClick: () => hashes.forEach((h) => window.bridge.downloads.resumeTorrent(h)),
     },
     { separator: true },
     {
-      label: "Retirer la sélection",
+      label: t("common.context_remove_selection"),
       onClick: () =>
         confirmAndRemove(
           () => hashes.forEach((h) => window.bridge.downloads.removeTorrent(h, false)),
@@ -612,7 +647,7 @@ function downloadsOpenCategoryDialog(infoHash, currentCategory) {
 
     const label = document.createElement("label");
     label.className = "field-label";
-    label.textContent = "Catégorie :";
+    label.textContent = t("downloads_tab.category_dialog_label");
     content.appendChild(label);
 
     const input = document.createElement("input");
@@ -633,19 +668,115 @@ function downloadsOpenCategoryDialog(infoHash, currentCategory) {
     const buttonRow = document.createElement("div");
     buttonRow.className = "modal-close-row";
     const saveBtn = document.createElement("button");
-    saveBtn.textContent = "Enregistrer";
+    saveBtn.textContent = t("profile_tab.save_button");
     saveBtn.addEventListener("click", () => {
       window.bridge.downloads.setCategory(infoHash, input.value.trim());
       closeModal();
     });
     buttonRow.appendChild(saveBtn);
     const cancelBtn = document.createElement("button");
-    cancelBtn.textContent = "Annuler";
+    cancelBtn.textContent = t("common.cancel");
     cancelBtn.addEventListener("click", () => closeModal());
     buttonRow.appendChild(cancelBtn);
     content.appendChild(buttonRow);
 
-    openModal("Assigner une catégorie", content);
+    openModal(t("downloads_tab.category_dialog_title"), content);
+  });
+}
+
+// Catalogue idea "etiquettes multiples" -- multiple free-form tags per
+// torrent, alongside (not replacing) the single category above.
+function downloadsRefreshTagFilterOptions() {
+  window.bridge.downloads.listAllTags((tags) => {
+    const select = document.getElementById("downloadsTagFilterSelect");
+    const previous = select.value;
+    select.replaceChildren();
+    const allOpt = document.createElement("option");
+    allOpt.value = "";
+    allOpt.textContent = t("web.downloads.all_tags_option");
+    select.appendChild(allOpt);
+    tags.forEach((tag) => {
+      const opt = document.createElement("option");
+      opt.value = tag;
+      opt.textContent = tag;
+      select.appendChild(opt);
+    });
+    select.value = tags.includes(previous) ? previous : "";
+  });
+}
+
+function downloadsOpenTagsDialog(infoHash, torrentName) {
+  window.bridge.downloads.getTags(infoHash, (tags) => {
+    downloadsTagsCache.set(infoHash, tags);
+    const content = document.createElement("div");
+    content.className = "form-grid";
+
+    const list = document.createElement("div");
+    list.className = "listbox";
+
+    function renderTagList(currentTags) {
+      list.replaceChildren();
+      if (!currentTags.length) {
+        const note = document.createElement("p");
+        note.className = "empty-note";
+        note.textContent = t("web.downloads.no_tags_note");
+        list.appendChild(note);
+        return;
+      }
+      currentTags.forEach((tag) => {
+        const row = document.createElement("div");
+        row.className = "row";
+        const label = document.createElement("span");
+        label.className = "row-name";
+        label.textContent = tag;
+        row.appendChild(label);
+        const removeBtn = document.createElement("button");
+        removeBtn.textContent = "✕";
+        removeBtn.addEventListener("click", () => {
+          window.bridge.downloads.removeTag(infoHash, tag);
+          const updated = currentTags.filter((t) => t !== tag);
+          downloadsTagsCache.set(infoHash, updated);
+          renderTagList(updated);
+          downloadsRefreshTagFilterOptions();
+        });
+        row.appendChild(removeBtn);
+        list.appendChild(row);
+      });
+    }
+    renderTagList(tags);
+    content.appendChild(list);
+
+    const addRow = document.createElement("div");
+    addRow.className = "field-row";
+    const addInput = document.createElement("input");
+    addInput.type = "text";
+    addInput.placeholder = t("web.downloads.new_tag_placeholder");
+    addRow.appendChild(addInput);
+    const addBtn = document.createElement("button");
+    addBtn.textContent = t("common.add");
+    addBtn.addEventListener("click", () => {
+      const tag = addInput.value.trim();
+      if (!tag) return;
+      window.bridge.downloads.addTag(infoHash, tag);
+      const updated = downloadsTagsCache.get(infoHash) || [];
+      if (!updated.includes(tag)) updated.push(tag);
+      downloadsTagsCache.set(infoHash, updated);
+      renderTagList(updated);
+      addInput.value = "";
+      downloadsRefreshTagFilterOptions();
+    });
+    addRow.appendChild(addBtn);
+    content.appendChild(addRow);
+
+    const closeRow = document.createElement("div");
+    closeRow.className = "modal-close-row";
+    const closeBtn = document.createElement("button");
+    closeBtn.textContent = t("titlebar.close");
+    closeBtn.addEventListener("click", () => closeModal());
+    closeRow.appendChild(closeBtn);
+    content.appendChild(closeRow);
+
+    openModal(t("web.downloads.tags_dialog_title", { name: torrentName }), content);
   });
 }
 
@@ -683,7 +814,7 @@ function wireSuggestionBanner() {
   document.getElementById("downloadsSuggestionCloseBtn").addEventListener("click", hideSuggestionBanner);
 
   window.bridge.profileAutomation.lowSpaceWarning.connect((savePath, message) => {
-    showSuggestionBanner(`${message} Envisagez de déplacer ou de supprimer un torrent terminé.`);
+    showSuggestionBanner(`${message} ${t("web.downloads.low_space_suggestion_suffix")}`);
   });
 
   window.bridge.share.recordUpdated.connect((row) => {
@@ -692,8 +823,8 @@ function wireSuggestionBanner() {
     const count = shareReachedNotified.size;
     showSuggestionBanner(
       count === 1
-        ? "1 torrent a atteint sa limite de partage — pensez à l'arrêter ou l'ajuster dans l'onglet Partage."
-        : `${count} torrents ont atteint leur limite de partage — pensez à les arrêter ou les ajuster dans l'onglet Partage.`
+        ? t("web.downloads.share_limit_reached_singular")
+        : t("web.downloads.share_limit_reached_plural", { count })
     );
   });
 }
@@ -708,6 +839,12 @@ function wireDownloadsPage() {
 
   document.getElementById("downloadsSearchInput").addEventListener("input", downloadsApplyFilter);
 
+  downloadsRefreshTagFilterOptions();
+  document.getElementById("downloadsTagFilterSelect").addEventListener("change", (event) => {
+    downloadsTagFilterValue = event.target.value;
+    downloadsApplyFilter();
+  });
+
   document.getElementById("downloadsDetailsPauseBtn").addEventListener("click", () => {
     const sel = downloadsSelectedHashes();
     if (sel.length === 1) window.bridge.downloads.pauseTorrent(sel[0]);
@@ -721,7 +858,7 @@ function wireDownloadsPage() {
     if (sel.length !== 1) return;
     const infoHash = sel[0];
     const box = document.getElementById("downloadsDetailsSlowness");
-    box.textContent = "Analyse en cours…";
+    box.textContent = t("web.downloads.slowness_analyzing");
     box.style.display = "block";
     window.bridge.downloads.explainSlowness(infoHash, (result) => {
       if (downloadsDetailsSlownessFor !== infoHash) return; // selection changed while awaiting the reply

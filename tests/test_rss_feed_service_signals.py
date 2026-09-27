@@ -7,6 +7,7 @@ network access and no QThreadPool workers are ever started.
 """
 
 import pytest
+from PySide6.QtCore import QObject, Signal
 from PySide6.QtWidgets import QApplication
 
 from torrent2000.config.settings import RssFeedSubscription, Settings
@@ -29,22 +30,36 @@ def isolated_data_dir(tmp_path, monkeypatch):
     monkeypatch.setenv("TORRENT2000_DATA_DIR", str(tmp_path))
 
 
-class FakeSessionManager:
+class FakeSessionManager(QObject):
+    # Real Qt signal (not a plain attribute) so tests can hand-emit it just
+    # like service._signals.feed_fetched etc. below, to simulate
+    # SessionManager reporting that a magnet-added torrent's metadata
+    # arrived -- see RssFeedService._on_rss_metadata_received.
+    metadata_received = Signal(str)
+
     def __init__(self):
+        super().__init__()
         self.magnet_calls = []
         self.file_calls = []
         self.started_after_analysis = []
+        self.excluded_calls = []
 
     def add_torrent_from_magnet(self, uri, save_path=None):
         self.magnet_calls.append((uri, save_path))
         return "fakehash"
 
-    def add_torrent_from_file(self, path, save_path=None):
+    def add_torrent_from_file(self, path, save_path=None, excluded_indices=None):
         self.file_calls.append((path, save_path))
         return "fakehash"
 
     def start_after_analysis(self, info_hash):
         self.started_after_analysis.append(info_hash)
+
+    def get_torrent_files(self, info_hash):
+        return []
+
+    def exclude_files(self, info_hash, excluded_indices):
+        self.excluded_calls.append((info_hash, excluded_indices))
 
 
 def _make_service(tmp_path, feeds):
@@ -70,8 +85,10 @@ def test_new_matching_magnet_item_is_added_and_marked_seen(tmp_path):
     assert session_manager.magnet_calls == [("magnet:?xt=urn:btih:abc", settings.default_download_dir)]
     # A magnet is always added paused/awaiting-analysis by SessionManager
     # (so a human can review the file list first) -- an RSS auto-download has
-    # no one to review it, so it must be started immediately or it would sit
-    # forever without downloading.
+    # no one to review it, so it must be started as soon as its metadata
+    # (and therefore its file list, for the danger scan) arrives, not before.
+    assert session_manager.started_after_analysis == []
+    session_manager.metadata_received.emit("fakehash")
     assert session_manager.started_after_analysis == ["fakehash"]
     assert seen_store.is_seen("guid-1") is True
     assert len(found) == 1

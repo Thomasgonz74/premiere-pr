@@ -21,7 +21,7 @@ Token comparison uses hmac.compare_digest rather than == to avoid a timing
 side-channel that could help an attacker guess the token character by
 character.
 
-Serves exactly three things, nothing else -- in particular, NOT a generic
+Serves exactly four things, nothing else -- in particular, NOT a generic
 file server (no SimpleHTTPRequestHandler, no path-to-disk mapping of any
 kind), so there is no path-traversal surface to worry about:
   - GET  /                          the embedded HTML/JS page (constant, no
@@ -29,6 +29,12 @@ kind), so there is no path-traversal surface to worry about:
   - GET  /api/torrents              JSON list of current torrents
   - POST /api/torrents/<hash>/pause   pause that torrent
   - POST /api/torrents/<hash>/resume  resume that torrent
+  - POST /api/torrents/add          add a torrent (catalogue idea "ajout a
+                                     distance") -- {"magnet": "..."} or
+                                     {"torrentBase64": "...", "filename":
+                                     "..."}, started immediately with no
+                                     human review, same auto-exclude cutoff
+                                     as the RSS/watch-folder auto-add paths
 
 Runs on a dedicated background thread (ThreadingHTTPServer's own
 serve_forever loop, itself spawning one short-lived thread per request) so
@@ -37,17 +43,31 @@ second start() while already running, or a stop() while not running, is a
 harmless no-op.
 """
 
+import base64
 import hmac
 import json
 import logging
+import os
 import secrets
+import tempfile
 import threading
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlsplit
 
 from torrent2000.config.settings import Settings
+from torrent2000.danger_scanner.scanner import auto_exclude_indices, scan_files
 from torrent2000.engine.session_manager import SessionManager
+from torrent2000.engine.torrent_files import files_from_torrent_path
+
+# Mirrors dropped_file.py's cap for the same reason: a legitimate .torrent is
+# KB-scale, this just bounds how much a hostile/buggy phone client can force
+# this process to decode and write to disk.
+_MAX_TORRENT_BYTES = 8 * 1024 * 1024
+# base64 inflates by ~4/3 -- the raw JSON body carrying it is correspondingly
+# larger than the decoded .torrent size, plus a little headroom for the
+# surrounding JSON envelope itself.
+_MAX_ADD_BODY_BYTES = (_MAX_TORRENT_BYTES * 4 // 3) + 4096
 
 logger = logging.getLogger(__name__)
 
@@ -75,11 +95,18 @@ _REMOTE_ACCESS_PAGE_HTML = """<!doctype html>
            font-size: 0.85rem; }
   button:active { opacity: 0.8; }
   #empty { color: #a3a7b3; font-size: 0.9rem; }
+  #addRow { display: flex; gap: 6px; margin-bottom: 14px; }
+  #addInput { flex: 1; padding: 8px; border-radius: 6px; border: 1px solid #2c2f3a;
+              background: #1a1d24; color: #eaeaea; font-size: 0.85rem; }
 </style>
 </head>
 <body>
 <h1>Torrent 2000 - Remote access</h1>
 <div id="status"></div>
+<div id="addRow">
+  <input id="addInput" type="text" placeholder="magnet:?xt=..." autocapitalize="off" autocorrect="off">
+  <button id="addBtn">Add</button>
+</div>
 <div id="empty" hidden>No torrents.</div>
 <div id="list"></div>
 <script>
@@ -163,6 +190,30 @@ _REMOTE_ACCESS_PAGE_HTML = """<!doctype html>
       });
   }
 
+  document.getElementById("addBtn").addEventListener("click", function () {
+    var input = document.getElementById("addInput");
+    var magnet = input.value.trim();
+    if (!magnet) return;
+    fetch(withToken("/api/torrents/add"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ magnet: magnet }),
+    })
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (data.ok) {
+          input.value = "";
+          document.getElementById("status").textContent = "";
+          refresh();
+        } else {
+          document.getElementById("status").textContent = data.error || "Add failed";
+        }
+      })
+      .catch(function (err) {
+        document.getElementById("status").textContent = "Connection error: " + err.message;
+      });
+  });
+
   refresh();
   setInterval(refresh, 3000);
 })();
@@ -243,8 +294,69 @@ class _RemoteAccessHandler(BaseHTTPRequestHandler):
             else:
                 session_manager.resume_torrent(info_hash)
             self._send_json(HTTPStatus.OK, {"ok": True})
+        elif path == "/api/torrents/add":
+            self._handle_add(split)
         else:
             self._send_json(HTTPStatus.NOT_FOUND, {"error": "not found"})
+
+    def _handle_add(self, split) -> None:
+        """Catalogue idea "ajout de torrent a distance depuis le telephone" --
+        accepts either {"magnet": "..."} or {"torrentBase64": "...",
+        "filename": "..."} (the second is used by no built-in client today --
+        the embedded page below only ever sends a magnet -- but is supported
+        for any other phone client that wants to upload a real .torrent
+        file). Both start immediately, same "no human reviews the file list"
+        convention as the RSS/watch-folder auto-add paths, including the
+        same danger-scanner auto-exclude cutoff."""
+        try:
+            content_length = int(self.headers.get("Content-Length", 0) or 0)
+        except ValueError:
+            content_length = 0
+        if content_length <= 0 or content_length > _MAX_ADD_BODY_BYTES:
+            self._send_json(HTTPStatus.BAD_REQUEST, {"error": "missing or oversized request body"})
+            return
+        try:
+            payload = json.loads(self.rfile.read(content_length))
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            self._send_json(HTTPStatus.BAD_REQUEST, {"error": "invalid JSON body"})
+            return
+        if not isinstance(payload, dict):
+            self._send_json(HTTPStatus.BAD_REQUEST, {"error": "invalid JSON body"})
+            return
+
+        session_manager: SessionManager = self.server.session_manager  # type: ignore[attr-defined]
+        settings: Settings = self.server.settings  # type: ignore[attr-defined]
+        magnet = str(payload.get("magnet") or "").strip()
+        torrent_base64 = payload.get("torrentBase64")
+
+        try:
+            if magnet:
+                info_hash = session_manager.add_torrent_from_magnet(magnet, settings.default_download_dir)
+                session_manager.start_after_analysis(info_hash)
+            elif torrent_base64:
+                info_hash = self._add_from_base64(session_manager, settings, str(torrent_base64))
+            else:
+                self._send_json(HTTPStatus.BAD_REQUEST, {"error": "magnet or torrentBase64 required"})
+                return
+        except Exception as exc:
+            self._send_json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
+            return
+        self._send_json(HTTPStatus.OK, {"ok": True, "info_hash": info_hash})
+
+    @staticmethod
+    def _add_from_base64(session_manager: SessionManager, settings: Settings, torrent_base64: str) -> str:
+        data = base64.b64decode(torrent_base64, validate=True)
+        if len(data) > _MAX_TORRENT_BYTES:
+            raise ValueError("torrent file too large")
+        fd, tmp_path = tempfile.mkstemp(suffix=".torrent", prefix="remote_add_")
+        with os.fdopen(fd, "wb") as f:
+            f.write(data)
+        try:
+            files = files_from_torrent_path(tmp_path)
+            excluded = auto_exclude_indices(scan_files(files), settings.danger_auto_exclude_threshold)
+        except Exception:
+            excluded = set()
+        return session_manager.add_torrent_from_file(tmp_path, settings.default_download_dir, excluded)
 
     def _send_json(self, status: HTTPStatus, payload: dict) -> None:
         body = json.dumps(payload).encode("utf-8")

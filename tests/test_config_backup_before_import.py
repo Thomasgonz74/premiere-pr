@@ -5,6 +5,7 @@ QApplication/QWebEngine needed, consistent with how paths.py-dependent
 helpers are already tested elsewhere (test_crash_logging.py, test_persistence.py).
 """
 
+import json
 import os
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
@@ -29,7 +30,23 @@ def test_backup_snapshots_current_config_content(tmp_path, monkeypatch):
 
     backups = list(get_config_backups_dir().glob("config-*.json"))
     assert len(backups) == 1
-    assert backups[0].read_text(encoding="utf-8") == '{"theme": "luna_xp"}'
+    # Re-serialized (redacted) rather than a byte-for-byte copy -- see
+    # redact_settings_dict() -- so compare parsed content, not raw text.
+    assert json.loads(backups[0].read_text(encoding="utf-8")) == {"theme": "luna_xp"}
+
+
+def test_backup_redacts_proxy_password_and_remote_access_token(tmp_path, monkeypatch):
+    monkeypatch.setenv("TORRENT2000_DATA_DIR", str(tmp_path))
+    get_config_path().write_text(
+        json.dumps({"proxy": {"password": "hunter2"}, "remote_access_token": "s3cret"}), encoding="utf-8"
+    )
+
+    _backup_current_config()
+
+    backups = list(get_config_backups_dir().glob("config-*.json"))
+    data = json.loads(backups[0].read_text(encoding="utf-8"))
+    assert data["proxy"]["password"] == ""
+    assert data["remote_access_token"] == ""
 
 
 def test_only_the_five_most_recent_backups_are_kept(tmp_path, monkeypatch):

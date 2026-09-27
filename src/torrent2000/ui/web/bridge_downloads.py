@@ -138,11 +138,20 @@ class DownloadsBridge(QObject):
     recordRemoved = Signal(str)
 
     def __init__(
-        self, session_manager: SessionManager, bandwidth_scheduler: BandwidthScheduler, parent=None
+        self,
+        session_manager: SessionManager,
+        bandwidth_scheduler: BandwidthScheduler,
+        parent=None,
+        tag_service=None,
     ) -> None:
         super().__init__(parent)
         self._session_manager = session_manager
         self._bandwidth_scheduler = bandwidth_scheduler
+        # Optional (default None, catalogue idea "etiquettes multiples") so
+        # existing callers/tests that construct this bridge without a
+        # TagService keep working unchanged; those tag slots are simply
+        # no-ops (empty list / never called) without one.
+        self._tag_service = tag_service
         session_manager.torrent_added.connect(self._on_added_or_updated)
         session_manager.torrent_status_updated.connect(self._on_status_updated)
         session_manager.torrent_removed.connect(self.recordRemoved.emit)
@@ -212,6 +221,26 @@ class DownloadsBridge(QObject):
     @Slot(result="QVariantList")
     def listCategories(self) -> list:
         return self._session_manager.list_categories()
+
+    # ---------------------------------------------------------- tags (catalogue idea)
+
+    @Slot(str, result="QVariantList")
+    def getTags(self, info_hash: str) -> list:
+        return self._tag_service.get(info_hash) if self._tag_service is not None else []
+
+    @Slot(str, str)
+    def addTag(self, info_hash: str, tag: str) -> None:
+        if self._tag_service is not None:
+            self._tag_service.add(info_hash, tag)
+
+    @Slot(str, str)
+    def removeTag(self, info_hash: str, tag: str) -> None:
+        if self._tag_service is not None:
+            self._tag_service.remove(info_hash, tag)
+
+    @Slot(result="QVariantList")
+    def listAllTags(self) -> list:
+        return self._tag_service.all_tags() if self._tag_service is not None else []
 
     @Slot(str)
     def moveQueueUp(self, info_hash: str) -> None:

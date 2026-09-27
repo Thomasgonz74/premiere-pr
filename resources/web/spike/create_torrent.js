@@ -20,15 +20,15 @@ function openCreateTorrentDialog() {
   const sourceRow = document.createElement("div");
   sourceRow.className = "field-row";
   const chooseFileBtn = document.createElement("button");
-  chooseFileBtn.textContent = "Choisir un fichier…";
+  chooseFileBtn.textContent = t("web.create_torrent.choose_file_button");
   const chooseFolderBtn = document.createElement("button");
-  chooseFolderBtn.textContent = "Choisir un dossier…";
+  chooseFolderBtn.textContent = t("web.create_torrent.choose_folder_button");
   sourceRow.appendChild(chooseFileBtn);
   sourceRow.appendChild(chooseFolderBtn);
   content.appendChild(sourceRow);
 
   chooseFileBtn.addEventListener("click", () => {
-    dialogs.browseOpenFile("Tous les fichiers (*)", (path) => {
+    dialogs.browseOpenFile(t("web.create_torrent.all_files_filter"), (path) => {
       if (!path) return;
       sourcePath = path;
       sourceLabel.textContent = path;
@@ -45,7 +45,7 @@ function openCreateTorrentDialog() {
   // ---- Trackers ----
   const trackersLabel = document.createElement("p");
   trackersLabel.className = "field-label";
-  trackersLabel.textContent = "Trackers";
+  trackersLabel.textContent = t("create_torrent.trackers_group");
   content.appendChild(trackersLabel);
 
   const trackersList = document.createElement("ul");
@@ -58,7 +58,7 @@ function openCreateTorrentDialog() {
   trackerInput.type = "text";
   trackerInput.placeholder = "http://tracker.example.com/announce";
   const addTrackerBtn = document.createElement("button");
-  addTrackerBtn.textContent = "Ajouter";
+  addTrackerBtn.textContent = t("common.add");
   trackerAddRow.appendChild(trackerInput);
   trackerAddRow.appendChild(addTrackerBtn);
   content.appendChild(trackerAddRow);
@@ -68,7 +68,7 @@ function openCreateTorrentDialog() {
     if (!url) return;
     const li = document.createElement("li");
     li.textContent = url;
-    li.title = "Cliquer pour retirer";
+    li.title = t("web.create_torrent.click_to_remove");
     li.style.cursor = "pointer";
     li.addEventListener("click", () => li.remove());
     trackersList.appendChild(li);
@@ -81,7 +81,7 @@ function openCreateTorrentDialog() {
   const privateCheckbox = document.createElement("input");
   privateCheckbox.type = "checkbox";
   const privateText = document.createElement("span");
-  privateText.textContent = "Torrent privé";
+  privateText.textContent = t("create_torrent.private_checkbox");
   privateRow.appendChild(privateCheckbox);
   privateRow.appendChild(privateText);
   content.appendChild(privateRow);
@@ -90,7 +90,7 @@ function openCreateTorrentDialog() {
   commentRow.className = "field-row";
   const commentLabel = document.createElement("span");
   commentLabel.className = "field-label inline";
-  commentLabel.textContent = "Commentaire";
+  commentLabel.textContent = t("web.create_torrent.comment_label");
   const commentInput = document.createElement("input");
   commentInput.type = "text";
   commentRow.appendChild(commentLabel);
@@ -106,9 +106,9 @@ function openCreateTorrentDialog() {
   const buttonRow = document.createElement("div");
   buttonRow.className = "modal-close-row";
   const createBtn = document.createElement("button");
-  createBtn.textContent = "Créer…";
+  createBtn.textContent = t("web.create_torrent.create_button");
   const cancelBtn = document.createElement("button");
-  cancelBtn.textContent = "Annuler";
+  cancelBtn.textContent = t("common.cancel");
   buttonRow.appendChild(createBtn);
   buttonRow.appendChild(cancelBtn);
   content.appendChild(buttonRow);
@@ -117,7 +117,7 @@ function openCreateTorrentDialog() {
 
   createBtn.addEventListener("click", () => {
     if (!sourcePath) {
-      status.textContent = "Choisissez d'abord un fichier ou un dossier source.";
+      status.textContent = t("web.create_torrent.no_source_message");
       return;
     }
     const defaultName = sourcePath.split(/[\\/]/).pop() + ".torrent";
@@ -132,7 +132,7 @@ function openCreateTorrentDialog() {
         commentInput.value.trim(),
         (result) => {
           if (result.ok) {
-            status.textContent = "Torrent créé : " + outputPath;
+            status.textContent = t("web.create_torrent.created", { path: outputPath });
             closeModal();
           } else {
             status.textContent = result.error;
@@ -142,5 +142,5 @@ function openCreateTorrentDialog() {
     });
   });
 
-  openModal("Créer un torrent", content);
+  openModal(t("create_torrent.window_title"), content);
 }

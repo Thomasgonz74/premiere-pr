@@ -87,3 +87,24 @@ def test_language_labels_are_shown_in_their_own_language_not_translated():
     assert ("Français", "fr") in translator.LANGUAGE_LABELS
     assert ("English", "en") in translator.LANGUAGE_LABELS
     assert ("Русский", "ru") in translator.LANGUAGE_LABELS
+
+
+def test_effective_catalog_for_french_is_just_the_french_catalog():
+    translator.set_language("fr")
+    catalog = translator.effective_catalog()
+    assert catalog["common.cancel"] == "Annuler"
+
+
+def test_effective_catalog_falls_back_to_french_for_a_key_missing_in_the_target_language(tmp_path, monkeypatch):
+    monkeypatch.setattr(translator, "resource_path", lambda rel: tmp_path if rel == "resources/i18n" else tmp_path)
+    (tmp_path / "xx.json").write_text(json.dumps({"common.cancel": "XX-CANCEL"}), encoding="utf-8")
+    (tmp_path / "fr.json").write_text(json.dumps({"common.cancel": "Annuler", "common.add": "Ajouter"}), encoding="utf-8")
+
+    translator._VALID_LANGUAGE_CODES.add("xx")
+    try:
+        translator.set_language("xx")
+        catalog = translator.effective_catalog()
+        assert catalog["common.cancel"] == "XX-CANCEL"  # present in xx -> used directly
+        assert catalog["common.add"] == "Ajouter"  # missing in xx -> falls back to fr
+    finally:
+        translator._VALID_LANGUAGE_CODES.discard("xx")

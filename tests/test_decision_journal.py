@@ -52,12 +52,45 @@ class FakeDiskSpaceMonitor(QObject):
     low_space_warning = Signal(str, str)
 
 
+class FakeShareLimitService(QObject):
+    limit_reached = Signal(str, str)
+
+
+class FakeAutoShutdownService(QObject):
+    shutdown_countdown_started = Signal(int)
+
+
+class FakeRssFeedService(QObject):
+    items_found = Signal(str, list)
+
+
 def _wired_service():
     session_manager = FakeSessionManager()
     known_disk_service = FakeKnownDiskService()
     disk_space_monitor = FakeDiskSpaceMonitor()
     service = DecisionJournalService(session_manager, known_disk_service, disk_space_monitor)
     return service, session_manager, known_disk_service, disk_space_monitor
+
+
+def _fully_wired_service():
+    session_manager = FakeSessionManager()
+    known_disk_service = FakeKnownDiskService()
+    disk_space_monitor = FakeDiskSpaceMonitor()
+    share_limit_service = FakeShareLimitService()
+    auto_shutdown_service = FakeAutoShutdownService()
+    rss_feed_service = FakeRssFeedService()
+    service = DecisionJournalService(
+        session_manager,
+        known_disk_service,
+        disk_space_monitor,
+        share_limit_service=share_limit_service,
+        auto_shutdown_service=auto_shutdown_service,
+        rss_feed_service=rss_feed_service,
+    )
+    # `service` itself must be kept alive by the caller -- with no parent and
+    # no Python reference held here, it would be garbage-collected (and its
+    # Qt connections silently dropped) the moment this function returns.
+    return session_manager, share_limit_service, auto_shutdown_service, rss_feed_service, service
 
 
 def test_read_recent_entries_empty_when_no_file_exists():
@@ -123,3 +156,43 @@ def test_entries_are_returned_most_recent_first():
     # recent_entries() is the same read, exposed as a static method for the
     # bridge to call without importing the module function directly.
     assert service.recent_entries(1) == [entries[0]]
+
+
+def test_optional_services_default_to_none_without_raising():
+    # The three new params are optional so existing callers/tests (like
+    # _wired_service above) that only cover the original three signals keep
+    # working unchanged.
+    _wired_service()
+
+
+def test_limit_reached_journals_the_torrent_name_and_reason():
+    session_manager, share_limit_service, _asd, _rfs, _svc = _fully_wired_service()
+    session_manager.records["abc123"] = FakeRecord("Example.Torrent")
+
+    share_limit_service.limit_reached.emit("abc123", "ratio")
+
+    entries = read_recent_entries()
+    assert "Example.Torrent" in entries[0]["text"]
+    assert "ratio" in entries[0]["text"]
+
+
+def test_shutdown_countdown_started_journals_the_delay():
+    _sm, _sls, auto_shutdown_service, _rfs, _svc = _fully_wired_service()
+
+    auto_shutdown_service.shutdown_countdown_started.emit(60)
+
+    entries = read_recent_entries()
+    assert "60" in entries[0]["text"]
+
+
+def test_rss_items_found_journals_titles_and_redacts_the_feed_url():
+    _sm, _sls, _asd, rss_feed_service, _svc = _fully_wired_service()
+
+    rss_feed_service.items_found.emit(
+        "https://tracker.example/rss?passkey=SECRET123", [{"title": "Ubuntu.24.04", "guid": "g1"}]
+    )
+
+    entries = read_recent_entries()
+    assert "Ubuntu.24.04" in entries[0]["text"]
+    assert "SECRET123" not in entries[0]["text"]
+    assert "tracker.example/rss" in entries[0]["text"]

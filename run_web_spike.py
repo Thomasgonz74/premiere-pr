@@ -19,6 +19,7 @@ from torrent2000.engine.antivirus_scan_service import AntivirusScanService
 from torrent2000.engine.auto_shutdown_service import AutoShutdownService
 from torrent2000.engine.battery_pause_service import BatteryPauseService
 from torrent2000.engine.bandwidth_scheduler import BandwidthScheduler
+from torrent2000.engine.clipboard_watcher_service import ClipboardWatcherService
 from torrent2000.engine.decision_journal import DecisionJournalService
 from torrent2000.engine.disk_reconnect_service import DiskReconnectService
 from torrent2000.engine.disk_space_monitor import DiskSpaceMonitor
@@ -26,16 +27,22 @@ from torrent2000.engine.idle_activity_service import IdleActivityService
 from torrent2000.engine.known_disk_service import KnownDiskService, KnownDiskStore
 from torrent2000.engine.memory_pressure_governor import MemoryPressureGovernor
 from torrent2000.engine.network_profile_switcher import NetworkProfileStore, NetworkProfileSwitcherService
+from torrent2000.engine.post_complete_action_service import PostCompleteActionService
 from torrent2000.engine.remote_server import RemoteAccessServer
 from torrent2000.engine.routing_rules import RoutingRuleStore
 from torrent2000.engine.rss_feed_service import RssFeedService
 from torrent2000.engine.rss_seen_store import RssSeenStore
+from torrent2000.engine.scheduled_recheck_service import ScheduledRecheckService
 from torrent2000.engine.session_manager import SessionManager
 from torrent2000.engine.settings_profiles import SettingsProfileStore
 from torrent2000.engine.share_limits import ShareLimitService
+from torrent2000.engine.tag_service import TagService
+from torrent2000.engine.torrent_search_service import TorrentSearchSourceStore
 from torrent2000.engine.single_instance import SingleInstanceGuard
 from torrent2000.engine.update_checker import UpdateChecker
 from torrent2000.engine.watch_folder_service import WatchFolderService
+from torrent2000.engine.webhook_notification_service import WebhookNotificationService
+from torrent2000.i18n.translator import set_language
 from torrent2000.logging_setup import _setup_logging
 from torrent2000.stats.history_service import HistoryService
 from torrent2000.stats.history_store import HistoryStore
@@ -58,6 +65,10 @@ def main() -> int:
 
     _setup_logging()
     settings = Settings.load()
+    # native app has the same gap (set_language is otherwise only called from
+    # bridge_profile_general.py's live-change slot) -- without this, every
+    # fresh launch would show French regardless of the saved language.
+    set_language(settings.language)
     session_manager = SessionManager(settings)
     share_limit_service = ShareLimitService(session_manager, settings)
     watch_folder_service = WatchFolderService(session_manager, settings)
@@ -80,6 +91,16 @@ def main() -> int:
     if settings.remote_access_enabled:
         remote_access_server.start()
     routing_rule_store = RoutingRuleStore()
+    # Shares this exact instance (not its own RoutingRuleStore()) so a rule
+    # edited via the Profile tab's routing-rules editor (bridge_profile_advanced.py,
+    # which also holds this instance) is visible immediately, not just after
+    # a restart.
+    post_complete_action_service = PostCompleteActionService(session_manager, routing_rule_store)
+    scheduled_recheck_service = ScheduledRecheckService(session_manager, settings)
+    webhook_notification_service = WebhookNotificationService(session_manager, share_limit_service, settings)
+    tag_service = TagService()
+    clipboard_watcher_service = ClipboardWatcherService(settings)
+    torrent_search_source_store = TorrentSearchSourceStore()
     settings_profile_store = SettingsProfileStore()
     auto_shutdown_service = AutoShutdownService(session_manager, settings)
     anthem_player = AnthemPlayer(settings.audio_volume)
@@ -89,7 +110,14 @@ def main() -> int:
     network_profile_switcher_service = NetworkProfileSwitcherService(
         session_manager, settings, network_profile_store, settings_profile_store
     )
-    decision_journal_service = DecisionJournalService(session_manager, known_disk_service, disk_space_monitor)
+    decision_journal_service = DecisionJournalService(
+        session_manager,
+        known_disk_service,
+        disk_space_monitor,
+        share_limit_service=share_limit_service,
+        auto_shutdown_service=auto_shutdown_service,
+        rss_feed_service=rss_feed_service,
+    )
 
     window = SpikeWindow(
         session_manager,
@@ -110,6 +138,9 @@ def main() -> int:
         known_disk_service=known_disk_service,
         network_profile_store=network_profile_store,
         decision_journal_service=decision_journal_service,
+        tag_service=tag_service,
+        clipboard_watcher_service=clipboard_watcher_service,
+        torrent_search_source_store=torrent_search_source_store,
     )
     # Second-launch arguments arriving later, forwarded by SingleInstanceGuard
     # (empty when a later launch had none, e.g. the exe was just reopened).

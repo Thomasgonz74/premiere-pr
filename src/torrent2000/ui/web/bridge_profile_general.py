@@ -81,6 +81,8 @@ class ProfileGeneralBridge(QObject):
             "maxActiveDownloads": s.max_active_downloads,
             "dangerAutoExcludeThreshold": s.danger_auto_exclude_threshold,
             "notificationsEnabled": s.notifications_enabled,
+            "webhookEnabled": s.webhook_enabled,
+            "webhookUrl": s.webhook_url,
             "launchAtStartup": s.launch_at_startup,
             "checkForUpdates": s.check_for_updates,
             "minimizeToTray": s.minimize_to_tray,
@@ -101,6 +103,8 @@ class ProfileGeneralBridge(QObject):
             0, min(100, int(values.get("dangerAutoExcludeThreshold", s.danger_auto_exclude_threshold)))
         )
         s.notifications_enabled = bool(values.get("notificationsEnabled", s.notifications_enabled))
+        s.webhook_enabled = bool(values.get("webhookEnabled", s.webhook_enabled))
+        s.webhook_url = str(values.get("webhookUrl", s.webhook_url)).strip()
         new_launch_at_startup = bool(values.get("launchAtStartup", s.launch_at_startup))
         if new_launch_at_startup != s.launch_at_startup:
             # Only touch the registry when the checkbox actually changed --

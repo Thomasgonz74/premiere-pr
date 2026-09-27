@@ -3,7 +3,7 @@
 // getSettings/saveSettings pair here, just a pushed snapshot + a
 // full-refresh-on-change history table, mirroring the native widgets.
 
-const HISTORY_EVENT_LABELS = { removed: "Retiré" };
+const HISTORY_EVENT_LABELS = { removed: "web.profile_stats.history_event_removed" };
 
 // Cached once by buildProfileStatsSection() (called exactly once per page
 // load) so statsFormatSnapshot() -- driven by a signal pushed on every
@@ -14,12 +14,14 @@ let statsProgressLabelEl;
 let statsTotalsLabelEl;
 
 function statsFormatSnapshot(snap) {
-  statsLevelValueEl.textContent = `Niveau ${snap.level}`;
+  statsLevelValueEl.textContent = t("profile_tab.level_value", { level: snap.level });
   const percent = Math.round(snap.progressToNext * 100);
   statsProgressFillEl.style.width = `${percent}%`;
   statsProgressLabelEl.textContent = `${percent}%`;
-  statsTotalsLabelEl.textContent =
-    `Téléchargé : ${formatSize(snap.totalDownloaded)}  —  Envoyé : ${formatSize(snap.totalUploaded)}`;
+  statsTotalsLabelEl.textContent = t("web.profile_stats.totals_label", {
+    downloaded: formatSize(snap.totalDownloaded),
+    uploaded: formatSize(snap.totalUploaded),
+  });
 }
 
 function statsRenderHistory(entries) {
@@ -28,7 +30,7 @@ function statsRenderHistory(entries) {
   if (!entries.length) {
     const note = document.createElement("p");
     note.className = "empty-note";
-    note.textContent = "Aucun historique pour l'instant.";
+    note.textContent = t("web.profile_stats.empty_history");
     body.appendChild(note);
     return;
   }
@@ -64,7 +66,8 @@ function statsRenderHistory(entries) {
 
     const eventEl = document.createElement("span");
     eventEl.className = "history-cell";
-    eventEl.textContent = HISTORY_EVENT_LABELS[entry.event] || entry.event;
+    const eventKey = HISTORY_EVENT_LABELS[entry.event];
+    eventEl.textContent = eventKey ? t(eventKey) : entry.event;
     row.appendChild(eventEl);
 
     body.appendChild(row);
@@ -82,7 +85,8 @@ function buildProfileStatsSection() {
   levelGroup.className = "form-grid";
   const levelHeading = document.createElement("h3");
   levelHeading.className = "profile-section-heading";
-  levelHeading.textContent = "Niveau et statistiques";
+  levelHeading.textContent = t("web.profile_stats.heading_level");
+  levelHeading.dataset.i18nKey = "web.profile_stats.heading_level";
   levelGroup.appendChild(levelHeading);
 
   const levelValue = document.createElement("p");
@@ -119,14 +123,24 @@ function buildProfileStatsSection() {
   historyGroup.className = "form-grid";
   const historyHeading = document.createElement("h3");
   historyHeading.className = "profile-section-heading";
-  historyHeading.textContent = "Historique";
+  historyHeading.textContent = t("web.profile_stats.heading_history");
+  historyHeading.dataset.i18nKey = "web.profile_stats.heading_history";
   historyGroup.appendChild(historyHeading);
 
   const historyHeader = document.createElement("div");
   historyHeader.className = "history-row history-header";
-  ["Nom", "Taille", "Téléchargé", "Envoyé", "Terminé le", "Événement"].forEach((label) => {
+  const historyColumnKeys = [
+    "profile_tab.history_column_name",
+    "profile_tab.history_column_size",
+    "profile_tab.history_column_downloaded",
+    "profile_tab.history_column_uploaded",
+    "web.profile_stats.column_finished_at",
+    "web.profile_stats.column_event",
+  ];
+  historyColumnKeys.forEach((key) => {
     const cell = document.createElement("span");
-    cell.textContent = label;
+    cell.textContent = t(key);
+    cell.dataset.i18nKey = key;
     historyHeader.appendChild(cell);
   });
   historyGroup.appendChild(historyHeader);
@@ -140,11 +154,13 @@ function buildProfileStatsSection() {
   buttonRow.className = "field-row";
   const exportBtn = document.createElement("button");
   exportBtn.id = "statsExportCsvBtn";
-  exportBtn.textContent = "Exporter CSV";
+  exportBtn.textContent = t("web.profile_stats.export_csv_button");
+  exportBtn.dataset.i18nKey = "web.profile_stats.export_csv_button";
   buttonRow.appendChild(exportBtn);
   const clearBtn = document.createElement("button");
   clearBtn.id = "statsClearHistoryBtn";
-  clearBtn.textContent = "Effacer l'historique";
+  clearBtn.textContent = t("web.profile_stats.clear_history_button");
+  clearBtn.dataset.i18nKey = "web.profile_stats.clear_history_button";
   buttonRow.appendChild(clearBtn);
   historyGroup.appendChild(buttonRow);
 
@@ -173,16 +189,16 @@ function wireProfileStats() {
       if (!path) return;
       bridge.exportHistoryCsv(path, (result) => {
         document.getElementById("statsHistoryStatus").textContent = result.ok
-          ? "Export réussi."
-          : result.error || "Échec de l'export.";
+          ? t("web.profile_stats.export_success")
+          : result.error || t("web.profile_stats.export_failed");
       });
     });
   });
 
   document.getElementById("statsClearHistoryBtn").addEventListener("click", () => {
-    if (!confirm("Effacer tout l'historique ? Cette action est irréversible.")) return;
+    if (!confirm(t("web.profile_stats.clear_history_confirm"))) return;
     bridge.clearHistory(() => {
-      document.getElementById("statsHistoryStatus").textContent = "Historique effacé.";
+      document.getElementById("statsHistoryStatus").textContent = t("web.profile_stats.history_cleared");
     });
   });
 }

@@ -12,7 +12,12 @@ function renderTrackerEditor(containerEl, infoHash) {
   const header = document.createElement("div");
   header.className = "row";
   header.style.fontWeight = "bold";
-  ["URL", "Niveau", "Dernière erreur", "Action"].forEach((text) => {
+  [
+    t("tracker_editor.column_url"),
+    t("tracker_editor.column_tier"),
+    t("tracker_editor.column_last_error"),
+    t("tracker_editor.column_action"),
+  ].forEach((text) => {
     const cell = document.createElement("div");
     cell.textContent = text;
     header.appendChild(cell);
@@ -30,7 +35,7 @@ function renderTrackerEditor(containerEl, infoHash) {
   urlInput.placeholder = "http://tracker.example.com/announce";
   addRow.appendChild(urlInput);
   const addBtn = document.createElement("button");
-  addBtn.textContent = "Ajouter";
+  addBtn.textContent = t("common.add");
   addBtn.addEventListener("click", () => {
     const url = urlInput.value.trim();
     if (!url) return;
@@ -47,7 +52,7 @@ function renderTrackerEditor(containerEl, infoHash) {
     if (trackers.length === 0) {
       const note = document.createElement("p");
       note.className = "empty-note";
-      note.textContent = "Aucun tracker.";
+      note.textContent = t("web.tracker_editor.no_trackers");
       list.appendChild(note);
       return;
     }
@@ -74,7 +79,7 @@ function renderTrackerEditor(containerEl, infoHash) {
       const actions = document.createElement("div");
       actions.className = "row-actions";
       const removeBtn = document.createElement("button");
-      removeBtn.textContent = "Retirer";
+      removeBtn.textContent = t("common.remove");
       removeBtn.addEventListener("click", () => {
         window.bridge.trackerEditor.removeTracker(infoHash, tracker.url);
         renderTrackerEditor(containerEl, infoHash);

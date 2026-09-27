@@ -71,3 +71,24 @@ def test_metadata_not_yet_available_returns_zero(tmp_path):
     sm = _session_manager_with_handle("hash1", str(tmp_path), handle)
 
     assert sm.get_allocated_size("hash1") == 0
+
+
+def test_path_traversal_entry_is_excluded_from_the_sum(tmp_path):
+    (tmp_path / "inside.bin").write_bytes(b"x" * 100)
+    outside_dir = tmp_path.parent / "outside_confinement_test"
+    outside_dir.mkdir(exist_ok=True)
+    (outside_dir / "escaped.bin").write_bytes(b"y" * 999)
+    try:
+        handle = MagicMock()
+        # A torrent-internal path crafted with ../ segments to point outside
+        # save_path -- see SessionManager._is_confined.
+        escaped_relative = os.path.relpath(outside_dir / "escaped.bin", tmp_path)
+        handle.torrent_file.return_value = _mock_torrent_info(
+            [("inside.bin", 100), (escaped_relative, 999)]
+        )
+        sm = _session_manager_with_handle("hash1", str(tmp_path), handle)
+
+        assert sm.get_allocated_size("hash1") == 100
+    finally:
+        (outside_dir / "escaped.bin").unlink(missing_ok=True)
+        outside_dir.rmdir()

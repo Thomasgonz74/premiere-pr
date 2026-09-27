@@ -58,6 +58,15 @@ def current_language() -> str:
     return _current_language
 
 
+def effective_catalog() -> dict[str, str]:
+    """The full key -> text mapping for the active language, French-fallback
+    already resolved -- used by ui/web/bridge_i18n.py to hand the web UI one
+    flat dict instead of re-implementing tr()'s fallback logic in JS."""
+    merged = dict(_load_catalog(DEFAULT_LANGUAGE))
+    merged.update(_load_catalog(_current_language))
+    return merged
+
+
 def tr(key: str, **kwargs) -> str:
     """Look up `key` in the active language's catalog, falling back to
     French and then to the key itself, so a missing/mistyped key degrades

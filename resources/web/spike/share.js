@@ -2,24 +2,24 @@
 // server's tracked_info_hashes() (see bridge_share.py), not from a client
 // side filter -- the bridge only ever pushes rows for tracked torrents.
 
-const SHARE_STATE_LABELS = {
-  QUEUED: "En file",
-  CHECKING_METADATA: "Vérification métadonnées",
-  AWAITING_ANALYSIS: "En attente d'analyse",
-  DOWNLOADING: "Téléchargement",
-  PAUSED: "En pause",
-  SEEDING: "Partage",
-  FINISHED: "Terminé",
-  ERROR: "Erreur",
+const SHARE_STATE_KEYS = {
+  QUEUED: "web.share.state_queued",
+  CHECKING_METADATA: "web.share.state_checking_metadata",
+  AWAITING_ANALYSIS: "downloads_tab.state_awaiting_analysis",
+  DOWNLOADING: "downloads_tab.state_downloading",
+  PAUSED: "share_tab.state_paused",
+  SEEDING: "web.share.state_seeding",
+  FINISHED: "downloads_tab.state_finished",
+  ERROR: "share_tab.state_error",
 };
-const REASON_LABELS = { time: "Limite de temps atteinte", data: "Limite de données atteinte", ratio: "Ratio atteint" };
+const REASON_KEYS = { time: "share_tab.limit_reason_time", data: "share_tab.limit_reason_data", ratio: "web.share.limit_reason_ratio" };
 
 const shareRows = new Map(); // infoHash -> el
 let shareSelectedPath = null;
 
 function shareStateText(record) {
-  if (record.reached) return REASON_LABELS[record.reachedReason] || "Limite atteinte";
-  return SHARE_STATE_LABELS[record.state] || record.state;
+  if (record.reached) return REASON_KEYS[record.reachedReason] ? t(REASON_KEYS[record.reachedReason]) : t("share_tab.limit_reached");
+  return SHARE_STATE_KEYS[record.state] ? t(SHARE_STATE_KEYS[record.state]) : record.state;
 }
 
 function shareEnsureRow(record) {
@@ -82,13 +82,13 @@ function shareEnsureRow(record) {
     const infoHash = record.infoHash;
     const name = el.querySelector(".row-name").textContent;
     showContextMenu(event.clientX, event.clientY, [
-      { label: "Voir les pairs", onClick: () => openPeerListDialog(infoHash, name) },
-      { label: "Graphique de vitesse", onClick: () => openSpeedGraphDialog(infoHash, name) },
-      { label: "Modifier les fichiers…", onClick: () => openFilePriorityDialog(infoHash, name) },
+      { label: t("common.context_view_peers"), onClick: () => openPeerListDialog(infoHash, name) },
+      { label: t("speed_graph.dialog_title"), onClick: () => openSpeedGraphDialog(infoHash, name) },
+      { label: t("web.share.context_edit_files"), onClick: () => openFilePriorityDialog(infoHash, name) },
       { separator: true },
-      { label: "Revérifier", onClick: () => window.bridge.share.recheckTorrent(infoHash) },
+      { label: t("common.context_recheck"), onClick: () => window.bridge.share.recheckTorrent(infoHash) },
       {
-        label: "Déplacer les données…",
+        label: t("web.share.context_move_data"),
         onClick: () => {
           window.bridge.dialogs.browseFolder("", (path) => {
             if (path) window.bridge.share.moveStorage(infoHash, path);
@@ -96,7 +96,7 @@ function shareEnsureRow(record) {
         },
       },
       { separator: true },
-      { label: "Supprimer", onClick: () => window.bridge.share.removeTorrent(infoHash, false) },
+      { label: t("settings_profiles.delete_button"), onClick: () => window.bridge.share.removeTorrent(infoHash, false) },
     ]);
   });
 
@@ -143,7 +143,7 @@ function shareRemoveRow(infoHash) {
     const note = document.createElement("p");
     note.className = "empty-note";
     note.id = "shareEmptyNote";
-    note.textContent = "Aucun torrent partagé — ajoutez-en un ci-dessus pour le voir apparaître ici en direct.";
+    note.textContent = t("web.share.no_shares");
     document.getElementById("shareList").appendChild(note);
   }
 }
@@ -204,7 +204,7 @@ function wireSharePage() {
   });
 
   shareBridge.started.connect(() => {
-    document.getElementById("shareStatus").textContent = "Partage démarré.";
+    document.getElementById("shareStatus").textContent = t("web.share.share_started_status");
     shareResetForm();
   });
   shareBridge.recordUpdated.connect(shareRenderRow);

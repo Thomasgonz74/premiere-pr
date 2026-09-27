@@ -31,6 +31,8 @@ class FakeSessionManager(QObject):
     tracker_error = Signal(str, str)
     file_error = Signal(str, str)
     torrent_removed = Signal(str)
+    theme_downloads_paused = Signal(int)
+    storage_moved = Signal(str, str)
 
     def __init__(self) -> None:
         super().__init__()

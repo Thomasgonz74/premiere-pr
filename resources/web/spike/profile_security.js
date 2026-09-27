@@ -1,19 +1,21 @@
 // Profile / Security-Data page wiring. Mirrors profile_sections.py's
 // SecuritySection + DiagnosticsSection + ConfigImportExportSection.
 
-function profileSecurityBuildSection(title) {
+function profileSecurityBuildSection(key) {
   const section = document.createElement("fieldset");
   section.className = "profile-subsection";
   const legend = document.createElement("legend");
-  legend.textContent = title;
+  legend.textContent = t(key);
+  legend.dataset.i18nKey = key;
   section.appendChild(legend);
   return section;
 }
 
-function profileSecurityNote(text) {
+function profileSecurityNote(key) {
   const note = document.createElement("p");
   note.className = "field-note";
-  note.textContent = text;
+  note.textContent = t(key);
+  note.dataset.i18nKey = key;
   return note;
 }
 
@@ -28,14 +30,13 @@ function wireProfileSecurity() {
 
   // -- Sécurité ----------------------------------------------------------
 
-  const securitySection = profileSecurityBuildSection("Sécurité");
+  const securitySection = profileSecurityBuildSection("profile_tab.security_group");
   const defenderBtn = document.createElement("button");
-  defenderBtn.textContent = "Ouvrir Windows Defender";
+  defenderBtn.textContent = t("web.profile_security.open_defender_button");
+  defenderBtn.dataset.i18nKey = "web.profile_security.open_defender_button";
   defenderBtn.addEventListener("click", () => bridge.openDefender());
   securitySection.appendChild(defenderBtn);
-  securitySection.appendChild(
-    profileSecurityNote("Ouvre la page des exclusions de Windows Security — ajoutez-en une vous-même si besoin.")
-  );
+  securitySection.appendChild(profileSecurityNote("web.profile_security.defender_note"));
 
   const scanRow = document.createElement("div");
   scanRow.className = "field-row";
@@ -45,17 +46,21 @@ function wireProfileSecurity() {
   const scanLabel = document.createElement("label");
   scanLabel.className = "field-label inline";
   scanLabel.htmlFor = "profileSecurityScanCheck";
-  scanLabel.textContent = "Analyser les fichiers téléchargés avec Windows Defender";
+  scanLabel.textContent = t("web.profile_security.scan_checkbox");
+  scanLabel.dataset.i18nKey = "web.profile_security.scan_checkbox";
   scanRow.appendChild(scanCheck);
   scanRow.appendChild(scanLabel);
   securitySection.appendChild(scanRow);
 
   const securitySaveBtn = document.createElement("button");
   securitySaveBtn.className = "start-btn";
-  securitySaveBtn.textContent = "Enregistrer";
+  securitySaveBtn.textContent = t("profile_tab.save_button");
+  securitySaveBtn.dataset.i18nKey = "profile_tab.save_button";
   securitySaveBtn.addEventListener("click", () => {
     bridge.saveSettings({ scanCompletedFilesWithDefender: scanCheck.checked }, (result) => {
-      status.textContent = result.ok ? "Paramètres de sécurité enregistrés." : result.error || "Échec de l'enregistrement.";
+      status.textContent = result.ok
+        ? t("web.profile_security.settings_saved")
+        : result.error || t("web.profile_security.save_failed");
     });
   });
   securitySection.appendChild(securitySaveBtn);
@@ -66,72 +71,72 @@ function wireProfileSecurity() {
 
   // -- Diagnostics ---------------------------------------------------------
 
-  const diagnosticsSection = profileSecurityBuildSection("Diagnostics");
+  const diagnosticsSection = profileSecurityBuildSection("web.profile_security.diagnostics_heading");
   const openLogsBtn = document.createElement("button");
-  openLogsBtn.textContent = "Ouvrir le dossier des journaux";
+  openLogsBtn.textContent = t("web.profile_security.open_logs_button");
+  openLogsBtn.dataset.i18nKey = "web.profile_security.open_logs_button";
   openLogsBtn.addEventListener("click", () => bridge.openLogsFolder());
   diagnosticsSection.appendChild(openLogsBtn);
 
   const copyLogBtn = document.createElement("button");
-  copyLogBtn.textContent = "Copier le journal";
+  copyLogBtn.textContent = t("web.profile_security.copy_log_button");
+  copyLogBtn.dataset.i18nKey = "web.profile_security.copy_log_button";
   copyLogBtn.addEventListener("click", () => {
     bridge.copyLogToClipboard((result) => {
       if (!result.ok) {
-        status.textContent = "Aucun journal disponible.";
+        status.textContent = t("web.profile_security.no_log");
         return;
       }
       navigator.clipboard
         .writeText(result.text)
-        .then(() => (status.textContent = "Journal copié dans le presse-papiers."))
-        .catch(() => (status.textContent = "Impossible d'accéder au presse-papiers."));
+        .then(() => (status.textContent = t("web.profile_security.log_copied")))
+        .catch(() => (status.textContent = t("web.profile_security.clipboard_error")));
     });
   });
   diagnosticsSection.appendChild(copyLogBtn);
-  diagnosticsSection.appendChild(
-    profileSecurityNote("Copiez le journal pour le joindre à un rapport de bug.")
-  );
+  diagnosticsSection.appendChild(profileSecurityNote("web.profile_security.copy_log_note"));
 
   // -- Configuration ---------------------------------------------------------
 
-  const configSection = profileSecurityBuildSection("Configuration");
+  const configSection = profileSecurityBuildSection("profile_tab.config_group");
   const configRow = document.createElement("div");
   configRow.className = "field-row";
 
   const exportBtn = document.createElement("button");
-  exportBtn.textContent = "Exporter…";
+  exportBtn.textContent = t("web.profile_security.export_button");
+  exportBtn.dataset.i18nKey = "web.profile_security.export_button";
   exportBtn.addEventListener("click", () => {
     dialogs.browseSaveFile("torrent2000_config.json", "JSON (*.json)", (path) => {
       if (!path) return;
       bridge.exportConfig(path, (result) => {
         status.textContent = result.ok
-          ? `Configuration exportée vers ${path}.`
-          : result.error || "Échec de l'export.";
+          ? t("web.profile_security.export_success", { path })
+          : result.error || t("web.profile_security.export_failed");
       });
     });
   });
   configRow.appendChild(exportBtn);
 
   const importBtn = document.createElement("button");
-  importBtn.textContent = "Importer…";
+  importBtn.textContent = t("web.profile_security.import_button");
+  importBtn.dataset.i18nKey = "web.profile_security.import_button";
   importBtn.addEventListener("click", () => {
     dialogs.browseOpenFile("JSON (*.json)", (path) => {
       if (!path) return;
-      if (!confirm("Remplacer la configuration actuelle par le fichier importé ? Un redémarrage sera nécessaire.")) {
+      if (!confirm(t("web.profile_security.import_confirm"))) {
         return;
       }
       bridge.importConfig(path, (result) => {
         status.textContent = result.ok
-          ? "Configuration importée. Redémarrez Torrent 2000 pour l'appliquer."
-          : result.error || "Échec de l'import.";
+          ? t("profile_tab.import_success_message")
+          : result.error || t("web.profile_security.import_failed");
       });
     });
   });
   configRow.appendChild(importBtn);
 
   configSection.appendChild(configRow);
-  configSection.appendChild(
-    profileSecurityNote("Le mot de passe du proxy n'est jamais inclus dans l'export.")
-  );
+  configSection.appendChild(profileSecurityNote("web.profile_security.export_password_note"));
 
   container.appendChild(securitySection);
   container.appendChild(diagnosticsSection);

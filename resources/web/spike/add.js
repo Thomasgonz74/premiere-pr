@@ -3,7 +3,18 @@
 // Analyze tries the file source then the magnet source, Start requires two
 // clicks for an unanalyzed magnet (server pushes a "pending" status back).
 
-const LEVEL_LABELS = { SAFE: "Sûr", LOW: "Faible", MEDIUM: "Moyen", HIGH: "Élevé", CRITICAL: "Critique" };
+const LEVEL_LABEL_KEYS = {
+  SAFE: "file_tree_risk.level_safe",
+  LOW: "file_tree_risk.level_low",
+  MEDIUM: "file_tree_risk.level_medium",
+  HIGH: "file_tree_risk.level_high",
+  CRITICAL: "file_tree_risk.level_critical",
+};
+
+function addLevelLabel(level) {
+  const key = LEVEL_LABEL_KEYS[level];
+  return key ? t(key) : level;
+}
 
 let addSelectedPath = null;
 let addLastScan = null; // { fileRisks, threshold }
@@ -17,16 +28,16 @@ let addDefaultDestination = ""; // captured once from the bridge, used to tell "
 // "other" has no keyword list on purpose: no plausible category to guess,
 // so picking it only surfaces the share-policy note, if any.
 const ADD_INTENT_CATEGORY_GUESSES = {
-  movie: { fallback: "Films", keywords: ["film", "vidéo", "video", "série", "serie", "épisode", "episode"] },
-  software: { fallback: "Logiciels", keywords: ["logiciel", "app", "programme", "soft"] },
-  document: { fallback: "Documents", keywords: ["document", "doc", "livre", "ebook"] },
+  movie: { fallbackKey: "web.add.category_movie_fallback", keywords: ["film", "vidéo", "video", "série", "serie", "épisode", "episode"] },
+  software: { fallbackKey: "web.add.category_software_fallback", keywords: ["logiciel", "app", "programme", "soft"] },
+  document: { fallbackKey: "web.add.category_document_fallback", keywords: ["document", "doc", "livre", "ebook"] },
 };
 
 function addGuessCategory(intent, existingCategories) {
   const spec = ADD_INTENT_CATEGORY_GUESSES[intent];
   if (!spec) return ""; // "other" or unknown -- no invented mapping
   const existing = existingCategories.find((c) => spec.keywords.some((k) => c.toLowerCase().includes(k)));
-  return existing || spec.fallback;
+  return existing || t(spec.fallbackKey);
 }
 
 function addApplyIntentPreset(intent) {
@@ -49,12 +60,25 @@ function addApplyIntentPreset(intent) {
 
 function addRenderScan(scan) {
   addLastScan = scan;
+  // Prefills the destination the same way a matching RSS auto-download
+  // already does (rss_feed_service.py) -- but only when a real routing rule
+  // matched (suggested !== default) AND the field is still at its untouched
+  // default, so this never overwrites something the user already typed or
+  // picked via the intent preset below.
+  const destInput = document.getElementById("addDestInput");
+  if (
+    scan.suggestedDestination &&
+    scan.suggestedDestination !== addDefaultDestination &&
+    destInput.value === addDefaultDestination
+  ) {
+    destInput.value = scan.suggestedDestination;
+  }
   const list = document.getElementById("addScanList");
   list.replaceChildren();
   if (!scan.fileRisks.length) {
     const note = document.createElement("p");
     note.className = "empty-note";
-    note.textContent = "Aucun fichier dans ce torrent.";
+    note.textContent = t("web.add.no_files_in_torrent");
     list.appendChild(note);
     return;
   }
@@ -82,7 +106,7 @@ function addRenderScan(scan) {
 
     const level = document.createElement("span");
     level.className = `risk-badge risk-${risk.level.toLowerCase()}`;
-    level.textContent = LEVEL_LABELS[risk.level] || risk.level;
+    level.textContent = addLevelLabel(risk.level);
     row.appendChild(level);
 
     const reasons = document.createElement("span");
@@ -109,7 +133,7 @@ function addClearScanList() {
   list.replaceChildren();
   const note = document.createElement("p");
   note.className = "empty-note";
-  note.textContent = "Aucune analyse pour l’instant.";
+  note.textContent = t("web.add.no_scan_yet");
   list.appendChild(note);
 }
 
@@ -214,10 +238,10 @@ function wireAddPage() {
     document.getElementById("addStatus").textContent = msg;
   });
   addBridge.blockedByTheme.connect(() => {
-    document.getElementById("addStatus").textContent = "Démarrage bloqué par le thème actif.";
+    document.getElementById("addStatus").textContent = t("web.add.blocked_by_theme");
   });
   addBridge.started.connect(() => {
-    document.getElementById("addStatus").textContent = "Torrent ajouté.";
+    document.getElementById("addStatus").textContent = t("web.add.torrent_added");
     addResetForm();
     switchToTab("downloads");
   });

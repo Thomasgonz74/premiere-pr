@@ -24,7 +24,14 @@ def qapp():
     return QApplication.instance() or QApplication([])
 
 
+class _NoOpSignal:
+    def connect(self, slot):
+        pass
+
+
 class _FakeSessionManager:
+    metadata_received = _NoOpSignal()
+
     def add_torrent_from_file(self, path, save_path=None, excluded_indices=None):
         return "fakehash"
 
@@ -71,6 +78,8 @@ def test_torrent_download_failure_never_logs_passkey(tmp_path, caplog):
 
 def test_magnet_add_failure_never_logs_passkey(tmp_path, caplog):
     class _RaisingSessionManager:
+        metadata_received = _NoOpSignal()
+
         def add_torrent_from_magnet(self, uri, save_path=None):
             raise RuntimeError("boom")
 

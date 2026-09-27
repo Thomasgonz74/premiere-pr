@@ -70,8 +70,8 @@ function _speedGraphLegend() {
   row.style.marginTop = "6px";
 
   for (const [color, label] of [
-    [SPEED_GRAPH_COLOR_DOWNLOAD, "Téléchargement"],
-    [SPEED_GRAPH_COLOR_UPLOAD, "Envoi"],
+    [SPEED_GRAPH_COLOR_DOWNLOAD, t("downloads_tab.state_downloading")],
+    [SPEED_GRAPH_COLOR_UPLOAD, t("web.speed_graph_dialog.legend_upload")],
   ]) {
     const item = document.createElement("div");
     item.style.display = "flex";
@@ -112,5 +112,5 @@ function openSpeedGraphDialog(infoHash, torrentName) {
   refresh();
   const timer = setInterval(refresh, 1000);
 
-  openModal(`Vitesse — ${torrentName}`, contentEl, () => clearInterval(timer));
+  openModal(t("web.speed_graph_dialog.dialog_title", { name: torrentName }), contentEl, () => clearInterval(timer));
 }

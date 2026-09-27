@@ -5,25 +5,27 @@
 // sub-sections are save-on-click, batched behind one shared "Enregistrer"
 // button (see bridge_profile_automation.py's getSettings/saveSettings).
 
-function paHeading(text) {
+function paHeading(key) {
   const h = document.createElement("h3");
   h.className = "automation-heading";
-  h.textContent = text;
+  h.textContent = t(key);
+  h.dataset.i18nKey = key;
   return h;
 }
 
-function paFieldRow(labelText, ...inputs) {
+function paFieldRow(labelKey, ...inputs) {
   const row = document.createElement("div");
   row.className = "field-row";
   const label = document.createElement("label");
   label.className = "field-label inline";
-  label.textContent = labelText;
+  label.textContent = t(labelKey);
+  label.dataset.i18nKey = labelKey;
   row.appendChild(label);
   inputs.forEach((input) => row.appendChild(input));
   return row;
 }
 
-function paCheckboxRow(id, labelText) {
+function paCheckboxRow(id, labelKey) {
   const row = document.createElement("div");
   row.className = "field-row";
   const check = document.createElement("input");
@@ -33,7 +35,8 @@ function paCheckboxRow(id, labelText) {
   const label = document.createElement("label");
   label.className = "field-label inline";
   label.htmlFor = id;
-  label.textContent = labelText;
+  label.textContent = t(labelKey);
+  label.dataset.i18nKey = labelKey;
   row.appendChild(label);
   return { row, check };
 }
@@ -57,10 +60,10 @@ function wireProfileAutomation() {
   container.appendChild(grid);
 
   // -- Planification de la bande passante --------------------------------
-  grid.appendChild(paHeading("Planification de la bande passante"));
+  grid.appendChild(paHeading("profile_tab.schedule_group"));
   const { row: scheduleEnabledRow, check: scheduleEnabledCheck } = paCheckboxRow(
     "paScheduleEnabled",
-    "Activer la plage horaire limitée"
+    "web.profile_automation.schedule_enabled_checkbox"
   );
   grid.appendChild(scheduleEnabledRow);
 
@@ -70,10 +73,12 @@ function wireProfileAutomation() {
   scheduleRow.className = "field-row";
   const fromLabel = document.createElement("label");
   fromLabel.className = "field-label inline";
-  fromLabel.textContent = "De";
+  fromLabel.textContent = t("profile_tab.schedule_from");
+  fromLabel.dataset.i18nKey = "profile_tab.schedule_from";
   const toLabel = document.createElement("label");
   toLabel.className = "field-label inline";
-  toLabel.textContent = "à";
+  toLabel.textContent = t("profile_tab.schedule_to");
+  toLabel.dataset.i18nKey = "profile_tab.schedule_to";
   scheduleRow.appendChild(fromLabel);
   scheduleRow.appendChild(scheduleStart);
   scheduleRow.appendChild(toLabel);
@@ -81,15 +86,15 @@ function wireProfileAutomation() {
   grid.appendChild(scheduleRow);
 
   const scheduleDownload = paNumberInput("paScheduleDownload", 0, 1000000, "90px");
-  grid.appendChild(paFieldRow("Débit descendant limité (Ko/s, 0 = illimité)", scheduleDownload));
+  grid.appendChild(paFieldRow("web.profile_automation.schedule_download_label", scheduleDownload));
   const scheduleUpload = paNumberInput("paScheduleUpload", 0, 1000000, "90px");
-  grid.appendChild(paFieldRow("Débit montant limité (Ko/s, 0 = illimité)", scheduleUpload));
+  grid.appendChild(paFieldRow("web.profile_automation.schedule_upload_label", scheduleUpload));
 
   // -- Dossier surveillé ---------------------------------------------------
-  grid.appendChild(paHeading("Dossier surveillé"));
+  grid.appendChild(paHeading("profile_tab.watch_folder_group"));
   const { row: watchEnabledRow, check: watchEnabledCheck } = paCheckboxRow(
     "paWatchEnabled",
-    "Ajouter automatiquement les .torrent déposés dans ce dossier"
+    "web.profile_automation.watch_folder_enabled_checkbox"
   );
   grid.appendChild(watchEnabledRow);
 
@@ -98,7 +103,8 @@ function wireProfileAutomation() {
   watchPathInput.id = "paWatchPath";
   const watchBrowseBtn = document.createElement("button");
   watchBrowseBtn.id = "paWatchBrowseBtn";
-  watchBrowseBtn.textContent = "Parcourir…";
+  watchBrowseBtn.textContent = t("web.profile_automation.browse_button");
+  watchBrowseBtn.dataset.i18nKey = "web.profile_automation.browse_button";
   const watchRow = document.createElement("div");
   watchRow.className = "field-row";
   watchRow.appendChild(watchPathInput);
@@ -106,20 +112,20 @@ function wireProfileAutomation() {
   grid.appendChild(watchRow);
 
   // -- Espace disque --------------------------------------------------------
-  grid.appendChild(paHeading("Espace disque"));
+  grid.appendChild(paHeading("profile_tab.disk_space_group"));
   const { row: diskEnabledRow, check: diskEnabledCheck } = paCheckboxRow(
     "paDiskEnabled",
-    "Avertir si l'espace libre devient trop faible"
+    "web.profile_automation.disk_space_enabled_checkbox"
   );
   grid.appendChild(diskEnabledRow);
   const diskThreshold = paNumberInput("paDiskThreshold", 1, 1000000, "90px");
-  grid.appendChild(paFieldRow("Seuil d'alerte (Mo)", diskThreshold));
+  grid.appendChild(paFieldRow("web.profile_automation.disk_threshold_label", diskThreshold));
 
   // -- Extinction automatique + Pause sur batterie --------------------------
-  grid.appendChild(paHeading("Extinction automatique et pause sur batterie"));
+  grid.appendChild(paHeading("web.profile_automation.shutdown_battery_heading"));
   const { row: shutdownEnabledRow, check: shutdownEnabledCheck } = paCheckboxRow(
     "paShutdownEnabled",
-    "Éteindre l'ordinateur une fois tous les téléchargements terminés"
+    "profile_tab.shutdown_enabled"
   );
   grid.appendChild(shutdownEnabledRow);
 
@@ -127,66 +133,86 @@ function wireProfileAutomation() {
   shutdownActionSelect.id = "paShutdownAction";
   const shutdownOpt = document.createElement("option");
   shutdownOpt.value = "shutdown";
-  shutdownOpt.textContent = "Éteindre";
+  shutdownOpt.textContent = t("shutdown_action.shutdown");
+  shutdownOpt.dataset.i18nKey = "shutdown_action.shutdown";
   const hibernateOpt = document.createElement("option");
   hibernateOpt.value = "hibernate";
-  hibernateOpt.textContent = "Mettre en veille prolongée";
+  hibernateOpt.textContent = t("shutdown_action.hibernate");
+  hibernateOpt.dataset.i18nKey = "shutdown_action.hibernate";
   shutdownActionSelect.appendChild(shutdownOpt);
   shutdownActionSelect.appendChild(hibernateOpt);
-  grid.appendChild(paFieldRow("Action", shutdownActionSelect));
+  grid.appendChild(paFieldRow("web.profile_automation.shutdown_action_label", shutdownActionSelect));
 
   const shutdownDelay = paNumberInput("paShutdownDelay", 0, 3600, "90px");
-  grid.appendChild(paFieldRow("Délai avant extinction (s)", shutdownDelay));
+  grid.appendChild(paFieldRow("web.profile_automation.shutdown_delay_label", shutdownDelay));
 
   const { row: batteryEnabledRow, check: batteryEnabledCheck } = paCheckboxRow(
     "paBatteryEnabled",
-    "Mettre les téléchargements en pause sur batterie"
+    "profile_tab.battery_pause_checkbox"
   );
   grid.appendChild(batteryEnabledRow);
 
   // -- Manifeste de provenance ----------------------------------------------
-  grid.appendChild(paHeading("Manifeste de provenance"));
+  grid.appendChild(paHeading("web.profile_automation.provenance_heading"));
   const { row: provenanceEnabledRow, check: provenanceEnabledCheck } = paCheckboxRow(
     "paProvenanceEnabled",
-    "Écrire un manifeste de provenance à la fin de chaque téléchargement"
+    "web.profile_automation.provenance_enabled_checkbox"
   );
   grid.appendChild(provenanceEnabledRow);
 
   // -- Réputation des pairs --------------------------------------------------
-  grid.appendChild(paHeading("Réputation des pairs"));
+  grid.appendChild(paHeading("web.profile_automation.peer_reputation_heading"));
   const { row: peerReputationEnabledRow, check: peerReputationEnabledCheck } = paCheckboxRow(
     "paPeerReputationEnabled",
-    "Suivre la stabilité et l'historique de chaque pair (liste de pairs)"
+    "web.profile_automation.peer_reputation_enabled_checkbox"
   );
   grid.appendChild(peerReputationEnabledRow);
 
   // -- Cache des pairs locaux (LAN) -------------------------------------------
-  grid.appendChild(paHeading("Cache des pairs locaux (LAN)"));
+  grid.appendChild(paHeading("web.profile_automation.lan_peer_cache_heading"));
   const { row: lanPeerCacheEnabledRow, check: lanPeerCacheEnabledCheck } = paCheckboxRow(
     "paLanPeerCacheEnabled",
-    "Mémoriser les pairs du réseau local pour les reconnecter plus vite"
+    "web.profile_automation.lan_peer_cache_enabled_checkbox"
   );
   grid.appendChild(lanPeerCacheEnabledRow);
 
   // -- Gouverneur de pression mémoire ---------------------------------------
-  grid.appendChild(paHeading("Gouverneur de pression mémoire"));
+  grid.appendChild(paHeading("web.profile_automation.memory_governor_heading"));
   const { row: memoryGovernorEnabledRow, check: memoryGovernorEnabledCheck } = paCheckboxRow(
     "paMemoryGovernorEnabled",
-    "Réduire temporairement l'activité si la mémoire système sature"
+    "web.profile_automation.memory_governor_enabled_checkbox"
   );
   grid.appendChild(memoryGovernorEnabledRow);
   const memoryGovernorThreshold = paNumberInput("paMemoryGovernorThreshold", 1, 100, "70px");
-  grid.appendChild(paFieldRow("Seuil de déclenchement (% mémoire utilisée)", memoryGovernorThreshold));
+  grid.appendChild(paFieldRow("web.profile_automation.memory_governor_threshold_label", memoryGovernorThreshold));
 
   // -- Mode tortue sur inactivité --------------------------------------------
-  grid.appendChild(paHeading("Mode tortue sur inactivité"));
+  grid.appendChild(paHeading("web.profile_automation.idle_turtle_heading"));
   const { row: idleEnabledRow, check: idleEnabledCheck } = paCheckboxRow(
     "paIdleEnabled",
-    "Réduire la bande passante quand l'ordinateur est inactif"
+    "web.profile_automation.idle_enabled_checkbox"
   );
   grid.appendChild(idleEnabledRow);
   const idleMinutes = paNumberInput("paIdleMinutes", 1, 1440, "70px");
-  grid.appendChild(paFieldRow("Délai d'inactivité avant activation (minutes)", idleMinutes));
+  grid.appendChild(paFieldRow("web.profile_automation.idle_minutes_label", idleMinutes));
+
+  // -- Contrôle d'intégrité planifié --------------------------------------------
+  grid.appendChild(paHeading("web.profile_automation.scheduled_recheck_heading"));
+  const { row: scheduledRecheckEnabledRow, check: scheduledRecheckEnabledCheck } = paCheckboxRow(
+    "paScheduledRecheckEnabled",
+    "web.profile_automation.scheduled_recheck_enabled_checkbox"
+  );
+  grid.appendChild(scheduledRecheckEnabledRow);
+  const scheduledRecheckInterval = paNumberInput("paScheduledRecheckInterval", 1, 365, "70px");
+  grid.appendChild(paFieldRow("web.profile_automation.scheduled_recheck_interval_label", scheduledRecheckInterval));
+
+  // -- Presse-papiers -----------------------------------------------------------
+  grid.appendChild(paHeading("web.profile_automation.clipboard_heading"));
+  const { row: clipboardEnabledRow, check: clipboardEnabledCheck } = paCheckboxRow(
+    "paClipboardMagnetEnabled",
+    "web.profile_automation.clipboard_enabled_checkbox"
+  );
+  grid.appendChild(clipboardEnabledRow);
 
   // -- Disque connu -----------------------------------------------------------
   // Note: contrairement aux sections ci-dessus, la liste des disques connus
@@ -194,30 +220,33 @@ function wireProfileAutomation() {
   // s'appliquent immédiatement (mêmes bridge.knownDisk.saveDisk/deleteDisk),
   // même convention que la liste de flux RSS (rss.js). Seule la case
   // d'activation ci-dessous fait partie du lot enregistré par ce formulaire.
-  grid.appendChild(paHeading("Action automatique à l'insertion d'un disque connu"));
+  grid.appendChild(paHeading("web.profile_automation.known_disk_heading"));
   const { row: knownDiskEnabledRow, check: knownDiskEnabledCheck } = paCheckboxRow(
     "paKnownDiskEnabled",
-    "Proposer une action quand un disque enregistré est inséré"
+    "web.profile_automation.known_disk_enabled_checkbox"
   );
   grid.appendChild(knownDiskEnabledRow);
 
   const knownDiskNote = document.createElement("p");
   knownDiskNote.className = "field-note";
-  knownDiskNote.textContent =
-    "Rien ne s'exécute automatiquement : une confirmation est toujours demandée avant toute copie.";
+  knownDiskNote.textContent = t("web.profile_automation.known_disk_note");
+  knownDiskNote.dataset.i18nKey = "web.profile_automation.known_disk_note";
   grid.appendChild(knownDiskNote);
 
   const knownDiskLabelInput = document.createElement("input");
   knownDiskLabelInput.type = "text";
   knownDiskLabelInput.id = "paKnownDiskLabel";
-  knownDiskLabelInput.placeholder = "Label du volume (ex : BACKUP_USB)";
+  knownDiskLabelInput.placeholder = t("web.profile_automation.known_disk_label_placeholder");
+  knownDiskLabelInput.dataset.i18nPlaceholder = "web.profile_automation.known_disk_label_placeholder";
   const knownDiskActionInput = document.createElement("input");
   knownDiskActionInput.type = "text";
   knownDiskActionInput.id = "paKnownDiskAction";
-  knownDiskActionInput.placeholder = "Action associée (ex : copier vers D:\\Backups)";
+  knownDiskActionInput.placeholder = t("web.profile_automation.known_disk_action_placeholder");
+  knownDiskActionInput.dataset.i18nPlaceholder = "web.profile_automation.known_disk_action_placeholder";
   const knownDiskAddBtn = document.createElement("button");
   knownDiskAddBtn.id = "paKnownDiskAddBtn";
-  knownDiskAddBtn.textContent = "Ajouter";
+  knownDiskAddBtn.textContent = t("common.add");
+  knownDiskAddBtn.dataset.i18nKey = "common.add";
   const knownDiskAddRow = document.createElement("div");
   knownDiskAddRow.className = "field-row";
   knownDiskAddRow.appendChild(knownDiskLabelInput);
@@ -241,7 +270,7 @@ function wireProfileAutomation() {
   // connu détecté...), pas ce que l'utilisateur a fait à la main. Pas de
   // pagination/filtre -- juste les 100 dernières entrées, la plus récente en
   // premier (voir engine/decision_journal.py).
-  grid.appendChild(paHeading("Journal des décisions automatiques"));
+  grid.appendChild(paHeading("web.profile_automation.decision_journal_heading"));
   const journalList = document.createElement("div");
   journalList.className = "listbox";
   journalList.id = "paDecisionJournalList";
@@ -252,7 +281,7 @@ function wireProfileAutomation() {
     if (!entries.length) {
       const note = document.createElement("p");
       note.className = "empty-note";
-      note.textContent = "Aucune décision automatique enregistrée.";
+      note.textContent = t("web.profile_automation.decision_journal_empty");
       journalList.appendChild(note);
       return;
     }
@@ -284,7 +313,8 @@ function wireProfileAutomation() {
   const saveBtn = document.createElement("button");
   saveBtn.className = "start-btn";
   saveBtn.id = "paSaveBtn";
-  saveBtn.textContent = "Enregistrer";
+  saveBtn.textContent = t("profile_tab.save_button");
+  saveBtn.dataset.i18nKey = "profile_tab.save_button";
   grid.appendChild(saveBtn);
 
   function populate(values) {
@@ -308,6 +338,9 @@ function wireProfileAutomation() {
     memoryGovernorThreshold.value = values.memoryGovernorThresholdPercent;
     idleEnabledCheck.checked = values.idleBandwidthReductionEnabled;
     idleMinutes.value = values.idleBandwidthReductionMinutes;
+    scheduledRecheckEnabledCheck.checked = values.scheduledRecheckEnabled;
+    scheduledRecheckInterval.value = values.scheduledRecheckIntervalDays;
+    clipboardEnabledCheck.checked = values.clipboardMagnetDetectionEnabled;
     knownDiskEnabledCheck.checked = values.knownDiskEnabled;
   }
 
@@ -321,7 +354,7 @@ function wireProfileAutomation() {
     if (!disks.length) {
       const note = document.createElement("p");
       note.className = "empty-note";
-      note.textContent = "Aucun disque enregistré.";
+      note.textContent = t("web.profile_automation.known_disk_empty");
       knownDiskList.appendChild(note);
       return;
     }
@@ -400,40 +433,53 @@ function wireProfileAutomation() {
       content.className = "form-grid";
 
       const message = document.createElement("p");
-      message.textContent = `Le disque "${info.label || "?"}" (${info.mountpoint || "?"}) est associé à la catégorie "${category}".`;
+      message.textContent = t("web.profile_automation.known_disk_confirm_message", {
+        label: info.label || "?",
+        mountpoint: info.mountpoint || "?",
+        category,
+      });
       content.appendChild(message);
 
       const details = document.createElement("p");
       details.className = "field-note";
       details.textContent = impact.count > 0
-        ? `${impact.count} torrent(s) de cette catégorie seront déplacés vers "${info.mountpoint || "?"}\\${category}" (taille totale : ${formatSize(impact.totalSize)}).`
-        : "Aucun torrent actif n'appartient à cette catégorie -- rien à déplacer.";
+        ? t("web.profile_automation.known_disk_impact_message", {
+            count: impact.count,
+            mountpoint: info.mountpoint || "?",
+            category,
+            totalSize: formatSize(impact.totalSize),
+          })
+        : t("web.profile_automation.known_disk_impact_none");
       content.appendChild(details);
 
       const buttonRow = document.createElement("div");
       buttonRow.className = "modal-close-row";
 
       const confirmBtn = document.createElement("button");
-      confirmBtn.textContent = "Confirmer et déplacer";
+      confirmBtn.textContent = t("web.profile_automation.known_disk_confirm_button");
       confirmBtn.disabled = impact.count === 0;
       confirmBtn.addEventListener("click", () => {
         closeModal();
         knownDiskBridge.executeCategoryMove(category, info.mountpoint || "", (result) => {
           const summary = result.errors.length
-            ? `${result.moved} torrent(s) déplacé(s), ${result.errors.length} échec(s) : ${result.errors.join("; ")}`
-            : `${result.moved} torrent(s) déplacé(s) avec succès.`;
-          alertModal("Déplacement terminé", summary, "Fermer");
+            ? t("web.profile_automation.known_disk_move_result_errors", {
+                moved: result.moved,
+                errorCount: result.errors.length,
+                errors: result.errors.join("; "),
+              })
+            : t("web.profile_automation.known_disk_move_result_success", { moved: result.moved });
+          alertModal(t("notifications.storage_moved_title"), summary, t("titlebar.close"));
         });
       });
       buttonRow.appendChild(confirmBtn);
 
       const cancelBtn = document.createElement("button");
-      cancelBtn.textContent = "Annuler";
+      cancelBtn.textContent = t("common.cancel");
       cancelBtn.addEventListener("click", () => closeModal());
       buttonRow.appendChild(cancelBtn);
 
       content.appendChild(buttonRow);
-      openModal("Disque connu détecté", content);
+      openModal(t("web.profile_automation.known_disk_modal_title"), content);
     });
   });
 
@@ -465,10 +511,13 @@ function wireProfileAutomation() {
       memoryGovernorThresholdPercent: parseInt(memoryGovernorThreshold.value, 10) || 90,
       idleBandwidthReductionEnabled: idleEnabledCheck.checked,
       idleBandwidthReductionMinutes: parseInt(idleMinutes.value, 10) || 15,
+      scheduledRecheckEnabled: scheduledRecheckEnabledCheck.checked,
+      scheduledRecheckIntervalDays: parseInt(scheduledRecheckInterval.value, 10) || 30,
+      clipboardMagnetDetectionEnabled: clipboardEnabledCheck.checked,
       knownDiskEnabled: knownDiskEnabledCheck.checked,
     };
     bridge.saveSettings(values, (result) => {
-      status.textContent = result.ok ? "Paramètres enregistrés." : result.error || "Erreur lors de l'enregistrement.";
+      status.textContent = result.ok ? t("web.profile_automation.settings_saved") : result.error || t("web.profile_automation.save_error");
     });
   });
 

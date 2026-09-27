@@ -27,7 +27,14 @@ def isolated_data_dir(tmp_path, monkeypatch):
     monkeypatch.setenv("TORRENT2000_DATA_DIR", str(tmp_path))
 
 
+class _NoOpSignal:
+    def connect(self, slot):
+        pass
+
+
 class FakeSessionManager:
+    metadata_received = _NoOpSignal()
+
     def __init__(self):
         self.magnet_calls = []
         self.file_calls = []
@@ -37,7 +44,7 @@ class FakeSessionManager:
         self.magnet_calls.append((uri, save_path))
         return "fakehash"
 
-    def add_torrent_from_file(self, path, save_path=None):
+    def add_torrent_from_file(self, path, save_path=None, excluded_indices=None):
         self.file_calls.append((path, save_path))
         return "fakehash"
 

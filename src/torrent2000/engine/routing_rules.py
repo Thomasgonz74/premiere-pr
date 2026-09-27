@@ -30,6 +30,13 @@ class RoutingRule:
     pattern: str  # substring to search for, case-insensitive
     match_field: str  # "name" | "tracker"
     destination: str  # absolute destination folder
+    # Catalogue idea "action de fin de telechargement personnalisable" --
+    # applied once, when this rule's torrent finishes (see
+    # SessionManager.torrent_finished and TorrentRecord.matched_rule_name).
+    # Deliberately NOT an arbitrary user command: only a closed set of safe,
+    # local file operations is supported.
+    post_complete_action: str = "none"  # "none" | "move" | "unzip"
+    post_complete_move_to: str = ""  # destination for "move", ignored otherwise
 
 
 class RoutingRuleStore:
@@ -117,6 +124,21 @@ def resolve_destination(
     and, for match_field == "tracker", against at least one entry of
     `trackers` -- an empty list is treated the same as no match, same as
     None."""
+    rule = find_matching_rule(rules, name, trackers)
+    return rule.destination if rule is not None else default_destination
+
+
+def find_matching_rule(
+    rules: list[RoutingRule],
+    name: str = "",
+    trackers: list[str] | None = None,
+) -> RoutingRule | None:
+    """The same first-match evaluation resolve_destination() uses, exposed
+    separately so a caller that needs to know WHICH rule matched -- not just
+    its destination -- doesn't have to re-implement this loop (see
+    TorrentRecord.matched_rule_name, set by callers right after
+    resolve_destination() so a post_complete_action can be looked up once
+    the torrent finishes)."""
     name_lower = name.lower() if name else ""
     trackers_lower = [t.lower() for t in trackers] if trackers else []
     for rule in rules:
@@ -125,8 +147,8 @@ def resolve_destination(
         needle = rule.pattern.lower()
         if rule.match_field == "name":
             if name and needle in name_lower:
-                return rule.destination
+                return rule
         elif rule.match_field == "tracker":
             if trackers_lower and any(needle in t for t in trackers_lower):
-                return rule.destination
-    return default_destination
+                return rule
+    return None

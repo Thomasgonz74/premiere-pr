@@ -352,6 +352,25 @@ def test_lock_and_unlock_torrent_unknown_hash_is_a_noop():
     sm.unlock_torrent("unknown")  # must not raise
 
 
+def test_lock_torrent_refuses_a_path_traversal_entry(tmp_path):
+    outside_dir = tmp_path.parent / "outside_lock_confinement_test"
+    outside_dir.mkdir(exist_ok=True)
+    escaped_file = outside_dir / "escaped.mkv"
+    escaped_file.write_bytes(b"data")
+    try:
+        escaped_relative = os.path.relpath(escaped_file, tmp_path)
+        sm = _session_manager_with_mock_handles()
+        sm._records["hash0"] = TorrentRecord(info_hash="hash0", save_path=str(tmp_path))
+        sm.get_torrent_files = lambda info_hash: [FileEntry(index=0, path=escaped_relative, size=4)]
+
+        sm.lock_torrent("hash0")  # must not raise, and must not touch the file outside save_path
+
+        assert os.access(escaped_file, os.W_OK)
+    finally:
+        escaped_file.unlink(missing_ok=True)
+        outside_dir.rmdir()
+
+
 # --------------------------------------------------------------------- pin panel
 
 

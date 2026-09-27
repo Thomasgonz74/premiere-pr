@@ -16,6 +16,7 @@ from torrent2000.config.settings import Settings
 from torrent2000.engine import add_params, persistence, proxy, trackers as tracker_ops
 from torrent2000.engine.alerts import AlertDispatcher, status_to_record
 from torrent2000.engine.lan_peer_cache import LanPeerCacheStore, reconnect_cached_peers
+from torrent2000.engine.ip_blocklist import parse_blocklist_file
 from torrent2000.engine.peer_reputation import PeerReputationStore, PeerReputationTracker, ip_from_display, score_label
 from torrent2000.engine.torrent_categories import TorrentCategoryService
 from torrent2000.engine.torrent_item import ACTIVE_DOWNLOAD_STATES, PeerInfo, TorrentRecord, TorrentState, TrackerInfo
@@ -35,6 +36,13 @@ FILE_PRIORITY_DEFAULT = 4
 # matters at hour granularity.
 DEADLINE_URGENT_WINDOW_S = 24 * 3600
 _DEADLINE_SWEEP_INTERVAL_S = 10.0
+
+# Streaming (see set_sequential_download): how many pieces at the head of
+# the largest file get an urgency deadline, and how far apart (in ms) each
+# successive one's deadline is set -- a real player only ever needs a
+# rolling window near its current playback position, not the whole file.
+_STREAMING_HEAD_PIECE_COUNT = 30
+_STREAMING_DEADLINE_STEP_MS = 500
 
 ALERT_MASK = (
     lt.alert_category.error
@@ -190,6 +198,22 @@ def is_safe_move_destination(new_path: str) -> bool:
     return True
 
 
+def _is_confined(file_path: Path, save_path: Path) -> bool:
+    """True if file_path resolves to somewhere under save_path -- guards
+    lock/unlock/get_allocated_size against a torrent whose internal file
+    paths were crafted with a `../` segment or an absolute path, which
+    would otherwise let them touch a file outside the intended download
+    directory. Same resolve-then-contains check as is_safe_move_destination
+    above, applied here to a path built from torrent-internal metadata
+    rather than a user-chosen destination."""
+    try:
+        resolved = file_path.resolve()
+        resolved_root = save_path.resolve()
+    except (OSError, ValueError):
+        return False
+    return resolved == resolved_root or resolved_root in resolved.parents
+
+
 class SessionManager(QObject):
     torrent_added = Signal(str)
     torrent_removed = Signal(str)
@@ -212,6 +236,11 @@ class SessionManager(QObject):
         super().__init__(parent)
         self._settings = settings
         self._session = lt.session(_build_session_settings(settings))
+        if settings.ip_blocklist_enabled and settings.ip_blocklist_path:
+            try:
+                self._session.set_ip_filter(parse_blocklist_file(settings.ip_blocklist_path))
+            except OSError:
+                logger.exception("Failed to load IP blocklist from %r", settings.ip_blocklist_path)
         self._records: dict[str, TorrentRecord] = {}
         self._handles: dict[str, "lt.torrent_handle"] = {}
         self._private_flag_checked: set[str] = set()
@@ -535,7 +564,12 @@ class SessionManager(QObject):
         if ti is None:
             return 0
         save_path = Path(record.save_path)
-        return sum(compressed_file_size(save_path / entry.path) for entry in files_from_torrent_info(ti))
+        total = 0
+        for entry in files_from_torrent_info(ti):
+            file_path = save_path / entry.path
+            if _is_confined(file_path, save_path):
+                total += compressed_file_size(file_path)
+        return total
 
     def lock_torrent(self, info_hash: str) -> None:
         """Archive mode: mark this torrent's real files read-only on disk
@@ -551,6 +585,19 @@ class SessionManager(QObject):
         record = self._records.get(info_hash)
         if record is not None:
             record.locked = False
+
+    def set_matched_rule_name(self, info_hash: str, rule_name: str | None) -> None:
+        """Records which routing_rules.RoutingRule (if any) picked this
+        torrent's destination -- see TorrentRecord.matched_rule_name and
+        engine/post_complete_action_service.py, which looks this back up
+        once the torrent finishes. Only called by the fully-automatic add
+        paths (watch folder, RSS) where the rule's destination is used
+        verbatim; the manual Add page lets the user freely edit the
+        suggested destination, so there's no reliable "the rule is what
+        actually applied" signal to record there."""
+        record = self._records.get(info_hash)
+        if record is not None:
+            record.matched_rule_name = rule_name
 
     def pin_torrent(self, info_hash: str) -> None:
         """Pin panel: no disk/engine effect, just an in-memory flag the UI
@@ -579,6 +626,11 @@ class SessionManager(QObject):
         save_path = Path(record.save_path)
         for entry in self.get_torrent_files(info_hash):
             file_path = save_path / entry.path
+            if not _is_confined(file_path, save_path):
+                logger.warning(
+                    "lock_torrent: refusing to chmod %s -- outside save_path (info_hash=%s)", file_path, info_hash
+                )
+                continue
             try:
                 mode = file_path.stat().st_mode
                 new_mode = mode & ~stat.S_IWUSR if read_only else mode | stat.S_IWUSR
@@ -682,9 +734,41 @@ class SessionManager(QObject):
             self.theme_downloads_paused.emit(paused_count)
 
     def set_sequential_download(self, info_hash: str, enabled: bool) -> None:
+        """Catalogue idea "telechargement sequentiel -> vrai mode streaming":
+        beyond the existing handle.set_sequential_download() alone (which
+        only orders piece REQUESTS, no urgency signal), also apply
+        deadline-based piece priorities via handle.set_piece_deadline() --
+        libtorrent's own streaming-oriented API (used by real media-player
+        integrations) -- to the head of the torrent's largest file, so the
+        pieces a player would need first actually download with real
+        urgency instead of merely "before pieces further along"."""
         handle = self._handles.get(info_hash)
-        if handle is not None:
-            handle.set_sequential_download(enabled)
+        if handle is None:
+            return
+        handle.set_sequential_download(enabled)
+        if enabled:
+            self._apply_streaming_deadlines(handle)
+        else:
+            handle.clear_piece_deadlines()
+
+    def _apply_streaming_deadlines(self, handle) -> None:
+        ti = handle.torrent_file()
+        if ti is None:
+            return  # metadata not ready yet (magnet still resolving) -- nothing to prioritize
+        fs = ti.files()
+        if fs.num_files() == 0:
+            return
+        piece_length = ti.piece_length()
+        if piece_length <= 0:
+            return
+        largest_index = max(range(fs.num_files()), key=fs.file_size)
+        offset = fs.file_offset(largest_index)
+        size = fs.file_size(largest_index)
+        first_piece = offset // piece_length
+        last_piece = min(ti.num_pieces() - 1, (offset + max(size, 1) - 1) // piece_length)
+        last_head_piece = min(last_piece, first_piece + _STREAMING_HEAD_PIECE_COUNT - 1)
+        for rank, piece in enumerate(range(first_piece, last_head_piece + 1)):
+            handle.set_piece_deadline(piece, rank * _STREAMING_DEADLINE_STEP_MS)
 
     def move_queue_up(self, info_hash: str) -> None:
         handle = self._handles.get(info_hash)

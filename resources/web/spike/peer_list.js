@@ -2,11 +2,24 @@
 // same 5 columns, same 2s poll while the dialog is open, poll stops on
 // close instead of tying its lifetime to the downloads list's own polling.
 
-const PEER_LIST_HEADERS = ["IP", "Client", "Progression", "↓ Vitesse", "↑ Vitesse"];
+// Built fresh on every call (not a module-level constant) so a language
+// change is picked up the next time the dialog is opened.
+function _peerListHeaders() {
+  return [
+    t("peer_list.column_ip"),
+    t("peer_list.column_client"),
+    t("peer_list.column_progress"),
+    t("peer_list.column_down_speed"),
+    t("peer_list.column_up_speed"),
+  ];
+}
 
 // Opt-in (Settings.peer_reputation_enabled, see engine/peer_reputation.py) --
 // column only gets added when bridge.peerList.isReputationEnabled() says so.
-const PEER_REPUTATION_LABELS = { good: "Bonne", neutral: "Neutre", bad: "Mauvaise" };
+function _peerReputationLabel(score) {
+  const key = score === "good" ? "web.peer_list.reputation_good" : score === "bad" ? "web.peer_list.reputation_bad" : "web.peer_list.reputation_neutral";
+  return t(key);
+}
 
 function _peerListBuildRow(withReputation) {
   const el = document.createElement("div");
@@ -42,7 +55,7 @@ function _peerListRenderRows(list, peers, reputationEnabled) {
     list.replaceChildren();
     const note = document.createElement("p");
     note.className = "empty-note";
-    note.textContent = "Aucun pair connecté.";
+    note.textContent = t("web.peer_list.no_peers");
     list.appendChild(note);
     list._peerRows = null;
     return;
@@ -74,7 +87,7 @@ function _peerListRenderRows(list, peers, reputationEnabled) {
     if (reputationEnabled && row.rep) {
       const score = peer.reputation || "neutral";
       row.rep.className = `reputation-badge reputation-${score}`;
-      row.rep.textContent = PEER_REPUTATION_LABELS[score] || PEER_REPUTATION_LABELS.neutral;
+      row.rep.textContent = _peerReputationLabel(score);
     }
   });
 
@@ -96,7 +109,7 @@ function openPeerListDialog(infoHash, torrentName) {
   contentEl.appendChild(list);
 
   window.bridge.peerList.isReputationEnabled((reputationEnabled) => {
-    const headers = reputationEnabled ? [...PEER_LIST_HEADERS, "Réputation"] : PEER_LIST_HEADERS;
+    const headers = reputationEnabled ? [..._peerListHeaders(), t("web.peer_list.column_reputation")] : _peerListHeaders();
     headers.forEach((text) => {
       const cell = document.createElement("div");
       cell.textContent = text;
@@ -114,6 +127,6 @@ function openPeerListDialog(infoHash, torrentName) {
     refresh();
     const timer = setInterval(refresh, 2000);
 
-    openModal(`Pairs — ${torrentName}`, contentEl, () => clearInterval(timer));
+    openModal(t("web.peer_list.dialog_title", { name: torrentName }), contentEl, () => clearInterval(timer));
   });
 }

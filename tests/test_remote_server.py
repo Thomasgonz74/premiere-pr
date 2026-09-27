@@ -41,6 +41,9 @@ class FakeSessionManager:
         self.records: list = []
         self.paused: list[str] = []
         self.resumed: list[str] = []
+        self.added_magnets: list[tuple[str, str]] = []
+        self.started_after_analysis: list[str] = []
+        self.added_files: list[tuple[str, str, set]] = []
 
     def all_records(self):
         return list(self.records)
@@ -50,6 +53,17 @@ class FakeSessionManager:
 
     def resume_torrent(self, info_hash: str) -> None:
         self.resumed.append(info_hash)
+
+    def add_torrent_from_magnet(self, uri: str, save_path=None) -> str:
+        self.added_magnets.append((uri, save_path))
+        return "remotehash"
+
+    def start_after_analysis(self, info_hash: str) -> None:
+        self.started_after_analysis.append(info_hash)
+
+    def add_torrent_from_file(self, path: str, save_path=None, excluded_indices=None) -> str:
+        self.added_files.append((path, save_path, excluded_indices))
+        return "remotefilehash"
 
 
 def _settings() -> Settings:
@@ -76,6 +90,16 @@ def _url(server: RemoteAccessServer, path: str) -> str:
 
 def _request(url: str, method: str = "GET"):
     req = urllib.request.Request(url, method=method)
+    try:
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            return resp.status, resp.read()
+    except urllib.error.HTTPError as exc:
+        return exc.code, exc.read()
+
+
+def _post_json(url: str, payload, raw_body: bytes | None = None):
+    body = raw_body if raw_body is not None else json.dumps(payload).encode("utf-8")
+    req = urllib.request.Request(url, data=body, method="POST", headers={"Content-Type": "application/json"})
     try:
         with urllib.request.urlopen(req, timeout=5) as resp:
             return resp.status, resp.read()
@@ -266,6 +290,64 @@ def test_start_returns_false_and_leaves_is_running_false_on_bind_failure():
     finally:
         server.stop()
         blocker.close()
+
+
+# ----------------------------------------------------------- remote add
+
+
+def test_add_magnet_starts_immediately_with_no_review(running_server):
+    server, fake_sm, settings = running_server
+    status, body = _post_json(
+        _url(server, f"/api/torrents/add?token={settings.remote_access_token}"),
+        {"magnet": "magnet:?xt=urn:btih:abc"},
+    )
+
+    assert status == 200
+    data = json.loads(body)
+    assert data["ok"] is True
+    assert data["info_hash"] == "remotehash"
+    assert fake_sm.added_magnets == [("magnet:?xt=urn:btih:abc", settings.default_download_dir)]
+    assert fake_sm.started_after_analysis == ["remotehash"]
+
+
+def test_add_without_token_never_reaches_session_manager(running_server):
+    server, fake_sm, _settings = running_server
+    status, _body = _post_json(_url(server, "/api/torrents/add"), {"magnet": "magnet:?xt=urn:btih:abc"})
+
+    assert status == 401
+    assert fake_sm.added_magnets == []
+
+
+def test_add_with_neither_magnet_nor_torrent_is_rejected(running_server):
+    server, fake_sm, settings = running_server
+    status, body = _post_json(_url(server, f"/api/torrents/add?token={settings.remote_access_token}"), {})
+
+    assert status == 400
+    assert json.loads(body)["error"]
+    assert fake_sm.added_magnets == []
+
+
+def test_add_with_invalid_json_is_rejected(running_server):
+    server, _fake_sm, settings = running_server
+    status, body = _post_json(
+        _url(server, f"/api/torrents/add?token={settings.remote_access_token}"),
+        None,
+        raw_body=b"not valid json{{{",
+    )
+
+    assert status == 400
+    assert json.loads(body)["error"]
+
+
+def test_max_add_body_bytes_accounts_for_base64_inflation():
+    # A base64-encoded _MAX_TORRENT_BYTES-sized .torrent must actually fit
+    # under the request-body cap, or every legitimate max-size upload would
+    # be rejected as "oversized" before ever reaching the size check meant
+    # for the DECODED bytes.
+    from torrent2000.engine.remote_server import _MAX_ADD_BODY_BYTES, _MAX_TORRENT_BYTES
+
+    base64_inflated_size = -(-_MAX_TORRENT_BYTES * 4 // 3)  # ceil(n * 4/3)
+    assert _MAX_ADD_BODY_BYTES >= base64_inflated_size
 
 
 def test_start_twice_is_idempotent():

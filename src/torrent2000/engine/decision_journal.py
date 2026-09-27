@@ -105,12 +105,31 @@ class DecisionJournalService(QObject):
     line per event. No state of its own beyond the Qt connections -- the
     JSONL file is the only state."""
 
-    def __init__(self, session_manager, known_disk_service, disk_space_monitor, parent=None) -> None:
+    def __init__(
+        self,
+        session_manager,
+        known_disk_service,
+        disk_space_monitor,
+        share_limit_service=None,
+        auto_shutdown_service=None,
+        rss_feed_service=None,
+        parent=None,
+    ) -> None:
         super().__init__(parent)
         self._session_manager = session_manager
         session_manager.file_error.connect(self._on_file_error)
         known_disk_service.diskConfirmationRequested.connect(self._on_disk_confirmation_requested)
         disk_space_monitor.low_space_warning.connect(self._on_low_space_warning)
+        # Three more signals that already existed elsewhere but were never
+        # journaled -- share_limit_service/auto_shutdown_service/rss_feed_service
+        # are optional (default None) so existing callers/tests that only
+        # cover the original three signals keep working unchanged.
+        if share_limit_service is not None:
+            share_limit_service.limit_reached.connect(self._on_limit_reached)
+        if auto_shutdown_service is not None:
+            auto_shutdown_service.shutdown_countdown_started.connect(self._on_shutdown_countdown_started)
+        if rss_feed_service is not None:
+            rss_feed_service.items_found.connect(self._on_rss_items_found)
 
     @staticmethod
     def recent_entries(limit: int = 100) -> list[dict]:
@@ -133,3 +152,23 @@ class DecisionJournalService(QObject):
 
     def _on_low_space_warning(self, save_path: str, message: str) -> None:
         _append(f"Espace disque faible détecté pour « {save_path} ».")
+
+    def _on_limit_reached(self, info_hash: str, reason: str) -> None:
+        record = self._session_manager.get_record(info_hash)
+        name = record.name if record is not None else info_hash[:12]
+        _append(f"Partage « {name} » mis en pause automatiquement (limite atteinte : {reason}).")
+
+    def _on_shutdown_countdown_started(self, delay_seconds: int) -> None:
+        _append(f"Compte à rebours d'extinction automatique démarré ({delay_seconds} s).")
+
+    def _on_rss_items_found(self, feed_url: str, items: list) -> None:
+        # Strips the query string (private-tracker passkeys ride there, see
+        # rss_feed_service._redact_url) before this ever reaches the journal
+        # file / the Profile > Automatisation page that displays it.
+        from torrent2000.engine.rss_feed_service import _redact_url
+
+        titles = ", ".join(item.get("title", "?") for item in items) if items else "?"
+        _append(
+            f"{len(items)} torrent(s) ajouté(s) automatiquement depuis le flux RSS "
+            f"({_redact_url(feed_url)}) : {titles}."
+        )

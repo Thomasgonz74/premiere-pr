@@ -26,6 +26,15 @@ class _NoOpThreadPool:
         pass
 
 
+class _NoOpSignal:
+    def connect(self, slot):
+        pass
+
+
+class _FakeSessionManager:
+    metadata_received = _NoOpSignal()
+
+
 def test_paused_service_skips_check_now(tmp_path, monkeypatch):
     monkeypatch.setattr(
         "torrent2000.engine.rss_feed_service.QThreadPool.globalInstance",
@@ -43,7 +52,7 @@ def test_paused_service_skips_check_now(tmp_path, monkeypatch):
         staticmethod(lambda: type("P", (), {"start": staticmethod(lambda r, priority=0: started.append(r))})()),
     )
 
-    service = RssFeedService(object(), settings, seen_store)
+    service = RssFeedService(_FakeSessionManager(), settings, seen_store)
     service.set_paused(True)
 
     service.check_now()
@@ -64,7 +73,7 @@ def test_unpaused_service_runs_check_now_normally(tmp_path, monkeypatch):
         staticmethod(lambda: type("P", (), {"start": staticmethod(lambda r, priority=0: started.append(r))})()),
     )
 
-    service = RssFeedService(object(), settings, seen_store)
+    service = RssFeedService(_FakeSessionManager(), settings, seen_store)
     service.set_paused(True)
     service.set_paused(False)
 

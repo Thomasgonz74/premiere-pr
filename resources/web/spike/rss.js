@@ -17,7 +17,8 @@ function rssBuildPage() {
   topRow.className = "field-row";
   const label = document.createElement("span");
   label.className = "field-label";
-  label.textContent = "Abonnements";
+  label.textContent = t("web.rss.subscriptions_label");
+  label.dataset.i18nKey = "web.rss.subscriptions_label";
   topRow.appendChild(label);
   const spacer = document.createElement("span");
   spacer.style.flex = "1";
@@ -25,7 +26,8 @@ function rssBuildPage() {
   const checkNowBtn = document.createElement("button");
   checkNowBtn.className = "start-btn";
   checkNowBtn.id = "rssCheckNowBtn";
-  checkNowBtn.textContent = "Vérifier maintenant";
+  checkNowBtn.textContent = t("rss_tab.check_now");
+  checkNowBtn.dataset.i18nKey = "rss_tab.check_now";
   topRow.appendChild(checkNowBtn);
   root.appendChild(topRow);
 
@@ -36,11 +38,13 @@ function rssBuildPage() {
   urlRow.className = "field-row";
   const urlLabel = document.createElement("label");
   urlLabel.className = "field-label inline";
-  urlLabel.textContent = "URL du flux";
+  urlLabel.textContent = t("web.rss.feed_url_label");
+  urlLabel.dataset.i18nKey = "web.rss.feed_url_label";
   const urlInput = document.createElement("input");
   urlInput.type = "text";
   urlInput.id = "rssUrlInput";
-  urlInput.placeholder = "https://exemple.com/rss";
+  urlInput.placeholder = t("web.rss.url_placeholder");
+  urlInput.dataset.i18nPlaceholder = "web.rss.url_placeholder";
   urlRow.appendChild(urlLabel);
   urlRow.appendChild(urlInput);
   addGrid.appendChild(urlRow);
@@ -49,11 +53,13 @@ function rssBuildPage() {
   keywordRow.className = "field-row";
   const keywordLabel = document.createElement("label");
   keywordLabel.className = "field-label inline";
-  keywordLabel.textContent = "Mot-clé";
+  keywordLabel.textContent = t("rss_tab.column_keyword");
+  keywordLabel.dataset.i18nKey = "rss_tab.column_keyword";
   const keywordInput = document.createElement("input");
   keywordInput.type = "text";
   keywordInput.id = "rssKeywordInput";
-  keywordInput.placeholder = "Optionnel — filtre les titres";
+  keywordInput.placeholder = t("web.rss.keyword_placeholder");
+  keywordInput.dataset.i18nPlaceholder = "web.rss.keyword_placeholder";
   keywordRow.appendChild(keywordLabel);
   keywordRow.appendChild(keywordInput);
   addGrid.appendChild(keywordRow);
@@ -63,7 +69,8 @@ function rssBuildPage() {
   const addBtn = document.createElement("button");
   addBtn.className = "start-btn";
   addBtn.id = "rssAddBtn";
-  addBtn.textContent = "Ajouter";
+  addBtn.textContent = t("common.add");
+  addBtn.dataset.i18nKey = "common.add";
   addBtnRow.appendChild(addBtn);
   addGrid.appendChild(addBtnRow);
 
@@ -78,7 +85,8 @@ function rssBuildPage() {
   searchInput.type = "text";
   searchInput.className = "search-input";
   searchInput.id = "rssSearchInput";
-  searchInput.placeholder = "Rechercher…";
+  searchInput.placeholder = t("web.search.query_placeholder");
+  searchInput.dataset.i18nPlaceholder = "web.search.query_placeholder";
   root.appendChild(searchInput);
 
   const feedList = document.createElement("div");
@@ -88,7 +96,8 @@ function rssBuildPage() {
 
   const logLabel = document.createElement("p");
   logLabel.className = "field-label";
-  logLabel.textContent = "Journal";
+  logLabel.textContent = t("web.rss.log_label");
+  logLabel.dataset.i18nKey = "web.rss.log_label";
   root.appendChild(logLabel);
 
   const logList = document.createElement("div");
@@ -110,7 +119,7 @@ function rssRenderFeedList() {
   if (!visible.length) {
     const note = document.createElement("p");
     note.className = "empty-note";
-    note.textContent = "Aucun flux RSS.";
+    note.textContent = t("web.rss.no_feeds");
     list.appendChild(note);
     return;
   }
@@ -140,6 +149,10 @@ function rssRenderFeedList() {
 
     const actions = document.createElement("div");
     actions.className = "row-actions";
+    const filtersBtn = document.createElement("button");
+    filtersBtn.textContent = t("web.rss.filters_button");
+    filtersBtn.addEventListener("click", () => rssOpenFiltersDialog(feed));
+    actions.appendChild(filtersBtn);
     const removeBtn = document.createElement("button");
     removeBtn.textContent = "✕";
     removeBtn.addEventListener("click", () => {
@@ -152,6 +165,75 @@ function rssRenderFeedList() {
 
     list.appendChild(row);
   });
+}
+
+// Advanced filters (catalogue idea "filtres RSS avances") -- a separate
+// dialog from the simple add form above, since these are optional/rare
+// fields that would clutter the always-visible add row.
+function rssOpenFiltersDialog(feed) {
+  const content = document.createElement("div");
+  content.className = "form-grid";
+
+  function field(labelText, id, value, placeholder) {
+    const row = document.createElement("div");
+    row.className = "field-row";
+    const label = document.createElement("label");
+    label.className = "field-label inline";
+    label.textContent = labelText;
+    label.htmlFor = id;
+    const input = document.createElement("input");
+    input.type = "text";
+    input.id = id;
+    input.value = value || "";
+    if (placeholder) input.placeholder = placeholder;
+    row.appendChild(label);
+    row.appendChild(input);
+    content.appendChild(row);
+    return input;
+  }
+
+  const includeInput = field(t("web.rss.filter_include_label"), "rssFilterInclude", feed.regexInclude, t("web.rss.filter_include_placeholder"));
+  const excludeInput = field(t("web.rss.filter_exclude_label"), "rssFilterExclude", feed.regexExclude, t("web.rss.filter_exclude_placeholder"));
+  const minInput = field(t("web.rss.filter_res_min_label"), "rssFilterResMin", feed.resolutionMin || "", t("web.rss.filter_res_min_placeholder"));
+  const maxInput = field(t("web.rss.filter_res_max_label"), "rssFilterResMax", feed.resolutionMax || "", t("web.rss.filter_res_max_placeholder"));
+
+  const latestRow = document.createElement("div");
+  latestRow.className = "field-row";
+  const latestCheck = document.createElement("input");
+  latestCheck.type = "checkbox";
+  latestCheck.id = "rssFilterLatestOnly";
+  latestCheck.checked = !!feed.latestEpisodeOnly;
+  const latestLabel = document.createElement("label");
+  latestLabel.className = "field-label inline";
+  latestLabel.textContent = t("web.rss.filter_latest_only_label");
+  latestLabel.htmlFor = "rssFilterLatestOnly";
+  latestRow.appendChild(latestCheck);
+  latestRow.appendChild(latestLabel);
+  content.appendChild(latestRow);
+
+  const buttonRow = document.createElement("div");
+  buttonRow.className = "modal-close-row";
+  const saveBtn = document.createElement("button");
+  saveBtn.textContent = t("web.rss.filters_save_button");
+  saveBtn.addEventListener("click", () => {
+    window.bridge.rss.updateFeedFilters(feed.url, {
+      regexInclude: includeInput.value.trim(),
+      regexExclude: excludeInput.value.trim(),
+      resolutionMin: parseInt(minInput.value, 10) || 0,
+      resolutionMax: parseInt(maxInput.value, 10) || 0,
+      latestEpisodeOnly: latestCheck.checked,
+    });
+    closeModal();
+    rssReloadFeeds();
+  });
+  buttonRow.appendChild(saveBtn);
+  const cancelBtn = document.createElement("button");
+  cancelBtn.textContent = t("common.cancel");
+  cancelBtn.addEventListener("click", () => closeModal());
+  buttonRow.appendChild(cancelBtn);
+  content.appendChild(buttonRow);
+
+  openModal(t("web.rss.filters_dialog_title", { url: feed.url }), content);
 }
 
 function rssReloadFeeds() {
@@ -202,11 +284,11 @@ function wireRssPage() {
   rssBridge.itemsFound.connect((feedUrl, items) => {
     items.forEach((item) => {
       const title = item.title || feedUrl;
-      rssAppendLog(`${title} — ${feedUrl}`, false);
+      rssAppendLog(t("web.rss.log_entry", { title, url: feedUrl }), false);
     });
   });
   rssBridge.feedCheckFailed.connect((feedUrl, message) => {
-    rssAppendLog(`${feedUrl} — ${message}`, true);
+    rssAppendLog(t("web.rss.log_feed_check_failed", { url: feedUrl, message }), true);
   });
 
   rssReloadFeeds();

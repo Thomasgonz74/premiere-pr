@@ -13,7 +13,16 @@ from torrent2000.engine.session_manager import SessionManager
 
 
 def _feed_to_dict(feed: RssFeedSubscription) -> dict:
-    return {"url": feed.url, "filterKeyword": feed.filter_keyword, "enabled": feed.enabled}
+    return {
+        "url": feed.url,
+        "filterKeyword": feed.filter_keyword,
+        "enabled": feed.enabled,
+        "regexInclude": feed.regex_include,
+        "regexExclude": feed.regex_exclude,
+        "resolutionMin": feed.resolution_min,
+        "resolutionMax": feed.resolution_max,
+        "latestEpisodeOnly": feed.latest_episode_only,
+    }
 
 
 class RssBridge(QObject):
@@ -65,3 +74,21 @@ class RssBridge(QObject):
     @Slot()
     def checkNow(self) -> None:
         self._rss_feed_service.check_now()
+
+    @Slot(str, "QVariantMap")
+    def updateFeedFilters(self, url: str, values: dict) -> None:
+        """Advanced filters (catalogue idea "filtres RSS avances") -- a
+        separate call from addFeed so the simple add form's signature never
+        had to change; the RSS page's filter editor calls this after
+        addFeed for a new subscription, or on its own to edit an existing
+        one."""
+        for feed in self._settings.rss_feeds:
+            if feed.url != url:
+                continue
+            feed.regex_include = str(values.get("regexInclude", "")).strip()
+            feed.regex_exclude = str(values.get("regexExclude", "")).strip()
+            feed.resolution_min = max(0, int(values.get("resolutionMin", 0) or 0))
+            feed.resolution_max = max(0, int(values.get("resolutionMax", 0) or 0))
+            feed.latest_episode_only = bool(values.get("latestEpisodeOnly", False))
+            self._settings.save()
+            break

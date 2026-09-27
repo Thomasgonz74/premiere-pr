@@ -39,6 +39,9 @@ from torrent2000.ui.web.bridge_profile_network import ProfileNetworkBridge
 from torrent2000.ui.web.bridge_profile_security import ProfileSecurityBridge
 from torrent2000.ui.web.bridge_profile_stats import ProfileStatsBridge
 from torrent2000.ui.web.bridge_rss import RssBridge
+from torrent2000.engine.torrent_search_service import TorrentSearchSourceStore
+from torrent2000.ui.web.bridge_i18n import I18nBridge
+from torrent2000.ui.web.bridge_search import SearchBridge
 from torrent2000.ui.web.bridge_share import ShareBridge
 from torrent2000.ui.web.bridge_speed_graph import SpeedGraphBridge
 from torrent2000.ui.web.bridge_storage_sunburst import StorageSunburstBridge
@@ -85,6 +88,9 @@ class SpikeWindow(QMainWindow):
         known_disk_service,
         network_profile_store,
         decision_journal_service,
+        tag_service=None,
+        clipboard_watcher_service=None,
+        torrent_search_source_store=None,
         parent=None,
         debug: bool = False,
     ) -> None:
@@ -143,13 +149,19 @@ class SpikeWindow(QMainWindow):
 
         self._channel = QWebChannel(self)
         self._window_bridge = WindowBridge(self, settings, anthem_player, self)
+        if clipboard_watcher_service is not None:
+            clipboard_watcher_service.magnetDetected.connect(self._window_bridge.magnetDetected.emit)
         self._auto_shutdown_bridge = AutoShutdownBridge(auto_shutdown_service, self)
         self._auto_shutdown_bridge.countdownStarted.connect(self._on_shutdown_countdown_started)
-        self._downloads_bridge = DownloadsBridge(session_manager, bandwidth_scheduler, self)
+        self._downloads_bridge = DownloadsBridge(session_manager, bandwidth_scheduler, self, tag_service=tag_service)
         self._add_bridge = AddBridge(session_manager, settings, routing_rule_store, self)
         self._share_bridge = ShareBridge(session_manager, share_limit_service, settings, self)
         self._dialog_bridge = DialogBridge(self, self)
+        self._i18n_bridge = I18nBridge(self)
         self._rss_bridge = RssBridge(session_manager, rss_feed_service, settings, self)
+        self._search_bridge = SearchBridge(
+            torrent_search_source_store or TorrentSearchSourceStore(), settings, self
+        )
         self._profile_general_bridge = ProfileGeneralBridge(session_manager, settings, self)
         self._profile_general_bridge.volumeChanged.connect(anthem_player.set_volume)
         self._profile_network_bridge = ProfileNetworkBridge(session_manager, settings, remote_access_server, self)
@@ -176,7 +188,9 @@ class SpikeWindow(QMainWindow):
         self._channel.registerObject("add", self._add_bridge)
         self._channel.registerObject("share", self._share_bridge)
         self._channel.registerObject("dialogs", self._dialog_bridge)
+        self._channel.registerObject("i18n", self._i18n_bridge)
         self._channel.registerObject("rss", self._rss_bridge)
+        self._channel.registerObject("search", self._search_bridge)
         self._channel.registerObject("profileGeneral", self._profile_general_bridge)
         self._channel.registerObject("profileNetwork", self._profile_network_bridge)
         self._channel.registerObject("profileAutomation", self._profile_automation_bridge)

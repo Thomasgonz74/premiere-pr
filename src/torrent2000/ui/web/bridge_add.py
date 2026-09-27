@@ -5,16 +5,25 @@ check before a file-based add, the magnet-needs-two-clicks-of-Demarrer
 quirk) rather than reinventing any of it.
 
 AddTorrentTab's own routing-rule auto-prefill of dest_input from the
-torrent's name/tracker is still NOT ported (it fires on every analysis,
-unconditionally). What IS exposed here is narrower: listCategories/
-resolveDestination/defaultSharePolicyNote back the intent-guided preset
-selector in add.js, which only ever prefills the category/destination
-fields (still freely editable) when the user explicitly picks a preset --
-each one reuses an existing engine mechanism (torrent_categories.py's
-free-text category, routing_rules.py's resolve_destination(), and the
-Settings fields ShareLimitService already reads for its default policy)
-rather than adding a new one.
+torrent's name now IS ported (see selectTorrentFile/_on_metadata_received's
+`suggestedDestination` on the scan payload) -- previously only the RSS
+auto-download path (rss_feed_service.py) applied resolve_destination() by
+default, an inconsistency with no real reason behind it. Unlike the RSS
+path, add.js only ever uses the suggestion to prefill an empty/still-default
+destination field (see addRenderScan), never overwriting something the user
+already typed -- the explicit intent-preset selector below remains available
+and takes priority if picked afterward.
+
+listCategories/resolveDestination/defaultSharePolicyNote back the
+intent-guided preset selector in add.js, which only ever prefills the
+category/destination fields (still freely editable) when the user explicitly
+picks a preset -- each one reuses an existing engine mechanism
+(torrent_categories.py's free-text category, routing_rules.py's
+resolve_destination(), and the Settings fields ShareLimitService already
+reads for its default policy) rather than adding a new one.
 """
+
+from pathlib import Path
 
 from PySide6.QtCore import QObject, Signal, Slot
 
@@ -143,7 +152,11 @@ class AddBridge(QObject):
             return
         self._torrent_files = files
         result = scan_files(files)
-        self.scanReady.emit(_scan_result_to_dict(result, self._threshold))
+        payload = _scan_result_to_dict(result, self._threshold)
+        payload["suggestedDestination"] = resolve_destination(
+            self._routing_rule_store.list_rules(), self._settings.default_download_dir, name=Path(path).stem
+        )
+        self.scanReady.emit(payload)
         self.statusChanged.emit(f"{len(files)} fichier(s) analysé(s).")
 
     @Slot(str, str, result=str)
@@ -175,7 +188,14 @@ class AddBridge(QObject):
             return
         files = self._session_manager.get_torrent_files(info_hash)
         result = scan_files(files)
-        self.scanReady.emit(_scan_result_to_dict(result, self._threshold))
+        payload = _scan_result_to_dict(result, self._threshold)
+        record = self._session_manager.get_record(info_hash)
+        payload["suggestedDestination"] = resolve_destination(
+            self._routing_rule_store.list_rules(),
+            self._settings.default_download_dir,
+            name=record.name if record is not None else "",
+        )
+        self.scanReady.emit(payload)
         self.statusChanged.emit(f"{len(files)} fichier(s) analysé(s).")
 
     @Slot(str, str, str, "QVariantList", result="QVariantMap")

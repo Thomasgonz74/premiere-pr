@@ -71,17 +71,35 @@ new QWebChannel(qt.webChannelTransport, (channel) => {
     _applyCccpPanelState(themeId, channel.objects.windowBridge);
   });
 
+  // Re-fetch the fallback-resolved catalog (see i18n.js/bridge_i18n.py) and
+  // refresh static DOM whenever the Profile > General language selector
+  // changes it -- dynamically-rendered content (list rows, dialogs) needs
+  // no extra wiring here, it already calls t() fresh on its own next render.
+  channel.objects.profileGeneral.languageChanged.connect(() => {
+    channel.objects.i18n.getCatalog((catalog) => setCatalog(catalog));
+  });
+
   // One-time welcome dialog on the very first launch (see
   // window_bridge.shouldShowOnboarding/markOnboardingSeen -- backed by
   // Settings.first_launch_seen, same flag the native app uses).
   channel.objects.windowBridge.shouldShowOnboarding((show) => {
     if (!show) return;
     alertModal(
-      "Bienvenue dans Torrent 2000",
-      "Avant de commencer, faites un tour dans l'onglet Profil : vous y trouverez les réglages de confidentialité et de réseau (proxy, chiffrement, découverte réseau) qui déterminent ce que vos pairs peuvent voir de votre activité.",
-      "Compris",
+      t("onboarding.title"),
+      t("onboarding.message"),
+      t("onboarding.ok_button"),
       () => channel.objects.windowBridge.markOnboardingSeen()
     );
+  });
+
+  // Catalogue idea "detection de lien magnet dans le presse-papiers" (off
+  // by default, see Profil > Automatisation) -- never auto-adds, always
+  // offers first.
+  channel.objects.windowBridge.magnetDetected.connect((magnetUri) => {
+    if (confirm(t("web.app.magnet_detected_confirm", { magnetUri }))) {
+      switchToTab("add");
+      channel.objects.add.analyzeMagnet(magnetUri);
+    }
   });
 
   channel.objects.update.updateAvailable.connect((version, releaseUrl) => {
@@ -96,14 +114,22 @@ new QWebChannel(qt.webChannelTransport, (channel) => {
   // directly via runJavaScript with the action already resolved from
   // settings; connecting again here would fire the dialog twice.
 
-  wireDownloadsPage();
-  wireAddPage();
-  wireSharePage();
-  wireRssPage();
-  wireProfileGeneral();
-  wireProfileNetwork();
-  wireProfileAutomation();
-  wireProfileSecurity();
-  wireProfileAdvanced();
-  wireProfileStats();
+  // Pages are built with t() calls baked into their DOM construction, so
+  // they must wire up only after the catalog has actually arrived --
+  // otherwise every label would render as its raw key.
+  channel.objects.i18n.getCatalog((catalog) => {
+    setCatalog(catalog);
+
+    wireDownloadsPage();
+    wireAddPage();
+    wireSharePage();
+    wireRssPage();
+    wireSearchPage();
+    wireProfileGeneral();
+    wireProfileNetwork();
+    wireProfileAutomation();
+    wireProfileSecurity();
+    wireProfileAdvanced();
+    wireProfileStats();
+  });
 });

@@ -9,13 +9,15 @@ function pgFieldRow(labelText, inputEl, noteText) {
   row.className = "field-row";
   const label = document.createElement("label");
   label.className = "field-label";
-  label.textContent = labelText;
+  label.textContent = t(labelText);
+  label.dataset.i18nKey = labelText;
   row.appendChild(label);
   row.appendChild(inputEl);
   if (noteText) {
     const note = document.createElement("span");
     note.className = "field-note";
-    note.textContent = noteText;
+    note.textContent = t(noteText);
+    note.dataset.i18nKey = noteText;
     row.appendChild(note);
   }
   return row;
@@ -28,7 +30,10 @@ function pgCheckboxRow(id, labelText) {
   input.type = "checkbox";
   input.id = id;
   row.appendChild(input);
-  row.appendChild(document.createTextNode(labelText));
+  const labelSpan = document.createElement("span");
+  labelSpan.textContent = t(labelText);
+  labelSpan.dataset.i18nKey = labelText;
+  row.appendChild(labelSpan);
   return { row, input };
 }
 
@@ -49,13 +54,15 @@ function wireProfileGeneral() {
   const container = document.getElementById("profileGeneralContainer");
 
   const heading = document.createElement("h3");
-  heading.textContent = "Général";
+  heading.textContent = t("web.profile_general.heading");
+  heading.dataset.i18nKey = "web.profile_general.heading";
   container.appendChild(heading);
 
   // ---- Téléchargements ----
   const dlHeading = document.createElement("h4");
   dlHeading.className = "profile-subheading";
-  dlHeading.textContent = "Téléchargements";
+  dlHeading.textContent = t("web.profile_general.downloads_heading");
+  dlHeading.dataset.i18nKey = "web.profile_general.downloads_heading";
   container.appendChild(dlHeading);
 
   const dlGrid = document.createElement("div");
@@ -67,8 +74,9 @@ function wireProfileGeneral() {
   destInput.id = "pgDestInput";
   const destBrowseBtn = document.createElement("button");
   destBrowseBtn.id = "pgDestBrowseBtn";
-  destBrowseBtn.textContent = "Parcourir...";
-  const destRow = pgFieldRow("Dossier de destination par défaut :", destInput);
+  destBrowseBtn.textContent = t("common.browse");
+  destBrowseBtn.dataset.i18nKey = "common.browse";
+  const destRow = pgFieldRow("profile_tab.default_download_dir", destInput);
   destRow.appendChild(destBrowseBtn);
   dlGrid.appendChild(destRow);
 
@@ -77,42 +85,51 @@ function wireProfileGeneral() {
   downloadLimitInput.id = "pgDownloadLimit";
   downloadLimitInput.min = "0";
   downloadLimitInput.max = "1000000";
-  dlGrid.appendChild(pgFieldRow("Limite de téléchargement :", downloadLimitInput, "Ko/s (0 = illimité)"));
+  dlGrid.appendChild(pgFieldRow("profile_tab.download_limit", downloadLimitInput, "common.kbps_unlimited_suffix"));
 
   const uploadLimitInput = document.createElement("input");
   uploadLimitInput.type = "number";
   uploadLimitInput.id = "pgUploadLimit";
   uploadLimitInput.min = "0";
   uploadLimitInput.max = "1000000";
-  dlGrid.appendChild(pgFieldRow("Limite d'envoi :", uploadLimitInput, "Ko/s (0 = illimité)"));
+  dlGrid.appendChild(pgFieldRow("profile_tab.upload_limit", uploadLimitInput, "common.kbps_unlimited_suffix"));
 
   const maxActiveInput = document.createElement("input");
   maxActiveInput.type = "number";
   maxActiveInput.id = "pgMaxActive";
   maxActiveInput.min = "1";
   maxActiveInput.max = "100";
-  dlGrid.appendChild(pgFieldRow("Téléchargements actifs simultanés maximum :", maxActiveInput));
+  dlGrid.appendChild(pgFieldRow("profile_tab.max_active_downloads", maxActiveInput));
 
   const dangerThresholdInput = document.createElement("input");
   dangerThresholdInput.type = "number";
   dangerThresholdInput.id = "pgDangerThreshold";
   dangerThresholdInput.min = "0";
   dangerThresholdInput.max = "100";
-  dlGrid.appendChild(pgFieldRow("Seuil d'auto-exclusion des fichiers dangereux :", dangerThresholdInput, "%"));
+  dlGrid.appendChild(pgFieldRow("profile_tab.danger_threshold", dangerThresholdInput, "%"));
 
-  const notif = pgCheckboxRow("pgNotifications", "Notifier la fin d'un téléchargement ou d'un partage");
+  const notif = pgCheckboxRow("pgNotifications", "profile_tab.notifications_checkbox");
   dlGrid.appendChild(notif.row);
-  const launch = pgCheckboxRow("pgLaunchAtStartup", "Lancer automatiquement au démarrage de Windows");
+  const webhookEnabled = pgCheckboxRow("pgWebhookEnabled", "web.profile_general.webhook_enabled_checkbox");
+  dlGrid.appendChild(webhookEnabled.row);
+  const webhookUrlInput = document.createElement("input");
+  webhookUrlInput.type = "text";
+  webhookUrlInput.id = "pgWebhookUrl";
+  webhookUrlInput.placeholder = t("web.profile_general.webhook_url_placeholder");
+  webhookUrlInput.dataset.i18nPlaceholder = "web.profile_general.webhook_url_placeholder";
+  dlGrid.appendChild(pgFieldRow("web.profile_general.webhook_url_label", webhookUrlInput));
+  const launch = pgCheckboxRow("pgLaunchAtStartup", "profile_tab.launch_at_startup_checkbox");
   dlGrid.appendChild(launch.row);
-  const updates = pgCheckboxRow("pgCheckForUpdates", "Vérifier les mises à jour au démarrage");
+  const updates = pgCheckboxRow("pgCheckForUpdates", "profile_tab.check_for_updates_checkbox");
   dlGrid.appendChild(updates.row);
-  const tray = pgCheckboxRow("pgMinimizeToTray", "Réduire dans la barre système");
+  const tray = pgCheckboxRow("pgMinimizeToTray", "profile_tab.minimize_to_tray_checkbox");
   dlGrid.appendChild(tray.row);
 
   const saveBtn = document.createElement("button");
   saveBtn.className = "start-btn";
   saveBtn.id = "pgSaveBtn";
-  saveBtn.textContent = "Enregistrer";
+  saveBtn.textContent = t("profile_tab.save_button");
+  saveBtn.dataset.i18nKey = "profile_tab.save_button";
   container.appendChild(saveBtn);
 
   const status = document.createElement("p");
@@ -123,7 +140,8 @@ function wireProfileGeneral() {
   // ---- Apparence ----
   const appearanceHeading = document.createElement("h4");
   appearanceHeading.className = "profile-subheading";
-  appearanceHeading.textContent = "Apparence";
+  appearanceHeading.textContent = t("web.profile_general.appearance_heading");
+  appearanceHeading.dataset.i18nKey = "web.profile_general.appearance_heading";
   container.appendChild(appearanceHeading);
 
   const appearanceGrid = document.createElement("div");
@@ -132,20 +150,21 @@ function wireProfileGeneral() {
 
   const themeSelect = document.createElement("select");
   themeSelect.id = "pgThemeSelect";
-  appearanceGrid.appendChild(pgFieldRow("Thème (base Windows XP) :", themeSelect));
+  appearanceGrid.appendChild(pgFieldRow("profile_tab.theme_label", themeSelect));
 
   const appearanceSelect = document.createElement("select");
   appearanceSelect.id = "pgAppearanceSelect";
-  appearanceGrid.appendChild(pgFieldRow("Mode d'affichage :", appearanceSelect));
+  appearanceGrid.appendChild(pgFieldRow("profile_tab.appearance_mode_label", appearanceSelect));
 
   const languageSelect = document.createElement("select");
   languageSelect.id = "pgLanguageSelect";
-  appearanceGrid.appendChild(pgFieldRow("Langue :", languageSelect));
+  appearanceGrid.appendChild(pgFieldRow("profile_tab.language_label", languageSelect));
 
   // ---- Audio ----
   const audioHeading = document.createElement("h4");
   audioHeading.className = "profile-subheading";
-  audioHeading.textContent = "Audio";
+  audioHeading.textContent = t("profile_tab.audio_group");
+  audioHeading.dataset.i18nKey = "profile_tab.audio_group";
   container.appendChild(audioHeading);
 
   const audioGrid = document.createElement("div");
@@ -159,13 +178,14 @@ function wireProfileGeneral() {
   volumeSlider.max = "100";
   const volumeValue = document.createElement("span");
   volumeValue.id = "pgVolumeValue";
-  const volumeRow = pgFieldRow("Volume", volumeSlider);
+  const volumeRow = pgFieldRow("profile_tab.audio_volume_label", volumeSlider);
   volumeRow.appendChild(volumeValue);
   audioGrid.appendChild(volumeRow);
 
   const audioNote = document.createElement("p");
   audioNote.className = "field-note";
-  audioNote.textContent = "Contrôle le volume de l'hymne joué en fond sonore par le thème CCCP.";
+  audioNote.textContent = t("profile_tab.audio_note");
+  audioNote.dataset.i18nKey = "profile_tab.audio_note";
   audioGrid.appendChild(audioNote);
 
   // ---- Populate + wire ----
@@ -183,12 +203,14 @@ function wireProfileGeneral() {
       maxActiveDownloads: parseInt(maxActiveInput.value, 10) || 1,
       dangerAutoExcludeThreshold: parseInt(dangerThresholdInput.value, 10) || 0,
       notificationsEnabled: notif.input.checked,
+      webhookEnabled: webhookEnabled.input.checked,
+      webhookUrl: webhookUrlInput.value.trim(),
       launchAtStartup: launch.input.checked,
       checkForUpdates: updates.input.checked,
       minimizeToTray: tray.input.checked,
     };
     bridge.saveSettings(values, (result) => {
-      status.textContent = result.ok ? "Paramètres enregistrés." : result.error || "";
+      status.textContent = result.ok ? t("web.profile_general.settings_saved") : result.error || "";
     });
   });
 
@@ -210,6 +232,8 @@ function wireProfileGeneral() {
     maxActiveInput.value = values.maxActiveDownloads;
     dangerThresholdInput.value = values.dangerAutoExcludeThreshold;
     notif.input.checked = values.notificationsEnabled;
+    webhookEnabled.input.checked = values.webhookEnabled;
+    webhookUrlInput.value = values.webhookUrl;
     updates.input.checked = values.checkForUpdates;
     tray.input.checked = values.minimizeToTray;
     volumeSlider.value = values.audioVolume;

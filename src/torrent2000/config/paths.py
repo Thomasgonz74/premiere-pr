@@ -1,5 +1,36 @@
 import os
+import subprocess
 from pathlib import Path
+
+
+def _lock_down_acl(path: Path) -> None:
+    """Best-effort NTFS ACL lockdown for a freshly-created app data
+    directory -- restricts access to the current user + SYSTEM, replacing
+    whatever broader access it inherited from its parent (relevant on a
+    machine shared between multiple Windows accounts; this directory holds
+    config.json, resume data, and the sqlite stores). Never raises: a
+    failure here (e.g. running outside Windows, icacls missing) must never
+    block the app from starting."""
+    username = os.environ.get("USERNAME", "")
+    if not username:
+        return
+    try:
+        subprocess.run(
+            [
+                "icacls",
+                str(path),
+                "/inheritance:r",
+                "/grant:r",
+                f"{username}:(OI)(CI)F",
+                "/grant:r",
+                "SYSTEM:(OI)(CI)F",
+            ],
+            capture_output=True,
+            timeout=5,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        pass
 
 
 def get_app_data_dir() -> Path:
@@ -9,7 +40,10 @@ def get_app_data_dir() -> Path:
     else:
         base = os.environ.get("APPDATA") or str(Path.home() / "AppData" / "Roaming")
         app_dir = Path(base) / "Torrent2000"
+    just_created = not app_dir.exists()
     app_dir.mkdir(parents=True, exist_ok=True)
+    if just_created:
+        _lock_down_acl(app_dir)
     return app_dir
 
 
@@ -57,6 +91,14 @@ def get_share_limits_path() -> Path:
 
 def get_categories_path() -> Path:
     return get_config_path().parent / "categories.json"
+
+
+def get_tags_path() -> Path:
+    return get_config_path().parent / "tags.json"
+
+
+def get_torrent_search_sources_path() -> Path:
+    return get_config_path().parent / "torrent_search_sources.json"
 
 
 def get_settings_profiles_path() -> Path:

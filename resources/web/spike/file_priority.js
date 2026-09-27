@@ -37,14 +37,13 @@ function fpRenderContent(container, infoHash, files) {
   if (files.length === 0) {
     const note = document.createElement("p");
     note.className = "empty-note";
-    note.textContent =
-      "Aucune information de fichiers disponible pour le moment (métadonnées non reçues, ou torrent introuvable).";
+    note.textContent = t("web.file_priority.no_metadata_message");
     container.appendChild(note);
 
     const closeRow = document.createElement("div");
     closeRow.className = "modal-close-row";
     const closeBtn = document.createElement("button");
-    closeBtn.textContent = "Fermer";
+    closeBtn.textContent = t("titlebar.close");
     closeBtn.addEventListener("click", () => closeModal());
     closeRow.appendChild(closeBtn);
     container.appendChild(closeRow);
@@ -54,19 +53,19 @@ function fpRenderContent(container, infoHash, files) {
   if (files.length === 1) {
     const warn = document.createElement("p");
     warn.className = "field-note";
-    warn.textContent = "Décocher l'unique fichier exclura le torrent entier.";
+    warn.textContent = t("web.file_priority.single_file_message");
     container.appendChild(warn);
   }
 
   const toolbar = document.createElement("div");
   toolbar.className = "scan-toolbar";
   const checkAllBtn = document.createElement("button");
-  checkAllBtn.textContent = "Tout cocher";
+  checkAllBtn.textContent = t("file_priority_dialog.check_all");
   checkAllBtn.addEventListener("click", () => {
     list.querySelectorAll(".fp-check").forEach((c) => (c.checked = true));
   });
   const uncheckAllBtn = document.createElement("button");
-  uncheckAllBtn.textContent = "Tout décocher";
+  uncheckAllBtn.textContent = t("file_priority_dialog.uncheck_all");
   uncheckAllBtn.addEventListener("click", () => {
     list.querySelectorAll(".fp-check").forEach((c) => (c.checked = false));
   });
@@ -82,7 +81,7 @@ function fpRenderContent(container, infoHash, files) {
   const buttonRow = document.createElement("div");
   buttonRow.className = "modal-close-row";
   const saveBtn = document.createElement("button");
-  saveBtn.textContent = "Enregistrer";
+  saveBtn.textContent = t("file_priority_dialog.save_button");
   saveBtn.addEventListener("click", () => {
     const excluded = [];
     list.querySelectorAll(".field-row").forEach((row) => {
@@ -94,7 +93,7 @@ function fpRenderContent(container, infoHash, files) {
     closeModal();
   });
   const cancelBtn = document.createElement("button");
-  cancelBtn.textContent = "Annuler";
+  cancelBtn.textContent = t("common.cancel");
   cancelBtn.addEventListener("click", () => closeModal());
   buttonRow.appendChild(saveBtn);
   buttonRow.appendChild(cancelBtn);
@@ -106,12 +105,12 @@ function openFilePriorityDialog(infoHash, torrentName) {
   container.className = "form-grid";
   const loading = document.createElement("p");
   loading.className = "status-line";
-  loading.textContent = "Chargement…";
+  loading.textContent = t("web.file_priority.loading");
   container.appendChild(loading);
 
   // titleText is passed to openModal, which assigns it via .textContent
   // (safe even though torrentName is untrusted torrent-file data).
-  openModal(`Fichiers — ${torrentName}`, container);
+  openModal(t("web.file_priority.dialog_title", { name: torrentName }), container);
 
   window.bridge.filePriority.getFiles(infoHash, (files) => {
     fpRenderContent(container, infoHash, files);

@@ -69,6 +69,7 @@ def fetch_url(
     timeout_seconds: float,
     extra_headers: dict | None = None,
     proxy: "ProxySettings | None" = None,
+    data: bytes | None = None,
 ) -> bytes:
     # Python's urllib.request happily opens file:// (and other non-http(s))
     # URLs by default -- without this check, a crafted feed/config URL could
@@ -78,7 +79,11 @@ def fetch_url(
     if scheme not in _ALLOWED_SCHEMES:
         raise FetchError(f"Refusing to fetch a non-http(s) URL (scheme: {scheme or '<none>'!r})")
 
-    request = urllib.request.Request(url, headers={"User-Agent": user_agent, **(extra_headers or {})})
+    # urllib.request.Request uses POST automatically when data is not None,
+    # GET otherwise -- existing callers never pass data, so this is a purely
+    # additive capability (webhook_notification_service.py's POST is the
+    # first caller to use it).
+    request = urllib.request.Request(url, data=data, headers={"User-Agent": user_agent, **(extra_headers or {})})
     opener = _build_proxy_opener(proxy, url)
     # timeout_seconds bounds the WHOLE operation (connect + full read) from
     # here on, not just each individual socket recv() the way urlopen's own

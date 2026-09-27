@@ -4,6 +4,7 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 from torrent2000.config.paths import get_config_path, get_default_download_dir
+from torrent2000.engine import dpapi
 
 SCHEMA_VERSION = 1
 
@@ -44,6 +45,19 @@ class RssFeedSubscription:
     url: str = ""
     filter_keyword: str = ""  # empty = match every item in the feed
     enabled: bool = True
+    # Advanced filters (catalogue idea "filtres RSS avances") -- all optional,
+    # applied on top of filter_keyword, never instead of it. Empty/0/False
+    # means "no additional constraint", same convention as filter_keyword
+    # itself. See engine/rss_feed_service.py::matches_advanced_filters.
+    regex_include: str = ""  # item title must match this regex if set
+    regex_exclude: str = ""  # item title must NOT match this regex if set
+    resolution_min: int = 0  # e.g. 720 -- 0 = no minimum
+    resolution_max: int = 0  # e.g. 1080 -- 0 = no maximum
+    # When true, only the single item with the highest heuristically-parsed
+    # episode/sequence number in a fetch batch is downloaded -- the rest are
+    # marked seen (never retried) but never added, avoiding a backlog flood
+    # the first time a season-pack-heavy feed is subscribed to.
+    latest_episode_only: bool = False
 
 
 def _from_dict(cls, raw: dict):
@@ -227,6 +241,36 @@ class Settings:
     # ahead of tracker/DHT/LSD rediscovering them on their own.
     lan_peer_cache_enabled: bool = False
 
+    # Off by default -- only takes effect once the user explicitly enables it
+    # in the Profile tab and supplies a blocklist file (one CIDR block or IP
+    # range per line, "#" comments allowed -- see engine/ip_blocklist.py).
+    # Applied once at session start via lt.session.set_ip_filter(); toggling
+    # or changing the path takes effect on next launch, same convention as
+    # network_interface.
+    ip_blocklist_enabled: bool = False
+    ip_blocklist_path: str = ""
+
+    # Off by default -- only takes effect once the user explicitly enables it
+    # in the Profile tab. See engine/scheduled_recheck_service.py: while
+    # enabled, periodically force-rechecks finished torrents whose last
+    # verification is older than scheduled_recheck_interval_days, to catch
+    # silent disk corruption before it's discovered too late.
+    scheduled_recheck_enabled: bool = False
+    scheduled_recheck_interval_days: int = 30
+
+    # Off by default -- only takes effect once the user explicitly enables it
+    # in the Profile tab and supplies a URL. See
+    # engine/webhook_notification_service.py: POSTs a short plain-text
+    # message for the same events already shown as a system tray toast.
+    webhook_enabled: bool = False
+    webhook_url: str = ""
+
+    # Off by default -- only takes effect once the user explicitly enables it
+    # in the Profile tab. See engine/clipboard_watcher_service.py: while
+    # enabled, watches the clipboard and offers (never auto-adds) to add a
+    # copied magnet: link.
+    clipboard_magnet_detection_enabled: bool = False
+
     @staticmethod
     def load() -> "Settings":
         path = get_config_path()
@@ -244,6 +288,14 @@ class Settings:
         proxy_data = data.pop("proxy", {})
         schedule_data = data.pop("bandwidth_schedule", {})
         rss_feeds_data = data.pop("rss_feeds", [])
+        # Decrypted here, at the JSON-dict boundary, so every Settings field
+        # in memory is always plaintext -- see engine/dpapi.py. A pre-existing
+        # plaintext value (config saved before this feature existed) passes
+        # through unprotect() unchanged and is re-encrypted on the next save().
+        if isinstance(proxy_data.get("password"), str):
+            proxy_data["password"] = dpapi.unprotect(proxy_data["password"])
+        if isinstance(data.get("remote_access_token"), str):
+            data["remote_access_token"] = dpapi.unprotect(data["remote_access_token"])
         settings = _from_dict(Settings, data)
         settings.proxy = _from_dict(ProxySettings, proxy_data)
         settings.bandwidth_schedule = _from_dict(BandwidthSchedule, schedule_data)
@@ -265,6 +317,12 @@ class Settings:
             except (json.JSONDecodeError, OSError):
                 old_data = None
         new_data = asdict(self)
+        # Encrypted only in the dict about to be written to disk -- `self`
+        # (and therefore old_data's diff below, which excludes both fields
+        # entirely anyway -- see settings_history._EXCLUDED_FIELDS) keeps
+        # plaintext in memory throughout.
+        new_data["proxy"]["password"] = dpapi.protect(new_data["proxy"]["password"])
+        new_data["remote_access_token"] = dpapi.protect(new_data["remote_access_token"])
         tmp_path = path.with_suffix(path.suffix + ".tmp")
         tmp_path.write_text(json.dumps(new_data, indent=2, ensure_ascii=False), encoding="utf-8")
         os.replace(tmp_path, path)

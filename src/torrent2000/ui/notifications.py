@@ -55,6 +55,8 @@ class NotificationService(QObject):
         session_manager.tracker_error.connect(self._on_tracker_error)
         session_manager.file_error.connect(self._on_file_error)
         session_manager.torrent_removed.connect(self._on_torrent_removed)
+        session_manager.theme_downloads_paused.connect(self._on_theme_downloads_paused)
+        session_manager.storage_moved.connect(self._on_storage_moved)
 
     def _on_tray_activated(self, reason: QSystemTrayIcon.ActivationReason) -> None:
         if reason in _TRAY_ACTIVATION_REASONS:
@@ -108,3 +110,19 @@ class NotificationService(QObject):
     def _on_torrent_removed(self, info_hash: str) -> None:
         self._notified_tracker_errors.discard(info_hash)
         self._notified_file_errors.discard(info_hash)
+
+    def _on_theme_downloads_paused(self, paused_count: int) -> None:
+        if paused_count <= 0:
+            return
+        self._notify(
+            tr("notifications.theme_downloads_paused_title"),
+            tr("notifications.theme_downloads_paused_message", count=paused_count),
+        )
+
+    def _on_storage_moved(self, info_hash: str, new_path: str) -> None:
+        record = self._session_manager.get_record(info_hash)
+        name = record.name if record is not None else info_hash[:12]
+        self._notify(
+            tr("notifications.storage_moved_title"),
+            tr("notifications.storage_moved_message", name=name, path=new_path),
+        )

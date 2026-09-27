@@ -4,12 +4,13 @@
 // hits the bridge/store directly, there's no batched "Enregistrer" button
 // for this group.
 
-const AR_FIELD_LABELS = { name: "Nom du torrent", tracker: "Tracker" };
+const AR_FIELD_LABEL_KEYS = { name: "routing_rules.field_name", tracker: "routing_rules.field_tracker" };
 
-function arSectionHeading(text) {
+function arSectionHeading(key) {
   const h = document.createElement("h3");
   h.className = "profile-section-heading";
-  h.textContent = text;
+  h.textContent = t(key);
+  h.dataset.i18nKey = key;
   return h;
 }
 
@@ -36,7 +37,7 @@ function arRuleRow(rule, index) {
 
   const fieldEl = document.createElement("span");
   fieldEl.className = "rule-cell";
-  fieldEl.textContent = AR_FIELD_LABELS[rule.matchField] || rule.matchField;
+  fieldEl.textContent = AR_FIELD_LABEL_KEYS[rule.matchField] ? t(AR_FIELD_LABEL_KEYS[rule.matchField]) : rule.matchField;
   row.appendChild(fieldEl);
 
   const destEl = document.createElement("span");
@@ -61,12 +62,12 @@ function arRuleRow(rule, index) {
   actions.appendChild(downBtn);
 
   const editBtn = document.createElement("button");
-  editBtn.textContent = "Modifier";
+  editBtn.textContent = t("routing_rules.edit_button");
   editBtn.addEventListener("click", () => arOpenForm(rule));
   actions.appendChild(editBtn);
 
   const removeBtn = document.createElement("button");
-  removeBtn.textContent = "Retirer";
+  removeBtn.textContent = t("common.remove");
   removeBtn.addEventListener("click", () => arDeleteRule(rule.name));
   actions.appendChild(removeBtn);
 
@@ -80,7 +81,7 @@ function arRenderRules() {
   if (!arRules.length) {
     const note = document.createElement("p");
     note.className = "empty-note";
-    note.textContent = "Aucune règle de classement pour l'instant.";
+    note.textContent = t("web.profile_advanced.no_routing_rules");
     list.appendChild(note);
     return;
   }
@@ -105,7 +106,7 @@ function arMoveRule(from, to) {
 }
 
 function arDeleteRule(name) {
-  if (!confirm(`Voulez-vous vraiment supprimer la règle « ${name} » ?`)) return;
+  if (!confirm(t("routing_rules.delete_confirm_message", { name }))) return;
   window.bridge.profileAdvanced.deleteRoutingRule(name);
   arRules = arRules.filter((r) => r.name !== name);
   arRenderRules();
@@ -113,11 +114,14 @@ function arDeleteRule(name) {
 
 function arOpenForm(rule) {
   arEditingName = rule ? rule.name : null;
-  document.getElementById("arFormTitle").textContent = rule ? "Modifier la règle" : "Ajouter une règle";
+  document.getElementById("arFormTitle").textContent = rule ? t("routing_rules.dialog_edit_title") : t("routing_rules.dialog_add_title");
   document.getElementById("arNameInput").value = rule ? rule.name : "";
   document.getElementById("arPatternInput").value = rule ? rule.pattern : "";
   document.getElementById("arFieldSelect").value = rule ? rule.matchField : "name";
   document.getElementById("arDestInput").value = rule ? rule.destination : "";
+  document.getElementById("arPostActionSelect").value = rule ? rule.postCompleteAction : "none";
+  document.getElementById("arPostActionMoveToInput").value = rule ? rule.postCompleteMoveTo : "";
+  document.getElementById("arPostActionSelect").dispatchEvent(new Event("change"));
   document.getElementById("arFormStatus").textContent = "";
   document.getElementById("arForm").style.display = "";
 }
@@ -130,21 +134,28 @@ function arCloseForm() {
 function arBuildRulesSection(container) {
   const section = document.createElement("div");
   section.className = "profile-section";
-  section.appendChild(arSectionHeading("Règles de routage"));
+  section.appendChild(arSectionHeading("web.profile_advanced.routing_rules_heading"));
 
   const intro = document.createElement("p");
   intro.className = "field-note";
-  intro.textContent =
-    "Définissez des règles « si le nom ou le tracker contient X, alors dossier Y » pour orienter " +
-    "automatiquement chaque nouveau torrent. La première règle qui correspond l'emporte -- utilisez " +
-    "▲/▼ pour les prioriser.";
+  intro.textContent = t("web.profile_advanced.routing_rules_intro");
+  intro.dataset.i18nKey = "web.profile_advanced.routing_rules_intro";
   section.appendChild(intro);
 
   const header = document.createElement("div");
   header.className = "rule-row rule-header";
-  ["Nom", "Motif", "Champ", "Destination", ""].forEach((label) => {
+  [
+    "routing_rules.column_name",
+    "routing_rules.column_pattern",
+    "routing_rules.column_field",
+    "routing_rules.column_destination",
+    null,
+  ].forEach((key) => {
     const cell = document.createElement("span");
-    cell.textContent = label;
+    if (key) {
+      cell.textContent = t(key);
+      cell.dataset.i18nKey = key;
+    }
     header.appendChild(cell);
   });
   section.appendChild(header);
@@ -157,7 +168,8 @@ function arBuildRulesSection(container) {
   const addBtnRow = document.createElement("div");
   addBtnRow.className = "field-row";
   const addBtn = document.createElement("button");
-  addBtn.textContent = "Ajouter";
+  addBtn.textContent = t("common.add");
+  addBtn.dataset.i18nKey = "common.add";
   addBtn.addEventListener("click", () => arOpenForm(null));
   addBtnRow.appendChild(addBtn);
   section.appendChild(addBtnRow);
@@ -177,7 +189,8 @@ function arBuildRulesSection(container) {
   nameRow.className = "field-row";
   const nameLabel = document.createElement("label");
   nameLabel.className = "field-label inline";
-  nameLabel.textContent = "Nom de la règle :";
+  nameLabel.textContent = t("routing_rules.name_label");
+  nameLabel.dataset.i18nKey = "routing_rules.name_label";
   const nameInput = document.createElement("input");
   nameInput.type = "text";
   nameInput.id = "arNameInput";
@@ -189,7 +202,8 @@ function arBuildRulesSection(container) {
   patternRow.className = "field-row";
   const patternLabel = document.createElement("label");
   patternLabel.className = "field-label inline";
-  patternLabel.textContent = "Motif (sous-chaîne) :";
+  patternLabel.textContent = t("routing_rules.pattern_label");
+  patternLabel.dataset.i18nKey = "routing_rules.pattern_label";
   const patternInput = document.createElement("input");
   patternInput.type = "text";
   patternInput.id = "arPatternInput";
@@ -201,13 +215,15 @@ function arBuildRulesSection(container) {
   fieldRow.className = "field-row";
   const fieldLabel = document.createElement("label");
   fieldLabel.className = "field-label inline";
-  fieldLabel.textContent = "Champ à vérifier :";
+  fieldLabel.textContent = t("routing_rules.field_label");
+  fieldLabel.dataset.i18nKey = "routing_rules.field_label";
   const fieldSelect = document.createElement("select");
   fieldSelect.id = "arFieldSelect";
-  Object.entries(AR_FIELD_LABELS).forEach(([value, text]) => {
+  Object.entries(AR_FIELD_LABEL_KEYS).forEach(([value, key]) => {
     const opt = document.createElement("option");
     opt.value = value;
-    opt.textContent = text;
+    opt.textContent = t(key);
+    opt.dataset.i18nKey = key;
     fieldSelect.appendChild(opt);
   });
   fieldRow.appendChild(fieldLabel);
@@ -218,12 +234,14 @@ function arBuildRulesSection(container) {
   destRow.className = "field-row";
   const destLabel = document.createElement("label");
   destLabel.className = "field-label inline";
-  destLabel.textContent = "Dossier de destination :";
+  destLabel.textContent = t("routing_rules.destination_label");
+  destLabel.dataset.i18nKey = "routing_rules.destination_label";
   const destInput = document.createElement("input");
   destInput.type = "text";
   destInput.id = "arDestInput";
   const destBrowseBtn = document.createElement("button");
-  destBrowseBtn.textContent = "Parcourir...";
+  destBrowseBtn.textContent = t("common.browse");
+  destBrowseBtn.dataset.i18nKey = "common.browse";
   destBrowseBtn.addEventListener("click", () => {
     window.bridge.dialogs.browseFolder(destInput.value, (path) => {
       if (path) destInput.value = path;
@@ -234,6 +252,58 @@ function arBuildRulesSection(container) {
   destRow.appendChild(destBrowseBtn);
   form.appendChild(destRow);
 
+  // Post-completion action (catalogue idea): deliberately limited to move/
+  // unzip, never an arbitrary command -- see routing_rules.RoutingRule.
+  const actionRow = document.createElement("div");
+  actionRow.className = "field-row";
+  const actionLabel = document.createElement("label");
+  actionLabel.className = "field-label inline";
+  actionLabel.textContent = t("web.profile_advanced.post_action_label");
+  actionLabel.dataset.i18nKey = "web.profile_advanced.post_action_label";
+  const actionSelect = document.createElement("select");
+  actionSelect.id = "arPostActionSelect";
+  [
+    ["none", "web.profile_advanced.post_action_none"],
+    ["move", "web.profile_advanced.post_action_move"],
+    ["unzip", "web.profile_advanced.post_action_unzip"],
+  ].forEach(([value, key]) => {
+    const opt = document.createElement("option");
+    opt.value = value;
+    opt.textContent = t(key);
+    opt.dataset.i18nKey = key;
+    actionSelect.appendChild(opt);
+  });
+  actionRow.appendChild(actionLabel);
+  actionRow.appendChild(actionSelect);
+  form.appendChild(actionRow);
+
+  const moveToRow = document.createElement("div");
+  moveToRow.className = "field-row";
+  const moveToLabel = document.createElement("label");
+  moveToLabel.className = "field-label inline";
+  moveToLabel.textContent = t("web.profile_advanced.move_to_label");
+  moveToLabel.dataset.i18nKey = "web.profile_advanced.move_to_label";
+  const moveToInput = document.createElement("input");
+  moveToInput.type = "text";
+  moveToInput.id = "arPostActionMoveToInput";
+  const moveToBrowseBtn = document.createElement("button");
+  moveToBrowseBtn.textContent = t("common.browse");
+  moveToBrowseBtn.dataset.i18nKey = "common.browse";
+  moveToBrowseBtn.addEventListener("click", () => {
+    window.bridge.dialogs.browseFolder(moveToInput.value, (path) => {
+      if (path) moveToInput.value = path;
+    });
+  });
+  moveToRow.appendChild(moveToLabel);
+  moveToRow.appendChild(moveToInput);
+  moveToRow.appendChild(moveToBrowseBtn);
+  form.appendChild(moveToRow);
+
+  function refreshPostActionRowVisibility() {
+    moveToRow.style.display = actionSelect.value === "move" ? "" : "none";
+  }
+  actionSelect.addEventListener("change", refreshPostActionRowVisibility);
+
   const formStatus = document.createElement("p");
   formStatus.id = "arFormStatus";
   formStatus.className = "status-line";
@@ -243,13 +313,14 @@ function arBuildRulesSection(container) {
   formBtnRow.className = "field-row";
   const saveBtn = document.createElement("button");
   saveBtn.className = "start-btn";
-  saveBtn.textContent = "Enregistrer";
+  saveBtn.textContent = t("routing_rules.dialog_save_button");
+  saveBtn.dataset.i18nKey = "routing_rules.dialog_save_button";
   saveBtn.addEventListener("click", () => {
     const name = nameInput.value.trim();
     const pattern = patternInput.value.trim();
     const destination = destInput.value.trim();
     if (!name || !pattern || !destination) {
-      formStatus.textContent = "Le nom, le motif et le dossier de destination sont obligatoires.";
+      formStatus.textContent = t("routing_rules.missing_fields_message");
       return;
     }
     if (arEditingName && arEditingName !== name) {
@@ -257,13 +328,21 @@ function arBuildRulesSection(container) {
       // alongside the new one under a different name.
       window.bridge.profileAdvanced.deleteRoutingRule(arEditingName);
     }
-    window.bridge.profileAdvanced.saveRoutingRule(name, pattern, fieldSelect.value, destination);
+    window.bridge.profileAdvanced.saveRoutingRule(
+      name,
+      pattern,
+      fieldSelect.value,
+      destination,
+      actionSelect.value,
+      moveToInput.value.trim()
+    );
     arCloseForm();
     arReloadRules();
   });
   formBtnRow.appendChild(saveBtn);
   const cancelBtn = document.createElement("button");
-  cancelBtn.textContent = "Annuler";
+  cancelBtn.textContent = t("common.cancel");
+  cancelBtn.dataset.i18nKey = "common.cancel";
   cancelBtn.addEventListener("click", arCloseForm);
   formBtnRow.appendChild(cancelBtn);
   form.appendChild(formBtnRow);
@@ -309,21 +388,20 @@ function arReloadProfiles(selectName) {
 function arBuildProfilesSection(container) {
   const section = document.createElement("div");
   section.className = "profile-section";
-  section.appendChild(arSectionHeading("Profils de réglages"));
+  section.appendChild(arSectionHeading("web.profile_advanced.settings_profiles_heading"));
 
   const intro = document.createElement("p");
   intro.className = "field-note";
-  intro.textContent =
-    "Enregistrez le proxy, le chiffrement, les notifications, les limites de débit et la restriction " +
-    "DHT/PEX/LSD actuels sous un profil nommé (ex. « voyage », « connexion mobile »), pour tout " +
-    "réappliquer en un clic la prochaine fois.";
+  intro.textContent = t("settings_profiles.intro");
+  intro.dataset.i18nKey = "settings_profiles.intro";
   section.appendChild(intro);
 
   const comboRow = document.createElement("div");
   comboRow.className = "field-row";
   const comboLabel = document.createElement("label");
   comboLabel.className = "field-label inline";
-  comboLabel.textContent = "Profil";
+  comboLabel.textContent = t("settings_profiles.profile_label");
+  comboLabel.dataset.i18nKey = "settings_profiles.profile_label";
   const combo = document.createElement("select");
   combo.id = "apProfileSelect";
   comboRow.appendChild(comboLabel);
@@ -335,15 +413,18 @@ function arBuildProfilesSection(container) {
   const applyBtn = document.createElement("button");
   applyBtn.id = "apApplyBtn";
   applyBtn.className = "start-btn";
-  applyBtn.textContent = "Appliquer";
+  applyBtn.textContent = t("settings_profiles.apply_button");
+  applyBtn.dataset.i18nKey = "settings_profiles.apply_button";
   btnRow.appendChild(applyBtn);
   const saveAsBtn = document.createElement("button");
   saveAsBtn.id = "apSaveAsBtn";
-  saveAsBtn.textContent = "Enregistrer le profil actuel sous...";
+  saveAsBtn.textContent = t("settings_profiles.save_as_button");
+  saveAsBtn.dataset.i18nKey = "settings_profiles.save_as_button";
   btnRow.appendChild(saveAsBtn);
   const deleteBtn = document.createElement("button");
   deleteBtn.id = "apDeleteBtn";
-  deleteBtn.textContent = "Supprimer";
+  deleteBtn.textContent = t("settings_profiles.delete_button");
+  deleteBtn.dataset.i18nKey = "settings_profiles.delete_button";
   btnRow.appendChild(deleteBtn);
   section.appendChild(btnRow);
 
@@ -356,15 +437,15 @@ function arBuildProfilesSection(container) {
     const name = combo.value;
     if (!name) return;
     window.bridge.profileAdvanced.applyProfile(name, (result) => {
-      status.textContent = result.ok ? "Profil appliqué." : result.error || "Erreur lors de l'application.";
+      status.textContent = result.ok ? t("web.profile_advanced.profile_applied") : result.error || t("web.profile_advanced.profile_apply_error");
     });
   });
 
   saveAsBtn.addEventListener("click", () => {
-    const name = (prompt("Nom du profil :") || "").trim();
+    const name = (prompt(t("settings_profiles.save_as_label")) || "").trim();
     if (!name) return;
     window.bridge.profileAdvanced.saveCurrentAsProfile(name, () => {
-      status.textContent = "Profil enregistré.";
+      status.textContent = t("web.profile_advanced.profile_saved");
       arReloadProfiles(name);
     });
   });
@@ -372,7 +453,7 @@ function arBuildProfilesSection(container) {
   deleteBtn.addEventListener("click", () => {
     const name = combo.value;
     if (!name) return;
-    if (!confirm(`Voulez-vous vraiment supprimer le profil « ${name} » ?`)) return;
+    if (!confirm(t("settings_profiles.delete_confirm_message", { name }))) return;
     window.bridge.profileAdvanced.deleteSettingsProfile(name);
     status.textContent = "";
     arReloadProfiles();
@@ -389,7 +470,7 @@ function anpRenderAssociations(list) {
   if (!list.length) {
     const note = document.createElement("p");
     note.className = "empty-note";
-    note.textContent = "Aucune association réseau -> profil pour l'instant.";
+    note.textContent = t("web.profile_advanced.no_network_associations");
     box.appendChild(note);
     return;
   }
@@ -435,19 +516,17 @@ function anpReloadAssociations() {
 function anpBuildSection(container) {
   const section = document.createElement("div");
   section.className = "profile-section";
-  section.appendChild(arSectionHeading("Bascule automatique de profil selon le réseau Wi-Fi"));
+  section.appendChild(arSectionHeading("web.profile_advanced.network_profile_switch_heading"));
 
   const intro = document.createElement("p");
   intro.className = "field-note";
-  intro.textContent =
-    "Associez un réseau Wi-Fi (SSID) à un profil de réglages ci-dessus : dès que ce réseau est détecté, " +
-    "le profil correspondant est appliqué automatiquement (proxy, chiffrement, notifications, limites de " +
-    "débit, restriction DHT/PEX/LSD). Désactivé par défaut.";
+  intro.textContent = t("web.profile_advanced.network_switch_intro");
+  intro.dataset.i18nKey = "web.profile_advanced.network_switch_intro";
   section.appendChild(intro);
 
   const { row: enabledRow, check: enabledCheck } = paCheckboxRow(
     "anpEnabled",
-    "Activer la bascule automatique de profil réseau"
+    "web.profile_advanced.network_switch_enabled_checkbox"
   );
   section.appendChild(enabledRow);
   enabledCheck.addEventListener("change", () => {
@@ -462,7 +541,8 @@ function anpBuildSection(container) {
   const ssidInput = document.createElement("input");
   ssidInput.type = "text";
   ssidInput.id = "anpSsidInput";
-  ssidInput.placeholder = "Nom du réseau Wi-Fi (SSID)";
+  ssidInput.placeholder = t("web.profile_advanced.ssid_placeholder");
+  ssidInput.dataset.i18nPlaceholder = "web.profile_advanced.ssid_placeholder";
   addRow.appendChild(ssidInput);
 
   const profileSelect = document.createElement("select");
@@ -470,7 +550,8 @@ function anpBuildSection(container) {
   addRow.appendChild(profileSelect);
 
   const addBtn = document.createElement("button");
-  addBtn.textContent = "Associer";
+  addBtn.textContent = t("web.profile_advanced.associate_button");
+  addBtn.dataset.i18nKey = "web.profile_advanced.associate_button";
   addRow.appendChild(addBtn);
   section.appendChild(addRow);
 

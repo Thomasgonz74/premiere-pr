@@ -58,16 +58,16 @@ function confirmAndRemove(onRemoveOnly, onRemoveWithFiles, impact) {
 
   const message = document.createElement("p");
   message.textContent = impact && impact.count > 1
-    ? `Voulez-vous vraiment retirer ces ${impact.count} éléments ?`
-    : "Voulez-vous vraiment retirer cet élément ?";
+    ? t("web.modal.remove_confirm_plural", { count: impact.count })
+    : t("common.remove_confirm_message");
   content.appendChild(message);
 
   if (impact) {
     const details = document.createElement("p");
     details.className = "field-note";
-    const parts = [`Taille totale : ${formatSize(impact.totalSize)}`];
-    if (impact.stateLabel) parts.push(`État : ${impact.stateLabel}`);
-    if (impact.numSeeds !== undefined) parts.push(`${impact.numSeeds} seeds / ${impact.numPeers} pairs`);
+    const parts = [t("web.modal.total_size", { size: formatSize(impact.totalSize) })];
+    if (impact.stateLabel) parts.push(t("web.modal.state_label", { state: impact.stateLabel }));
+    if (impact.numSeeds !== undefined) parts.push(t("web.modal.seeds_peers", { seeds: impact.numSeeds, peers: impact.numPeers }));
     details.textContent = parts.join(" — "); // safe: DOM property assignment, not HTML parsing
     content.appendChild(details);
   }
@@ -76,7 +76,7 @@ function confirmAndRemove(onRemoveOnly, onRemoveWithFiles, impact) {
   buttonRow.className = "modal-close-row";
 
   const removeOnlyBtn = document.createElement("button");
-  removeOnlyBtn.textContent = "Retirer seulement";
+  removeOnlyBtn.textContent = t("common.remove_only_button");
   removeOnlyBtn.addEventListener("click", () => {
     closeModal();
     onRemoveOnly();
@@ -84,7 +84,7 @@ function confirmAndRemove(onRemoveOnly, onRemoveWithFiles, impact) {
   buttonRow.appendChild(removeOnlyBtn);
 
   const removeWithFilesBtn = document.createElement("button");
-  removeWithFilesBtn.textContent = "Retirer et supprimer les fichiers";
+  removeWithFilesBtn.textContent = t("common.remove_with_files_button");
   removeWithFilesBtn.addEventListener("click", () => {
     closeModal();
     onRemoveWithFiles();
@@ -92,12 +92,12 @@ function confirmAndRemove(onRemoveOnly, onRemoveWithFiles, impact) {
   buttonRow.appendChild(removeWithFilesBtn);
 
   const cancelBtn = document.createElement("button");
-  cancelBtn.textContent = "Annuler";
+  cancelBtn.textContent = t("common.cancel");
   cancelBtn.addEventListener("click", () => closeModal());
   buttonRow.appendChild(cancelBtn);
 
   content.appendChild(buttonRow);
-  openModal("Confirmer le retrait", content);
+  openModal(t("common.remove_confirm_title"), content);
 }
 
 // A plain informational message + one "Fermer" button -- the web-spike
@@ -115,7 +115,7 @@ function alertModal(titleText, message, buttonLabel, onClose) {
   const buttonRow = document.createElement("div");
   buttonRow.className = "modal-close-row";
   const closeBtn = document.createElement("button");
-  closeBtn.textContent = buttonLabel || "Fermer";
+  closeBtn.textContent = buttonLabel || t("titlebar.close");
   closeBtn.addEventListener("click", () => closeModal());
   buttonRow.appendChild(closeBtn);
   content.appendChild(buttonRow);
@@ -134,8 +134,8 @@ let _shutdownCountdownTimer = null;
 
 function showAutoShutdownCountdown(delaySeconds, action) {
   const actionLabel = action === "hibernate"
-    ? "L'ordinateur va se mettre en veille prolongée"
-    : "L'ordinateur va s'éteindre";
+    ? t("shutdown_dialog.action_hibernate")
+    : t("shutdown_dialog.action_shutdown");
   _shutdownCountdownRemaining = delaySeconds;
 
   const content = document.createElement("div");
@@ -148,14 +148,14 @@ function showAutoShutdownCountdown(delaySeconds, action) {
   const countdownEl = document.createElement("p");
   content.appendChild(countdownEl);
   const updateCountdownLabel = () => {
-    countdownEl.textContent = `Tous les téléchargements sont terminés. Extinction dans ${_shutdownCountdownRemaining} s.`;
+    countdownEl.textContent = t("shutdown_dialog.countdown", { seconds: _shutdownCountdownRemaining });
   };
   updateCountdownLabel();
 
   const buttonRow = document.createElement("div");
   buttonRow.className = "modal-close-row";
   const cancelBtn = document.createElement("button");
-  cancelBtn.textContent = "Annuler";
+  cancelBtn.textContent = t("common.cancel");
   cancelBtn.addEventListener("click", () => {
     window.bridge.autoShutdown.cancelShutdown();
     closeModal();
@@ -175,7 +175,7 @@ function showAutoShutdownCountdown(delaySeconds, action) {
     updateCountdownLabel();
   }, 1000);
 
-  openModal("Extinction automatique", content, () => {
+  openModal(t("shutdown_dialog.window_title"), content, () => {
     if (_shutdownCountdownTimer) {
       clearInterval(_shutdownCountdownTimer);
       _shutdownCountdownTimer = null;
@@ -192,14 +192,14 @@ function showUpdateAvailable(version, releaseUrl) {
   content.className = "form-grid";
 
   const message = document.createElement("p");
-  message.textContent = `Une nouvelle version (${version}) est disponible.`;
+  message.textContent = t("web.modal.update_available_message", { version });
   content.appendChild(message);
 
   const buttonRow = document.createElement("div");
   buttonRow.className = "modal-close-row";
 
   const downloadBtn = document.createElement("button");
-  downloadBtn.textContent = "Télécharger";
+  downloadBtn.textContent = t("update.download_button");
   downloadBtn.addEventListener("click", () => {
     closeModal();
     window.bridge.update.downloadInstaller();
@@ -207,7 +207,7 @@ function showUpdateAvailable(version, releaseUrl) {
   buttonRow.appendChild(downloadBtn);
 
   const laterBtn = document.createElement("button");
-  laterBtn.textContent = "Plus tard";
+  laterBtn.textContent = t("update.later_button");
   laterBtn.addEventListener("click", () => {
     closeModal();
     window.bridge.update.dismissUpdate(version);
@@ -215,7 +215,7 @@ function showUpdateAvailable(version, releaseUrl) {
   buttonRow.appendChild(laterBtn);
 
   content.appendChild(buttonRow);
-  openModal("Mise à jour disponible", content);
+  openModal(t("update.title"), content);
 }
 
 function showInstallerVerified(localPath) {
@@ -223,14 +223,14 @@ function showInstallerVerified(localPath) {
   content.className = "form-grid";
 
   const message = document.createElement("p");
-  message.textContent = "La mise à jour a été téléchargée et vérifiée.";
+  message.textContent = t("web.modal.installer_verified_message");
   content.appendChild(message);
 
   const buttonRow = document.createElement("div");
   buttonRow.className = "modal-close-row";
 
   const launchBtn = document.createElement("button");
-  launchBtn.textContent = "Installer et redémarrer";
+  launchBtn.textContent = t("web.modal.launch_and_restart_button");
   launchBtn.addEventListener("click", () => {
     closeModal();
     window.bridge.update.launchInstaller(localPath);
@@ -238,7 +238,7 @@ function showInstallerVerified(localPath) {
   buttonRow.appendChild(launchBtn);
 
   const laterBtn = document.createElement("button");
-  laterBtn.textContent = "Plus tard";
+  laterBtn.textContent = t("update.later_button");
   laterBtn.addEventListener("click", () => {
     closeModal();
     window.bridge.update.discardInstaller(localPath);
@@ -246,5 +246,5 @@ function showInstallerVerified(localPath) {
   buttonRow.appendChild(laterBtn);
 
   content.appendChild(buttonRow);
-  openModal("Mise à jour vérifiée", content);
+  openModal(t("web.modal.installer_verified_title"), content);
 }

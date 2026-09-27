@@ -57,6 +57,8 @@ class ProfileNetworkBridge(QObject):
             "forceProxy": s.proxy.force_proxy,
             "networkInterface": s.network_interface,
             "encryptionMode": s.encryption_mode,
+            "ipBlocklistEnabled": s.ip_blocklist_enabled,
+            "ipBlocklistPath": s.ip_blocklist_path,
         }
 
     @Slot("QVariantMap", result="QVariantMap")
@@ -72,6 +74,11 @@ class ProfileNetworkBridge(QObject):
         s.proxy.force_proxy = bool(values.get("forceProxy", s.proxy.force_proxy))
         s.network_interface = str(values.get("networkInterface", "")).strip()
         s.encryption_mode = str(values.get("encryptionMode", s.encryption_mode))
+        # Applied once at session start (see SessionManager.__init__) --
+        # like network_interface, a change here only takes effect on next
+        # launch, not live-applied.
+        s.ip_blocklist_enabled = bool(values.get("ipBlocklistEnabled", s.ip_blocklist_enabled))
+        s.ip_blocklist_path = str(values.get("ipBlocklistPath", "")).strip()
         s.save()
 
         # Live-apply, matching the native Save handler's sequence exactly.

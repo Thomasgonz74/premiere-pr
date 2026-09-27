@@ -8,7 +8,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 import pytest
 
-from torrent2000.engine.routing_rules import RoutingRule, RoutingRuleStore, resolve_destination
+from torrent2000.engine.routing_rules import RoutingRule, RoutingRuleStore, find_matching_rule, resolve_destination
 
 DEFAULT = "C:/downloads/default"
 
@@ -217,3 +217,32 @@ def test_persistence_file_with_malformed_entry_skips_it_without_crashing():
     store = RoutingRuleStore()  # missing required fields -- must not raise
 
     assert store.list_rules() == []
+
+
+# ------------------------------------------------------------- find_matching_rule
+
+
+def test_find_matching_rule_returns_the_rule_not_just_its_destination():
+    rule = RoutingRule(name="linux", pattern="ubuntu", match_field="name", destination="D:/linux")
+    assert find_matching_rule([rule], name="Ubuntu.24.04") is rule
+
+
+def test_find_matching_rule_returns_none_when_nothing_matches():
+    rule = RoutingRule(name="linux", pattern="fedora", match_field="name", destination="D:/linux")
+    assert find_matching_rule([rule], name="Ubuntu.24.04") is None
+
+
+def test_resolve_destination_and_find_matching_rule_agree():
+    rules = [
+        RoutingRule(name="linux", pattern="ubuntu", match_field="name", destination="D:/linux"),
+        RoutingRule(name="other", pattern="", match_field="name", destination="D:/other"),
+    ]
+    assert resolve_destination(rules, DEFAULT, name="Ubuntu.24.04") == find_matching_rule(
+        rules, name="Ubuntu.24.04"
+    ).destination
+
+
+def test_new_post_complete_fields_default_to_none_action():
+    rule = RoutingRule(name="linux", pattern="ubuntu", match_field="name", destination="D:/linux")
+    assert rule.post_complete_action == "none"
+    assert rule.post_complete_move_to == ""

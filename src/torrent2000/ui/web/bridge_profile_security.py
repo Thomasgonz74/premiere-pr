@@ -14,6 +14,7 @@ from PySide6.QtCore import QObject, QUrl, Slot
 from PySide6.QtGui import QDesktopServices
 
 from torrent2000.config.paths import get_config_backups_dir, get_config_path, get_logs_dir
+from torrent2000.config.redaction import redact_settings_dict
 from torrent2000.config.settings import BandwidthSchedule, ProxySettings, RssFeedSubscription, Settings, _from_dict
 
 _MAX_CONFIG_BACKUPS = 5
@@ -30,8 +31,13 @@ def _backup_current_config() -> None:
     backups_dir = get_config_backups_dir()
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     try:
-        (backups_dir / f"config-{stamp}.json").write_bytes(config_path.read_bytes())
-    except OSError:
+        # Redacted like exportConfig() -- a backup is a copy that can end up
+        # shared for support/troubleshooting just as easily as an export.
+        data = redact_settings_dict(json.loads(config_path.read_text(encoding="utf-8")))
+        (backups_dir / f"config-{stamp}.json").write_text(
+            json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    except (OSError, json.JSONDecodeError):
         return
     existing = sorted(backups_dir.glob("config-*.json"))
     for stale in existing[:-_MAX_CONFIG_BACKUPS]:
@@ -102,12 +108,9 @@ class ProfileSecurityBridge(QObject):
     def exportConfig(self, path: str) -> dict:
         if not path:
             return {"ok": False}
-        # The proxy password must never leave the machine in a plain-text
-        # export -- redact it before serializing, matching native
-        # ConfigImportExportSection._on_export_settings.
-        data = asdict(self._settings)
-        if data.get("proxy"):
-            data["proxy"]["password"] = ""
+        # The proxy password and remote-access token must never leave the
+        # machine in a plain-text export -- redact both before serializing.
+        data = redact_settings_dict(asdict(self._settings))
         try:
             Path(path).write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
         except Exception as exc:

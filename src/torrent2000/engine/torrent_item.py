@@ -103,3 +103,11 @@ class TorrentRecord:
     # field like pinned/locked/completed_at -- resets to None on the next
     # launch (the user has to re-set it, same as re-pinning).
     deadline: float | None = None
+    # Name of the routing_rules.RoutingRule that resolved this torrent's
+    # destination at add time (see engine.routing_rules.find_matching_rule),
+    # if any -- lets a post-completion action look up which rule (and
+    # therefore which post_complete_action) applies once the torrent
+    # finishes. Plain in-memory field like the others above -- not
+    # re-derived on restart (a rule change after restart simply doesn't
+    # retroactively apply to already-restored torrents).
+    matched_rule_name: str | None = None

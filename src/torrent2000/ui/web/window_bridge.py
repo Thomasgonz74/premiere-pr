@@ -5,7 +5,7 @@ QWidget's mousePressEvent (confirmed empirically this session). JS calls
 these slots instead of relying on Qt event bubbling.
 """
 
-from PySide6.QtCore import QObject, Qt, Slot
+from PySide6.QtCore import QObject, Qt, Signal, Slot
 
 # Must match the CCCP propaganda panel's CSS width (style.css
 # .cccp-propaganda-panel) -- the window itself grows/shrinks by this exact
@@ -26,6 +26,13 @@ _RESIZE_EDGES = {
 
 
 class WindowBridge(QObject):
+    # Catalogue idea "detection de lien magnet dans le presse-papiers" --
+    # re-emits ClipboardWatcherService.magnetDetected, wired in
+    # spike_window.py, since this bridge is already registered on the
+    # QWebChannel as "windowBridge" and every other window-scoped signal
+    # already lives here.
+    magnetDetected = Signal(str)
+
     def __init__(self, window, settings, anthem_player, parent=None) -> None:
         super().__init__(parent)
         self._window = window

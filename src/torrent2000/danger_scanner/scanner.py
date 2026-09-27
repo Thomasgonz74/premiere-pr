@@ -46,3 +46,11 @@ def scan_files(
         overall_score = max(overall_score, score)
 
     return ScanResult(file_risks=file_risks, overall_score=overall_score, flagged_indices=flagged_indices)
+
+
+def auto_exclude_indices(result: ScanResult, threshold: int) -> set[int]:
+    """Same cutoff the Add/Analysis page's UI applies to pre-uncheck a file
+    (add.js: `risk.score < scan.threshold` stays checked/included) -- shared
+    here so automatic-import paths (RSS, watch folder) that have no UI to
+    apply it in can exclude the same files a manual add would."""
+    return {fr.file.index for fr in result.file_risks if fr.score >= threshold}

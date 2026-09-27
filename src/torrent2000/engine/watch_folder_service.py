@@ -20,8 +20,10 @@ import libtorrent as lt
 from PySide6.QtCore import QObject
 
 from torrent2000.config.settings import Settings
-from torrent2000.engine.routing_rules import RoutingRuleStore, resolve_destination
+from torrent2000.danger_scanner.scanner import auto_exclude_indices, scan_files
+from torrent2000.engine.routing_rules import RoutingRuleStore, find_matching_rule
 from torrent2000.engine.session_manager import SessionManager
+from torrent2000.engine.torrent_files import files_from_torrent_path
 from torrent2000.utils.qt_timers import start_periodic_timer
 
 logger = logging.getLogger(__name__)
@@ -63,14 +65,29 @@ class WatchFolderService(QObject):
         for torrent_path in sorted(folder.glob("*.torrent")):
             if not torrent_path.is_file():
                 continue
-            destination = resolve_destination(
+            matched_rule = find_matching_rule(
                 rules,
-                self._settings.default_download_dir,
                 name=torrent_path.stem,
                 trackers=self._read_trackers(torrent_path) if needs_trackers else None,
             )
+            destination = matched_rule.destination if matched_rule else self._settings.default_download_dir
+            excluded: set[int] = set()
             try:
-                self._session_manager.add_torrent_from_file(str(torrent_path), destination)
+                # Same danger scan + auto-exclude cutoff the manual Add page
+                # applies (see danger_scanner.scanner.auto_exclude_indices) --
+                # an auto-imported torrent previously started with zero
+                # scanning at all. A file that fails to parse here (corrupt/
+                # still-being-written) falls through with excluded left
+                # empty; add_torrent_from_file()'s own parse will raise and
+                # route it to the failed-quarantine path below as before.
+                files = files_from_torrent_path(str(torrent_path))
+                excluded = auto_exclude_indices(scan_files(files), self._settings.danger_auto_exclude_threshold)
+            except Exception:
+                pass
+            try:
+                info_hash = self._session_manager.add_torrent_from_file(str(torrent_path), destination, excluded)
+                if matched_rule is not None:
+                    self._session_manager.set_matched_rule_name(info_hash, matched_rule.name)
             except Exception:
                 # A permanently-failing file (already in the session, corrupt,
                 # etc.) would otherwise be retried -- and log an identical

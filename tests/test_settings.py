@@ -6,8 +6,11 @@ without the user ever opening the Settings screen, and a proxy the user
 does turn on must default to a fail-closed ("force proxy") kill switch.
 """
 
+import json
+
 import libtorrent as lt
 
+from torrent2000.config.paths import get_config_path
 from torrent2000.config.settings import ProxySettings, RssFeedSubscription, Settings
 from torrent2000.engine import add_params
 
@@ -117,3 +120,45 @@ def test_new_feature_settings_round_trip(tmp_path, monkeypatch):
     assert reloaded.encryption_mode == "forced"
     assert reloaded.auto_shutdown_enabled is True
     assert reloaded.auto_shutdown_action == "hibernate"
+
+
+def test_proxy_password_and_remote_token_are_encrypted_at_rest(tmp_path, monkeypatch):
+    monkeypatch.setenv("TORRENT2000_DATA_DIR", str(tmp_path))
+
+    settings = Settings.load()
+    settings.proxy.password = "hunter2"
+    settings.remote_access_token = "s3cret-token"
+    settings.save()
+
+    on_disk = json.loads(get_config_path().read_text(encoding="utf-8"))
+    assert on_disk["proxy"]["password"] != "hunter2"
+    assert on_disk["proxy"]["password"].startswith("dpapi:")
+    assert on_disk["remote_access_token"] != "s3cret-token"
+    assert on_disk["remote_access_token"].startswith("dpapi:")
+
+    # In-memory Settings and a fresh reload both stay plaintext -- only the
+    # on-disk form is encrypted.
+    assert settings.proxy.password == "hunter2"
+    reloaded = Settings.load()
+    assert reloaded.proxy.password == "hunter2"
+    assert reloaded.remote_access_token == "s3cret-token"
+
+
+def test_preexisting_plaintext_secrets_load_then_get_encrypted_on_next_save(tmp_path, monkeypatch):
+    monkeypatch.setenv("TORRENT2000_DATA_DIR", str(tmp_path))
+    config_path = get_config_path()
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    config_path.write_text(
+        json.dumps({"proxy": {"password": "old-plaintext"}, "remote_access_token": "old-token"}),
+        encoding="utf-8",
+    )
+
+    settings = Settings.load()
+    assert settings.proxy.password == "old-plaintext"
+    assert settings.remote_access_token == "old-token"
+
+    settings.save()
+    on_disk = json.loads(config_path.read_text(encoding="utf-8"))
+    assert on_disk["proxy"]["password"].startswith("dpapi:")
+    assert on_disk["remote_access_token"].startswith("dpapi:")
+    assert Settings.load().proxy.password == "old-plaintext"

@@ -41,10 +41,10 @@ function _pieceMapLegend() {
   row.style.flexWrap = "wrap";
 
   for (const [color, label] of [
-    [PIECE_MAP_COLOR_HAVE, "Téléchargé"],
-    [PIECE_MAP_COLOR_MISSING_COMMON, "Manquant (courant)"],
-    [PIECE_MAP_COLOR_MISSING_RARE, "Manquant (rare)"],
-    [PIECE_MAP_COLOR_MISSING_NONE, "Manquant (aucun pair)"],
+    [PIECE_MAP_COLOR_HAVE, t("profile_tab.history_column_downloaded")],
+    [PIECE_MAP_COLOR_MISSING_COMMON, t("web.piece_map_dialog.legend_missing_common")],
+    [PIECE_MAP_COLOR_MISSING_RARE, t("web.piece_map_dialog.legend_missing_rare")],
+    [PIECE_MAP_COLOR_MISSING_NONE, t("web.piece_map_dialog.legend_missing_none")],
   ]) {
     const item = document.createElement("div");
     item.style.display = "flex";
@@ -100,5 +100,5 @@ function openPieceMapDialog(infoHash, torrentName) {
   refresh();
   const timer = setInterval(refresh, 2000);
 
-  openModal(`Mosaïque des morceaux — ${torrentName}`, contentEl, () => clearInterval(timer));
+  openModal(t("web.piece_map_dialog.dialog_title", { name: torrentName }), contentEl, () => clearInterval(timer));
 }

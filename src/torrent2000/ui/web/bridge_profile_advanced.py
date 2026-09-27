@@ -30,6 +30,8 @@ def _rule_to_dict(rule: RoutingRule) -> dict:
         "pattern": rule.pattern,
         "matchField": rule.match_field,
         "destination": rule.destination,
+        "postCompleteAction": rule.post_complete_action,
+        "postCompleteMoveTo": rule.post_complete_move_to,
     }
 
 
@@ -73,11 +75,26 @@ class ProfileAdvancedBridge(QObject):
     def listRoutingRules(self) -> list:
         return [_rule_to_dict(rule) for rule in self._routing_rule_store.list_rules()]
 
-    @Slot(str, str, str, str)
-    def saveRoutingRule(self, name: str, pattern: str, match_field: str, destination: str) -> None:
+    @Slot(str, str, str, str, str, str)
+    def saveRoutingRule(
+        self,
+        name: str,
+        pattern: str,
+        match_field: str,
+        destination: str,
+        post_complete_action: str = "none",
+        post_complete_move_to: str = "",
+    ) -> None:
         # save_rule() both adds a new rule and edits an existing one in
         # place (same name = same priority slot) -- see its docstring.
-        rule = RoutingRule(name=name, pattern=pattern, match_field=match_field, destination=destination)
+        rule = RoutingRule(
+            name=name,
+            pattern=pattern,
+            match_field=match_field,
+            destination=destination,
+            post_complete_action=post_complete_action or "none",
+            post_complete_move_to=post_complete_move_to or "",
+        )
         self._routing_rule_store.save_rule(rule)
 
     @Slot(str)

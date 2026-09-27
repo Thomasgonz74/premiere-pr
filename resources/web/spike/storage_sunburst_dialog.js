@@ -110,9 +110,9 @@ function _sunburstLegend() {
   row.style.flexWrap = "wrap";
 
   for (const [color, label] of [
-    [SUNBURST_COLOR_DONE, "Téléchargé"],
-    [SUNBURST_COLOR_PARTIAL, "Partiel"],
-    [SUNBURST_COLOR_MISSING, "Manquant"],
+    [SUNBURST_COLOR_DONE, t("profile_tab.history_column_downloaded")],
+    [SUNBURST_COLOR_PARTIAL, t("web.storage_sunburst_dialog.legend_partial")],
+    [SUNBURST_COLOR_MISSING, t("web.storage_sunburst_dialog.legend_missing")],
   ]) {
     const item = document.createElement("div");
     item.style.display = "flex";
@@ -134,7 +134,7 @@ function _sunburstLegend() {
 
   const note = document.createElement("p");
   note.className = "field-note";
-  note.textContent = "Chaque secteur = un fichier, proportionnel à sa taille. Anneau intérieur = dossiers (si le torrent en a).";
+  note.textContent = t("web.storage_sunburst_dialog.legend_note");
   row.appendChild(note);
 
   return row;
@@ -150,8 +150,7 @@ function openStorageSunburstDialog(infoHash, torrentName) {
 
   const emptyNote = document.createElement("p");
   emptyNote.className = "empty-note";
-  emptyNote.textContent =
-    "Aucune information de fichiers disponible pour le moment (métadonnées non reçues, ou torrent introuvable).";
+  emptyNote.textContent = t("web.storage_sunburst_dialog.no_data");
   emptyNote.style.display = "none";
   contentEl.appendChild(emptyNote);
 
@@ -170,5 +169,5 @@ function openStorageSunburstDialog(infoHash, torrentName) {
   refresh();
   const timer = setInterval(refresh, 2000);
 
-  openModal(`Répartition du stockage — ${torrentName}`, contentEl, () => clearInterval(timer));
+  openModal(t("web.storage_sunburst_dialog.dialog_title", { name: torrentName }), contentEl, () => clearInterval(timer));
 }

@@ -94,11 +94,11 @@ function _swarmLegend() {
   row.style.flexWrap = "wrap";
 
   for (const [color, label] of [
-    [SWARM_COLOR_LOCAL, "Vous (local)"],
-    [SWARM_COLOR_PEER_SEED, "Pair — copie complète"],
-    [SWARM_COLOR_PEER_HALF, "Pair — plus de la moitié"],
-    [SWARM_COLOR_PEER_STARTED, "Pair — début"],
-    [SWARM_COLOR_PEER_NONE, "Pair — aucune donnée"],
+    [SWARM_COLOR_LOCAL, t("web.swarm_constellation.legend_local")],
+    [SWARM_COLOR_PEER_SEED, t("web.swarm_constellation.legend_seed")],
+    [SWARM_COLOR_PEER_HALF, t("web.swarm_constellation.legend_half")],
+    [SWARM_COLOR_PEER_STARTED, t("web.swarm_constellation.legend_started")],
+    [SWARM_COLOR_PEER_NONE, t("web.swarm_constellation.legend_none")],
   ]) {
     const item = document.createElement("div");
     item.style.display = "flex";
@@ -121,7 +121,7 @@ function _swarmLegend() {
 
   const note = document.createElement("p");
   note.className = "field-note";
-  note.textContent = "Taille du point = vitesse totale (↓+↑). Distance = proximité d'une copie complète.";
+  note.textContent = t("web.swarm_constellation.legend_note");
   row.appendChild(note);
 
   return row;
@@ -137,7 +137,7 @@ function openSwarmConstellationDialog(infoHash, torrentName) {
 
   const emptyNote = document.createElement("p");
   emptyNote.className = "empty-note";
-  emptyNote.textContent = "Aucun pair connecté.";
+  emptyNote.textContent = t("web.swarm_constellation.no_peers");
   emptyNote.style.display = "none";
   contentEl.appendChild(emptyNote);
 
@@ -154,5 +154,5 @@ function openSwarmConstellationDialog(infoHash, torrentName) {
   refresh();
   const timer = setInterval(refresh, 2000);
 
-  openModal(`Constellation de l'essaim — ${torrentName}`, contentEl, () => clearInterval(timer));
+  openModal(t("web.swarm_constellation.dialog_title", { name: torrentName }), contentEl, () => clearInterval(timer));
 }

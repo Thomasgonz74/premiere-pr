@@ -61,6 +61,9 @@ class ProfileAutomationBridge(QObject):
             "knownDiskEnabled": s.known_disk_automation_enabled,
             "peerReputationEnabled": s.peer_reputation_enabled,
             "lanPeerCacheEnabled": s.lan_peer_cache_enabled,
+            "scheduledRecheckEnabled": s.scheduled_recheck_enabled,
+            "scheduledRecheckIntervalDays": s.scheduled_recheck_interval_days,
+            "clipboardMagnetDetectionEnabled": s.clipboard_magnet_detection_enabled,
         }
 
     @Slot("QVariantMap", result="QVariantMap")
@@ -105,6 +108,15 @@ class ProfileAutomationBridge(QObject):
 
         s.peer_reputation_enabled = bool(values.get("peerReputationEnabled", s.peer_reputation_enabled))
         s.lan_peer_cache_enabled = bool(values.get("lanPeerCacheEnabled", s.lan_peer_cache_enabled))
+
+        s.scheduled_recheck_enabled = bool(values.get("scheduledRecheckEnabled", s.scheduled_recheck_enabled))
+        s.scheduled_recheck_interval_days = max(
+            1, int(values.get("scheduledRecheckIntervalDays", s.scheduled_recheck_interval_days) or 1)
+        )
+
+        s.clipboard_magnet_detection_enabled = bool(
+            values.get("clipboardMagnetDetectionEnabled", s.clipboard_magnet_detection_enabled)
+        )
 
         s.save()
         # Disk-space monitor re-reads settings on its own timer tick, no

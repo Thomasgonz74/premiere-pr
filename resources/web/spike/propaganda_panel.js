@@ -5,30 +5,31 @@
 // scratchpad/generate_propaganda_icons.py) and recolored live via CSS
 // mask-image + background-color, exactly like the native _PropagandaIcon's
 // single-color repaint but without re-deriving the bezier/polygon math in
-// JS. Message text is hardcoded French, matching the rest of this web spike
-// (no i18n layer exists here yet -- see plan notes).
+// JS. Message text is routed through the i18n catalog (see i18n.js); the
+// French originals are Soviet-satire wordplay that may not translate
+// cleanly to other languages, and that's expected.
 
 const PROPAGANDA_MESSAGE_INTERVAL_MS = 17000;
 
 const PROPAGANDA_MESSAGE_SPECS = [
-  ["star", "Camarade, votre contribution au partage collectif a été inscrite au tableau d'honneur du Politburo. La Patrie numérique vous remercie."],
-  ["hammer_sickle", "Le marteau frappe les fichiers verrouillés, la faucille moissonne les graines partagées. Ensemble, camarade, ils forgent votre ratio."],
-  ["gear", "Chaque rouage de ce kolkhoze numérique tourne grâce à votre bande passante. Ne grippez pas la machine collective, camarade."],
-  ["sun_rays", "Le levant du partage universel se lève sur le kolkhoze numérique. Un jour nouveau, un octet nouveau, camarade."],
-  ["wheat", "La moisson de graines dépasse cette semaine les objectifs du plan quinquennal. Qui a dit que « seed » n'était pas un mot de la terre ?"],
-  ["rocket", "Votre bande passante atteint l'orbite plus vite que le premier Spoutnik. Le cosmos du pair-à-pair vous salue, camarade."],
-  ["factory", "L'usine numérique du kolkhoze tourne à plein régime : vous, camarade, en êtes le fier ouvrier de l'octet."],
-  ["fist", "Levez le poing, camarade : chaque fichier partagé est un coup porté à l'exploitation... du disque dur du voisin qui ne partage jamais."],
-  ["star", "Un camarade qui télécharge sans jamais partager n'est qu'une sangsue bourgeoise déguisée en pair. Le Politburo n'est pas dupe."],
-  ["hammer_sickle", "Sous l'emblème du Parti, on ne dit pas « peer-to-peer » : on dit « camarade à camarade ». C'est plus long, mais tellement plus loyal."],
-  ["gear", "Le Comité Central salue votre bande passante, généreusement redistribuée aux rouages du peuple plutôt qu'accaparée comme un vulgaire capitaliste."],
-  ["sun_rays", "Chaque connexion pair-à-pair rapproche le prolétariat de l'aube radieuse... du ratio positif."],
-  ["wheat", "Sous ce régime, celui qui ne sème pas de graines ne récolte pas de bande passante. C'est la loi du kolkhoze, camarade, pas la mienne."],
-  ["rocket", "Votre altruisme numérique sera cité en exemple au prochain congrès du Parti, quelque part entre l'orbite et le Kremlin."],
-  ["factory", "Le glorieux plan quinquennal de la bande passante avance grâce à votre sacrifice héroïque, camarade machiniste de l'octet."],
-  ["fist", "Un octet caché est un octet volé au peuple. Serrez le poing, pas le fichier, camarade."],
-  ["star", "Ici, on ne dit pas « télécharger ». On dit « attendre dignement en servant le peuple », comme dans toute bonne file d'attente soviétique."],
-  ["hammer_sickle", "Camarade, votre seedbox sera commémorée sur la Place Rouge numérique, juste à côté du mausolée du tracker."],
+  ["star", t("web.propaganda_panel.message_01")],
+  ["hammer_sickle", t("web.propaganda_panel.message_02")],
+  ["gear", t("web.propaganda_panel.message_03")],
+  ["sun_rays", t("web.propaganda_panel.message_04")],
+  ["wheat", t("web.propaganda_panel.message_05")],
+  ["rocket", t("web.propaganda_panel.message_06")],
+  ["factory", t("web.propaganda_panel.message_07")],
+  ["fist", t("web.propaganda_panel.message_08")],
+  ["star", t("web.propaganda_panel.message_09")],
+  ["hammer_sickle", t("web.propaganda_panel.message_10")],
+  ["gear", t("web.propaganda_panel.message_11")],
+  ["sun_rays", t("web.propaganda_panel.message_12")],
+  ["wheat", t("web.propaganda_panel.message_13")],
+  ["rocket", t("web.propaganda_panel.message_14")],
+  ["factory", t("web.propaganda_panel.message_15")],
+  ["fist", t("web.propaganda_panel.message_16")],
+  ["star", t("web.propaganda_panel.message_17")],
+  ["hammer_sickle", t("web.propaganda_panel.message_18")],
 ];
 
 let _propagandaOrder = [];
