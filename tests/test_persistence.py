@@ -2,6 +2,9 @@
 a tmp_path-backed data dir, and the corrupt-file-is-skipped-not-crashed
 behavior of load_all_resume_params."""
 
+import shutil
+from pathlib import Path
+
 import libtorrent as lt
 import pytest
 
@@ -84,3 +87,21 @@ def test_save_overwrites_an_existing_resume_file_for_the_same_hash():
     assert len(loaded) == 1
     assert loaded[0].name == "second-name"
     assert loaded[0].save_path == "D:/second"
+
+
+def test_resume_dir_is_created_once_then_recreated_if_deleted_mid_run(monkeypatch):
+    """exists() + mkdir() on every write cost ~27 % of a .fastresume write:
+    the folder is checked once per run, and a folder the user deletes
+    afterwards is recreated by a single retry."""
+    save_resume_params("hash1", _params("D:/downloads", "my-torrent"))
+    mkdir_calls = []
+    real_mkdir = Path.mkdir
+    monkeypatch.setattr(Path, "mkdir", lambda self, *a, **k: (mkdir_calls.append(self), real_mkdir(self, *a, **k)))
+
+    save_resume_params("hash2", _params("D:/downloads", "other"))
+    assert mkdir_calls == []  # already ensured this run -- no syscall
+
+    shutil.rmtree(persistence.get_resume_dir())
+    save_resume_params("hash3", _params("D:/downloads", "after-delete"))
+
+    assert [p.name for p in load_all_resume_params()] == ["after-delete"]

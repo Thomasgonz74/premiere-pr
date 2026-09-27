@@ -8,6 +8,17 @@ from torrent2000.engine import dpapi
 
 SCHEMA_VERSION = 1
 
+# config.json exactly as Settings.save() last wrote it, keyed by path (tests
+# switch TORRENT2000_DATA_DIR per case): save() diffs against this instead of
+# re-reading the file it just wrote -- reopening a freshly modified file
+# triggers a Defender scan, ~14 ms of a ~19 ms save. Anything else that
+# writes config.json must call forget_saved_config().
+_last_saved_config: dict[str, dict] = {}
+
+
+def forget_saved_config() -> None:
+    _last_saved_config.clear()
+
 
 @dataclass
 class ProxySettings:
@@ -306,12 +317,14 @@ class Settings:
 
     def save(self) -> None:
         path = get_config_path()
-        # Read whatever's on disk *before* overwriting it, so the diff-based
-        # history log (settings_history.py) can journal only what changed.
-        # None on first-ever save (no prior state to diff against) or if the
-        # existing file is unreadable -- either way, nothing gets journaled.
-        old_data = None
-        if path.exists():
+        # The state being overwritten, so the diff-based history log
+        # (settings_history.py) can journal only what changed: what this
+        # process last wrote if known (see _last_saved_config), else whatever's
+        # on disk. None on first-ever save (no prior state to diff against)
+        # or if the existing file is unreadable -- either way, nothing gets
+        # journaled.
+        old_data = _last_saved_config.get(str(path))
+        if old_data is None and path.exists():
             try:
                 old_data = json.loads(path.read_text(encoding="utf-8"))
             except (json.JSONDecodeError, OSError):
@@ -326,6 +339,7 @@ class Settings:
         tmp_path = path.with_suffix(path.suffix + ".tmp")
         tmp_path.write_text(json.dumps(new_data, indent=2, ensure_ascii=False), encoding="utf-8")
         os.replace(tmp_path, path)
+        _last_saved_config[str(path)] = new_data
         if old_data is not None:
             # Local import: settings_history imports Settings/_from_dict back
             # for restore_settings_snapshot, so this stays a lazy call-time

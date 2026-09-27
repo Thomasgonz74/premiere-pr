@@ -39,6 +39,7 @@ raises into a signal handler).
 
 import json
 import logging
+import os
 from datetime import datetime
 
 from PySide6.QtCore import QObject
@@ -48,6 +49,12 @@ from torrent2000.config.paths import get_decision_journal_path
 logger = logging.getLogger(__name__)
 
 _MAX_ENTRIES = 200  # ponytail: flat line cap like settings_history.py, revisit if too short
+# Re-reading the file right after appending to it triggers a Defender scan
+# (11-15 ms per entry), so the size comes from f.tell() and the file is only
+# re-read once it is about twice the size of _MAX_ENTRIES typical lines
+# (~160 B each). ponytail: fixed byte threshold -- if 200 real lines ever
+# exceed it, every append re-reads again (the old cost, never worse).
+_TRIM_THRESHOLD_BYTES = 64 * 1024
 
 
 def _append(text: str) -> None:
@@ -56,13 +63,18 @@ def _append(text: str) -> None:
     try:
         with path.open("a", encoding="utf-8") as f:
             f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+            size = f.tell()
     except OSError:
         logger.exception("Decision journal: failed to append entry")
         return
-    _trim()
+    if size > _TRIM_THRESHOLD_BYTES:
+        _trim()
 
 
 def _trim() -> None:
+    """Back to the last _MAX_ENTRIES lines (only the line count is capped,
+    not the size), through a tmp file + os.replace() so a crash mid-trim
+    never leaves a truncated journal."""
     path = get_decision_journal_path()
     try:
         lines = path.read_text(encoding="utf-8").splitlines()
@@ -70,8 +82,10 @@ def _trim() -> None:
         return
     if len(lines) <= _MAX_ENTRIES:
         return
+    tmp_path = path.with_suffix(path.suffix + ".tmp")
     try:
-        path.write_text("\n".join(lines[-_MAX_ENTRIES:]) + "\n", encoding="utf-8")
+        tmp_path.write_text("\n".join(lines[-_MAX_ENTRIES:]) + "\n", encoding="utf-8")
+        os.replace(tmp_path, path)
     except OSError:
         return
 
@@ -117,7 +131,10 @@ class DecisionJournalService(QObject):
     ) -> None:
         super().__init__(parent)
         self._session_manager = session_manager
+        # info_hashes whose file error is already journaled -- see _on_file_error.
+        self._journaled_file_errors: set[str] = set()
         session_manager.file_error.connect(self._on_file_error)
+        session_manager.torrent_removed.connect(self._on_torrent_removed)
         known_disk_service.diskConfirmationRequested.connect(self._on_disk_confirmation_requested)
         disk_space_monitor.low_space_warning.connect(self._on_low_space_warning)
         # Three more signals that already existed elsewhere but were never
@@ -136,11 +153,22 @@ class DecisionJournalService(QObject):
         return read_recent_entries(limit)
 
     def _on_file_error(self, info_hash: str, message: str) -> None:
+        # One line per error episode, same suppression as ui/notifications.py
+        # (a burst of 100 file errors froze the GUI ~1.2-1.5 s). Removal is
+        # the only reset point: no file-error-recovered event exists.
+        # ponytail: a torrent the user resumes that fails again is not
+        # journaled a second time -- reset on resume if that ever matters.
+        if info_hash in self._journaled_file_errors:
+            return
+        self._journaled_file_errors.add(info_hash)
         # Same get_record-or-fallback-to-hash convention as
         # ui/notifications.py's own _on_file_error.
         record = self._session_manager.get_record(info_hash)
         name = record.name if record is not None else info_hash[:12]
         _append(f"Téléchargement « {name} » mis en pause automatiquement (erreur disque/fichier : {message}).")
+
+    def _on_torrent_removed(self, info_hash: str) -> None:
+        self._journaled_file_errors.discard(info_hash)
 
     def _on_disk_confirmation_requested(self, info_json: str, action: str) -> None:
         try:

@@ -105,6 +105,19 @@ def test_fresh_entry_survives_purge():
     assert store.get_peers("hashA") == [("10.1.2.3", 6881)]
 
 
+def test_flush_writes_the_update_the_throttle_held_back():
+    """Nothing flushed this store at quit: a peer first seen within 30 s of
+    the previous write never reached disk."""
+    store = LanPeerCacheStore()
+    store.record_peers("hashA", [FakePeer("10.0.0.5", 6881)])  # first write goes through
+    store.record_peers("hashB", [FakePeer("10.0.0.6", 6881)])  # throttled
+    assert LanPeerCacheStore().get_peers("hashB") == []
+
+    store.flush()
+
+    assert LanPeerCacheStore().get_peers("hashB") == [("10.0.0.6", 6881)]
+
+
 # --------------------------------------------------------------- reconnect_cached_peers
 
 

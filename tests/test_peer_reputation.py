@@ -86,6 +86,30 @@ def test_tracker_keys_active_streaks_per_torrent_not_globally():
     assert "9.9.9.9" in tracker._active.get("hashB", {})  # hashB's streak is untouched
 
 
+def test_tracker_writes_once_per_tick_and_holds_later_disconnects_until_flush(monkeypatch):
+    """One JSON rewrite per vanished peer cost 519 ms per poll tick at 5 000
+    IPs: a tick's disconnects go to disk in a single write, and disconnects
+    within the next 30 s stay in memory until flush() (called at quit)."""
+    store = PeerReputationStore()
+    tracker = PeerReputationTracker(store)
+    writes = []
+    real_save = store._save
+    monkeypatch.setattr(store, "_save", lambda: (writes.append(1), real_save()))
+
+    tracker.observe("hashA", [FakePeer("1.1.1.1", 1, 10, 0), FakePeer("2.2.2.2", 1, 20, 0)])
+    assert writes == []  # nobody left -- nothing to write
+    tracker.observe("hashA", [FakePeer("3.3.3.3", 1, 30, 0)])  # two peers gone in one tick
+    assert len(writes) == 1
+
+    tracker.observe("hashA", [])  # 3.3.3.3 gone well within 30 s of that write
+    assert len(writes) == 1
+    assert store.get("3.3.3.3").disconnect_count == 1  # folded in memory...
+    assert PeerReputationStore().get("3.3.3.3") is None  # ...not on disk yet
+
+    store.flush()
+    assert PeerReputationStore().get("3.3.3.3").disconnect_count == 1
+
+
 # ----------------------------------------------------------------------- score_label
 
 

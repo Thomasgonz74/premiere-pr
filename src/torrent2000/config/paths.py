@@ -1,6 +1,42 @@
 import os
 import subprocess
+from collections.abc import Callable
 from pathlib import Path
+from typing import TypeVar
+
+_T = TypeVar("_T")
+
+# Folders already created (or found) this run. Each getter below used to redo
+# exists() + mkdir() on every call -- ~0.7-1.2 ms per state write (~27 % of a
+# .fastresume write). Keyed by absolute path (os.path.abspath is string-only,
+# unlike Path.resolve() which hits the disk) because TORRENT2000_DATA_DIR
+# changes between test cases. Only resume/ and config_backups/ can vanish
+# while the app runs (the root and logs/ hold open SQLite/log handles that
+# Windows refuses to delete), so their write sites go through
+# retry_if_dir_vanished().
+_ensured_dirs: set[str] = set()
+
+
+def _ensure_dir(path: Path) -> bool:
+    """mkdir -p `path` once per run; True if it did not exist before."""
+    key = os.path.abspath(path)
+    if key in _ensured_dirs:
+        return False
+    just_created = not path.exists()
+    path.mkdir(parents=True, exist_ok=True)
+    _ensured_dirs.add(key)
+    return just_created
+
+
+def retry_if_dir_vanished(write: Callable[[], _T]) -> _T:
+    """Runs write() -- which must call the path getter itself -- and, if a
+    memoised folder was deleted underneath it (FileNotFoundError), forgets
+    every memoised folder and runs it once more so the getter recreates it."""
+    try:
+        return write()
+    except FileNotFoundError:
+        _ensured_dirs.clear()
+        return write()
 
 
 def _lock_down_acl(path: Path) -> None:
@@ -40,22 +76,20 @@ def get_app_data_dir() -> Path:
     else:
         base = os.environ.get("APPDATA") or str(Path.home() / "AppData" / "Roaming")
         app_dir = Path(base) / "Torrent2000"
-    just_created = not app_dir.exists()
-    app_dir.mkdir(parents=True, exist_ok=True)
-    if just_created:
+    if _ensure_dir(app_dir):
         _lock_down_acl(app_dir)
     return app_dir
 
 
 def get_resume_dir() -> Path:
     resume_dir = get_app_data_dir() / "resume"
-    resume_dir.mkdir(parents=True, exist_ok=True)
+    _ensure_dir(resume_dir)
     return resume_dir
 
 
 def get_logs_dir() -> Path:
     logs_dir = get_app_data_dir() / "logs"
-    logs_dir.mkdir(parents=True, exist_ok=True)
+    _ensure_dir(logs_dir)
     return logs_dir
 
 
@@ -65,7 +99,7 @@ def get_config_path() -> Path:
 
 def get_config_backups_dir() -> Path:
     backups_dir = get_app_data_dir() / "config_backups"
-    backups_dir.mkdir(parents=True, exist_ok=True)
+    _ensure_dir(backups_dir)
     return backups_dir
 
 

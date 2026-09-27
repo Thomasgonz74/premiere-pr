@@ -11,7 +11,9 @@ import os
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 from torrent2000.config.paths import get_config_backups_dir, get_config_path
-from torrent2000.ui.web.bridge_profile_security import _backup_current_config
+from torrent2000.config.settings import Settings
+from torrent2000.config.settings_history import read_settings_history
+from torrent2000.ui.web.bridge_profile_security import ProfileSecurityBridge, _backup_current_config
 
 
 def test_no_backup_created_when_no_config_exists_yet(tmp_path, monkeypatch):
@@ -63,3 +65,19 @@ def test_only_the_five_most_recent_backups_are_kept(tmp_path, monkeypatch):
 
     assert len(list(backups_dir.glob("config-*.json"))) == 5
     assert not (backups_dir / "config-00000000-000000.json").exists()
+
+
+def test_import_resets_the_diff_base_of_the_next_save(tmp_path, monkeypatch):
+    """Settings.save() diffs against its in-memory copy of config.json -- an
+    import writes that file directly, so the next save must diff against
+    the imported content, not the pre-import state."""
+    monkeypatch.setenv("TORRENT2000_DATA_DIR", str(tmp_path))
+    settings = Settings.load()  # first save: language "fr" in memory and on disk
+    imported = tmp_path / "import.json"
+    imported.write_text(json.dumps({"language": "ja"}), encoding="utf-8")
+    assert ProfileSecurityBridge(settings).importConfig(str(imported))["ok"]
+
+    settings.language = "en"
+    settings.save()
+
+    assert read_settings_history()[0]["changes"]["language"] == {"old": "ja", "new": "en"}

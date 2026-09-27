@@ -15,6 +15,7 @@ import os
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 import subprocess
+from unittest.mock import MagicMock
 
 import pytest
 from PySide6.QtCore import QObject
@@ -39,6 +40,17 @@ def qapp():
 @pytest.fixture(autouse=True)
 def isolated_data_dir(tmp_path, monkeypatch):
     monkeypatch.setenv("TORRENT2000_DATA_DIR", str(tmp_path))
+
+
+@pytest.fixture(autouse=True)
+def inline_pool(monkeypatch):
+    """check_now() hands netsh to QThreadPool -- run the runnable inline so
+    each test can assert right after check_now(). Returns the mock so a test
+    can swap in a pool that only queues."""
+    pool = MagicMock()
+    pool.globalInstance.return_value.start.side_effect = lambda runnable: runnable.run()
+    monkeypatch.setattr(nps_module, "QThreadPool", pool)
+    return pool
 
 
 def _settings(enabled: bool) -> Settings:
@@ -272,6 +284,34 @@ def test_no_ssid_is_a_noop(monkeypatch):
 
     service = NetworkProfileSwitcherService(fake_sm, settings, store, profile_store)
     service.check_now()
+
+    assert fake_sm.calls == []
+
+
+def test_netsh_runs_off_thread_without_stacking_and_late_answer_respects_disable(monkeypatch, inline_pool):
+    """netsh (1.2-5 s) must not run on the GUI thread: check_now() only
+    queues it, never queues a second one while the first is pending, and a
+    result arriving after the option was switched off applies nothing."""
+    ssid_calls = []
+    monkeypatch.setattr(nps_module, "get_current_ssid", lambda: ssid_calls.append(1) or "PublicWifi")
+    queued = []
+    inline_pool.globalInstance.return_value.start.side_effect = queued.append
+    settings = _settings(enabled=True)
+    store = NetworkProfileStore()
+    store.save_association(NetworkProfileAssociation(ssid="PublicWifi", profile_name="Public"))
+    profile_store = SettingsProfileStore()
+    profile_store.save_from_settings("Public", _settings_from_profile(_profile("Public")))
+    fake_sm = FakeSessionManager()
+    service = NetworkProfileSwitcherService(fake_sm, settings, store, profile_store)
+
+    service.check_now()
+    service.check_now()  # previous query still pending -- must not stack a second one
+
+    assert len(queued) == 1
+    assert ssid_calls == []  # nothing ran synchronously
+
+    settings.network_profile_auto_switch_enabled = False
+    queued[0].run()  # netsh answers after the user switched the option off
 
     assert fake_sm.calls == []
 

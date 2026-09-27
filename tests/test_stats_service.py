@@ -213,3 +213,14 @@ def test_current_snapshot_applies_cccp_theme_upload_tripling(tmp_path):
     # (1 GiB) and clearly higher than the 1.5x baseline would reach.
     assert snap.level == level_for_total_bytes(LEVEL_BASE_BYTES * 3)
     assert snap.level > level_for_total_bytes(round(LEVEL_BASE_BYTES * UPLOAD_LEVEL_WEIGHT))
+
+
+def test_stats_and_history_stores_open_in_wal_mode(tmp_path):
+    """A DELETE-journal commit fsyncs and deletes a -journal file on every
+    10 s flush (~5 ms vs 0.16 ms in WAL). The pragma must also run before
+    StatsStore's first INSERT, or WAL is silently ignored."""
+    from torrent2000.stats.history_store import HistoryStore
+
+    for store in (StatsStore(tmp_path / "stats.sqlite3"), HistoryStore(tmp_path / "history.sqlite3")):
+        assert store._conn.execute("PRAGMA journal_mode").fetchone()[0] == "wal"
+        assert store._conn.execute("PRAGMA synchronous").fetchone()[0] == 1  # NORMAL

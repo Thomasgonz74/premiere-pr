@@ -5,6 +5,14 @@ from pathlib import Path
 class StatsStore:
     def __init__(self, db_path: Path) -> None:
         self._conn = sqlite3.connect(str(db_path))
+        # WAL + synchronous=NORMAL: a commit (every 10 s while transferring)
+        # no longer creates, fsyncs twice and deletes a -journal file --
+        # 5 ms -> 0.16 ms measured. Power loss can drop the last commits'
+        # counters, never corrupt the file. Must stay before the INSERT
+        # below: in legacy isolation that INSERT opens a transaction, and
+        # journal_mode=WAL is silently ignored inside one.
+        self._conn.execute("PRAGMA journal_mode=WAL")
+        self._conn.execute("PRAGMA synchronous=NORMAL")
         self._conn.execute(
             "CREATE TABLE IF NOT EXISTS totals ("
             "id INTEGER PRIMARY KEY CHECK (id = 1), "

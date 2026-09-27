@@ -13,9 +13,16 @@ from pathlib import Path
 from PySide6.QtCore import QObject, QUrl, Slot
 from PySide6.QtGui import QDesktopServices
 
-from torrent2000.config.paths import get_config_backups_dir, get_config_path, get_logs_dir
+from torrent2000.config.paths import get_config_backups_dir, get_config_path, get_logs_dir, retry_if_dir_vanished
 from torrent2000.config.redaction import redact_settings_dict
-from torrent2000.config.settings import BandwidthSchedule, ProxySettings, RssFeedSubscription, Settings, _from_dict
+from torrent2000.config.settings import (
+    BandwidthSchedule,
+    ProxySettings,
+    RssFeedSubscription,
+    Settings,
+    _from_dict,
+    forget_saved_config,
+)
 
 _MAX_CONFIG_BACKUPS = 5
 
@@ -34,8 +41,10 @@ def _backup_current_config() -> None:
         # Redacted like exportConfig() -- a backup is a copy that can end up
         # shared for support/troubleshooting just as easily as an export.
         data = redact_settings_dict(json.loads(config_path.read_text(encoding="utf-8")))
-        (backups_dir / f"config-{stamp}.json").write_text(
-            json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8"
+        text = json.dumps(data, indent=2, ensure_ascii=False)
+        # config_backups/ holds no open handle, so the user can delete it mid-run.
+        retry_if_dir_vanished(
+            lambda: (get_config_backups_dir() / f"config-{stamp}.json").write_text(text, encoding="utf-8")
         )
     except (OSError, json.JSONDecodeError):
         return
@@ -135,6 +144,9 @@ class ProfileSecurityBridge(QObject):
         _backup_current_config()
         # Written straight to the real config file, same as native -- applies
         # fully on next launch, no attempt to hot-reload the running Settings.
+        # Bypasses Settings.save(), so its in-memory copy of config.json (the
+        # base of the next history diff) must be dropped.
+        forget_saved_config()
         try:
             get_config_path().write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
         except OSError as exc:
