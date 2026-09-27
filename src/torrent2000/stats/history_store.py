@@ -17,6 +17,10 @@ class HistoryEntry:
 class HistoryStore:
     def __init__(self, db_path: Path) -> None:
         self._conn = sqlite3.connect(str(db_path))
+        # Same WAL + synchronous=NORMAL trade-off as stats/store.py, set
+        # before any statement that could open a transaction.
+        self._conn.execute("PRAGMA journal_mode=WAL")
+        self._conn.execute("PRAGMA synchronous=NORMAL")
         self._conn.execute(
             "CREATE TABLE IF NOT EXISTS history ("
             "id INTEGER PRIMARY KEY AUTOINCREMENT, "

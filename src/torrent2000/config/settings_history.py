@@ -11,18 +11,23 @@ and the remote-access API token) are never written to this file.
 """
 
 import json
+import os
 from dataclasses import fields
 from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from torrent2000.config.paths import get_config_backups_dir
+from torrent2000.config.paths import get_config_backups_dir, retry_if_dir_vanished
 
 if TYPE_CHECKING:
     from torrent2000.config.settings import Settings
 
 _HISTORY_FILENAME = "history.jsonl"
 _MAX_HISTORY_ENTRIES = 200  # ponytail: flat line cap, revisit if that's ever too short
+# Same reasoning as engine/decision_journal.py's _TRIM_THRESHOLD_BYTES: the
+# size comes from f.tell(), the file is only re-read (Defender scans a
+# freshly written file on open) once it is about twice 200 typical lines.
+_TRIM_THRESHOLD_BYTES = 64 * 1024
 
 # `proxy` carries host/username/password; `remote_access_token` is a bearer
 # secret for the local remote-access HTTP server. Neither is ever diffed or
@@ -51,15 +56,25 @@ def record_settings_change(old_data: dict, new_data: dict) -> None:
     if not changes:
         return
     entry = {"timestamp": datetime.now().isoformat(timespec="seconds"), "changes": changes}
-    try:
+
+    def _write() -> int:
         with _history_path().open("a", encoding="utf-8") as f:
             f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+            return f.tell()
+
+    try:
+        # config_backups/ holds no open handle, so the user can delete it mid-run.
+        size = retry_if_dir_vanished(_write)
     except OSError:
         return
-    _trim_history()
+    if size > _TRIM_THRESHOLD_BYTES:
+        _trim_history()
 
 
 def _trim_history() -> None:
+    """Back to the last _MAX_HISTORY_ENTRIES lines (only the line count is
+    capped, not the size), through a tmp file + os.replace() so a crash
+    mid-trim never leaves a truncated history."""
     path = _history_path()
     try:
         lines = path.read_text(encoding="utf-8").splitlines()
@@ -67,8 +82,10 @@ def _trim_history() -> None:
         return
     if len(lines) <= _MAX_HISTORY_ENTRIES:
         return
+    tmp_path = path.with_suffix(path.suffix + ".tmp")
     try:
-        path.write_text("\n".join(lines[-_MAX_HISTORY_ENTRIES:]) + "\n", encoding="utf-8")
+        tmp_path.write_text("\n".join(lines[-_MAX_HISTORY_ENTRIES:]) + "\n", encoding="utf-8")
+        os.replace(tmp_path, path)
     except OSError:
         return
 

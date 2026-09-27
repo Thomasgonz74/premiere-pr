@@ -8,9 +8,10 @@ import os
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 import zipfile
+from unittest.mock import MagicMock, patch
 
 import pytest
-from PySide6.QtCore import QObject, Signal
+from PySide6.QtCore import QObject, QThreadPool, Signal
 from PySide6.QtWidgets import QApplication
 
 from torrent2000.danger_scanner.models import FileEntry
@@ -83,8 +84,41 @@ def test_unzip_action_extracts_zip_files_found_among_the_torrents_files(tmp_path
     _service = PostCompleteActionService(session_manager, RoutingRuleStore())
 
     session_manager.torrent_finished.emit("hash2")
+    QThreadPool.globalInstance().waitForDone()  # extraction runs on the pool
 
     assert (tmp_path / "inner.txt").read_text(encoding="utf-8") == "hello world"
+
+
+def test_unzip_is_handed_to_the_thread_pool_not_run_on_the_gui_thread(tmp_path):
+    """Extraction can take minutes on multi-GB archives -- the torrent_finished
+    slot must only collect the zip list and queue a runnable."""
+    zip_path = tmp_path / "pack.zip"
+    with zipfile.ZipFile(zip_path, "w") as zf:
+        zf.writestr("inner.txt", "hello world")
+    RoutingRuleStore().save_rule(
+        RoutingRule(
+            name="software", pattern="setup", match_field="name", destination=str(tmp_path),
+            post_complete_action="unzip",
+        )
+    )
+    session_manager = FakeSessionManager()
+    session_manager.records["hash5"] = TorrentRecord(
+        info_hash="hash5", save_path=str(tmp_path), matched_rule_name="software"
+    )
+    session_manager.files["hash5"] = [
+        FileEntry(index=0, path="pack.zip", size=zip_path.stat().st_size),
+        FileEntry(index=1, path="readme.txt", size=1),
+    ]
+    _service = PostCompleteActionService(session_manager, RoutingRuleStore())
+
+    mock_start = MagicMock()
+    with patch("torrent2000.engine.post_complete_action_service.QThreadPool") as mock_pool_cls:
+        mock_pool_cls.globalInstance.return_value.start = mock_start
+        session_manager.torrent_finished.emit("hash5")
+
+    assert not (tmp_path / "inner.txt").exists()  # nothing extracted synchronously
+    mock_start.assert_called_once()
+    assert mock_start.call_args[0][0]._zip_paths == [zip_path]
 
 
 def test_no_action_when_torrent_has_no_matched_rule():

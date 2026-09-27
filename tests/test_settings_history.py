@@ -3,6 +3,8 @@ journals a diff to config_backups/history.jsonl, excludes sensitive fields,
 and a past entry can be restored.
 """
 
+from pathlib import Path
+
 from torrent2000.config.settings import Settings
 from torrent2000.config.settings_history import read_settings_history, restore_settings_snapshot
 
@@ -69,3 +71,25 @@ def test_restore_rebuilds_nested_dataclass_fields(tmp_path, monkeypatch):
 
     assert settings.bandwidth_schedule.enabled is False
     assert settings.bandwidth_schedule.start_hour == 8
+
+
+def test_save_diffs_without_rereading_config_or_history(tmp_path, monkeypatch):
+    """Reopening config.json / history.jsonl right after writing them
+    triggers a Defender scan (~14 ms of a ~19 ms save): the diff base is kept
+    in memory and the history size comes from f.tell()."""
+    monkeypatch.setenv("TORRENT2000_DATA_DIR", str(tmp_path))
+    settings = Settings.load()
+    reads = []
+    real_read_text = Path.read_text
+    with monkeypatch.context() as m:
+        m.setattr(Path, "read_text", lambda self, *a, **k: (reads.append(self.name), real_read_text(self, *a, **k))[1])
+        settings.language = "ja"
+        settings.save()
+        settings.language = "en"
+        settings.save()
+
+    assert reads == []
+    assert [e["changes"]["language"] for e in read_settings_history()] == [
+        {"old": "ja", "new": "en"},
+        {"old": "fr", "new": "ja"},
+    ]

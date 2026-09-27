@@ -266,6 +266,12 @@ class SessionManager(QObject):
         # idle unless the setting is on" construction convention as the peer
         # reputation store above.
         self._lan_peer_cache_store = LanPeerCacheStore()
+        # Both stores above throttle their disk writes to one per 30 s --
+        # write whatever is still pending when the app quits. Hooked here,
+        # where the stores live, not in run_web_spike.py's _shutdown.
+        app = QCoreApplication.instance()
+        if app is not None:
+            app.aboutToQuit.connect(self._flush_peer_stores)
         # time.time() of the last deadline-priority sweep -- see
         # _apply_deadline_priorities, throttling that work inside _on_tick.
         self._last_deadline_sweep = 0.0
@@ -819,6 +825,10 @@ class SessionManager(QObject):
             )
             for p in raw_peers
         ]
+
+    def _flush_peer_stores(self) -> None:
+        self._peer_reputation_store.flush()
+        self._lan_peer_cache_store.flush()
 
     def get_peer_reputation_score(self, display_ip: str) -> str:
         """"good" | "neutral" | "bad" for a peer IP as shown in the UI

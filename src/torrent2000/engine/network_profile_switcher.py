@@ -32,7 +32,7 @@ import os
 import subprocess
 from dataclasses import asdict, dataclass
 
-from PySide6.QtCore import QObject
+from PySide6.QtCore import QObject, QRunnable, QThreadPool, Signal
 
 from torrent2000.config.paths import get_network_profiles_path
 from torrent2000.config.settings import Settings
@@ -136,6 +136,28 @@ def get_current_ssid() -> str | None:
     return None
 
 
+class _SsidSignals(QObject):
+    ssid_ready = Signal(str)  # "" when there is no SSID right now
+
+
+class _SsidRunnable(QRunnable):
+    """Runs netsh off the GUI thread (1.2 s measured, up to 5 s on timeout);
+    the SSID comes back through _SsidSignals, same pattern as
+    rss_feed_service.py's _FetchFeedRunnable."""
+
+    def __init__(self, signals: _SsidSignals) -> None:
+        super().__init__()
+        self._signals = signals
+
+    def run(self) -> None:
+        try:
+            ssid = get_current_ssid() or ""
+        except Exception:  # always answer, or _check_in_flight would stay stuck
+            logger.exception("Network profile auto-switch: SSID check failed")
+            ssid = ""
+        self._signals.ssid_ready.emit(ssid)
+
+
 class NetworkProfileSwitcherService(QObject):
     def __init__(
         self,
@@ -158,15 +180,27 @@ class NetworkProfileSwitcherService(QObject):
         # effect until the SSID changes (disconnect/reconnect) or the app
         # restarts. Upgrade: reset _last_ssid whenever the store changes.
         self._last_ssid: str | None = None
+        # True while a netsh query is queued or running -- a slow netsh
+        # (5 s timeout) must not let 20 s ticks stack up queries.
+        self._check_in_flight = False
+        self._signals = _SsidSignals()
+        self._signals.ssid_ready.connect(self._on_ssid_ready)
 
         self._timer = start_periodic_timer(self, CHECK_INTERVAL_MS, self.check_now)
 
     def check_now(self) -> None:
+        if not self._settings.network_profile_auto_switch_enabled or self._check_in_flight:
+            return
+        self._check_in_flight = True
+        QThreadPool.globalInstance().start(_SsidRunnable(self._signals))
+
+    def _on_ssid_ready(self, ssid: str) -> None:
+        self._check_in_flight = False
+        # Re-checked: the option may have been switched off while netsh ran,
+        # and a late answer must not apply a profile after that.
         if not self._settings.network_profile_auto_switch_enabled:
             return
-
-        ssid = get_current_ssid()
-        if ssid is None or ssid == self._last_ssid:
+        if not ssid or ssid == self._last_ssid:
             return
         self._last_ssid = ssid
 

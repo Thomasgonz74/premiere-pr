@@ -87,6 +87,7 @@ class LanPeerCacheStore:
         # info_hash -> {ip: LanPeerRecord}
         self._entries: dict[str, dict[str, LanPeerRecord]] = {}
         self._last_saved_at: float = 0.0
+        self._dirty = False  # an update the throttle below held back from disk
         self._load()
 
     def record_peers(self, info_hash: str, raw_peers) -> None:
@@ -109,9 +110,16 @@ class LanPeerCacheStore:
         self._purge_expired()
         now_monotonic = time.monotonic()
         if now_monotonic - self._last_saved_at < _SAVE_MIN_INTERVAL_SECONDS:
+            self._dirty = True
             return
         self._save()
         self._last_saved_at = now_monotonic
+
+    def flush(self) -> None:
+        """Writes an update the 30 s throttle held back -- called at quit
+        (SessionManager's aboutToQuit hook)."""
+        if self._dirty:
+            self._save()
 
     def get_peers(self, info_hash: str) -> list[tuple[str, int]]:
         """(ip, port) pairs currently cached for this info_hash. Purges
@@ -141,6 +149,7 @@ class LanPeerCacheStore:
         }
         tmp_path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
         os.replace(tmp_path, path)
+        self._dirty = False
 
     def _load(self) -> None:
         path = get_lan_peer_cache_path()

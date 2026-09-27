@@ -11,10 +11,14 @@ import os
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
+from pathlib import Path
+
 import pytest
 from PySide6.QtCore import QObject, Signal
 from PySide6.QtWidgets import QApplication
 
+from torrent2000.config.paths import get_decision_journal_path
+from torrent2000.engine import decision_journal
 from torrent2000.engine.decision_journal import DecisionJournalService, read_recent_entries
 
 
@@ -35,6 +39,7 @@ class FakeRecord:
 
 class FakeSessionManager(QObject):
     file_error = Signal(str, str)
+    torrent_removed = Signal(str)
 
     def __init__(self) -> None:
         super().__init__()
@@ -196,3 +201,42 @@ def test_rss_items_found_journals_titles_and_redacts_the_feed_url():
     assert "Ubuntu.24.04" in entries[0]["text"]
     assert "SECRET123" not in entries[0]["text"]
     assert "tracker.example/rss" in entries[0]["text"]
+
+
+def test_repeated_file_errors_for_one_torrent_are_journaled_once_until_removed():
+    """A burst of file errors (100 froze the GUI ~1.2-1.5 s) must not write
+    one line each -- one per torrent, like ui/notifications.py, reset on removal."""
+    _service, session_manager, _kds, _dsm = _wired_service()
+
+    for _ in range(5):
+        session_manager.file_error.emit("abc123", "the device is not ready")
+    session_manager.file_error.emit("def456", "other torrent")
+    assert len(read_recent_entries()) == 2
+
+    session_manager.torrent_removed.emit("abc123")
+    session_manager.file_error.emit("abc123", "re-added, failing again")
+    assert len(read_recent_entries()) == 3
+
+
+def test_append_does_not_reread_the_journal_below_the_threshold_and_trims_to_200_lines(monkeypatch):
+    """Re-reading the freshly written file after every append triggered a
+    Defender scan (11-15 ms per entry): the size comes from f.tell(), and a
+    trim, once due, always goes back to exactly the last 200 lines."""
+    reads = []
+    real_read_text = Path.read_text
+    monkeypatch.setattr(
+        Path, "read_text", lambda self, *a, **k: (reads.append(self), real_read_text(self, *a, **k))[1]
+    )
+
+    for i in range(250):
+        decision_journal._append(f"entry {i}")
+    assert reads == []  # 250 short lines stay under the threshold -- never re-read
+    assert len(real_read_text(get_decision_journal_path(), encoding="utf-8").splitlines()) == 250
+
+    monkeypatch.setattr(decision_journal, "_TRIM_THRESHOLD_BYTES", 0)
+    decision_journal._append("entry 250")
+
+    lines = real_read_text(get_decision_journal_path(), encoding="utf-8").splitlines()
+    assert len(lines) == 200
+    assert "entry 250" in lines[-1] and "entry 51" in lines[0]
+    assert list(get_decision_journal_path().parent.glob("*.tmp")) == []  # replaced atomically
