@@ -486,6 +486,8 @@
   "web.create_torrent.create_button": "Créer…",
   "web.create_torrent.no_source_message": "Choisissez d'abord un fichier ou un dossier source.",
   "web.create_torrent.created": "Torrent créé : {path}",
+  "web.create_torrent.hashing": "Calcul des empreintes des morceaux…",
+  "web.create_torrent.busy": "Une création de torrent est déjà en cours.",
   "web.file_priority.no_metadata_message": "Aucune information de fichiers disponible pour le moment (métadonnées non reçues, ou torrent introuvable).",
   "web.file_priority.single_file_message": "Décocher l'unique fichier exclura le torrent entier.",
   "web.file_priority.loading": "Chargement…",

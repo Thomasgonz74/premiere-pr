@@ -5,6 +5,13 @@
 let _modalOnClose = null;
 
 function openModal(titleText, contentEl, onClose) {
+  // A dialog replaced by this one is closed too: the polling dialogs only
+  // stop their timer in onClose, so dropping it leaked the poll for good.
+  if (_modalOnClose) {
+    const cb = _modalOnClose;
+    _modalOnClose = null;
+    cb();
+  }
   let overlay = document.getElementById("modalOverlay");
   if (!overlay) {
     overlay = document.createElement("div");
@@ -163,6 +170,16 @@ function showAutoShutdownCountdown(delaySeconds, action) {
   buttonRow.appendChild(cancelBtn);
   content.appendChild(buttonRow);
 
+  // Timer created only after openModal(): opening runs the previous
+  // dialog's onClose, which for an earlier countdown clears
+  // _shutdownCountdownTimer -- it would kill a timer created before.
+  openModal(t("shutdown_dialog.window_title"), content, () => {
+    if (_shutdownCountdownTimer) {
+      clearInterval(_shutdownCountdownTimer);
+      _shutdownCountdownTimer = null;
+    }
+  });
+
   if (_shutdownCountdownTimer) clearInterval(_shutdownCountdownTimer);
   _shutdownCountdownTimer = setInterval(() => {
     _shutdownCountdownRemaining -= 1;
@@ -174,13 +191,6 @@ function showAutoShutdownCountdown(delaySeconds, action) {
     }
     updateCountdownLabel();
   }, 1000);
-
-  openModal(t("shutdown_dialog.window_title"), content, () => {
-    if (_shutdownCountdownTimer) {
-      clearInterval(_shutdownCountdownTimer);
-      _shutdownCountdownTimer = null;
-    }
-  });
 }
 
 // Two-step update flow, mirroring MainWindow._on_update_available/

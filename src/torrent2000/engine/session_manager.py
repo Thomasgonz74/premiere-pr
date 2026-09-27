@@ -599,7 +599,9 @@ class SessionManager(QObject):
             return {"num_pieces": 0, "have": [], "availability": []}
         return {
             "num_pieces": ti.num_pieces(),
-            "have": list(handle.status().pieces),
+            # query_pieces only: the default flags also compute every other
+            # optional status field, none of which this 2 s poll uses.
+            "have": list(handle.status(lt.torrent_handle.query_pieces).pieces),
             "availability": list(handle.piece_availability()),
         }
 

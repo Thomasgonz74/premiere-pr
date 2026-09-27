@@ -78,6 +78,28 @@ function statsRefreshHistory(bridge) {
   bridge.getHistoryEntries((entries) => statsRenderHistory(entries));
 }
 
+// historyChanged fires once per removed torrent: removing 20 at once meant
+// 20 fetches of 200 rows and 20 full rebuilds, even with the Profile page
+// hidden. Coalesced into one refresh 100 ms later, and none while hidden --
+// the tab button refreshes on opening if anything changed meanwhile.
+let statsHistoryDirty = false;
+let statsHistoryTimer = null;
+
+function statsProfileVisible() {
+  return document.getElementById("page-profile").classList.contains("active");
+}
+
+function statsScheduleHistoryRefresh(bridge) {
+  statsHistoryDirty = true;
+  if (statsHistoryTimer !== null || !statsProfileVisible()) return;
+  statsHistoryTimer = setTimeout(() => {
+    statsHistoryTimer = null;
+    if (!statsHistoryDirty || !statsProfileVisible()) return;
+    statsHistoryDirty = false;
+    statsRefreshHistory(bridge);
+  }, 100);
+}
+
 function buildProfileStatsSection() {
   const container = document.getElementById("profileStatsContainer");
 
@@ -182,7 +204,13 @@ function wireProfileStats() {
   bridge.snapshotUpdated.connect(statsFormatSnapshot);
 
   statsRefreshHistory(bridge);
-  bridge.historyChanged.connect(() => statsRefreshHistory(bridge));
+  bridge.historyChanged.connect(() => statsScheduleHistoryRefresh(bridge));
+  // Immediate, not after the 100 ms: the page must not open on a stale table.
+  document.querySelector('.tab-btn[data-tab="profile"]').addEventListener("click", () => {
+    if (!statsHistoryDirty) return;
+    statsHistoryDirty = false;
+    statsRefreshHistory(bridge);
+  });
 
   document.getElementById("statsExportCsvBtn").addEventListener("click", () => {
     dialogs.browseSaveFile("torrent2000_historique.csv", "CSV (*.csv)", (path) => {
