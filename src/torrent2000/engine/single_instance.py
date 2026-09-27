@@ -27,6 +27,11 @@ logger = logging.getLogger(__name__)
 
 _SERVER_NAME = "Torrent2000SingleInstance"
 _CONNECT_TIMEOUT_MS = 500
+# The primary only reads once its event loop runs -- a second or two after it
+# starts listening on a cold start (imports, session restore, window). The
+# second launch has nothing else to do, so it waits that long for its
+# argument to be read rather than exiting with it unsent.
+_FORWARD_TIMEOUT_MS = 10_000
 
 
 class SingleInstanceGuard(QObject):
@@ -89,7 +94,7 @@ class SingleInstanceGuard(QObject):
             socket.abort()
             return False
         socket.write(forward_argument.encode("utf-8"))
-        socket.waitForBytesWritten(_CONNECT_TIMEOUT_MS)
+        socket.waitForBytesWritten(_FORWARD_TIMEOUT_MS)
         socket.disconnectFromServer()
         return True
 

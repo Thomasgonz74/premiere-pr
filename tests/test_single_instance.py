@@ -167,3 +167,36 @@ def test_second_launch_imports_only_what_the_guard_needs():
     )
     assert result.returncode == 0, result.stderr
     assert "LOADED []" in result.stdout, result.stdout
+
+
+def test_argument_sent_while_the_primary_is_still_starting_is_not_lost(qapp, make_guard, monkeypatch):
+    """A second launch while the primary is listening but still starting up
+    (imports, session restore, window: its event loop not running yet) must
+    wait for its argument to be read instead of exiting with it unsent."""
+    from torrent2000.engine import single_instance
+
+    name = "Torrent2000SingleInstance_test_startup"
+    monkeypatch.setattr(single_instance, "_SERVER_NAME", name)
+    primary = make_guard()
+    assert primary.try_become_primary("") is True
+    received = []
+    primary.argument_received.connect(received.append)
+
+    src = str(Path(__file__).resolve().parents[1] / "src")
+    code = (
+        "import os, sys\n"
+        "os.environ['QT_QPA_PLATFORM'] = 'offscreen'\n"
+        f"sys.path.insert(0, {src!r})\n"
+        "from PySide6.QtCore import QCoreApplication\n"
+        "from torrent2000.engine import single_instance\n"
+        f"single_instance._SERVER_NAME = {name!r}\n"
+        "app = QCoreApplication([])\n"
+        "became_primary = single_instance.SingleInstanceGuard().try_become_primary('C:/downloads/late.torrent')\n"
+        "sys.exit(1 if became_primary else 0)\n"
+    )
+    second = subprocess.Popen([sys.executable, "-c", code])
+    time.sleep(2.5)  # the primary is busy starting up: no events processed yet
+
+    assert _pump_until(qapp, lambda: received, timeout_s=15)
+    assert second.wait(15) == 0
+    assert received == ["C:/downloads/late.torrent"]

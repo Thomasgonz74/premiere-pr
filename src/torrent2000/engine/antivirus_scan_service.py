@@ -70,8 +70,15 @@ def _scan_target(save_path: str, name: str) -> str:
     renamed), or escapes save_path: the name comes from the torrent's own
     metadata, so a crafted ".." or absolute name must not widen the scan."""
     if name:
+        # _is_confined expects an already-resolved root: an unresolved one
+        # (junction, subst or mapped drive, 8.3 name) never contains the
+        # resolved target, which would silently fall back to the whole library.
+        try:
+            root = Path(save_path).resolve()
+        except (OSError, ValueError):
+            return save_path
         target = Path(save_path) / name
-        if _is_confined(target, Path(save_path)) and target.exists():
+        if _is_confined(target, root) and target.exists():
             return str(target)
     return save_path
 
@@ -131,3 +138,17 @@ class AntivirusScanService(QObject):
             return
         runnable = _ScanRunnable(_scan_target(record.save_path, record.name))
         QThreadPool.globalInstance().start(runnable)
+
+
+def test_scan_target_follows_a_save_path_behind_a_junction(tmp_path):
+    """save_path reached through a junction (or subst/mapped drive) must still
+    narrow the scan to the torrent's folder, not fall back to the library."""
+    from torrent2000.engine.antivirus_scan_service import _scan_target
+
+    (tmp_path / "real" / "My.Torrent").mkdir(parents=True)
+    link = tmp_path / "link"
+    made = subprocess.run(["cmd", "/c", "mklink", "/J", str(link), str(tmp_path / "real")], capture_output=True)
+    if made.returncode != 0:
+        pytest.skip("cannot create a junction here")
+
+    assert _scan_target(str(link), "My.Torrent") == str(link / "My.Torrent")
