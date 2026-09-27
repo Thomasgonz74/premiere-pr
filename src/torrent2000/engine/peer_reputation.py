@@ -47,8 +47,10 @@ logger = logging.getLogger(__name__)
 # open): one full JSON rewrite per vanished peer measured 59 ms per tick with
 # 500 IPs, 519 ms with 5 000. Disconnects are folded in memory and written at
 # most once per this interval (same throttle as lan_peer_cache.py), plus once
-# at quit (SessionManager flushes on aboutToQuit). Trade-off: a crash loses
-# at most this many seconds of reputation data.
+# at quit (SessionManager flushes on aboutToQuit). Trade-off: pending data is
+# only written by a later poll or at quit, so a crash after the peer view was
+# closed loses whatever was still pending -- possibly hours of it, as with
+# lan_peer_cache.py.
 _SAVE_MIN_INTERVAL_SECONDS = 30
 
 

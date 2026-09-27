@@ -168,3 +168,33 @@ def test_second_finish_event_does_not_start_a_second_countdown():
     fake_sm.torrent_finished.emit("abc")
 
     assert started == [settings.auto_shutdown_delay_seconds]
+
+
+
+class FakePostCompleteActions(QObject):
+    extractions_idle = Signal()
+
+    def __init__(self):
+        super().__init__()
+        self.pending = False
+
+    def has_pending_extractions(self):
+        return self.pending
+
+
+def test_countdown_waits_for_a_running_extraction_to_finish():
+    settings = _make_settings(auto_shutdown_delay_seconds=30)
+    fake_sm = FakeSessionManager()
+    fake_sm.records = [FakeRecord(state=TorrentState.FINISHED)]
+    extractions = FakePostCompleteActions()
+    extractions.pending = True
+    service = AutoShutdownService(fake_sm, settings, extractions)
+
+    started = []
+    service.shutdown_countdown_started.connect(started.append)
+    fake_sm.torrent_finished.emit("abc")
+    assert started == []  # shutting down now would cut the extraction short
+
+    extractions.pending = False
+    extractions.extractions_idle.emit()
+    assert started == [30]

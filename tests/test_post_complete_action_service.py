@@ -149,3 +149,59 @@ def test_unknown_info_hash_is_a_noop():
     _service = PostCompleteActionService(session_manager, RoutingRuleStore())
 
     session_manager.torrent_finished.emit("unknown")  # must not raise
+
+
+def _unzip_rule_and_session(tmp_path, info_hash):
+    zip_path = tmp_path / "pack.zip"
+    with zipfile.ZipFile(zip_path, "w") as zf:
+        zf.writestr("a.txt", "a")
+        zf.writestr("b.txt", "b")
+    RoutingRuleStore().save_rule(
+        RoutingRule(
+            name="software", pattern="setup", match_field="name", destination=str(tmp_path),
+            post_complete_action="unzip",
+        )
+    )
+    session_manager = FakeSessionManager()
+    session_manager.records[info_hash] = TorrentRecord(
+        info_hash=info_hash, save_path=str(tmp_path), matched_rule_name="software"
+    )
+    session_manager.files[info_hash] = [FileEntry(index=0, path="pack.zip", size=zip_path.stat().st_size)]
+    return session_manager
+
+
+def test_pending_extraction_is_reported_until_the_runnable_finishes(tmp_path, qapp):
+    """AutoShutdownService relies on this to never shut down mid-extraction."""
+    session_manager = _unzip_rule_and_session(tmp_path, "hash6")
+    service = PostCompleteActionService(session_manager, RoutingRuleStore())
+    idle = []
+    service.extractions_idle.connect(lambda: idle.append(True))
+
+    session_manager.torrent_finished.emit("hash6")
+    assert service.has_pending_extractions()
+
+    QThreadPool.globalInstance().waitForDone()
+    qapp.processEvents()  # the finished signal is queued to this thread
+
+    assert not service.has_pending_extractions()
+    assert idle == [True]
+    assert (tmp_path / "b.txt").exists()
+
+
+def test_extraction_stops_once_cancelled_at_quit(tmp_path):
+    from torrent2000.engine import post_complete_action_service as pca
+
+    zip_path = tmp_path / "pack.zip"
+    with zipfile.ZipFile(zip_path, "w") as zf:
+        zf.writestr("a.txt", "a")
+    signals = pca._UnzipSignals()
+    finished = []
+    signals.finished.connect(lambda: finished.append(True))
+    pca.cancel_running_extractions()
+    try:
+        pca._UnzipRunnable([zip_path], "hash7", signals).run()
+    finally:
+        pca._cancel_event.clear()
+
+    assert not (tmp_path / "a.txt").exists()
+    assert finished == [True]  # still reported, so nothing waits on it forever

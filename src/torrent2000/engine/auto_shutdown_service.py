@@ -32,22 +32,35 @@ def all_torrents_idle(records: list[TorrentRecord]) -> bool:
 class AutoShutdownService(QObject):
     shutdown_countdown_started = Signal(int)  # delay in seconds
 
-    def __init__(self, session_manager: SessionManager, settings: Settings, parent=None) -> None:
+    def __init__(
+        self, session_manager: SessionManager, settings: Settings, post_complete_actions=None, parent=None
+    ) -> None:
         super().__init__(parent)
         self._session_manager = session_manager
         self._settings = settings
+        # Optional PostCompleteActionService: a rule's "unzip" runs in the
+        # background, and shutting down mid-extraction would leave half-written
+        # files -- the countdown only starts once no extraction is running.
+        self._post_complete_actions = post_complete_actions
         self._countdown_timer: QTimer | None = None
         self._pending_action: str | None = None
 
         session_manager.torrent_finished.connect(self._on_torrent_finished)
+        if post_complete_actions is not None:
+            post_complete_actions.extractions_idle.connect(self._maybe_start_countdown)
 
     def _on_torrent_finished(self, info_hash: str) -> None:
+        self._maybe_start_countdown()
+
+    def _maybe_start_countdown(self) -> None:
         if not self._settings.auto_shutdown_enabled:
             return
         if self._pending_action is not None:
             return  # a countdown is already running
         if not all_torrents_idle(self._session_manager.all_records()):
             return
+        if self._post_complete_actions is not None and self._post_complete_actions.has_pending_extractions():
+            return  # tried again on extractions_idle
 
         self._pending_action = self._settings.auto_shutdown_action
         delay = self._settings.auto_shutdown_delay_seconds

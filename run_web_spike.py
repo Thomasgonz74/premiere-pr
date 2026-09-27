@@ -62,7 +62,7 @@ def main() -> int:
     from torrent2000.engine.known_disk_service import KnownDiskService, KnownDiskStore
     from torrent2000.engine.memory_pressure_governor import MemoryPressureGovernor
     from torrent2000.engine.network_profile_switcher import NetworkProfileStore, NetworkProfileSwitcherService
-    from torrent2000.engine.post_complete_action_service import PostCompleteActionService
+    from torrent2000.engine.post_complete_action_service import PostCompleteActionService, cancel_running_extractions
     from torrent2000.engine.remote_server import RemoteAccessServer
     from torrent2000.engine.routing_rules import RoutingRuleStore
     from torrent2000.engine.rss_feed_service import RssFeedService
@@ -126,7 +126,7 @@ def main() -> int:
     clipboard_watcher_service = ClipboardWatcherService(settings)
     torrent_search_source_store = TorrentSearchSourceStore()
     settings_profile_store = SettingsProfileStore()
-    auto_shutdown_service = AutoShutdownService(session_manager, settings)
+    auto_shutdown_service = AutoShutdownService(session_manager, settings, post_complete_action_service)
     anthem_player = AnthemPlayer(settings.audio_volume)
     known_disk_store = KnownDiskStore()
     known_disk_service = KnownDiskService(known_disk_store, settings)
@@ -199,6 +199,7 @@ def main() -> int:
         pool.clear()
         cancel_all_fetches()
         cancel_running_scans()
+        cancel_running_extractions()
         share_limit_service.flush_pending_save()
         remote_access_server.stop()
         session_manager.shutdown()
