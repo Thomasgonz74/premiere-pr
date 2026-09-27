@@ -29,8 +29,18 @@ def _wait_until_loaded(player, timeout_s=3.0):
         time.sleep(0.02)
 
 
+def test_construction_defers_the_multimedia_backend():
+    player = AnthemPlayer(initial_volume_percent=42)
+    assert player._player is None and player._audio_output is None
+    player.set_volume(30)  # before the first start(): remembered
+    assert player._player is None
+    player._ensure_player()
+    assert player._audio_output.volume() == pytest.approx(0.30)
+
+
 def test_loads_the_bundled_mp3_asset():
     player = AnthemPlayer()
+    player._ensure_player()
     _wait_until_loaded(player)
     assert player._player.source().isValid()
     assert player._player.source().toLocalFile().endswith("cccp_anthem.mp3")
@@ -40,18 +50,21 @@ def test_loads_the_bundled_mp3_asset():
 
 def test_loops_forever():
     player = AnthemPlayer()
+    player._ensure_player()
     assert player._player.loops() == QMediaPlayer.Loops.Infinite.value
 
 
 @pytest.mark.parametrize("percent,expected", [(0, 0.0), (70, 0.7), (100, 1.0)])
 def test_set_volume_converts_percent_to_qt_fraction(percent, expected):
     player = AnthemPlayer()
+    player._ensure_player()
     player.set_volume(percent)
     assert player._audio_output.volume() == pytest.approx(expected)
 
 
 def test_set_volume_clamps_out_of_range_input():
     player = AnthemPlayer()
+    player._ensure_player()
     player.set_volume(150)
     assert player._audio_output.volume() == pytest.approx(1.0)
     player.set_volume(-20)
@@ -60,6 +73,7 @@ def test_set_volume_clamps_out_of_range_input():
 
 def test_initial_volume_applied_at_construction():
     player = AnthemPlayer(initial_volume_percent=42)
+    player._ensure_player()
     assert player._audio_output.volume() == pytest.approx(0.42)
 
 

@@ -11,7 +11,7 @@ import os
 import time
 from ctypes import wintypes
 
-from PySide6.QtCore import QEvent, QTimer, QUrl
+from PySide6.QtCore import QEvent, QTimer, QUrl, QUrlQuery
 from PySide6.QtGui import QColor
 from PySide6.QtWebChannel import QWebChannel
 from PySide6.QtWebEngineCore import QWebEnginePage
@@ -36,7 +36,7 @@ from torrent2000.ui.web.bridge_known_disk import KnownDiskBridge
 from torrent2000.ui.web.bridge_peer_list import PeerListBridge
 from torrent2000.ui.web.bridge_profile_advanced import ProfileAdvancedBridge
 from torrent2000.ui.web.bridge_profile_automation import ProfileAutomationBridge
-from torrent2000.ui.web.bridge_profile_general import ProfileGeneralBridge
+from torrent2000.ui.web.bridge_profile_general import WEB_THEME_LABELS, ProfileGeneralBridge
 from torrent2000.ui.web.bridge_profile_network import ProfileNetworkBridge
 from torrent2000.ui.web.bridge_profile_security import ProfileSecurityBridge
 from torrent2000.ui.web.bridge_profile_stats import ProfileStatsBridge
@@ -56,6 +56,22 @@ from torrent2000.ui.web.window_bridge import WindowBridge
 from torrent2000.utils.resource_path import resource_path
 
 from PySide6.QtCore import Qt
+
+
+def _index_url(settings: Settings) -> QUrl:
+    """index.html with the saved theme/mode in its query: the page's <head>
+    script applies them before the first paint instead of flashing Luna XP
+    light until app.js's getSettings round-trip. Only a known theme id goes
+    in -- a stale one would load a 404 sheet and an unthemed page -- so the
+    page falls back to its default like setActiveTheme() does."""
+    query = QUrlQuery()
+    if settings.theme in {theme_id for _, theme_id in WEB_THEME_LABELS}:
+        query.addQueryItem("theme", settings.theme)
+    if settings.appearance_mode in ("dark", "dark_hc"):
+        query.addQueryItem("mode", settings.appearance_mode)
+    url = QUrl.fromLocalFile(str(resource_path("resources/web/spike/index.html")))
+    url.setQuery(query)
+    return url
 
 
 class _ConsoleLoggingPage(QWebEnginePage):
@@ -219,8 +235,7 @@ class SpikeWindow(QMainWindow):
         self._channel.registerObject("knownDisk", self._known_disk_bridge)
         self._view.page().setWebChannel(self._channel)
 
-        index_path = resource_path("resources/web/spike/index.html")
-        self._view.setUrl(QUrl.fromLocalFile(str(index_path)))
+        self._view.setUrl(_index_url(settings))
 
     def nativeEvent(self, event_type, message):
         # Detects the start/end of a live native drag-resize gesture so the

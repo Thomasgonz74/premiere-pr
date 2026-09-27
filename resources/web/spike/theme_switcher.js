@@ -44,6 +44,13 @@ function syncColorScheme() {
   document.documentElement.dataset.scheme = 0.2126 * r + 0.7152 * g + 0.0722 * b > 128 ? "dark" : "light";
 }
 
+// First paint: index.html's <head> script already set the saved theme,
+// whose sheet may or may not have loaded by the time this file runs.
+{
+  const link = document.getElementById("themeTokensLink");
+  if (link.sheet) syncColorScheme(); else link.onload = syncColorScheme;
+}
+
 function setAppearanceMode(mode) {
   // tokens.css files define [data-theme="dark"] / [data-theme="hc"]
   // override blocks on top of :root's light-mode base -- "light" itself
