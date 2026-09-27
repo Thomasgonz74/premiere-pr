@@ -85,7 +85,7 @@ class AlertDispatcher:
         elif isinstance(alert, lt.torrent_finished_alert):
             self._on_torrent_finished(_hash_of(alert.handle))
         elif isinstance(alert, lt.tracker_error_alert):
-            self._on_tracker_error(_hash_of(alert.handle), alert.error_message or str(alert.message()))
+            self._on_tracker_error(_hash_of(alert.handle), alert.error_message() or str(alert.message()))
         elif isinstance(alert, lt.save_resume_data_alert):
             self._on_save_resume_data(_hash_of(alert.handle), alert.params)
         elif isinstance(alert, lt.torrent_removed_alert):

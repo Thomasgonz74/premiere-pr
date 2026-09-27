@@ -93,7 +93,7 @@ def test_torrent_finished_alert_extracts_hash(dispatcher, callbacks):
 def test_tracker_error_alert_prefers_error_message(dispatcher, callbacks):
     alert = MagicMock(spec=lt.tracker_error_alert)
     alert.handle = _handle_with_hash("hash0")
-    alert.error_message = "connection refused"
+    alert.error_message.return_value = "connection refused"
     alert.message.return_value = "fallback message"
 
     dispatcher.dispatch(alert)
@@ -104,7 +104,7 @@ def test_tracker_error_alert_prefers_error_message(dispatcher, callbacks):
 def test_tracker_error_alert_falls_back_to_message_when_error_message_empty(dispatcher, callbacks):
     alert = MagicMock(spec=lt.tracker_error_alert)
     alert.handle = _handle_with_hash("hash0")
-    alert.error_message = ""
+    alert.error_message.return_value = ""
     alert.message.return_value = "fallback message"
 
     dispatcher.dispatch(alert)
