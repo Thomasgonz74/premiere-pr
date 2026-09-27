@@ -78,7 +78,7 @@ def test_multiple_causes_can_combine():
 
 class _FakeSessionManager(QObject):
     torrent_added = Signal(str)
-    torrent_status_updated = Signal(str, object)
+    torrent_status_batch_updated = Signal(list)
     torrent_removed = Signal(str)
 
 
