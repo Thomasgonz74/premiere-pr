@@ -1,7 +1,7 @@
 """Behaviour of a few web-UI scripts that run without any bridge round trip
-(modal.js, profile_stats.js, piece_map_dialog.js), exercised in the real
-resources/web/spike/index.html loaded in an offscreen QWebEngineView with
-hand-made bridge stubs (same page-loading convention as
+(modal.js, profile_stats.js, piece_map_dialog.js, downloads.js), exercised in
+the real resources/web/spike/index.html loaded in an offscreen QWebEngineView
+with hand-made bridge stubs (same page-loading convention as
 test_theme_readability.py)."""
 
 import os
@@ -54,18 +54,62 @@ def view(app):
 def test_opening_a_modal_closes_the_one_it_replaces(view):
     result = run_js(view, """(function () {
       window.bridge = { autoShutdown: { cancelShutdown() {} } };
-      let pollStopped = 0;
-      openModal('poll', document.createElement('div'), () => { pollStopped++; });
-      openModal('other', document.createElement('div'));
+      const replaced = [];
+      openModal('poll', document.createElement('div'), (info) => { replaced.push(info.replaced); });
+      openModal('other', document.createElement('div'), (info) => { replaced.push(info.replaced); });
       // A second countdown pushed while the first is open must keep ticking:
       // opening it runs the first one's onClose.
       showAutoShutdownCountdown(30, 'shutdown');
       showAutoShutdownCountdown(30, 'shutdown');
       const ticking = _shutdownCountdownTimer !== null;
       closeModal();
-      return JSON.stringify([pollStopped, ticking, _shutdownCountdownTimer]);
+      return JSON.stringify([replaced, ticking, _shutdownCountdownTimer]);
     })()""")
-    assert result == "[1,true,null]"
+    # onClose learns whether it was replaced (the first-launch welcome is
+    # only marked seen on a real close) or closed.
+    assert result == "[[true,true],true,null]"
+
+
+def test_share_banner_only_announces_limits_reached_this_session(view):
+    result = run_js(view, """(function () {
+      const sig = () => { const cbs = []; return { connect: (f) => cbs.push(f), emit: (...a) => cbs.forEach((f) => f(...a)) }; };
+      const share = { recordUpdated: sig(), recordsUpdated: sig(),
+                      listTorrents(cb) { cb([{ infoHash: 'old', reached: true }, { infoHash: 'fresh', reached: false }]); } };
+      window.bridge = { share, profileAutomation: { lowSpaceWarning: sig() } };
+      wireSuggestionBanner();
+      const banner = document.getElementById('downloadsSuggestionBanner');
+      const seen = [];
+      // set_live(true) resync: reached in a previous session, not now.
+      share.recordsUpdated.emit([{ infoHash: 'old', reached: true }, { infoHash: 'fresh', reached: false }]);
+      share.recordsUpdated.emit([{ infoHash: 'late', reached: true }]);  // first sighting
+      seen.push(banner.hidden);
+      share.recordUpdated.emit({ infoHash: 'fresh', reached: true });  // reached now
+      seen.push(banner.hidden);
+      hideSuggestionBanner();
+      share.recordsUpdated.emit([{ infoHash: 'fresh', reached: true }]);
+      seen.push(banner.hidden);
+      return JSON.stringify(seen);
+    })()""")
+    assert result == "[true,false,true]"
+
+
+def test_removing_tagged_torrents_refreshes_the_tag_filter_once(view):
+    run_js(view, """
+      window.__tagFetches = 0;
+      window.bridge = { downloads: { listAllTags(cb) { window.__tagFetches++; cb([]); } } };
+      downloadsTagsCache.set('t1', ['a']);
+      downloadsTagsCache.set('t2', ['b']);
+      downloadsTagsCache.set('u1', []);
+      downloadsRemoveRecord('u1');
+      downloadsRemoveRecord('never-fetched');
+      true""")
+    QTest.qWait(300)
+    assert run_js(view, "window.__tagFetches") == 0  # no tag could have gone
+
+    run_js(view, "downloadsRemoveRecord('t1'); downloadsRemoveRecord('t2'); true")
+    wait_until(view, "window.__tagFetches === 1")
+    QTest.qWait(300)
+    assert run_js(view, "window.__tagFetches") == 1  # two removals, one refresh
 
 
 def test_history_refresh_is_coalesced_and_skipped_while_profile_is_hidden(view):

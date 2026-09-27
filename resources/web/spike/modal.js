@@ -7,10 +7,11 @@ let _modalOnClose = null;
 function openModal(titleText, contentEl, onClose) {
   // A dialog replaced by this one is closed too: the polling dialogs only
   // stop their timer in onClose, so dropping it leaked the poll for good.
+  // `replaced` tells such a callback it was pushed aside, not dismissed.
   if (_modalOnClose) {
     const cb = _modalOnClose;
     _modalOnClose = null;
-    cb();
+    cb({ replaced: true });
   }
   let overlay = document.getElementById("modalOverlay");
   if (!overlay) {
@@ -44,7 +45,7 @@ function closeModal() {
   if (_modalOnClose) {
     const cb = _modalOnClose;
     _modalOnClose = null;
-    cb();
+    cb({ replaced: false });
   }
 }
 
