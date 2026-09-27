@@ -298,9 +298,14 @@ function downloadsRenderRecord(record) {
 }
 
 function downloadsRemoveRecord(infoHash) {
-  // Its tags were cleared server-side too (see DownloadsBridge.__init__).
+  // Its tags were cleared server-side too (see DownloadsBridge.__init__), so
+  // the filter's tag list may have lost one -- only if it had any.
+  // ponytail: tags never fetched this session (no tag filter or tags
+  // dialog used on it) are assumed empty; such a tag lingers in the select
+  // until the next refresh. Fetch before skipping if that ever matters.
+  const cachedTags = downloadsTagsCache.get(infoHash);
   downloadsTagsCache.delete(infoHash);
-  downloadsRefreshTagFilterOptions();
+  if (cachedTags && cachedTags.length) downloadsScheduleTagFilterRefresh();
   const entry = downloadsRows.get(infoHash);
   if (!entry) return;
   entry.el.remove();
@@ -714,6 +719,17 @@ function downloadsRefreshTagFilterOptions() {
   });
 }
 
+// Removing N torrents at once pushes N recordRemoved: one refresh for all.
+let downloadsTagFilterRefreshTimer = null;
+
+function downloadsScheduleTagFilterRefresh() {
+  if (downloadsTagFilterRefreshTimer !== null) return;
+  downloadsTagFilterRefreshTimer = setTimeout(() => {
+    downloadsTagFilterRefreshTimer = null;
+    downloadsRefreshTagFilterOptions();
+  }, 50);
+}
+
 function downloadsOpenTagsDialog(infoHash, torrentName) {
   window.bridge.downloads.getTags(infoHash, (tags) => {
     downloadsTagsCache.set(infoHash, tags);
@@ -799,10 +815,13 @@ function downloadsOpenTagsDialog(infoHash, torrentName) {
 
 const SUGGESTION_BANNER_AUTOHIDE_MS = 15000;
 let suggestionBannerTimer = null;
-// ponytail: per-infoHash "already notified" set, session-lifetime only (not
-// cleared on torrent removal or reached->false). Good enough for a spike
-// banner meant to fire once per torrent hitting its limit; revisit with a
-// real reached-state cache if a torrent needs to re-notify after reset.
+// infoHash -> last "reached" value seen this session. `reached` is persisted
+// (share_limits.json), so a row's first sighting (initial list or first push)
+// only records it: a limit reached in a previous session must not be
+// announced again, e.g. by the resync ShareBridge.set_live(true) sends when
+// the window comes back. Only a false->true change seen here notifies.
+const shareReachedSeen = new Map();
+// Torrents announced this session -- the banner's count.
 const shareReachedNotified = new Set();
 
 function showSuggestionBanner(message) {
@@ -828,7 +847,9 @@ function wireSuggestionBanner() {
   });
 
   const notifyShareReached = (row) => {
-    if (!row.reached || shareReachedNotified.has(row.infoHash)) return;
+    const before = shareReachedSeen.get(row.infoHash);
+    shareReachedSeen.set(row.infoHash, row.reached);
+    if (before !== false || !row.reached) return;
     shareReachedNotified.add(row.infoHash);
     const count = shareReachedNotified.size;
     showSuggestionBanner(
@@ -838,9 +859,12 @@ function wireSuggestionBanner() {
     );
   };
   // recordUpdated: the immediate "limit reached" push (sent even while the
-  // window is hidden); recordsUpdated: the per-tick batch.
+  // window is hidden); recordsUpdated: the per-tick batch. The initial list
+  // gives every tracked torrent its starting state, so a quiet one whose
+  // first push is the "limit reached" one still notifies.
   window.bridge.share.recordUpdated.connect(notifyShareReached);
   window.bridge.share.recordsUpdated.connect((rows) => rows.forEach(notifyShareReached));
+  window.bridge.share.listTorrents((rows) => rows.forEach(notifyShareReached));
 }
 
 // -------------------------------------------------------------------- wire

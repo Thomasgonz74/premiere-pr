@@ -80,19 +80,6 @@ new QWebChannel(qt.webChannelTransport, (channel) => {
     channel.objects.i18n.getCatalog((catalog) => setCatalog(catalog));
   });
 
-  // One-time welcome dialog on the very first launch (see
-  // window_bridge.shouldShowOnboarding/markOnboardingSeen -- backed by
-  // Settings.first_launch_seen, same flag the native app uses).
-  channel.objects.windowBridge.shouldShowOnboarding((show) => {
-    if (!show) return;
-    alertModal(
-      t("onboarding.title"),
-      t("onboarding.message"),
-      t("onboarding.ok_button"),
-      () => channel.objects.windowBridge.markOnboardingSeen()
-    );
-  });
-
   // Catalogue idea "detection de lien magnet dans le presse-papiers" (off
   // by default, see Profil > Automatisation) -- never auto-adds, always
   // offers first.
@@ -120,6 +107,23 @@ new QWebChannel(qt.webChannelTransport, (channel) => {
   // otherwise every label would render as its raw key.
   channel.objects.i18n.getCatalog((catalog) => {
     setCatalog(catalog);
+
+    // One-time welcome dialog on the very first launch (see
+    // window_bridge.shouldShowOnboarding/markOnboardingSeen -- backed by
+    // Settings.first_launch_seen, same flag the native app uses). Asked
+    // only now so its text is translated. Seen only once really closed: a
+    // dialog replacing it (e.g. the update offer) leaves it for next launch.
+    channel.objects.windowBridge.shouldShowOnboarding((show) => {
+      if (!show) return;
+      alertModal(
+        t("onboarding.title"),
+        t("onboarding.message"),
+        t("onboarding.ok_button"),
+        ({ replaced }) => {
+          if (!replaced) channel.objects.windowBridge.markOnboardingSeen();
+        }
+      );
+    });
 
     wireDownloadsPage();
     wireAddPage();
