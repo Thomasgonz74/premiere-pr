@@ -155,7 +155,10 @@ class _SsidRunnable(QRunnable):
         except Exception:  # always answer, or _check_in_flight would stay stuck
             logger.exception("Network profile auto-switch: SSID check failed")
             ssid = ""
-        self._signals.ssid_ready.emit(ssid)
+        try:
+            self._signals.ssid_ready.emit(ssid)
+        except RuntimeError:
+            pass  # netsh outlived the app: signals deleted by PySide's teardown
 
 
 class NetworkProfileSwitcherService(QObject):

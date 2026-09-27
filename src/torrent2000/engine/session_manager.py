@@ -335,16 +335,22 @@ class SessionManager(QObject):
         if not self._session.is_paused():
             self._session.pause()
             self._paused_for_ip_blocklist = True
+            logger.info("IP blocklist: session paused until %r is parsed", path)
         self._ip_blocklist_signals = BlocklistSignals()
         self._ip_blocklist_signals.loaded.connect(self._on_ip_blocklist_loaded)
         QThreadPool.globalInstance().start(BlocklistLoadRunnable(path, self._ip_blocklist_signals))
 
     def _on_ip_blocklist_loaded(self, ip_filter) -> None:
+        # shutdown() stops the tick timer first; this can still be delivered
+        # by its event pumping, and must not resume the session then.
+        if not self._timer.isActive():
+            return
         if ip_filter is not None:
             self._session.set_ip_filter(ip_filter)
         if self._paused_for_ip_blocklist:
             self._paused_for_ip_blocklist = False
             self._session.resume()
+            logger.info("IP blocklist: %s, session resumed", "filter applied" if ip_filter is not None else "no filter")
 
     # ------------------------------------------------------------------ tick
 
@@ -1045,7 +1051,12 @@ class SessionManager(QObject):
     def shutdown(self, timeout_ms: int = 3000) -> None:
         self._timer.stop()
         self._resume_save_timer.stop()
-        pending = 0
+        # Tracked per torrent, not counted: up to _RESUME_SAVES_PER_TICK
+        # periodic saves can still be in flight, and counting their alerts
+        # could end the wait before some torrent's final save arrives. (A
+        # periodic alert for the same torrent still clears it: libtorrent
+        # answers in request order, so that state is at most one tick older.)
+        pending: set = set()
         for handle in self._handles.values():
             if handle.is_valid():
                 # save_info_dict is required for the saved .fastresume to
@@ -1055,10 +1066,10 @@ class SessionManager(QObject):
                 # and re-hashes everything from scratch instead of doing a
                 # real fast-resume, discarding all prior verified progress.
                 handle.save_resume_data(lt.torrent_handle.save_info_dict)
-                pending += 1
+                pending.add(handle)
 
         deadline = time.monotonic() + (timeout_ms / 1000)
-        while pending > 0 and time.monotonic() < deadline:
+        while pending and time.monotonic() < deadline:
             # Keeps Qt's event loop pumping window messages during this
             # blocking wait so Windows doesn't mark the process "Not
             # Responding" -- the wait/save logic itself is unchanged.
@@ -1068,9 +1079,9 @@ class SessionManager(QObject):
                 if isinstance(alert, lt.save_resume_data_alert):
                     info_hash = _hash_of(alert.handle)
                     persistence.save_resume_params(info_hash, alert.params)
-                    pending -= 1
+                    pending.discard(alert.handle)
                 elif isinstance(alert, (lt.save_resume_data_failed_alert,)):
-                    pending -= 1
+                    pending.discard(alert.handle)
             time.sleep(0.05)
 
 

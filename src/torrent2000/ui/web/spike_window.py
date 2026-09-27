@@ -34,6 +34,7 @@ from torrent2000.ui.web.bridge_downloads import DownloadsBridge
 from torrent2000.ui.web.bridge_file_priority import FilePriorityBridge
 from torrent2000.ui.web.bridge_known_disk import KnownDiskBridge
 from torrent2000.ui.web.bridge_peer_list import PeerListBridge
+from torrent2000.ui.web.bridge_piece_map import PieceMapBridge
 from torrent2000.ui.web.bridge_profile_advanced import ProfileAdvancedBridge
 from torrent2000.ui.web.bridge_profile_automation import ProfileAutomationBridge
 from torrent2000.ui.web.bridge_profile_general import WEB_THEME_LABELS, ProfileGeneralBridge
@@ -205,7 +206,10 @@ class SpikeWindow(QMainWindow):
         self._speed_graph_bridge = SpeedGraphBridge(session_manager, self)
         self._swarm_constellation_bridge = SwarmConstellationBridge(session_manager, self)
         self._storage_sunburst_bridge = StorageSunburstBridge(session_manager, self)
+        self._piece_map_bridge = PieceMapBridge(session_manager, self)
         self._create_torrent_bridge = CreateTorrentBridge(self)
+        # Shutting the PC down mid-hash would lose the .torrent being created.
+        auto_shutdown_service.add_busy_source(self._create_torrent_bridge.is_busy, self._create_torrent_bridge.finished)
         self._tracker_editor_bridge = TrackerEditorBridge(session_manager, self)
         self._update_bridge = UpdateBridge(update_checker, settings, self, self)
         self._known_disk_bridge = KnownDiskBridge(known_disk_store, known_disk_service, session_manager, self)
@@ -229,6 +233,7 @@ class SpikeWindow(QMainWindow):
         self._channel.registerObject("speedGraph", self._speed_graph_bridge)
         self._channel.registerObject("swarmConstellation", self._swarm_constellation_bridge)
         self._channel.registerObject("storageSunburst", self._storage_sunburst_bridge)
+        self._channel.registerObject("pieceMap", self._piece_map_bridge)
         self._channel.registerObject("createTorrent", self._create_torrent_bridge)
         self._channel.registerObject("trackerEditor", self._tracker_editor_bridge)
         self._channel.registerObject("update", self._update_bridge)

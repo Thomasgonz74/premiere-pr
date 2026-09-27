@@ -28,13 +28,46 @@ logger = logging.getLogger(__name__)
 
 # Set once at quit: Qt waits for every running pool task before the process
 # exits, so a multi-GB extraction would keep a windowless process alive for
-# minutes. Members are extracted one by one and the loop stops at the next.
+# minutes. Checked before each member and before each chunk read from the
+# archive, so even a single huge member stops within one chunk.
 _cancel_event = threading.Event()
 
 
 def cancel_running_extractions() -> None:
-    """Called once at quit: a running extraction stops after its current member."""
+    """Called once at quit: a running extraction stops at its next chunk."""
     _cancel_event.set()
+
+
+class _Cancelled(Exception):
+    pass
+
+
+class _CancellableReader:
+    """A member's source stream that stops reading once quitting.
+    ZipFile._extract_member copies it with shutil.copyfileobj (1 MiB
+    chunks on Windows), so this is checked once per chunk."""
+
+    def __init__(self, stream) -> None:
+        self._stream = stream
+
+    def read(self, n: int = -1) -> bytes:
+        if _cancel_event.is_set():
+            raise _Cancelled
+        return self._stream.read(n)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc_info) -> None:
+        self._stream.close()
+
+
+class _CancellableZipFile(zipfile.ZipFile):
+    # Only the source stream is wrapped: extract() itself -- and its member
+    # path sanitizing -- stays zipfile's own.
+    def open(self, name, mode="r", pwd=None, **kwargs):
+        stream = super().open(name, mode, pwd, **kwargs)
+        return _CancellableReader(stream) if mode == "r" else stream
 
 
 class _UnzipSignals(QObject):
@@ -56,16 +89,27 @@ class _UnzipRunnable(QRunnable):
         try:
             for zip_path in self._zip_paths:
                 try:
-                    with zipfile.ZipFile(zip_path) as zf:
+                    with _CancellableZipFile(zip_path) as zf:
                         for member in zf.infolist():
                             if _cancel_event.is_set():
-                                logger.warning("Post-complete unzip of %s stopped at quit", zip_path)
-                                return
+                                raise _Cancelled
                             zf.extract(member, zip_path.parent)
+                except _Cancelled:
+                    logger.warning(
+                        "Post-complete unzip of %s stopped at quit; the last extracted file may be incomplete",
+                        zip_path,
+                    )
+                    return
                 except (OSError, zipfile.BadZipFile):
                     logger.exception("Post-complete unzip failed for %s (info_hash=%s)", zip_path, self._info_hash)
         finally:
-            self.signals.finished.emit()
+            # Quitting: nobody waits for this any more, and PySide's teardown
+            # may already have deleted the signals object.
+            if not _cancel_event.is_set():
+                try:
+                    self.signals.finished.emit()
+                except RuntimeError:
+                    pass  # deleted by PySide's teardown after the app quit
 
 
 class PostCompleteActionService(QObject):
@@ -116,5 +160,7 @@ class PostCompleteActionService(QObject):
     def _on_extraction_finished(self) -> None:
         self.sender().deleteLater()
         self._pending_extractions -= 1
-        if self._pending_extractions == 0:
+        # Not once quitting: this can still be delivered by the quit's event
+        # pumping, and must not start an auto-shutdown countdown then.
+        if self._pending_extractions == 0 and not _cancel_event.is_set():
             self.extractions_idle.emit()

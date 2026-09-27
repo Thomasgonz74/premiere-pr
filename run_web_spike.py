@@ -59,6 +59,7 @@ def main() -> int:
     from torrent2000.engine.disk_reconnect_service import DiskReconnectService
     from torrent2000.engine.disk_space_monitor import DiskSpaceMonitor
     from torrent2000.engine.idle_activity_service import IdleActivityService
+    from torrent2000.engine.ip_blocklist import cancel_blocklist_load
     from torrent2000.engine.known_disk_service import KnownDiskService, KnownDiskStore
     from torrent2000.engine.memory_pressure_governor import MemoryPressureGovernor
     from torrent2000.engine.network_profile_switcher import NetworkProfileStore, NetworkProfileSwitcherService
@@ -182,7 +183,18 @@ def main() -> int:
     notification_service.show_requested.connect(_restore_window)
     notification_service.quit_requested.connect(app.quit)
 
+    shutdown_started = False
+
     def _shutdown() -> None:
+        # Once only: when the window's close is accepted, aboutToQuit fires
+        # again from inside session_manager.shutdown()'s processEvents().
+        nonlocal shutdown_started
+        if shutdown_started:
+            return
+        shutdown_started = True
+        # First, before anything below pumps events: a countdown must never
+        # start (e.g. from an extraction ending) or fire while quitting.
+        auto_shutdown_service.stop()
         # Quit stops everything: Qt waits for every QThreadPool task before
         # the process can exit, and those include a Defender scan (up to
         # 300 s) and the installer download (up to 600 s). Queued tasks are
@@ -200,6 +212,7 @@ def main() -> int:
         cancel_all_fetches()
         cancel_running_scans()
         cancel_running_extractions()
+        cancel_blocklist_load()
         share_limit_service.flush_pending_save()
         remote_access_server.stop()
         session_manager.shutdown()

@@ -12,6 +12,7 @@ runs.
 
 import logging
 import os
+from collections.abc import Callable
 
 from PySide6.QtCore import QObject, QTimer, Signal
 
@@ -38,29 +39,55 @@ class AutoShutdownService(QObject):
         super().__init__(parent)
         self._session_manager = session_manager
         self._settings = settings
-        # Optional PostCompleteActionService: a rule's "unzip" runs in the
-        # background, and shutting down mid-extraction would leave half-written
-        # files -- the countdown only starts once no extraction is running.
-        self._post_complete_actions = post_complete_actions
+        # Background work that shutting down would cut short (see
+        # add_busy_source) -- the countdown only starts once none is busy.
+        self._busy_sources: list[Callable[[], bool]] = []
+        # True while a countdown a finished torrent asked for waits on one.
+        self._deferred_by_busy_source = False
         self._countdown_timer: QTimer | None = None
         self._pending_action: str | None = None
+        # Set by stop() at quit: never start or fire a countdown after that.
+        self._stopped = False
 
         session_manager.torrent_finished.connect(self._on_torrent_finished)
         if post_complete_actions is not None:
-            post_complete_actions.extractions_idle.connect(self._maybe_start_countdown)
+            # A rule's "unzip" runs in the background, and shutting down
+            # mid-extraction would leave half-written files.
+            self.add_busy_source(post_complete_actions.has_pending_extractions, post_complete_actions.extractions_idle)
+
+    def add_busy_source(self, is_busy: Callable[[], bool], idle_signal) -> None:
+        """Holds off the countdown while is_busy() is True; idle_signal is
+        emitted when that work ends, and retries a countdown held off that
+        way -- only then: e.g. creating a .torrent while everything seeds
+        must not start one by itself."""
+        self._busy_sources.append(is_busy)
+        idle_signal.connect(self._on_busy_source_idle)
+
+    def stop(self) -> None:
+        """Called first thing at quit: the app is going away, so a countdown
+        running now (or one a background task's end would start during the
+        quit's event pumping) must never shut the PC down."""
+        self._stopped = True
+        self.cancel_shutdown()
 
     def _on_torrent_finished(self, info_hash: str) -> None:
         self._maybe_start_countdown()
 
+    def _on_busy_source_idle(self) -> None:
+        if self._deferred_by_busy_source:
+            self._deferred_by_busy_source = False
+            self._maybe_start_countdown()
+
     def _maybe_start_countdown(self) -> None:
-        if not self._settings.auto_shutdown_enabled:
+        if self._stopped or not self._settings.auto_shutdown_enabled:
             return
         if self._pending_action is not None:
             return  # a countdown is already running
         if not all_torrents_idle(self._session_manager.all_records()):
             return
-        if self._post_complete_actions is not None and self._post_complete_actions.has_pending_extractions():
-            return  # tried again on extractions_idle
+        if any(is_busy() for is_busy in self._busy_sources):
+            self._deferred_by_busy_source = True  # tried again on that source's idle signal
+            return
 
         self._pending_action = self._settings.auto_shutdown_action
         delay = self._settings.auto_shutdown_delay_seconds
@@ -84,8 +111,8 @@ class AutoShutdownService(QObject):
         action = self._pending_action
         self._countdown_timer = None
         self._pending_action = None
-        if action is None:
-            return  # cancelled just as the timer fired
+        if action is None or self._stopped:
+            return  # cancelled (or quitting) just as the timer fired
         if not self._settings.auto_shutdown_enabled:
             return  # disabled in the meantime -- never actually shut down
         self._execute(action)
