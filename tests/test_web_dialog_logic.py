@@ -88,9 +88,13 @@ def test_share_banner_only_announces_limits_reached_this_session(view):
       hideSuggestionBanner();
       share.recordsUpdated.emit([{ infoHash: 'fresh', reached: true }]);
       seen.push(banner.hidden);
+      // The "limit reached" push is itself a change made this session, even
+      // for a torrent tracked while the window was hidden (never listed).
+      share.recordUpdated.emit({ infoHash: 'unseen', reached: true });
+      seen.push(banner.hidden);
       return JSON.stringify(seen);
     })()""")
-    assert result == "[true,false,true]"
+    assert result == "[true,false,true,false]"
 
 
 def test_removing_tagged_torrents_refreshes_the_tag_filter_once(view):
@@ -101,15 +105,17 @@ def test_removing_tagged_torrents_refreshes_the_tag_filter_once(view):
       downloadsTagsCache.set('t2', ['b']);
       downloadsTagsCache.set('u1', []);
       downloadsRemoveRecord('u1');
-      downloadsRemoveRecord('never-fetched');
       true""")
     QTest.qWait(300)
-    assert run_js(view, "window.__tagFetches") == 0  # no tag could have gone
+    assert run_js(view, "window.__tagFetches") == 0  # known to have no tag: none could have gone
+
+    run_js(view, "downloadsRemoveRecord('never-fetched'); true")  # its tags were never loaded
+    wait_until(view, "window.__tagFetches === 1")
 
     run_js(view, "downloadsRemoveRecord('t1'); downloadsRemoveRecord('t2'); true")
-    wait_until(view, "window.__tagFetches === 1")
+    wait_until(view, "window.__tagFetches === 2")
     QTest.qWait(300)
-    assert run_js(view, "window.__tagFetches") == 1  # two removals, one refresh
+    assert run_js(view, "window.__tagFetches") == 2  # two removals, one refresh
 
 
 def test_history_refresh_is_coalesced_and_skipped_while_profile_is_hidden(view):

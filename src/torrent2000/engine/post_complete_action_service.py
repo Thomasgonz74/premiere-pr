@@ -100,7 +100,9 @@ class _UnzipRunnable(QRunnable):
                         zip_path,
                     )
                     return
-                except (OSError, zipfile.BadZipFile):
+                # NotImplementedError: unsupported method (Deflate64);
+                # RuntimeError: encrypted member, password required.
+                except (OSError, zipfile.BadZipFile, NotImplementedError, RuntimeError):
                     logger.exception("Post-complete unzip failed for %s (info_hash=%s)", zip_path, self._info_hash)
         finally:
             # Quitting: nobody waits for this any more, and PySide's teardown

@@ -76,7 +76,10 @@ class AutoShutdownService(QObject):
     def _on_busy_source_idle(self) -> None:
         if self._deferred_by_busy_source:
             self._deferred_by_busy_source = False
-            self._maybe_start_countdown()
+            # Next event-loop turn: the idle signal (e.g. CreateTorrentBridge's
+            # finished) must reach the page before the countdown dialog
+            # replaces the one waiting for it.
+            QTimer.singleShot(0, self._maybe_start_countdown)
 
     def _maybe_start_countdown(self) -> None:
         if self._stopped or not self._settings.auto_shutdown_enabled:

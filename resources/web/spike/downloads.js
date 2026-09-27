@@ -299,13 +299,11 @@ function downloadsRenderRecord(record) {
 
 function downloadsRemoveRecord(infoHash) {
   // Its tags were cleared server-side too (see DownloadsBridge.__init__), so
-  // the filter's tag list may have lost one -- only if it had any.
-  // ponytail: tags never fetched this session (no tag filter or tags
-  // dialog used on it) are assumed empty; such a tag lingers in the select
-  // until the next refresh. Fetch before skipping if that ever matters.
+  // the filter's tag list may have lost one. Skipped only for a torrent known
+  // to have none; tags never fetched this session count as "maybe some".
   const cachedTags = downloadsTagsCache.get(infoHash);
   downloadsTagsCache.delete(infoHash);
-  if (cachedTags && cachedTags.length) downloadsScheduleTagFilterRefresh();
+  if (cachedTags === undefined || cachedTags.length) downloadsScheduleTagFilterRefresh();
   const entry = downloadsRows.get(infoHash);
   if (!entry) return;
   entry.el.remove();
@@ -846,10 +844,14 @@ function wireSuggestionBanner() {
     showSuggestionBanner(`${message} ${t("web.downloads.low_space_suggestion_suffix")}`);
   });
 
-  const notifyShareReached = (row) => {
+  // isTransition: the row comes from the "limit reached" push itself, which
+  // ShareLimitService only sends on a false->true change this session -- it
+  // notifies even for a torrent this page never saw before.
+  const notifyShareReached = (row, isTransition) => {
     const before = shareReachedSeen.get(row.infoHash);
     shareReachedSeen.set(row.infoHash, row.reached);
-    if (before !== false || !row.reached) return;
+    if (!row.reached || before === true) return;
+    if (before === undefined && !isTransition) return;  // first sighting in a list: starting state only
     shareReachedNotified.add(row.infoHash);
     const count = shareReachedNotified.size;
     showSuggestionBanner(
@@ -859,12 +861,11 @@ function wireSuggestionBanner() {
     );
   };
   // recordUpdated: the immediate "limit reached" push (sent even while the
-  // window is hidden); recordsUpdated: the per-tick batch. The initial list
-  // gives every tracked torrent its starting state, so a quiet one whose
-  // first push is the "limit reached" one still notifies.
-  window.bridge.share.recordUpdated.connect(notifyShareReached);
-  window.bridge.share.recordsUpdated.connect((rows) => rows.forEach(notifyShareReached));
-  window.bridge.share.listTorrents((rows) => rows.forEach(notifyShareReached));
+  // window is hidden); recordsUpdated: the per-tick batch and the resync
+  // sent when the window comes back; listTorrents: the starting state.
+  window.bridge.share.recordUpdated.connect((row) => notifyShareReached(row, true));
+  window.bridge.share.recordsUpdated.connect((rows) => rows.forEach((row) => notifyShareReached(row, false)));
+  window.bridge.share.listTorrents((rows) => rows.forEach((row) => notifyShareReached(row, false)));
 }
 
 // -------------------------------------------------------------------- wire

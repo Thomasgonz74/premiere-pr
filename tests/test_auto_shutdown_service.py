@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 
 import pytest
 from PySide6.QtCore import QObject, QThreadPool, Signal
+from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QApplication
 
 from torrent2000.config.settings import Settings
@@ -200,6 +201,7 @@ def test_countdown_waits_for_a_running_extraction_to_finish():
 
     extractions.pending = False
     extractions.extractions_idle.emit()
+    QTest.qWait(20)  # started on the next event-loop turn
     assert started == [30]
 
 
@@ -250,5 +252,5 @@ def test_countdown_waits_for_a_torrent_being_created(qapp, monkeypatch):
 
     release.set()
     assert QThreadPool.globalInstance().waitForDone(10000)
-    qapp.processEvents()  # finished is queued back to this thread
+    QTest.qWait(20)  # finished is queued back to this thread, the countdown one turn later
     assert started == [30]
