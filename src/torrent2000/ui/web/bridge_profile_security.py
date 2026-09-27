@@ -104,10 +104,12 @@ class ProfileSecurityBridge(QObject):
             content = log_path.read_text(encoding="utf-8")
         except OSError as exc:
             return {"ok": False, "error": str(exc)}
-        try:
-            QApplication.clipboard().setText(content)
-        except Exception as exc:
-            return {"ok": False, "clipboardError": True, "error": str(exc)}
+        clipboard = QApplication.clipboard()
+        clipboard.setText(content)
+        # setText never raises: on Windows a failed OleSetClipboard is only
+        # a Qt warning. Reading back is cheap while Qt owns the clipboard.
+        if clipboard.text() != content:
+            return {"ok": False, "clipboardError": True}
         return {"ok": True}
 
     # -- Config import/export ----------------------------------------------

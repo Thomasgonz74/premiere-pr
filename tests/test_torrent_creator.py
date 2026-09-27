@@ -4,11 +4,12 @@ is actually valid, not just "a file got written".
 """
 
 import os
+import threading
 
 import libtorrent as lt
 import pytest
 
-from torrent2000.engine.torrent_creator import create_torrent_file
+from torrent2000.engine.torrent_creator import CreationCancelled, create_torrent_file
 
 
 def _make_dir_source(tmp_path):
@@ -115,3 +116,35 @@ def test_output_write_is_atomic_no_leftover_tmp_file(tmp_path):
 
     assert output.exists()
     assert list(tmp_path.glob("*.tmp")) == []
+
+
+def test_piece_hashes_match_libtorrents_own(tmp_path):
+    # Pieces straddling file boundaries, an empty file, a short last piece.
+    source = tmp_path / "mixed"
+    (source / "sub").mkdir(parents=True)
+    (source / "a.bin").write_bytes(os.urandom(40000))
+    (source / "empty.bin").write_bytes(b"")
+    (source / "sub" / "c.bin").write_bytes(os.urandom(30001))
+    output = tmp_path / "mixed.torrent"
+
+    create_torrent_file(str(source), str(output), trackers=[])
+
+    fs = lt.file_storage()
+    lt.add_files(fs, str(source))
+    ct = lt.create_torrent(fs, 0, flags=lt.create_torrent.v1_only)
+    ct.set_creator("Torrent 2000")
+    lt.set_piece_hashes(ct, str(tmp_path))
+    expected = lt.torrent_info(lt.bencode(ct.generate()))
+    assert lt.torrent_info(str(output)).info_hash() == expected.info_hash()
+
+
+def test_cancel_stops_hashing_and_writes_nothing(tmp_path):
+    source = _make_dir_source(tmp_path)
+    output = tmp_path / "cancelled.torrent"
+    cancel = threading.Event()
+    cancel.set()
+
+    with pytest.raises(CreationCancelled):
+        create_torrent_file(str(source), str(output), trackers=[], cancel=cancel)
+
+    assert list(tmp_path.glob("cancelled.torrent*")) == []
