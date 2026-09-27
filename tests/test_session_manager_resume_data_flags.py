@@ -7,11 +7,12 @@ real fast-resume. Both save call sites (shutdown, and the periodic autosave)
 must pass that flag.
 """
 
+import collections
 from unittest.mock import MagicMock, patch
 
 import libtorrent as lt
 
-from torrent2000.engine.session_manager import SessionManager
+from torrent2000.engine.session_manager import _RESUME_SAVES_PER_TICK, SessionManager
 
 
 def _session_manager_with_mock_handles(*handles):
@@ -20,6 +21,7 @@ def _session_manager_with_mock_handles(*handles):
     sm._resume_save_timer = MagicMock()
     sm._session = MagicMock()
     sm._handles = {f"hash{i}": h for i, h in enumerate(handles)}
+    sm._resume_save_queue = collections.deque()
     return sm
 
 
@@ -40,6 +42,7 @@ def test_periodic_autosave_passes_save_info_dict_and_only_if_modified():
     sm = _session_manager_with_mock_handles(handle)
 
     sm._save_all_resume_data()
+    sm._drain_resume_save_queue()
 
     expected_flags = lt.torrent_handle.save_info_dict | lt.torrent_handle.only_if_modified
     handle.save_resume_data.assert_called_once_with(expected_flags)
@@ -62,8 +65,36 @@ def test_invalid_handles_are_skipped_without_saving():
     sm = _session_manager_with_mock_handles(handle)
 
     sm._save_all_resume_data()
+    sm._drain_resume_save_queue()
 
     handle.save_resume_data.assert_not_called()
+
+
+def test_periodic_autosave_is_spread_over_ticks_instead_of_one_burst():
+    """The 2-minute timer only queues the saves; each tick posts at most
+    _RESUME_SAVES_PER_TICK of them, so N resume writes never land in a
+    single pop_alerts() burst on the GUI thread. A refill while the queue is
+    still draining doesn't queue anything twice, and a torrent removed after
+    being queued is skipped at pop time."""
+    handles = [MagicMock() for _ in range(5)]
+    for handle in handles:
+        handle.is_valid.return_value = True
+    sm = _session_manager_with_mock_handles(*handles)
+
+    sm._save_all_resume_data()
+    assert sum(h.save_resume_data.call_count for h in handles) == 0
+
+    sm._drain_resume_save_queue()
+    assert sum(h.save_resume_data.call_count for h in handles) == _RESUME_SAVES_PER_TICK
+
+    sm._save_all_resume_data()  # timer fires again mid-drain
+    del sm._handles["hash4"]  # removed while still queued
+    while sm._resume_save_queue:
+        sm._drain_resume_save_queue()
+
+    # hash0/hash1 were saved before the refill, so they're queued again for
+    # the second round; hash2/hash3 were still queued, so only once.
+    assert [h.save_resume_data.call_count for h in handles] == [2, 2, 1, 1, 0]
 
 
 def test_shutdown_pumps_qt_events_while_waiting_for_pending_resume_data():

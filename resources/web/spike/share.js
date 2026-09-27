@@ -208,6 +208,7 @@ function wireSharePage() {
     shareResetForm();
   });
   shareBridge.recordUpdated.connect(shareRenderRow);
+  shareBridge.recordsUpdated.connect((rows) => rows.forEach(shareRenderRow));
   shareBridge.recordRemoved.connect(shareRemoveRow);
   shareBridge.listTorrents((initial) => initial.forEach(shareRenderRow));
 
