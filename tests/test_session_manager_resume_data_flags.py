@@ -25,6 +25,15 @@ def _session_manager_with_mock_handles(*handles):
     return sm
 
 
+def _save_alert_for(handle, info_hash):
+    handle.info_hashes.return_value.has_v1.return_value = True
+    handle.info_hashes.return_value.v1 = info_hash
+    alert = MagicMock(spec=lt.save_resume_data_alert)
+    alert.handle = handle
+    alert.params = MagicMock()
+    return alert
+
+
 def test_shutdown_passes_save_info_dict_flag():
     handle = MagicMock()
     handle.is_valid.return_value = True
@@ -107,11 +116,7 @@ def test_shutdown_pumps_qt_events_while_waiting_for_pending_resume_data():
     handle.is_valid.return_value = True
     sm = _session_manager_with_mock_handles(handle)
 
-    alert = MagicMock(spec=lt.save_resume_data_alert)
-    alert.handle.is_valid.return_value = True
-    alert.handle.info_hashes.return_value.has_v1.return_value = True
-    alert.handle.info_hashes.return_value.v1 = "hash0"
-    alert.params = MagicMock()
+    alert = _save_alert_for(handle, "hash0")
 
     # First two polls find nothing pending yet; the third delivers the
     # resume-data alert that satisfies the single pending save.
@@ -140,3 +145,29 @@ def test_shutdown_does_not_pump_qt_events_when_nothing_is_pending():
 
     mock_qapp.processEvents.assert_not_called()
     sm._session.pop_alerts.assert_not_called()
+
+
+def test_shutdown_waits_for_each_torrents_own_final_save():
+    """The last tick may have left _RESUME_SAVES_PER_TICK periodic saves in
+    flight; their alerts answer first and must not stand in for the final
+    save of other torrents -- counting alerts would stop the wait before
+    hash2's arrives, leaving its older .fastresume on disk."""
+    handles = [MagicMock() for _ in range(3)]
+    for handle in handles:
+        handle.is_valid.return_value = True
+    sm = _session_manager_with_mock_handles(*handles)
+    alerts = [_save_alert_for(handle, f"hash{i}") for i, handle in enumerate(handles)]
+    sm._session.pop_alerts.side_effect = [
+        [alerts[0], alerts[1]],  # the two periodic saves still in flight
+        [alerts[0], alerts[1]],  # shutdown's own, in request order
+        [alerts[2]],
+    ]
+
+    with (
+        patch("torrent2000.engine.session_manager.QCoreApplication"),
+        patch("torrent2000.engine.session_manager.persistence.save_resume_params") as mock_save,
+        patch("time.sleep"),
+    ):
+        sm.shutdown(timeout_ms=3000)
+
+    assert [call.args[0] for call in mock_save.call_args_list] == ["hash0", "hash1", "hash0", "hash1", "hash2"]

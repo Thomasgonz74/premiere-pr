@@ -53,7 +53,12 @@ class _CreateTorrentRunnable(QRunnable):
             result = {"ok": False, "path": self._output_path, "error": "La création du torrent a échoué."}
         else:
             result = {"ok": True, "path": self._output_path}
-        self._signals.finished.emit(result)
+        if self._cancel.is_set():
+            return  # finished just as the app quit: nobody is left to tell
+        try:
+            self._signals.finished.emit(result)
+        except RuntimeError:
+            pass  # signals object deleted by PySide's teardown after the app quit
 
 
 class _CreateTorrentSignals(QObject):
@@ -87,6 +92,10 @@ class CreateTorrentBridge(QObject):
             )
         )
         return True
+
+    def is_busy(self) -> bool:
+        """True while a job hashes -- AutoShutdownService waits for `finished`."""
+        return self._busy
 
     def _on_finished(self, result: dict) -> None:
         self._busy = False

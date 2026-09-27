@@ -14,6 +14,7 @@ peer reputation only ever learns from behavior already observed.
 
 import ipaddress
 import logging
+import threading
 
 import libtorrent as lt
 from PySide6.QtCore import QObject, QRunnable, Signal
@@ -27,16 +28,34 @@ _BLOCK_FLAG = 1  # libtorrent's ip_filter flag meaning "blocked"
 # list. Only the first few are logged individually, then one summary.
 _MAX_LOGGED_BAD_LINES = 10
 
+# Set once at quit: Qt waits for every running pool task before the process
+# exits, and a big list takes seconds to parse. Checked every
+# _CANCEL_CHECK_LINES lines.
+_cancel_event = threading.Event()
+_CANCEL_CHECK_LINES = 4096
+
+
+def cancel_blocklist_load() -> None:
+    """Called once at quit: a running parse stops within a few thousand lines."""
+    _cancel_event.set()
+
+
+class BlocklistLoadCancelled(Exception):
+    pass
+
 
 def parse_blocklist_file(path: str) -> lt.ip_filter:
     """Reads `path` and returns a populated ip_filter. Malformed/unparsable
     lines are skipped (logged), not fatal to the rest of the file --
     consistent with this project's "a malformed line degrades gracefully,
-    never crashes the app" convention (e.g. RssSeenStore._load)."""
+    never crashes the app" convention (e.g. RssSeenStore._load).
+    Raises BlocklistLoadCancelled once cancel_blocklist_load() was called."""
     ip_filter = lt.ip_filter()
     bad_lines = 0
     with open(path, encoding="utf-8", errors="replace") as f:
         for line_number, raw_line in enumerate(f, start=1):
+            if line_number % _CANCEL_CHECK_LINES == 0 and _cancel_event.is_set():
+                raise BlocklistLoadCancelled
             line = raw_line.strip()
             if not line or line.startswith("#"):
                 continue
@@ -75,13 +94,21 @@ class BlocklistLoadRunnable(QRunnable):
     def run(self) -> None:
         try:
             ip_filter = parse_blocklist_file(self._path)
+        except BlocklistLoadCancelled:
+            logger.info("IP blocklist load of %r dropped at quit", self._path)
+            return
         except Exception:
             # Logged here, not left to escape run() (it would only reach
             # stderr) -- and `loaded` must fire either way, or the session
             # held paused for this filter would never resume.
             logger.exception("Failed to load IP blocklist from %r", self._path)
             ip_filter = None
-        self._signals.loaded.emit(ip_filter)
+        if _cancel_event.is_set():
+            return  # quitting: the session is shutting down, nothing to apply
+        try:
+            self._signals.loaded.emit(ip_filter)
+        except RuntimeError:
+            pass  # signals object deleted by PySide's teardown after the app quit
 
 
 def _parse_line(line: str) -> tuple:

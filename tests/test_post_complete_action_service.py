@@ -7,6 +7,9 @@ import os
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
+import logging
+import shutil
+import threading
 import zipfile
 from unittest.mock import MagicMock, patch
 
@@ -204,4 +207,56 @@ def test_extraction_stops_once_cancelled_at_quit(tmp_path):
         pca._cancel_event.clear()
 
     assert not (tmp_path / "a.txt").exists()
-    assert finished == [True]  # still reported, so nothing waits on it forever
+    # Not reported: nothing waits for it once quitting, and PySide's teardown
+    # may already have deleted the signals object.
+    assert finished == []
+
+
+def test_an_extraction_reporting_back_during_quit_is_not_idle(tmp_path, qapp, monkeypatch):
+    """The finished signal can be delivered by the quit's own event pumping
+    (SessionManager.shutdown) -- extractions_idle then would let
+    AutoShutdownService start its countdown mid-quit."""
+    from torrent2000.engine import post_complete_action_service as pca
+
+    monkeypatch.setattr(pca, "_cancel_event", threading.Event())
+    session_manager = _unzip_rule_and_session(tmp_path, "hash8")
+    service = PostCompleteActionService(session_manager, RoutingRuleStore())
+    idle = []
+    service.extractions_idle.connect(lambda: idle.append(True))
+
+    session_manager.torrent_finished.emit("hash8")
+    QThreadPool.globalInstance().waitForDone()  # done, its signal still queued
+    pca.cancel_running_extractions()  # Quit clicked before it is delivered
+    qapp.processEvents()
+
+    assert idle == []
+
+
+def test_cancel_interrupts_a_single_huge_member(tmp_path, monkeypatch, caplog):
+    """A lone multi-GB member (ISO, MKV) must not keep the quit waiting for
+    its whole extraction: the source stream stops at its next chunk."""
+    from torrent2000.engine import post_complete_action_service as pca
+
+    zip_path = tmp_path / "movie.zip"
+    member_size = 4 * shutil.COPY_BUFSIZE
+    with zipfile.ZipFile(zip_path, "w") as zf:  # stored, so every chunk is a real read
+        zf.writestr("movie.mkv", b"\0" * member_size)
+    monkeypatch.setattr(pca, "_cancel_event", threading.Event())
+    real_read = pca._CancellableReader.read
+
+    def read_then_quit(self, n=-1):
+        data = real_read(self, n)
+        pca.cancel_running_extractions()  # Quit clicked during the first chunk
+        return data
+
+    monkeypatch.setattr(pca._CancellableReader, "read", read_then_quit)
+    signals = pca._UnzipSignals()
+    finished = []
+    signals.finished.connect(lambda: finished.append(True))
+
+    with caplog.at_level(logging.WARNING, logger=pca.__name__):
+        pca._UnzipRunnable([zip_path], "hash9", signals).run()  # nothing escapes
+
+    assert 0 < (tmp_path / "movie.mkv").stat().st_size < member_size
+    assert "movie.zip" in caplog.text and "may be incomplete" in caplog.text
+    assert finished == []

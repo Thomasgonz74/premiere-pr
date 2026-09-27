@@ -3,12 +3,14 @@ CIDR blocks, IP ranges, bare addresses, comments/blank lines, and graceful
 skipping of unparsable lines."""
 
 import logging
+import threading
 from unittest.mock import MagicMock
 
 from PySide6.QtCore import QObject
 
+from torrent2000.engine import ip_blocklist
 from torrent2000.engine import session_manager as session_manager_module
-from torrent2000.engine.ip_blocklist import parse_blocklist_file
+from torrent2000.engine.ip_blocklist import BlocklistLoadRunnable, BlocklistSignals, parse_blocklist_file
 from torrent2000.engine.session_manager import SessionManager
 
 
@@ -76,6 +78,7 @@ def _session_manager_loading_inline(monkeypatch, calls):
     sm._session.set_ip_filter.side_effect = lambda f: calls.append(("filter", f.access("1.2.3.5")))
     sm._session.resume.side_effect = lambda: calls.append("resume")
     sm._paused_for_ip_blocklist = False
+    sm._timer = MagicMock()  # the tick timer, active until shutdown()
     pool = MagicMock()
     pool.globalInstance.return_value.start.side_effect = lambda runnable: (calls.append("parse"), runnable.run())
     monkeypatch.setattr(session_manager_module, "QThreadPool", pool)
@@ -110,3 +113,36 @@ def test_a_session_paused_by_someone_else_is_not_resumed(tmp_path, monkeypatch):
     sm._load_ip_blocklist(_write(tmp_path, "1.2.3.0/24\n"))
 
     assert calls == ["parse", ("filter", 1)]
+
+
+def test_quit_stops_the_parse_and_reports_nothing(tmp_path, monkeypatch):
+    """Qt waits for this runnable before the process exits, and its signals
+    object may already be deleted by then."""
+    monkeypatch.setattr(ip_blocklist, "_cancel_event", threading.Event())
+    total_lines = 20000
+    path = _write(tmp_path, "1.2.3.0/24\n" * total_lines)
+    parsed = []
+    real_parse_line = ip_blocklist._parse_line
+    monkeypatch.setattr(ip_blocklist, "_parse_line", lambda line: (parsed.append(line), real_parse_line(line))[1])
+    signals = BlocklistSignals()
+    loaded = []
+    signals.loaded.connect(loaded.append)
+
+    ip_blocklist.cancel_blocklist_load()
+    BlocklistLoadRunnable(path, signals).run()
+
+    assert len(parsed) < total_lines
+    assert loaded == []
+
+
+def test_a_filter_arriving_during_shutdown_does_not_resume_the_session(monkeypatch):
+    """shutdown() pumps events while saving resume data; a parse finishing
+    then must not resume the session it is closing."""
+    calls = []
+    sm = _session_manager_loading_inline(monkeypatch, calls)
+    sm._paused_for_ip_blocklist = True
+    sm._timer.isActive.return_value = False  # shutdown() stops it first
+
+    sm._on_ip_blocklist_loaded(None)
+
+    assert calls == []
