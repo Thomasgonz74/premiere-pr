@@ -146,9 +146,43 @@ def _mean_diff_fraction(img_a: QImage, img_b: QImage) -> float:
 # dark blocks, light-on-light fields), so each theme is checked in all three.
 # Light keeps its historical reference name.
 MODES = (("light", ""), ("dark", "__dark"), ("dark_hc", "__dark_hc"))
-# Once Chromium has painted (set_mode waits two frames), one event-loop
-# turn more for the frame to reach the widget that grab() reads.
-GRAB_DELAY_MS = 60
+# set_mode() waits for two animation frames, but the frame still has to reach
+# the widget that grab() reads, and a heavy one (macos_modern's backdrop blur)
+# can arrive 200 ms later: a grab taken too soon shows the previous mode, and
+# macos_modern__dark.png was once saved from such a stale frame. So after the
+# switch a 1 px marker at (0, 0) -- never sampled by _mean_diff_fraction --
+# takes a new colour, and grab() is repeated until it shows that colour: the
+# frame is then at least as new as the mode switch.
+MARKER_JS = r"""
+(function () {
+  let m = document.getElementById('t2k-test-frame-marker');
+  if (!m) {
+    m = document.createElement('div');
+    m.id = 't2k-test-frame-marker';
+    m.style.cssText = 'position:fixed;left:0;top:0;width:1px;height:1px;z-index:2147483647;pointer-events:none';
+    document.documentElement.appendChild(m);
+  }
+  const n = (Number(m.dataset.n) || 0) % 200 + 1;
+  m.dataset.n = n;
+  m.style.background = `rgb(${n}, 64, 192)`;
+  return n;
+})()
+"""
+FRESH_FRAME_TIMEOUT_MS = 5_000
+
+
+def _grab_fresh(view: QWebEngineView) -> QImage:
+    marker = (int(run_js(view, MARKER_JS)), 64, 192)
+    waited = 0
+    while True:
+        image = view.grab().toImage().convertToFormat(QImage.Format_RGB888)
+        assert not image.isNull(), "grab() produced an empty image"
+        c = image.pixelColor(0, 0)
+        if (c.red(), c.green(), c.blue()) == marker:
+            return image
+        assert waited < FRESH_FRAME_TIMEOUT_MS, f"no grab showed the frame marker within {FRESH_FRAME_TIMEOUT_MS} ms"
+        QTest.qWait(20)
+        waited += 20
 
 
 @pytest.mark.parametrize("theme_id", _theme_ids())
@@ -159,9 +193,7 @@ def test_theme_visual_regression(view: QWebEngineView, theme_id: str) -> None:
     try:
         for mode, suffix in MODES:
             set_mode(view, mode)
-            QTest.qWait(GRAB_DELAY_MS)
-            rendered = view.grab().toImage().convertToFormat(QImage.Format_RGB888)
-            assert not rendered.isNull(), f"grab() produced an empty image for theme '{theme_id}' ({mode})"
+            rendered = _grab_fresh(view)
             ref_path = SNAPSHOTS_DIR / f"{theme_id}{suffix}.png"
             if not ref_path.is_file():
                 assert rendered.save(str(ref_path), "PNG"), f"failed to write new reference {ref_path}"
