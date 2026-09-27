@@ -12,6 +12,7 @@ from pathlib import Path
 
 from PySide6.QtCore import QObject, QUrl, Slot
 from PySide6.QtGui import QDesktopServices
+from PySide6.QtWidgets import QApplication
 
 from torrent2000.config.paths import get_config_backups_dir, get_config_path, get_logs_dir
 from torrent2000.config.redaction import redact_settings_dict
@@ -95,12 +96,19 @@ class ProfileSecurityBridge(QObject):
 
     @Slot(result="QVariantMap")
     def copyLogToClipboard(self) -> dict:
+        # Copied Python-side: shipping up to 5 MB of log through QWebChannel
+        # just for navigator.clipboard cost four copies per click (and that
+        # API rejects when the page doesn't have focus).
         log_path = get_logs_dir() / "torrent2000.log"
         try:
             content = log_path.read_text(encoding="utf-8")
         except OSError as exc:
             return {"ok": False, "error": str(exc)}
-        return {"ok": True, "text": content}
+        try:
+            QApplication.clipboard().setText(content)
+        except Exception as exc:
+            return {"ok": False, "clipboardError": True, "error": str(exc)}
+        return {"ok": True}
 
     # -- Config import/export ----------------------------------------------
 

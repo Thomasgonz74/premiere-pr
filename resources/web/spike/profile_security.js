@@ -82,15 +82,11 @@ function wireProfileSecurity() {
   copyLogBtn.textContent = t("web.profile_security.copy_log_button");
   copyLogBtn.dataset.i18nKey = "web.profile_security.copy_log_button";
   copyLogBtn.addEventListener("click", () => {
+    // The bridge puts the log on the clipboard itself (no 5 MB round trip).
     bridge.copyLogToClipboard((result) => {
-      if (!result.ok) {
-        status.textContent = t("web.profile_security.no_log");
-        return;
-      }
-      navigator.clipboard
-        .writeText(result.text)
-        .then(() => (status.textContent = t("web.profile_security.log_copied")))
-        .catch(() => (status.textContent = t("web.profile_security.clipboard_error")));
+      if (result.ok) status.textContent = t("web.profile_security.log_copied");
+      else if (result.clipboardError) status.textContent = t("web.profile_security.clipboard_error");
+      else status.textContent = t("web.profile_security.no_log");
     });
   });
   diagnosticsSection.appendChild(copyLogBtn);

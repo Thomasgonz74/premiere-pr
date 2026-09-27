@@ -54,7 +54,11 @@ def create_torrent_file(
     ct.set_creator("Torrent 2000")
 
     try:
-        lt.set_piece_hashes(ct, str(resolved_source.parent))
+        # The overload WITH a per-piece callback, on purpose: the plain
+        # set_piece_hashes(ct, path) holds the GIL for the whole hash, so
+        # even from a worker thread it froze the GUI thread (4.85 s for
+        # 300 MB, measured); the callback one releases it between pieces.
+        lt.set_piece_hashes(ct, str(resolved_source.parent), lambda _piece: None)
     except Exception as exc:
         # libtorrent's own exception here can carry a non-UTF-8-decodable
         # message (observed as a raw UnicodeDecodeError from boost.python

@@ -16,6 +16,9 @@ function _pieceMapColor(have, availability) {
   return PIECE_MAP_COLOR_MISSING_COMMON;
 }
 
+// `have` and `availability` are strings, one char per piece (see
+// bridge_piece_map.py): "1"/"0", and a peer count capped at "9". Decode
+// have[i] === "1" -- the string "0" is truthy.
 function _drawPieceMap(ctx, canvas, cols, snapshot, prevSnapshot) {
   const { numPieces, have, availability } = snapshot;
   for (let i = 0; i < numPieces; i++) {
@@ -28,7 +31,7 @@ function _drawPieceMap(ctx, canvas, cols, snapshot, prevSnapshot) {
     }
     const row = Math.floor(i / cols);
     const col = i % cols;
-    ctx.fillStyle = _pieceMapColor(have[i], availability[i]);
+    ctx.fillStyle = _pieceMapColor(have[i] === "1", Number(availability[i]));
     ctx.fillRect(col * PIECE_MAP_CELL_PX + 1, row * PIECE_MAP_CELL_PX + 1, PIECE_MAP_CELL_PX - 1, PIECE_MAP_CELL_PX - 1);
   }
 }
@@ -92,6 +95,10 @@ function openPieceMapDialog(infoHash, torrentName) {
         sizedForCount = numPieces;
         canvas.dataset.cols = cols;
         prevSnapshot = null; // resizing clears the canvas -- force a full repaint
+      }
+      // Nothing changed since the last poll (always the case while seeding).
+      if (prevSnapshot && prevSnapshot.have === snapshot.have && prevSnapshot.availability === snapshot.availability) {
+        return;
       }
       _drawPieceMap(ctx, canvas, Number(canvas.dataset.cols), snapshot, prevSnapshot);
       prevSnapshot = snapshot;
