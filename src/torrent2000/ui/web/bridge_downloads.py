@@ -154,6 +154,10 @@ class DownloadsBridge(QObject):
         self._tag_service = tag_service
         session_manager.torrent_added.connect(self._on_added_or_updated)
         session_manager.torrent_status_updated.connect(self._on_status_updated)
+        if tag_service is not None:
+            # Same as its category: a removed torrent's tags go with it (and
+            # out of the tag filter) -- re-added later, it starts untagged.
+            session_manager.torrent_removed.connect(tag_service.clear)
         session_manager.torrent_removed.connect(self.recordRemoved.emit)
 
     def _on_added_or_updated(self, info_hash: str) -> None:

@@ -77,8 +77,9 @@ def test_shutdown_pumps_qt_events_while_waiting_for_pending_resume_data():
     sm = _session_manager_with_mock_handles(handle)
 
     alert = MagicMock(spec=lt.save_resume_data_alert)
-    alert.handle.status.return_value.info_hashes.has_v1.return_value = True
-    alert.handle.status.return_value.info_hashes.v1 = "hash0"
+    alert.handle.is_valid.return_value = True
+    alert.handle.info_hashes.return_value.has_v1.return_value = True
+    alert.handle.info_hashes.return_value.v1 = "hash0"
     alert.params = MagicMock()
 
     # First two polls find nothing pending yet; the third delivers the

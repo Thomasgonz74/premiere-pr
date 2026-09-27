@@ -5,6 +5,7 @@ test_session_manager_missing_features.py and test_torrent_files.py.
 """
 
 import os
+from pathlib import Path
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
@@ -92,3 +93,19 @@ def test_path_traversal_entry_is_excluded_from_the_sum(tmp_path):
     finally:
         (outside_dir / "escaped.bin").unlink(missing_ok=True)
         outside_dir.rmdir()
+
+
+def test_save_path_is_resolved_once_not_once_per_file(tmp_path, monkeypatch):
+    """Each Path.resolve() opens an NT handle (~1.8 ms on Windows) -- the
+    root must be resolved once per call, not once per file."""
+    for name in ("a.bin", "b.bin", "c.bin"):
+        (tmp_path / name).write_bytes(b"x")
+    handle = MagicMock()
+    handle.torrent_file.return_value = _mock_torrent_info([("a.bin", 1), ("b.bin", 1), ("c.bin", 1)])
+    sm = _session_manager_with_handle("hash1", str(tmp_path), handle)
+    resolved = []
+    real_resolve = Path.resolve
+    monkeypatch.setattr(Path, "resolve", lambda self, *a, **k: resolved.append(self) or real_resolve(self, *a, **k))
+
+    assert sm.get_allocated_size("hash1") == 3
+    assert resolved.count(tmp_path) == 1

@@ -6,8 +6,9 @@ session_manager directly for its own dialog (one bridge per dialog, same as
 PieceMapBridge vs PeerListBridge) rather than reusing window.bridge.
 filePriority from JS -- FilePriorityBridge exposes size/path but not
 per-file download progress, which this dialog needs for its color coding.
-The page polls this on its own timer while the dialog is open and redraws
-its own canvas -- no push signal, no server-side timer to manage.
+The page fetches the breakdown once, then polls only getFileProgress (the
+bytes downloaded per file) on its own timer while the dialog is open and
+redraws its own canvas -- no push signal, no server-side timer to manage.
 """
 
 from PySide6.QtCore import QObject, Slot
@@ -23,3 +24,9 @@ class StorageSunburstBridge(QObject):
     @Slot(str, result="QVariantList")
     def getFileBreakdown(self, info_hash: str) -> list:
         return self._session_manager.get_file_progress(info_hash)
+
+    @Slot(str, result="QVariantList")
+    def getFileProgress(self, info_hash: str) -> list:
+        """Bytes downloaded per file, in getFileBreakdown's order -- empty
+        once the torrent is gone."""
+        return self._session_manager.get_file_downloaded(info_hash)

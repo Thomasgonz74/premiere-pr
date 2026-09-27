@@ -158,12 +158,37 @@ function openStorageSunburstDialog(infoHash, torrentName) {
 
   const ctx = canvas.getContext("2d");
 
+  const showEmpty = (empty) => {
+    canvas.style.display = empty ? "none" : "";
+    emptyNote.style.display = empty ? "" : "none";
+  };
+  // Paths and sizes never change once metadata is in: fetch them once, then
+  // poll only the bytes downloaded per file (same order). Keeps asking for
+  // the full breakdown while it comes back empty (magnet still resolving).
+  let files = null;
   const refresh = () => {
-    window.bridge.storageSunburst.getFileBreakdown(infoHash, (files) => {
-      const empty = files.length === 0;
-      canvas.style.display = empty ? "none" : "";
-      emptyNote.style.display = empty ? "" : "none";
-      if (!empty) _drawSunburst(ctx, canvas, files);
+    if (files === null) {
+      window.bridge.storageSunburst.getFileBreakdown(infoHash, (breakdown) => {
+        showEmpty(breakdown.length === 0);
+        if (breakdown.length === 0) return;
+        files = breakdown;
+        _drawSunburst(ctx, canvas, files);
+      });
+      return;
+    }
+    window.bridge.storageSunburst.getFileProgress(infoHash, (downloaded) => {
+      if (files === null) return;
+      if (downloaded.length !== files.length) {
+        // Torrent removed while the dialog is open: the "no data" note, not
+        // a stale all-red ring -- and back to asking for the breakdown.
+        files = null;
+        showEmpty(true);
+        return;
+      }
+      downloaded.forEach((bytes, i) => {
+        files[i].downloaded = bytes;
+      });
+      _drawSunburst(ctx, canvas, files);
     });
   };
   refresh();

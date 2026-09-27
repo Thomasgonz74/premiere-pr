@@ -45,7 +45,8 @@ def _handle_with_hash(info_hash: str) -> MagicMock:
     hashes = MagicMock()
     hashes.has_v1.return_value = True
     hashes.v1 = info_hash
-    handle.status.return_value.info_hashes = hashes
+    handle.is_valid.return_value = True
+    handle.info_hashes.return_value = hashes
     return handle
 
 
@@ -120,6 +121,19 @@ def test_save_resume_data_alert_forwards_hash_and_params(dispatcher, callbacks):
     dispatcher.dispatch(alert)
 
     callbacks["on_save_resume_data"].assert_called_once_with("hash1", alert.params)
+
+
+def test_alert_on_an_invalid_handle_is_skipped_not_routed_under_a_null_hash(dispatcher, callbacks):
+    """Torrent removed while its save_resume_data_alert was still queued:
+    info_hashes() on the dead handle returns an all-zero hash rather than
+    raising, so _hash_of must check is_valid() itself -- otherwise the resume
+    data would be persisted under 0000...0000."""
+    alert = MagicMock(spec=lt.save_resume_data_alert)
+    alert.handle = lt.torrent_handle()  # a real, never-attached (invalid) handle
+
+    dispatcher.dispatch_all([alert])
+
+    callbacks["on_save_resume_data"].assert_not_called()
 
 
 def test_torrent_removed_alert_uses_info_hashes_directly_not_handle(dispatcher, callbacks):

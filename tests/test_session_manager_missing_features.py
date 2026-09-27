@@ -305,6 +305,41 @@ def test_set_file_priorities_missing_handle_is_a_noop():
     sm.set_file_priorities("unknown", {0})  # must not raise
 
 
+# --------------------------------------------------------------- storage sunburst
+
+
+def test_file_progress_builds_the_file_list_once_and_purges_it_on_removal(monkeypatch):
+    """Paths/sizes are immutable once metadata is in: built once (never
+    while metadata is missing), then each poll only reads the bytes
+    downloaded per file -- and the cached list goes with the torrent."""
+    files_from_ti = MagicMock(
+        return_value=[FileEntry(index=0, path="a.bin", size=100), FileEntry(index=2, path="b.bin", size=250)]
+    )
+    monkeypatch.setattr("torrent2000.engine.torrent_files.files_from_torrent_info", files_from_ti)
+    handle = MagicMock()
+    handle.is_valid.return_value = True
+    handle.torrent_file.return_value = None  # magnet still resolving
+    handle.file_progress.return_value = [40, 0, 250]  # index 1 is a pad file
+    sm = _session_manager_with_mock_handles(hash0=handle)
+    sm._records["hash0"] = TorrentRecord(info_hash="hash0")
+
+    assert sm.get_file_progress("hash0") == []
+
+    handle.torrent_file.return_value = MagicMock()  # metadata arrived
+    assert sm.get_file_progress("hash0") == [
+        {"index": 0, "path": "a.bin", "size": 100, "downloaded": 40},
+        {"index": 2, "path": "b.bin", "size": 250, "downloaded": 250},
+    ]
+    handle.file_progress.return_value = [100, 0, 250]
+    assert sm.get_file_downloaded("hash0") == [100, 250]
+    files_from_ti.assert_called_once()
+
+    sm._on_torrent_removed("hash0")
+
+    assert sm.get_file_downloaded("hash0") == []
+    assert "hash0" not in sm._file_entries_cache
+
+
 # --------------------------------------------------------------- archive lock
 
 
