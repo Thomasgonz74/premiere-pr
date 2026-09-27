@@ -2,6 +2,7 @@ import json
 import os
 import time
 import urllib.error
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
@@ -53,14 +54,14 @@ def test_is_newer_version(remote, local, expected):
 # --------------------------------------------------------------- UpdateChecker
 
 
-def _fake_response(payload: dict):
+def _fake_response(payload: dict | bytes):
     # fetch_url() reads in chunks via response.read(size) (see
     # url_fetch._read_response_body), so this needs real file-like read()
     # semantics -- b"" once exhausted, not the same body returned forever
     # regardless of the requested size.
     import io
 
-    body = json.dumps(payload).encode("utf-8")
+    body = payload if isinstance(payload, bytes) else json.dumps(payload).encode("utf-8")
     context = MagicMock()
     buf = io.BytesIO(body)
     context.read.side_effect = buf.read
@@ -88,7 +89,7 @@ def test_emits_update_available_for_a_newer_release(qapp):
     checker.update_available.connect(lambda v, u: received.append((v, u)))
 
     with patch(
-        "torrent2000.engine.url_fetch.urllib.request.urlopen",
+        "urllib.request.urlopen",
         return_value=_fake_response(
             {"tag_name": "v99.0.0", "html_url": "https://github.com/Thomasgonz74/premiere-pr/releases/v99.0.0"}
         ),
@@ -106,7 +107,7 @@ def test_does_not_emit_when_already_up_to_date(qapp):
     checker.update_available.connect(lambda v, u: received.append((v, u)))
 
     with patch(
-        "torrent2000.engine.url_fetch.urllib.request.urlopen",
+        "urllib.request.urlopen",
         return_value=_fake_response({"tag_name": f"v{APP_VERSION}", "html_url": "https://example.com"}),
     ):
         checker.check_now()
@@ -123,7 +124,7 @@ def test_does_not_emit_for_an_already_dismissed_version(qapp):
     checker.update_available.connect(lambda v, u: received.append((v, u)))
 
     with patch(
-        "torrent2000.engine.url_fetch.urllib.request.urlopen",
+        "urllib.request.urlopen",
         return_value=_fake_response({"tag_name": "v99.0.0", "html_url": "https://example.com"}),
     ):
         checker.check_now()
@@ -137,7 +138,7 @@ def test_skips_the_network_call_entirely_when_disabled(qapp):
     settings.check_for_updates = False
     checker = UpdateChecker(settings)
 
-    with patch("torrent2000.engine.url_fetch.urllib.request.urlopen") as mock_urlopen:
+    with patch("urllib.request.urlopen") as mock_urlopen:
         checker.check_now()
         _run_check_and_wait(qapp, checker, timeout_s=0.5)
         mock_urlopen.assert_not_called()
@@ -150,7 +151,7 @@ def test_network_failure_does_not_raise_or_emit(qapp):
     checker.update_available.connect(lambda v, u: received.append((v, u)))
 
     with patch(
-        "torrent2000.engine.url_fetch.urllib.request.urlopen",
+        "urllib.request.urlopen",
         side_effect=urllib.error.URLError("no internet"),
     ):
         checker.check_now()  # must not raise
@@ -166,7 +167,7 @@ def test_malformed_response_does_not_raise_or_emit(qapp):
     checker.update_available.connect(lambda v, u: received.append((v, u)))
 
     with patch(
-        "torrent2000.engine.url_fetch.urllib.request.urlopen",
+        "urllib.request.urlopen",
         return_value=_fake_response({"unexpected": "shape"}),
     ):
         checker.check_now()
@@ -186,7 +187,7 @@ def test_non_github_html_url_is_treated_as_malformed(qapp):
     checker.update_available.connect(lambda v, u: received.append((v, u)))
 
     with patch(
-        "torrent2000.engine.url_fetch.urllib.request.urlopen",
+        "urllib.request.urlopen",
         return_value=_fake_response({"tag_name": "v99.0.0", "html_url": "https://evil.example.com/releases/v99.0.0"}),
     ):
         checker.check_now()
@@ -222,3 +223,37 @@ def test_check_now_passes_settings_proxy_to_fetch_url(qapp):
 
     assert captured_proxies == [settings.proxy]
     assert received == [("v99.0.0", "https://github.com/x/y/releases/v99.0.0")]
+
+
+# ------------------------------------------------------- verified installer download
+
+
+def test_installer_download_streams_past_the_in_memory_cap_and_never_keeps_a_bad_file(tmp_path, monkeypatch):
+    # The real installer (~130 MB) is over fetch_url's 50 MB in-memory cap --
+    # shrunk here to 10 bytes -- so it must go through the streaming path.
+    import hashlib
+    import tempfile
+
+    import torrent2000.engine.url_fetch as url_fetch_module
+    from torrent2000.engine.update_checker import _DownloadVerifiedInstallerRunnable, _UpdateCheckSignals
+
+    monkeypatch.setattr(url_fetch_module, "_MAX_RESPONSE_BYTES", 10)
+    monkeypatch.setattr(tempfile, "tempdir", str(tmp_path))
+    body = b"installer-bytes" * 100
+    signals = _UpdateCheckSignals()
+    ready, failed = [], []
+    signals.install_ready.connect(ready.append)
+    signals.verify_failed.connect(failed.append)
+
+    def download(digest):
+        asset = {"name": "Setup.exe", "digest": f"sha256:{digest}", "browser_download_url": "https://github.com/x"}
+        with patch("urllib.request.urlopen", return_value=_fake_response(body)):
+            _DownloadVerifiedInstallerRunnable(asset, signals).run()
+
+    download(hashlib.sha256(body).hexdigest())
+    assert failed == []
+    assert len(ready) == 1 and Path(ready[0]).read_bytes() == body
+
+    download("0" * 64)  # mismatch: nothing unverified may stay on disk
+    assert len(failed) == 1
+    assert list(tmp_path.glob("torrent2000_update_*")) == []  # the earlier copy is swept too

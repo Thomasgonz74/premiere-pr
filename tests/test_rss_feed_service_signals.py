@@ -163,6 +163,21 @@ def test_http_torrent_link_is_marked_seen_immediately_but_added_only_after_downl
     assert session_manager.file_calls == [(downloaded_path, settings.default_download_dir)]
 
 
+def test_downloaded_torrent_temp_file_is_deleted_once_added(tmp_path):
+    # Nothing reads the .torrent again after the add (the metadata lives on
+    # in the resume data) -- without this, %TEMP% grows by one file per item.
+    feed = RssFeedSubscription(url="https://example.com/feed.xml", filter_keyword="", enabled=True)
+    service, session_manager, seen_store, settings = _make_service(tmp_path, [feed])
+    temp_torrent = tmp_path / "torrent2000_rss_x.torrent"
+    temp_torrent.write_bytes(b"d8:announce...e")
+
+    item = {"title": "Something", "link": "https://example.com/x.torrent", "guid": "guid-4"}
+    service._signals.torrent_downloaded.emit(feed.url, item, str(temp_torrent), settings.default_download_dir)
+
+    assert session_manager.file_calls == [(str(temp_torrent), settings.default_download_dir)]
+    assert not temp_torrent.exists()
+
+
 def test_feed_fetch_failure_is_relayed_via_feed_check_failed_signal(tmp_path):
     feed = RssFeedSubscription(url="https://example.com/feed.xml", filter_keyword="", enabled=True)
     service, session_manager, seen_store, settings = _make_service(tmp_path, [feed])

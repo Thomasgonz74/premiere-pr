@@ -1,3 +1,4 @@
+import subprocess
 from dataclasses import dataclass
 from unittest.mock import MagicMock, patch
 
@@ -18,6 +19,7 @@ def qapp():
 class FakeRecord:
     info_hash: str = "abc"
     save_path: str = "C:\\Downloads\\some-torrent"
+    name: str = ""
 
 
 class FakeSessionManager(QObject):
@@ -63,6 +65,32 @@ def test_submits_scan_runnable_when_enabled_and_torrent_finishes():
     mock_start.assert_called_once()
     submitted_runnable = mock_start.call_args[0][0]
     assert submitted_runnable._save_path == "C:\\Downloads\\my-torrent"
+
+
+@pytest.mark.parametrize(
+    "name,expected",
+    [
+        ("My.Torrent", "My.Torrent"),  # the torrent's own folder, not the whole library
+        ("..", None),  # crafted name escaping save_path: confinement refuses it
+        ("Missing.Torrent", None),  # not on disk (e.g. renamed): scan save_path instead
+        ("", None),
+    ],
+)
+def test_scans_the_torrents_own_folder_rather_than_the_shared_save_path(tmp_path, name, expected):
+    (tmp_path / "My.Torrent").mkdir()
+    settings = Settings()
+    settings.scan_completed_files_with_defender = True
+    fake_sm = FakeSessionManager()
+    fake_sm.records["abc"] = FakeRecord(save_path=str(tmp_path), name=name)
+    service = AntivirusScanService(fake_sm, settings)
+
+    mock_start = MagicMock()
+    with patch("torrent2000.engine.antivirus_scan_service.QThreadPool") as mock_pool_cls:
+        mock_pool_cls.globalInstance.return_value.start = mock_start
+        fake_sm.torrent_finished.emit("abc")
+
+    submitted_runnable = mock_start.call_args[0][0]
+    assert submitted_runnable._save_path == str(tmp_path / expected if expected else tmp_path)
 
 
 def test_no_scan_when_record_missing():
@@ -156,10 +184,10 @@ def test_scan_runnable_logs_warning_and_returns_when_mpcmdrun_missing():
     runnable = _ScanRunnable("C:\\Downloads\\some-torrent")
     with (
         patch("torrent2000.engine.antivirus_scan_service.find_mpcmdrun", return_value=None),
-        patch("torrent2000.engine.antivirus_scan_service.subprocess.run") as mock_run,
+        patch("torrent2000.engine.antivirus_scan_service.subprocess.Popen") as mock_popen,
     ):
         runnable.run()
-        mock_run.assert_not_called()
+        mock_popen.assert_not_called()
 
 
 def test_scan_runnable_invokes_mpcmdrun_with_expected_args():
@@ -168,33 +196,58 @@ def test_scan_runnable_invokes_mpcmdrun_with_expected_args():
     runnable = _ScanRunnable("C:\\Downloads\\some-torrent")
     with (
         patch("torrent2000.engine.antivirus_scan_service.find_mpcmdrun", return_value="C:\\MpCmdRun.exe"),
-        patch("torrent2000.engine.antivirus_scan_service.subprocess.run") as mock_run,
+        patch("torrent2000.engine.antivirus_scan_service.subprocess.Popen") as mock_popen,
     ):
-        mock_run.return_value = MagicMock(returncode=0)
+        mock_popen.return_value.wait.return_value = 0
         runnable.run()
 
-    mock_run.assert_called_once_with(
+    mock_popen.assert_called_once_with(
         ["C:\\MpCmdRun.exe", "-Scan", "-ScanType", "3", "-File", "C:\\Downloads\\some-torrent"],
-        capture_output=True,
-        timeout=300,
-        check=False,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
     )
+    mock_popen.return_value.kill.assert_not_called()
 
 
 def test_scan_runnable_swallows_timeout_without_raising():
-    import subprocess
-
     from torrent2000.engine.antivirus_scan_service import _ScanRunnable
 
     runnable = _ScanRunnable("C:\\Downloads\\some-torrent")
     with (
         patch("torrent2000.engine.antivirus_scan_service.find_mpcmdrun", return_value="C:\\MpCmdRun.exe"),
-        patch(
-            "torrent2000.engine.antivirus_scan_service.subprocess.run",
-            side_effect=subprocess.TimeoutExpired(cmd="MpCmdRun.exe", timeout=300),
-        ),
+        patch("torrent2000.engine.antivirus_scan_service.subprocess.Popen") as mock_popen,
     ):
+        mock_popen.return_value.wait.side_effect = subprocess.TimeoutExpired(cmd="MpCmdRun.exe", timeout=1)
         runnable.run()  # must not raise
+
+    assert mock_popen.return_value.wait.call_count == 300  # SCAN_TIMEOUT_SECONDS one-second waits
+    mock_popen.return_value.kill.assert_called_once()
+
+
+def test_scan_runnable_is_killed_within_a_second_of_quit(monkeypatch):
+    # Qt keeps the process alive until every running pool task returns --
+    # a scan must not hold Quit for up to SCAN_TIMEOUT_SECONDS.
+    import threading
+
+    import torrent2000.engine.antivirus_scan_service as antivirus_module
+    from torrent2000.engine.antivirus_scan_service import _ScanRunnable
+
+    monkeypatch.setattr(antivirus_module, "_cancel_event", threading.Event())
+
+    def wait(timeout):
+        antivirus_module.cancel_running_scans()  # Quit arrives during the first second
+        raise subprocess.TimeoutExpired(cmd="MpCmdRun.exe", timeout=timeout)
+
+    runnable = _ScanRunnable("C:\\Downloads\\some-torrent")
+    with (
+        patch("torrent2000.engine.antivirus_scan_service.find_mpcmdrun", return_value="C:\\MpCmdRun.exe"),
+        patch("torrent2000.engine.antivirus_scan_service.subprocess.Popen") as mock_popen,
+    ):
+        mock_popen.return_value.wait.side_effect = wait
+        runnable.run()
+
+    assert mock_popen.return_value.wait.call_count == 1
+    mock_popen.return_value.kill.assert_called_once()
 
 
 def test_scan_runnable_swallows_oserror_without_raising():
@@ -203,6 +256,6 @@ def test_scan_runnable_swallows_oserror_without_raising():
     runnable = _ScanRunnable("C:\\Downloads\\some-torrent")
     with (
         patch("torrent2000.engine.antivirus_scan_service.find_mpcmdrun", return_value="C:\\MpCmdRun.exe"),
-        patch("torrent2000.engine.antivirus_scan_service.subprocess.run", side_effect=OSError("boom")),
+        patch("torrent2000.engine.antivirus_scan_service.subprocess.Popen", side_effect=OSError("boom")),
     ):
         runnable.run()  # must not raise
