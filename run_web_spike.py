@@ -14,44 +14,11 @@ from PySide6.QtCore import QTimer
 from PySide6.QtGui import QSurfaceFormat
 from PySide6.QtWidgets import QApplication
 
-from torrent2000.config.paths import get_history_db_path, get_rss_seen_db_path, get_stats_db_path
-from torrent2000.config.settings import Settings
-from torrent2000.engine.anthem_player import AnthemPlayer
-from torrent2000.engine.antivirus_scan_service import AntivirusScanService
-from torrent2000.engine.auto_shutdown_service import AutoShutdownService
-from torrent2000.engine.battery_pause_service import BatteryPauseService
-from torrent2000.engine.bandwidth_scheduler import BandwidthScheduler
-from torrent2000.engine.clipboard_watcher_service import ClipboardWatcherService
-from torrent2000.engine.decision_journal import DecisionJournalService
-from torrent2000.engine.disk_reconnect_service import DiskReconnectService
-from torrent2000.engine.disk_space_monitor import DiskSpaceMonitor
-from torrent2000.engine.idle_activity_service import IdleActivityService
-from torrent2000.engine.known_disk_service import KnownDiskService, KnownDiskStore
-from torrent2000.engine.memory_pressure_governor import MemoryPressureGovernor
-from torrent2000.engine.network_profile_switcher import NetworkProfileStore, NetworkProfileSwitcherService
-from torrent2000.engine.post_complete_action_service import PostCompleteActionService
-from torrent2000.engine.remote_server import RemoteAccessServer
-from torrent2000.engine.routing_rules import RoutingRuleStore
-from torrent2000.engine.rss_feed_service import RssFeedService
-from torrent2000.engine.rss_seen_store import RssSeenStore
-from torrent2000.engine.scheduled_recheck_service import ScheduledRecheckService
-from torrent2000.engine.session_manager import SessionManager
-from torrent2000.engine.settings_profiles import SettingsProfileStore
-from torrent2000.engine.share_limits import ShareLimitService
-from torrent2000.engine.tag_service import TagService
-from torrent2000.engine.torrent_search_service import TorrentSearchSourceStore
+# Only what the single-instance check needs is imported up front: a second
+# launch (double-clicking a .torrent while the app runs) forwards its argument
+# and exits, so it must not pay for QtWebEngine, libtorrent and every service
+# -- the rest is imported in main() once this process is the primary.
 from torrent2000.engine.single_instance import SingleInstanceGuard
-from torrent2000.engine.update_checker import UpdateChecker
-from torrent2000.engine.watch_folder_service import WatchFolderService
-from torrent2000.engine.webhook_notification_service import WebhookNotificationService
-from torrent2000.i18n.translator import set_language
-from torrent2000.logging_setup import _setup_logging
-from torrent2000.stats.history_service import HistoryService
-from torrent2000.stats.history_store import HistoryStore
-from torrent2000.stats.service import StatsService
-from torrent2000.stats.store import StatsStore
-from torrent2000.ui.notifications import NotificationService
-from torrent2000.ui.web.spike_window import SpikeWindow
 
 
 def main() -> int:
@@ -78,6 +45,44 @@ def main() -> int:
     guard = SingleInstanceGuard()
     if not guard.try_become_primary(sys.argv[1] if len(sys.argv) > 1 else ""):
         return 0
+
+    from torrent2000.config.paths import get_history_db_path, get_rss_seen_db_path, get_stats_db_path
+    from torrent2000.config.settings import Settings
+    from torrent2000.engine.anthem_player import AnthemPlayer
+    from torrent2000.engine.antivirus_scan_service import AntivirusScanService
+    from torrent2000.engine.auto_shutdown_service import AutoShutdownService
+    from torrent2000.engine.battery_pause_service import BatteryPauseService
+    from torrent2000.engine.bandwidth_scheduler import BandwidthScheduler
+    from torrent2000.engine.clipboard_watcher_service import ClipboardWatcherService
+    from torrent2000.engine.decision_journal import DecisionJournalService
+    from torrent2000.engine.disk_reconnect_service import DiskReconnectService
+    from torrent2000.engine.disk_space_monitor import DiskSpaceMonitor
+    from torrent2000.engine.idle_activity_service import IdleActivityService
+    from torrent2000.engine.known_disk_service import KnownDiskService, KnownDiskStore
+    from torrent2000.engine.memory_pressure_governor import MemoryPressureGovernor
+    from torrent2000.engine.network_profile_switcher import NetworkProfileStore, NetworkProfileSwitcherService
+    from torrent2000.engine.post_complete_action_service import PostCompleteActionService
+    from torrent2000.engine.remote_server import RemoteAccessServer
+    from torrent2000.engine.routing_rules import RoutingRuleStore
+    from torrent2000.engine.rss_feed_service import RssFeedService
+    from torrent2000.engine.rss_seen_store import RssSeenStore
+    from torrent2000.engine.scheduled_recheck_service import ScheduledRecheckService
+    from torrent2000.engine.session_manager import SessionManager
+    from torrent2000.engine.settings_profiles import SettingsProfileStore
+    from torrent2000.engine.share_limits import ShareLimitService
+    from torrent2000.engine.tag_service import TagService
+    from torrent2000.engine.torrent_search_service import TorrentSearchSourceStore
+    from torrent2000.engine.update_checker import UpdateChecker
+    from torrent2000.engine.watch_folder_service import WatchFolderService
+    from torrent2000.engine.webhook_notification_service import WebhookNotificationService
+    from torrent2000.i18n.translator import set_language
+    from torrent2000.logging_setup import _setup_logging
+    from torrent2000.stats.history_service import HistoryService
+    from torrent2000.stats.history_store import HistoryStore
+    from torrent2000.stats.service import StatsService
+    from torrent2000.stats.store import StatsStore
+    from torrent2000.ui.notifications import NotificationService
+    from torrent2000.ui.web.spike_window import SpikeWindow
 
     _setup_logging()
     settings = Settings.load()

@@ -57,9 +57,10 @@ new QWebChannel(qt.webChannelTransport, (channel) => {
   wireWindowChrome(channel.objects.windowBridge);
 
   // Applies the theme/appearance-mode already saved in Settings on load
-  // (the <link> in index.html only has a hardcoded default for the first
-  // paint before the bridge is ready), then keeps it live-synced with the
-  // Profile > General page's selectors for the rest of the session.
+  // (index.html's <head> script already painted them from the URL query;
+  // this is the authoritative pass, and the one that starts the CCCP
+  // panel), then keeps it live-synced with the Profile > General page's
+  // selectors for the rest of the session.
   channel.objects.profileGeneral.getSettings((s) => {
     setActiveTheme(s.theme);
     setAppearanceMode(s.appearanceMode);

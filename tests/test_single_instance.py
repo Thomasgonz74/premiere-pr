@@ -1,5 +1,8 @@
 import os
+import subprocess
+import sys
 import time
+from pathlib import Path
 from unittest.mock import patch
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
@@ -141,3 +144,26 @@ def test_still_returns_true_without_raising_if_listen_fails_even_after_retry(mak
 
     assert guard._server is not None
     assert guard._server.isListening() is False
+
+
+def test_second_launch_imports_only_what_the_guard_needs():
+    # Fresh interpreter: this one has already imported the whole app.
+    code = (
+        "import sys, run_web_spike\n"
+        "class _Secondary:\n"
+        "    def try_become_primary(self, _argument): return False\n"
+        "run_web_spike.SingleInstanceGuard = _Secondary\n"
+        "assert run_web_spike.main() == 0\n"
+        "heavy = ('libtorrent', 'PySide6.QtWebEngineWidgets', 'torrent2000.engine.session_manager')\n"
+        "print('LOADED', [m for m in heavy if m in sys.modules])\n"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", code],
+        cwd=Path(__file__).resolve().parents[1],
+        env={**os.environ, "QT_QPA_PLATFORM": "offscreen"},
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    assert result.returncode == 0, result.stderr
+    assert "LOADED []" in result.stdout, result.stdout

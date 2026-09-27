@@ -15,8 +15,25 @@
      theme's tokens.css can also carry real structural CSS rules (button
      shape/order, tab style, scrollbars, etc.) that must win the cascade
      over the generic rules above -- charter composition overrides the
-     shared grid, not the other way around. -->
-<link rel="stylesheet" href="themes/luna_xp/tokens.css" id="themeTokensLink">
+     shared grid, not the other way around.
+     blocking="render": its href is set by the script below, and a
+     script-set href alone is not render-blocking -- the first paint could
+     then come before the sheet (measured with a delayed sheet). -->
+<link rel="stylesheet" id="themeTokensLink" blocking="render">
+<script>
+  // The saved theme/mode, applied before the first paint: SpikeWindow puts
+  // them in the URL (theme id already checked against the theme list), so a
+  // dark or non-default theme no longer flashes Luna XP light first. No query
+  // (the theme tests) keeps the old default. app.js's getSettings still
+  // re-applies both once the bridge is up, and drives the CCCP panel.
+  (function () {
+    const query = new URLSearchParams(location.search);
+    document.getElementById("themeTokensLink").href = `themes/${query.get("theme") || "luna_xp"}/tokens.css`;
+    const mode = query.get("mode");
+    const attr = mode === "dark" ? "dark" : mode === "dark_hc" ? "hc" : null;  // as setAppearanceMode()
+    if (attr) document.documentElement.setAttribute("data-theme", attr);
+  })();
+</script>
 </head>
 <body>
   <div id="titlebar" class="titlebar">
