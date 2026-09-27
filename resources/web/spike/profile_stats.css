@@ -26,7 +26,8 @@
 
 .history-row {
   display: grid;
-  grid-template-columns: 1fr 90px 90px 90px 130px 90px;
+  /* 100 px: in 15 px bold fonts « Téléchargé » filled 90 px and ran into « Envoyé ». */
+  grid-template-columns: 1fr 100px 100px 100px 130px 100px;
   gap: var(--space-3);
   align-items: center;
   padding: var(--space-2) var(--space-3);

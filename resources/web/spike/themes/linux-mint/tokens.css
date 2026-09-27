@@ -29,14 +29,20 @@
   /* Bordures (la structure du style) */
   --my-border:         #C7C7CF;  /* contrôles, cartes ($borders_color) */
   --my-border-active:  #ACACB7;  /* contrôle pressé */
-  --my-border-field:   #BABABA;  /* champs ($entry_border) */
+  /* PORT: fix -- $entry_border #BABABA ne tenait que 1,9:1 sur le blanc : une
+     case non cochée ou un champ vide n'avaient plus de contour lisible
+     (≥ 3:1 exigé pour un contrôle). Même gris, foncé jusqu'à 3,1:1 sur
+     --my-bg ; la hiérarchie du charte (champs plus appuyés que les
+     boutons #C7C7CF) est conservée. */
+  --my-border-field:   #8E8E8E;  /* champs ($entry_border #BABABA) */
   --my-border-header:  #BDBDBD;  /* filet sous la barre de titre */
   --my-separator:      #DFDFDF;  /* filets internes, barre d'état */
   --my-border-disabled:#D9D9DE;
 
   /* Encres */
   --my-fg:          rgba(0,0,0,.87);   /* $fg_color */
-  --my-fg-dim:      rgba(0,0,0,.52);   /* libellés secondaires */
+  --my-fg-dim:      rgba(0,0,0,.60);   /* libellés secondaires -- PORT: fix, .52 au
+                                          charte = 4,2:1 sur les rangées de santé */
   --my-fg-disabled: rgba(0,0,0,.42);
   --my-text-view:   #303030;           /* texte des vues ($text_color) */
   --my-title-unfocused: #9D9D9F;
@@ -58,7 +64,7 @@
   --close-bg:      var(--accent);
   --close-hover:   #5ACB78;     /* lighten +14 % */
   --close-pressed: #1D5A2D;     /* darken −20 % */
-  --close-glyph:   #F8F8F8;     /* $wm_icon_close_bg */
+  --close-glyph:   #FFFFFF;     /* $wm_icon_close_bg #F8F8F8 -- PORT: fix, 2,9 → 3,05:1 sur l'accent */
 
   /* Boutons de fenêtre neutres (Réduire/Agrandir) */
   --wm-hover-bg:   #FDFDFF;     /* $wm_button_hover_bg */
@@ -76,14 +82,17 @@
   --warning:             #FF7139;   /* Orange (jauge en pause) */
 
   /* Infobulle : TEINTÉE À L'ACCENT ($tooltip_bg_color) */
-  --tooltip-bg: rgba(50,160,80,.95);   /* mix(accent, noir, 95 %) α .95 */
+  /* PORT: fix -- le charte pose mix(accent, noir, 95 %) α .95 = rgba(50,160,80,.95),
+     où le texte blanc ne tient que 3,1:1. Même vert, mix(accent, noir, 68 %)
+     α .95 : 5,4:1, l'infobulle reste verte (interdit #5). */
+  --tooltip-bg: rgba(36,114,57,.95);
   --tooltip-fg: #FFFFFF;
 
   /* Jauge : piste BLANCHE bordée ($trough_color light) */
   --progress-trough: #FFFFFF;
 
   /* Défilement en surimpression */
-  --scroll-thumb: rgba(0,0,0,.35);
+  --scroll-thumb: rgba(0,0,0,.45);   /* PORT: fix, .35 = 2,4:1 sur le blanc → 3,3:1 */
 
   /* Bureau (vert forêt sombre, esprit fonds Mint) */
   --gradient-desktop: radial-gradient(115% 95% at 30% 25%,
@@ -123,7 +132,10 @@
   --border-control:  var(--my-border);      /* contrôles bordés 1px (§2 principe) */
   --border-field:    var(--my-border-field);
   --border-group:    var(--my-border);      /* group box "blanc bordé --my-border" (§9) */
-  --border-progress: var(--my-border);      /* piste de jauge "blanche bordée" (§9) */
+  /* PORT: fix -- piste de jauge "blanche bordée" (§9) bordée comme un champ :
+     --my-border (1,6:1 en clair, 1,4:1 en sombre) laissait une jauge à 0 %
+     invisible (barre de niveau du Profil). */
+  --border-progress: var(--my-border-field);
   --border-tab:      var(--my-border);      /* onglets bordés (components.html .tab) */
   --text-legend:     var(--text-primary);   /* légende = grasse, PAS colorée (§4 typo :
                                                 "hiérarchie par la graisse", pas d'accent
@@ -276,6 +288,18 @@
   --p2-shadow-thumb: 0 1px 2px rgba(0,0,0,.18);
   /* P2TOK:END */
 
+  /* PORT: bouton "Suggéré" -- le blanc gras 13 px ne tient que 3,05:1 sur
+     --accent (#35A854). Même vert assombri (dérivé de --accent, donc le
+     rethémage suit) : repos 5,4:1, survol plus clair 4,75:1 (geste Mint
+     conservé), pressé 7,1:1. Le contraste élevé repasse sur --accent. */
+  --suggested-bg:      color-mix(in srgb, var(--accent) 72%, #000);
+  --suggested-hover:   color-mix(in srgb, var(--accent) 78%, #000);
+  --suggested-pressed: color-mix(in srgb, var(--accent) 60%, #000);
+
+  /* PORT: chevron des listes déroulantes, en jeton pour suivre le mode
+     (le trait #404040 disparaissait sur les champs sombres). */
+  --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Cpath d='M4 6.5l4 4 4-4' fill='none' stroke='%23404040' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+
   /* ================================================== ICONS:BEGIN
      9. ICÔNES — navigation & fichiers (14), tokenisées
      comme les curseurs : SVG data-URI dessinés dans la
@@ -309,12 +333,19 @@
   --my-insensitive: #333333;
   --my-border: #1E1E1E;
   --my-border-active: #4A4A4A;
-  --my-border-field: #1E1E1E;
+  /* PORT: fix -- #1E1E1E (charte) ne tenait que 1,2-1,4:1 : cases non
+     cochées et champs vides se fondaient dans #383838/#2E2E2E. Aucune
+     bordure plus sombre ne peut atteindre 3:1 sur ces fonds ; seuls
+     champs et cases passent donc au gris clair (3,2:1 sur #383838).
+     Boutons, onglets, cartes et menus gardent le filet sombre Mint-Y-Dark
+     (ils se lisent par leur face, leur libellé et leur ombre). */
+  --my-border-field: #858585;
   --my-border-header: #454545;
   --my-separator: #454545;
   --my-border-disabled: #2A2A2A;
   --my-fg: #DADADA;
-  --my-fg-dim: #9A9A9A;
+  /* PORT: fix -- #9A9A9A = 4,2:1 sur les vues, 3,6:1 sur les rangées de santé */
+  --my-fg-dim: #B4B4B4;
   --my-fg-disabled: #6E6E6E;
   --my-text-view: #DADADA;
   --my-title-unfocused: #8A8A8A;
@@ -335,6 +366,9 @@
   /* PORT: --btn-pressed devient un opaque #333333 en sombre (cf. ci-dessus) ;
      la face pressée à plat doit suivre plutôt que de rester sur le calcul clair */
   --plastic-pressed: linear-gradient(#333333,#333333);
+  /* PORT: fix -- pouce noir à 35 % invisible sur fond sombre (1,2:1) */
+  --scroll-thumb: rgba(255,255,255,.40);
+  --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Cpath d='M4 6.5l4 4 4-4' fill='none' stroke='%23DADADA' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   /* icônes surchargées pour le fond sombre */
   --icon-back: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M20 12H5.5M11.5 5.5L5 12l6.5 6.5' fill='none' stroke='%23DADADA' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   --icon-forward: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M4 12h14.5M12.5 5.5L19 12l-6.5 6.5' fill='none' stroke='%23DADADA' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
@@ -383,6 +417,13 @@
   --p2-shadow-thumb: 0 0 0 1.5px #000000;
   /* PORT: --btn-pressed devient un opaque #D8D8D8 en contraste élevé */
   --plastic-pressed: linear-gradient(#D8D8D8,#D8D8D8);
+  /* PORT: fix -- les états survol/pressé restaient aux verts clairs du mode
+     clair (blanc sur #3CBF60 / #5ACB78 ≈ 2:1). En contraste élevé ils
+     FONCENT le vert #146414 ; les bordures accent passent au noir. */
+  --suggested-bg: var(--accent);
+  --accent-border: #000000;
+  --close-hover: #0F4B0F;
+  --close-pressed: #0A320A;
 }
 /* HC:END */
 
@@ -568,14 +609,14 @@ button:disabled { background: var(--my-insensitive); border-color: var(--my-bord
    sur des onglets distincts donc chacun reste seul dans sa vue. */
 .start-btn {
   align-self: flex-start;
-  background: var(--accent);
+  background: var(--suggested-bg);
   border: 1px solid var(--accent-border);
   border-radius: var(--radius-control);
   color: var(--p2-on-accent);
   font-weight: 700;
 }
-.start-btn:not(:disabled):hover { background: var(--accent-hover); }
-.start-btn:not(:disabled):active { background: var(--accent-pressed); border-color: var(--accent-border); }
+.start-btn:not(:disabled):hover { background: var(--suggested-hover); }
+.start-btn:not(:disabled):active { background: var(--suggested-pressed); border-color: var(--accent-border); }
 .start-btn:focus-visible { border-color: var(--accent-border); box-shadow: var(--focus-ring); outline: none; }
 
 /* Boutons d'action de ligne (pause/suppression) : même carte bordée que le
@@ -613,7 +654,7 @@ textarea:disabled, select:disabled {
 select {
   appearance: none; -webkit-appearance: none;
   padding-right: 30px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Cpath d='M4 6.5l4 4 4-4' fill='none' stroke='%23404040' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-image: var(--select-chevron);
   background-repeat: no-repeat; background-position: right 8px center; background-size: 16px 16px;
 }
 
@@ -628,7 +669,10 @@ input[type="checkbox"] {
   display: inline-grid; place-content: center;
   transition: border-color var(--transition-state), background var(--transition-state);
 }
-input[type="checkbox"]:not(:disabled):hover { border-color: var(--my-border-active); }
+/* Survol : le contour se renforce vers l'encre secondaire (plus sombre en
+   clair, plus clair en sombre) -- --my-border-active était plus pâle que la
+   bordure de champ rehaussée ci-dessus et effaçait la case au survol. */
+input[type="checkbox"]:not(:disabled):hover { border-color: var(--text-soft); }
 input[type="checkbox"]:checked { background: var(--accent); border-color: var(--accent-border); }
 input[type="checkbox"]:checked::after {
   content: "";
@@ -692,6 +736,16 @@ input[type="checkbox"]:focus-visible { border-color: var(--accent); box-shadow: 
 .context-menu-item:hover { background: var(--veil-menu); color: var(--text-primary); }
 .context-menu-separator { background: none; border-top: 1px solid var(--my-separator); margin: 4px 2px; }
 
+/* ---------- Infobulle d'aide (« ? ») : TEINTÉE À L'ACCENT (§9, interdit #5) */
+/* Le CSS partagé peint la bulle aux couleurs de la fenêtre ; ici les trois
+   modes ont une paire --tooltip-bg/--tooltip-fg cohérente (vert/blanc,
+   #1E1E1E/#DADADA, blanc/noir), donc la bulle reprend l'infobulle du charte. */
+.info-tooltip-bubble {
+  background: var(--tooltip-bg);
+  color: var(--tooltip-fg);
+  border-radius: var(--radius-menu);
+}
+
 /* ---------- Boîtes de dialogue (GTK classique) --------------------------- */
 /* Le spécimen ne montre pas de voile de fond (ses dialogues sont des
    fenêtres normales côte à côte) -- un voile d'encre neutre, cohérent avec
@@ -736,3 +790,9 @@ canvas.tetris {
   background: var(--progress-trough);
   box-shadow: none;
 }
+
+/* Ligne sélectionnée des Téléchargements : encre sombre sur le vert Mint
+   (≈ 6,1:1) ; le blanc de la sélection n'y tenait que 3,05:1 depuis que les
+   cellules héritent de la couleur de la ligne. Valeur littérale : en sombre,
+   l'encre du thème est claire. Le contraste élevé garde sa propre paire. */
+:root:not([data-theme="hc"]) #downloadsList .row.selected { color: rgba(0, 0, 0, .87); }

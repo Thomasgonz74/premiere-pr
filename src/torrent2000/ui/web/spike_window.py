@@ -7,6 +7,8 @@ committing to porting the other ~30 widgets/dialogs.
 """
 
 import json
+import os
+import time
 from ctypes import wintypes
 
 from PySide6.QtCore import QTimer, QUrl
@@ -49,6 +51,7 @@ from torrent2000.ui.web.bridge_swarm_constellation import SwarmConstellationBrid
 from torrent2000.ui.web.bridge_tracker_editor import TrackerEditorBridge
 from torrent2000.ui.web.bridge_update import UpdateBridge
 from torrent2000.ui.web.dialog_bridge import DialogBridge
+from torrent2000.ui.web.resize_probe import ResizeProbe
 from torrent2000.ui.web.window_bridge import WindowBridge
 from torrent2000.utils.resource_path import resource_path
 
@@ -146,6 +149,14 @@ class SpikeWindow(QMainWindow):
         self._resize_overlay.setScaledContents(True)
         self._resize_overlay.hide()
         self._is_native_resizing = False
+        # A/B switches for the resize-fluidity work: T2K_RESIZE_FREEZE=0 lets
+        # Chromium reflow live instead of showing the frozen snapshot, and
+        # T2K_RESIZE_PROBE=1 logs per-gesture lag (see resize_probe.py).
+        self._freeze_enabled = os.environ.get("T2K_RESIZE_FREEZE", "1") != "0"
+        self._probe = (
+            ResizeProbe(self, self._view, self._freeze_enabled)
+            if os.environ.get("T2K_RESIZE_PROBE") == "1" else None
+        )
 
         self._channel = QWebChannel(self)
         self._window_bridge = WindowBridge(self, settings, anthem_player, self)
@@ -235,13 +246,21 @@ class SpikeWindow(QMainWindow):
         if event_type == b"windows_generic_MSG":
             msg = wintypes.MSG.from_address(int(message))
             if msg.message == _WM_ENTERSIZEMOVE:
-                self._begin_resize_freeze()
+                if self._probe:
+                    self._probe.on_enter()
+                if self._freeze_enabled:
+                    self._begin_resize_freeze()
             elif msg.message == _WM_EXITSIZEMOVE:
-                self._end_resize_freeze()
+                if self._freeze_enabled:
+                    self._end_resize_freeze()
+                if self._probe:
+                    self._probe.on_exit()
         return super().nativeEvent(event_type, message)
 
     def resizeEvent(self, event) -> None:
         super().resizeEvent(event)
+        if self._probe:
+            self._probe.on_resize(self.width(), self.height())
         if self._is_native_resizing:
             # Frozen: only the overlay (a cheap pixmap stretch, no Chromium
             # reflow) tracks the window's live outline during the drag.
@@ -252,7 +271,10 @@ class SpikeWindow(QMainWindow):
     def _begin_resize_freeze(self) -> None:
         if self._is_native_resizing:
             return
+        t0 = time.perf_counter()
         pixmap = self._view.grab()
+        if self._probe:
+            self._probe.note_grab((time.perf_counter() - t0) * 1000)
         if pixmap.isNull():
             return  # nothing rendered yet (e.g. gesture started before first paint) -- skip freezing
         self._resize_overlay.setPixmap(pixmap)
@@ -270,10 +292,18 @@ class SpikeWindow(QMainWindow):
         # at least one paint cycle to catch up to the final size, and
         # dropping the overlay immediately would flash the same 1-2 frames
         # of stale/mid-reflow content this whole mechanism exists to hide.
-        QTimer.singleShot(80, self._resize_overlay.hide)
+        QTimer.singleShot(80, self._release_resize_overlay)
+
+    def _release_resize_overlay(self) -> None:
+        # A new gesture may have started within the 80 ms: its overlay stays.
+        if not self._is_native_resizing:
+            self._resize_overlay.hide()
+            self._resize_overlay.clear()  # drop the full-window pixmap
 
     def _on_page_loaded(self, ok: bool) -> None:
         self._page_loaded = True
+        if ok and self._probe:
+            self._probe.on_page_loaded()
         if ok and self._pending_open_source is not None:
             source, self._pending_open_source = self._pending_open_source, None
             self._run_open_source(source)

@@ -18,6 +18,9 @@
 
 :root {
 
+  /* Erreur du journal RSS : rouge clair CGA, lisible sur le bleu des listes. */
+  --status-danger-text: #FF8080;
+
   /* ========================================================
      1. PRIMITIVES — palette CGA (8 des 16 couleurs d'époque)
      ======================================================== */
@@ -242,7 +245,8 @@
 /* HC:BEGIN — contraste élevé (phase 4). Repris tel quel du charter (mêmes
    primitives CGA remappées noir/blanc/jaune) ; tous les alias/extras
    ajoutés ci-dessus au §2-7 sont des var() sur ces mêmes primitives et se
-   re-résolvent donc correctement ici SANS rien redéfinir de plus :
+   re-résolvent ici -- SAUF les filets --border-field/-group/-progress/-tab,
+   redéfinis plus bas (ils restaient noirs sur les panneaux noirs) :
    --frame-shadow retombe sur noir/blanc/noir (le "filet blanc" doctrinal
    sur panneau noir), --plastic-raised/--gradient-titlebtn-close passent
    au blanc plein (dos-cyan→blanc), --text-legend suit --text-primary
@@ -277,6 +281,16 @@
   --on-accent: #000000;
   --link: #FF6A60;
   --btn-press: #FFFFFF;
+  /* Filets : --border-control reste noir (il cerne les boutons, devenus
+     BLANCS, y compris sur la ligne sélectionnée blanche), mais les cadres
+     posés sur les panneaux NOIRS (champs, cases, listes, groupes, jauge,
+     zone de dépôt, filet de titre) passent au blanc -- le « double filet
+     blanc » doctrinal de la phase 4. Sans ça, noir sur noir : champs vides
+     et cadres invisibles. */
+  --border-field:    var(--dos-white);
+  --border-group:    var(--dos-white);
+  --border-progress: var(--dos-white);
+  --border-tab:      var(--dos-white);
   /* icônes en contraste élevé (fonds sombres -> traits blancs) */
   --icon-search: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='10.4' cy='10.4' r='4.9' fill='none' stroke='%23FFFFFF' stroke-width='2.2'/%3E%3Cpath d='M14.2 14.2l5.2 5.2' fill='none' stroke='%23FFFFFF' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 }
@@ -319,7 +333,7 @@ input[type=text], textarea { cursor: var(--cursor-text); }
 .titlebar {
   padding: 0 8px;
   gap: 8px;
-  border-bottom: 3px double var(--dos-black);
+  border-bottom: 3px double var(--border-group);   /* noir ; blanc en HC (barre noire) */
   border-radius: 0;
 }
 .titlebar-drag { justify-content: center; }
@@ -379,9 +393,19 @@ input[type=text], textarea { cursor: var(--cursor-text); }
 }
 .tab-btn:last-child { border-right-width: 1px; }
 .tab-btn:hover:not(.active) { filter: none; }  /* survolé n'existe pas */
+/* Encre NOIRE sur l'actif (STYLE.md §9 « l'actif = cyan à encre noire ») :
+   le blanc de components.html ne donnait que 2,9:1 sur le cyan (noir : 7,2:1). */
 .tab-btn.active {
   background: var(--dos-cyan);
-  color: var(--on-accent);
+  color: var(--dos-black);
+}
+/* HC : gris et cyan deviennent tous deux blancs, l'actif se confondait avec
+   les autres. Il s'INVERSE (panneau noir, encre et filet blancs), comme la
+   sélection monochrome de la phase 4. */
+[data-theme="hc"] .tab-btn.active {
+  background: var(--surface-window);
+  color: var(--text-primary);
+  border-color: var(--border-tab);
 }
 
 /* ---------- Boutons : blocs CYAN à encre noire, ombre-bloc qui SE RAPPROCHE
@@ -406,6 +430,8 @@ button {
 button:not(:disabled):active { box-shadow: var(--btn-shadow-pressed); background: var(--btn-press); }
 button:focus-visible { outline: var(--focus-ring); outline-offset: 1px; }
 button:disabled { background: var(--dos-gray-dk); color: var(--text-disabled); box-shadow: none; }
+/* HC : le désactivé est NOIR sur fond noir -- sans filet blanc, plus de bouton. */
+[data-theme="hc"] button:disabled { border-color: var(--border-field); }
 
 .start-btn {
   min-width: var(--button-min-width);
@@ -437,6 +463,14 @@ button:disabled { background: var(--dos-gray-dk); color: var(--text-disabled); b
 }
 .row-actions button:not(:disabled):hover { box-shadow: var(--btn-shadow); }  /* no-op : pas de survol */
 .row-actions button:not(:disabled):active { box-shadow: var(--btn-shadow-pressed); background: var(--btn-press); }
+
+/* Place de l'ombre-bloc (STYLE.md §5) : l'écart de 4 px des rangées est plus
+   court que les 6 px de --btn-shadow, qui mordait sur le texte ou le bouton
+   voisin (« Parcourir… » / nom du fichier, « Analyser » / « Seuil… ») et, en
+   Recherche, sur le haut de la liste des sources. */
+.field-row > button:not(:last-child),
+.scan-toolbar > button:not(:last-child) { margin-right: var(--space-2); }
+.form-grid + .listbox { margin-top: var(--space-3); }
 
 /* ---------- Champs : BLEUS à texte JAUNE, cadre noir 1px, CARRÉS (radius 0
    -- ici ça ne les distingue pas des boutons, eux-mêmes déjà carrés dans ce
@@ -483,7 +517,7 @@ input[type="checkbox"] {
   appearance: none; -webkit-appearance: none;
   margin: 0; vertical-align: middle;
   width: var(--checkbox-size); height: var(--checkbox-size);
-  border: 1px solid var(--border-control);
+  border: 1px solid var(--border-field);   /* cadre de champ : noir ; blanc en HC */
   border-radius: 0;
   background: var(--surface-field);
   display: inline-grid; place-content: center;
@@ -496,6 +530,9 @@ input[type="checkbox"]:checked::after {
 input[type="checkbox"]:focus-visible { outline: var(--focus-ring); outline-offset: 1px; }
 input[type="checkbox"]:disabled { background: var(--dos-gray-dk); }
 input[type="checkbox"]:disabled:checked::after { opacity: .6; }
+/* Dans un panneau BLEU (listes RSS, sources, scan), la case bleue à cadre
+   noir se fondait dans le fond (1,6:1) : cadre gris CGA, 5,6:1. */
+.listbox input[type="checkbox"] { border-color: var(--dos-gray); }
 
 /* ---------- Listes : panneau BLEU à texte BLANC (hérité par les cellules
    .row-*), sélection CYAN à encre noire pleine (déjà exact via
@@ -513,10 +550,13 @@ input[type="checkbox"]:disabled:checked::after { opacity: .6; }
 .row:hover:not(.selected),
 #downloadsList .row:hover:not(.selected),
 .scan-row:hover { background: var(--dos-blue-hi); color: var(--on-accent); }
+/* L'en-tête des Téléchargements est posé sur le GRIS du dialogue, hors du
+   panneau bleu : le jaune des en-têtes de table (réservé au panneau bleu)
+   n'y donnait que 2,2:1, et le filet cyan 1,3:1. Encre et filet du dialogue. */
 .downloads-row-header {
-  color: var(--dos-yellow);
+  color: var(--text-primary);
   font-weight: 400;
-  border-bottom: 1px solid var(--dos-cyan);
+  border-bottom: 1px solid var(--border-group);
 }
 /* Cellules de donnees : style.css pose `.row-state{color:var(--text-primary)}`
    (noir) -- illisible sur le panneau BLEU de ce charter. On aligne toutes les
@@ -533,7 +573,7 @@ input[type="checkbox"]:disabled:checked::after { opacity: .6; }
    couleur de légende dédiée (voir §2 du fichier). ---------- */
 .profile-group, .details-group {
   background: transparent;
-  border: 3px double var(--dos-black);
+  border: 3px double var(--border-group);   /* noir ; blanc en HC */
   border-radius: 0;
 }
 .profile-group h3, .details-group h3 {
@@ -580,7 +620,7 @@ input[type="checkbox"]:disabled:checked::after { opacity: .6; }
 }
 .modal-box {
   background: var(--surface-window);
-  border: 3px double var(--dos-black);
+  border: 3px double var(--border-group);   /* noir ; blanc en HC */
   border-radius: 0;
   box-shadow: var(--shadow-window);
   padding: 0 var(--space-5) var(--space-5);
@@ -632,4 +672,32 @@ canvas.tetris {
   border-radius: 0;
   background: var(--shade-track);
   box-shadow: none;
+}
+
+/* Textes secondaires posés sur un champ bleu (zone de dépôt, raisons du
+   scan, pastille d'aide) : l'encre de base du thème est noire, prévue pour
+   le gris des fenêtres, et disparaît sur le bleu. Gris clair CGA à la place. */
+.drop-zone, .scan-reasons, .info-hint { color: var(--dos-gray); }
+/* Le « ? » est un rond de champ : au survol/focus, style.css passe son cadre
+   à --border-control, noir -- invisible sur le rond noir du HC. */
+.info-hint:hover, .info-hint:focus { border-color: var(--border-field); }
+/* Bandeau de suggestion (espace disque…) : fond bleu teinté d'ambre, où
+   l'encre noire des dialogues tombait à 1,8:1. Encre blanche du panneau. */
+.suggestion-banner { color: var(--dos-white); }
+/* Les listes sont des panneaux BLEUS a encre blanche : le texte secondaire
+   partage (melange de l'encre noire des fenetres) y devenait bleu-noir. */
+.listbox .empty-note { color: var(--dos-gray); }
+
+/* Texte indicatif en gris CGA 7 (valeur littérale : le HC remappe --dos-gray
+   au blanc) ; à 72 % de l'encre jaune il se confondait avec une saisie. */
+input::placeholder, textarea::placeholder { color: #A8A8A8; }
+
+/* Infobulle : la BARRE JAUNE à encre noire cernée de noir (STYLE.md §9,
+   .tooltip du spécimen) -- style.css la peint aux couleurs de la fenêtre.
+   Ici la paire est sûre dans les deux modes : jaune/noir 19:1, et en HC
+   --tooltip-bg passe au blanc (21:1). */
+.info-tooltip-bubble {
+  background: var(--surface-tooltip);
+  color: var(--dos-black);
+  border-color: var(--dos-black);
 }

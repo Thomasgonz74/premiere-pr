@@ -43,7 +43,8 @@
   --text-primary:     var(--mp-ink);
   --text-soft:        var(--mp-soft);
   --text-disabled:    var(--mp-disabled);
-  --text-inverse:     var(--mp-white);   /* texte clair sur plein fonce (danger, badge d'encre) */
+  --text-inverse:     #FFFFFF;   /* texte clair sur plein fonce (danger, badge d'encre) -- litteral :
+                                    --mp-white devient nuit (#28241F) en sombre */
 
   --title-active-text:   var(--text-primary);   /* pas de barre de titre coloree : encre sur creme */
   --title-inactive-text: var(--mp-disabled);
@@ -158,6 +159,8 @@
      ======================================================== */
   --focus-ring: 2px dashed var(--mp-ink);   /* offset 3, natif Memphis */
   --focus-outline: var(--focus-ring);       /* alias generique exige par l'app */
+  /* Chevron des selects : SVG fige, donc tokenise pour suivre l'encre par mode */
+  --mp-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23141414' stroke-width='2'/%3E%3C/svg%3E");
   --cursor-interactive: var(--cursor-default);   /* flèche, pas de main (hors hyperliens) */
   --transition-state: .14s ease;
   --transition: var(--transition-state);    /* alias generique exige par l'app */
@@ -242,6 +245,8 @@
   --mp-disabled: #6E675E;
   --selection-text: #141414;   /* l'encre du jour reste sur le jaune */
   --squiggle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='14'%3E%3Cpath d='M0 7q3.2-6 6.5 0t6.5 0 6.5 0 6.5 0' fill='none' stroke='%23F4EDDD' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+  /* chevron de select a la craie (l'encre #141414 tombait a 1.2:1 sur la nuit) */
+  --mp-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23F4EDDD' stroke-width='2'/%3E%3C/svg%3E");
 
   /* icônes surchargées pour le fond sombre (mêmes tracés, encre -> craie ;
      dépaquetées du même bug d'enveloppe url() en trop que ci-dessus) */
@@ -456,7 +461,7 @@ button:disabled {
   transform: translate(4px, 4px);
   box-shadow: none;
   background: var(--mp-pink-dk);
-  color: var(--mp-white);
+  color: var(--text-inverse);   /* blanc fixe : --mp-white vaut la nuit en sombre (3.2:1) */
 }
 
 /* Actions de ligne : même doctrine, ombre réduite à l'échelle du contrôle */
@@ -510,7 +515,7 @@ input:disabled, textarea:disabled {
 }
 select {
   appearance: none; -webkit-appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23141414' stroke-width='2'/%3E%3C/svg%3E");
+  background-image: var(--mp-chevron);
   background-repeat: no-repeat;
   background-position: right 10px center;
   padding-right: 28px;
@@ -533,7 +538,7 @@ input[type="checkbox"]:checked::after {
   content: "";
   position: absolute; left: 4px; top: 1px;
   width: 5px; height: 9px;
-  border: solid var(--mp-ink);
+  border: solid var(--selection-text);   /* encre du jour sur le jaune, meme en sombre (craie = 1.2:1) */
   border-width: 0 2.5px 2.5px 0;
   transform: rotate(40deg);
 }
@@ -577,6 +582,9 @@ input[type="checkbox"]:disabled { border-color: var(--mp-disabled); }
   font-size: .82em;
 }
 .row-rate, .row-eta, .row-category, .row-peers { color: var(--text-soft); }
+/* la plaque d'etat garde son propre fond (--mp-white) : son encre ne suit pas
+   l'encre de selection (#141414 sur nuit = illisible en sombre) */
+#downloadsList .row.selected .row-state { color: var(--text-primary); }
 .scan-path { color: var(--text-primary); }
 .scan-size { color: var(--text-soft); }
 

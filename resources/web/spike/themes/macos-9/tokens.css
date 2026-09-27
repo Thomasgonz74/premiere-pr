@@ -34,7 +34,14 @@
 
   --tooltip-bg: #FFFFC6;    /* bulles d'aide jaunes */
   --tooltip-border: #000000;
+  --tooltip-ink: #000000;   /* encre des bulles (components.html .tooltip) : noire dans tous les modes */
   --desktop: #7A93B8;       /* aplat bureau */
+
+  /* Matières des vues creuses, figées en hex dans le specimen (#B9B9B9,
+     #CCCCCC/#AFAFAF) : tokenisées pour que le bloc sombre puisse les suivre. */
+  --os9-field-inset: #B9B9B9;        /* ombre interne haute des champs/listes */
+  --os9-scroll-track: #CCCCCC;       /* gouttière d'ascenseur */
+  --os9-scroll-track-edge: #AFAFAF;
 
   --menu-ink: #FFFFFF;
   --link: #8B9CE8;
@@ -284,6 +291,29 @@
 }
 /* HC:END */
 
+/* Correctifs de lisibilité du mode sombre (étape B), hors des marqueurs
+   DARK:BEGIN/END pour ne pas altérer la copie de la charte :
+   - --os9-frame : le trait #0E1013 plafonne à 1.83:1 sur le platine nocturne
+     #3C4048 (même le noir pur n'y dépasse pas 2:1) ; bordures de contrôles,
+     pointillés de dépôt, anneau du bouton par défaut et gadgets de titre
+     étaient quasi invisibles. Le trait reste UNIQUE (STYLE.md §2) mais passe
+     en graphite clair : 3.3:1 sur la fenêtre, 4.8:1 sur les vues.
+   - --os9-line : hairline 1.3:1 → 2.3:1 (fenêtre) / 3.3:1 (vues), toujours
+     plus discret que le trait.
+   - --menu-hl : la charte veut une bande de menu à TEXTE BLANC (§3, §7) ;
+     sur #8B9CE8 le blanc tombe à 2.6:1, on garde donc le bleu canonique
+     #4062C8 (5.5:1).
+   - gouttière d'ascenseur et ombre interne des champs : les gris clairs du
+     specimen passent au graphite. */
+[data-theme="dark"] {
+  --os9-frame: #8A929E;
+  --os9-line: #6E7684;
+  --menu-hl: #4062C8;
+  --os9-field-inset: var(--os9-bevel-dark);
+  --os9-scroll-track: #2A2E35;
+  --os9-scroll-track-edge: var(--os9-bevel-dark);
+}
+
 
 
 /* --- Base recommandée (à copier dans l'app) ------------------------------ */
@@ -419,6 +449,19 @@ input[type=text], textarea { cursor: var(--cursor-text); }
   border-bottom-color: var(--os9-face-hi);
   box-shadow: inset 1px 1px 0 var(--os9-bevel-light);
   font-weight: 400;
+  /* La fusion : l'onglet actif descend d'1 px sur le trait bas de la barre
+     et l'efface (sans cela le trait passait dessous et rien ne fusionnait) ;
+     la marge négative garde la hauteur de la barre inchangée. */
+  height: 23px;
+  margin-bottom: -1px;
+  position: relative;
+  z-index: 1;
+}
+/* Contraste élevé : platine = plateau = blanc et biseaux = noir, l'actif ne
+   se distinguait plus que par 1 px de biseau. En plus de la fusion, il porte
+   le relief HC (un trait noir) en haut : 3 px au lieu de 1 — pas de gras. */
+[data-theme="hc"] .tab-btn.active {
+  box-shadow: inset 0 2px 0 var(--os9-frame);
 }
 
 /* ---------- Boutons : plateau + trait noir + biseau fin, radius 5px --
@@ -502,7 +545,7 @@ input[type="text"], input[type="number"], textarea, .search-input {
   background: var(--os9-view);
   border: 1px solid var(--os9-frame);
   border-radius: 0;
-  box-shadow: inset 1px 1px 0 #B9B9B9;
+  box-shadow: inset 1px 1px 0 var(--os9-field-inset);
   font: inherit;
   color: var(--text-primary);
   height: var(--control-height);
@@ -520,7 +563,7 @@ input[type="text"]:not(:disabled), textarea:not(:disabled) { cursor: var(--curso
 input[type="text"]:focus, textarea:focus, select:focus {
   outline: none;
   border-color: var(--os9-lav-dk);
-  box-shadow: inset 1px 1px 0 #B9B9B9, 0 0 0 1px var(--os9-lav-dk);
+  box-shadow: inset 1px 1px 0 var(--os9-field-inset), 0 0 0 1px var(--os9-lav-dk);
 }
 input:disabled, textarea:disabled {
   background: #F0F0F0;
@@ -551,7 +594,7 @@ input[type="checkbox"] {
   height: var(--checkbox-size);
   border: 1px solid var(--os9-frame);
   border-radius: 2px;
-  background: #fff;
+  background: var(--os9-view);   /* blanc en clair/HC, vue graphite en sombre */
   box-shadow: var(--bevel-out);
   display: inline-grid;
   place-content: center;
@@ -577,16 +620,17 @@ input[type="checkbox"]:disabled {
   background: var(--os9-view);
   border: 1px solid var(--os9-frame);
   border-radius: 0;
-  box-shadow: inset 1px 1px 0 #B9B9B9;
+  box-shadow: inset 1px 1px 0 var(--os9-field-inset);
   padding: 0;
 }
 .row { border-bottom: 1px solid var(--os9-line); }
 .row-state {
   justify-self: start;
-  padding: 1px 8px;
+  max-width: 100%;   /* le badge tient dans sa piste au lieu de mordre sur Catégorie */
+  padding: 1px 5px;
   background: var(--os9-view);
   border: 1px solid var(--os9-line);
-  box-shadow: inset 1px 1px 0 #B9B9B9;
+  box-shadow: inset 1px 1px 0 var(--os9-field-inset);
   color: var(--os9-ink);
 }
 .downloads-row-header {
@@ -660,7 +704,7 @@ input[type="checkbox"]:disabled {
 /* ---------- Ascenseur : gouttiere grise, pouce lavande strie, fleches
    noires -- porte tel quel du specimen ---------- */
 ::-webkit-scrollbar { width: var(--scrollbar-size); height: var(--scrollbar-size); }
-::-webkit-scrollbar-track { background: #CCCCCC; box-shadow: inset 1px 1px 0 #AFAFAF; }
+::-webkit-scrollbar-track { background: var(--os9-scroll-track); box-shadow: inset 1px 1px 0 var(--os9-scroll-track-edge); }
 ::-webkit-scrollbar-thumb {
   background: var(--thumb-lav);
   border: 1px solid var(--os9-frame);
@@ -687,7 +731,7 @@ canvas.tetris {
   border: 1px solid var(--os9-frame);
   border-radius: 0;
   background: var(--os9-view);
-  box-shadow: inset 1px 1px 0 #B9B9B9;
+  box-shadow: inset 1px 1px 0 var(--os9-field-inset);
 }
 
 /* ---------- Correctif contraste sombre : la fleche du select et les fleches
@@ -704,4 +748,45 @@ canvas.tetris {
 }
 [data-theme="dark"] ::-webkit-scrollbar-button:vertical:increment {
   background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='6'%3E%3Cpath d='M4.5 6L0 0H9Z' fill='%23D8DEF2'/%3E%3C/svg%3E") center/9px 6px no-repeat, var(--os9-face);
+}
+/* La coche est un SVG a encre noire figee : sur la case devenue graphite
+   (--os9-view) en sombre, meme encre claire que la fleche ci-dessus. */
+[data-theme="dark"] input[type="checkbox"]:checked::after {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10'%3E%3Cpath d='M1.5 5.5l2.6 2.6L8.5 2' fill='none' stroke='%23D8DEF2' stroke-width='2'/%3E%3C/svg%3E");
+}
+
+/* ---------- Bulle d'aide : JAUNE cernee, carree, encre noire (STYLE.md §3,
+   §9 ; components.html .tooltip) -- style.css la peint aux couleurs de la
+   fenetre ; ici la paire fond/encre est complete dans les trois modes
+   (--tooltip-ink n'est jamais surcharge). ---------- */
+.info-tooltip-bubble {
+  background: var(--surface-tooltip);
+  border: 1px solid var(--tooltip-border);
+  border-radius: 0;
+  color: var(--tooltip-ink);
+}
+
+/* ---------- Curseur de valeur (volume) : poignee lavande striee sur piste
+   creusee, sans remplissage (components.html P2 .sl-track/.sl-thumb) ---------- */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: var(--control-height);
+  background: transparent;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 6px;
+  background: var(--os9-view);
+  box-shadow: var(--bevel-in);
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  box-sizing: border-box;
+  width: 14px;
+  height: 22px;
+  margin-top: -8px;
+  background: var(--thumb-lav);
+  border: 1px solid var(--os9-frame);
+  border-radius: 0;
+  box-shadow: var(--bevel-out);
 }

@@ -19,13 +19,30 @@
   --fa-sky:      #EAF6FD;   /* la fenetre (ciel voile) */
   --fa-white:    #FFFFFF;
   --fa-ink:      #17364A;   /* texte bleu nuit doux */
-  --fa-soft:     #5A7A8E;
+  /* Douce de la charte (#5A7A8E) approfondie d'un cran dans la même
+     famille bleu nuit : à 4.56:1 sur blanc, elle tombait à 4.1-4.3 sur les
+     lignes teintées santé (rose/jaune) et sur le ciel. #4E6E82 : 5.4 sur
+     blanc, 4.9 sur ciel et sur les teintes santé. */
+  --fa-soft:     #4E6E82;
   --fa-line:     #B9D9EC;   /* filets d'eau */
+  /* Filet des contrôles À SAISIR ou À COCHER (champs, select, cases,
+     radios, pouce de défilement) : le filet d'eau pâle (1.5:1) y rendait
+     les cases vides et les champs invisibles. Même eau, plus profonde :
+     3.7 sur blanc, 3.4 sur ciel (≥ 3:1 exigé pour un contour de contrôle).
+     Les plaques, listes et menus gardent --fa-line, pâle (doctrine §3). */
+  --fa-line-ctl: #5F8AA8;
   --fa-disabled: #9DB6C4;
   --fa-desktop:  #7EC8F2;   /* stop du haut de --fa-aurora, pour un fond bureau uni */
 
   --fa-blue:      #4FC3F7;  /* bleu d'aquarium */
-  --fa-blue-deep: #1B7FD4;  /* bleu profond (selection, liens) */
+  /* Bleu profond (selection, liens, legendes) : #1B7FD4 de la charte
+     approfondi dans la même famille -- le blanc de sélection n'y tenait
+     qu'à 4.17:1 et les légendes 12.5 px à 3.8 sur le ciel. #1669B3 :
+     blanc 5.7, légende 5.2 sur ciel. */
+  --fa-blue-deep: #1669B3;
+  /* Aquarium approfondi pour l'anneau de focus : #4FC3F7 ne faisait que
+     1.8:1 sur le ciel. Même teinte cyan, 3.7 sur ciel, 4.05 sur blanc. */
+  --fa-blue-ring: #0F86C0;
   --fa-green:     #7CB93E;  /* vert prairie */
   --fa-green-deep:#4E8F1F;  /* vert profond (defaut presse) */
   --fa-red:       #E85D5D;
@@ -42,6 +59,14 @@
   --fa-thumb: linear-gradient(180deg,rgba(255,255,255,.9),rgba(214,238,250,.9));
   --fa-thumb-flat: #9CD1EE;
   --fa-toggle-track: linear-gradient(180deg,#DDEBF4,#CFE3F0);
+  /* Matière des capsules VERTES qui portent du blanc (bouton par défaut,
+     case cochée) : la sève part du vert profond au lieu du vert prairie --
+     le blanc y tient (4.0 → 6.0:1 au lieu de 2.4 → 4.0) et la goutte
+     --gloss, intacte par-dessus, rend le prairie à la moitié haute. La
+     jauge (sans texte) garde prairie → profond. */
+  --fa-green-matter: linear-gradient(180deg, var(--fa-green-deep), #3A7014);
+  /* Chevron du select, par mode (bleu profond de la charte en clair). */
+  --fa-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%231B7FD4' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E");
   --tooltip-bg: #FFFFFF;
   --tooltip-fg: var(--fa-ink);
 
@@ -72,10 +97,12 @@
   /* Generic aliases consumed by resources/web/spike/*.css -- every theme
      must define these. Frutiger n'a qu'UN seul concept de bordure ("filet
      d'eau", --fa-line) partage par tous les controles au repos -- pas de
-     jeu de gris distincts comme Luna -- donc les cinq alias pointent tous
-     vers la meme primitive, fidele a la doctrine "rien n'est gris". */
+     jeu de gris distincts comme Luna -- donc les alias pointent vers la
+     meme primitive, fidele a la doctrine "rien n'est gris". Seule
+     exception : --border-field (champs, cases, zone de dépôt) prend l'eau
+     profonde --fa-line-ctl, un contour de champ devant tenir 3:1. */
   --border-control:  var(--fa-line);
-  --border-field:    var(--fa-line);
+  --border-field:    var(--fa-line-ctl);
   --border-group:    var(--fa-line);
   --border-progress: var(--fa-line);
   --border-tab:      var(--fa-line);
@@ -174,7 +201,7 @@
      ======================================================== */
   --transition-state: .16s ease;
   --transition: var(--transition-state);
-  --focus-ring: 2px solid var(--fa-blue);
+  --focus-ring: 2px solid var(--fa-blue-ring);
   --focus-outline: var(--focus-ring);
   --cursor-interactive: var(--cursor-default);
 
@@ -255,6 +282,13 @@
   --fa-ink: #DCEFF8;
   --fa-soft: #9FC2D4;
   --fa-line: #2E5468;
+  --fa-line-ctl: #5E93B0;          /* contour des champs/cases : 3.8 sur la plaque, 4.5 sur la nuit */
+  --fa-blue-ring: var(--fa-blue);  /* l'aquarium pur tient sur la nuit (7.6) */
+  /* Légendes et en-têtes : le bleu profond (#1669B3) n'est qu'à 2.2:1 sur
+     la plaque de nuit -- l'aquarium, lumière de l'aquarium de nuit, y
+     tient à 6.3 (4.7 sous le reflet de l'en-tête). */
+  --text-legend: var(--fa-blue);
+  --fa-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%237ED4FA' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E");
   --fa-disabled: #547082;
   --fa-desktop: #0A1A28;           /* stop du haut de --fa-aurora en nuit */
   --fa-aurora: linear-gradient(180deg, #0A1A28 0%, #10303E 55%, #1E3A20 100%);
@@ -309,7 +343,14 @@
   --fa-red-deep: #8E2424;    /* 7.8 sous blanc */
   --fa-disabled: #5A7A8E;    /* l'ancienne douce */
   --fa-line: #8FB4CC;        /* filets d'eau plus fermes */
+  --fa-line-ctl: #46708C;    /* contours de champs/cases francs : 5.3 sur blanc */
+  /* Pas de dégradé derrière le blanc des capsules vertes : sève plate. */
+  --fa-green-matter: linear-gradient(var(--fa-green-deep), var(--fa-green-deep));
   --text-soft: #33495A;
+  /* Notes, lignes d'état, zone de dépôt : la couleur secondaire dérivée
+     par style.css (encre à 78 %) n'atteignait que 5.8-6.4:1 ; la douce
+     approfondie du contraste élevé tient l'AAA (7.6 sur le ciel). */
+  --text-secondary: var(--text-soft);
   --text-disabled: #5A7A8E;
   --p2-red-deep: #8E2424;
 
@@ -404,13 +445,17 @@ input[type=text], textarea { cursor: var(--cursor-text); }
   border: none;
   border-radius: 999px;
   padding: 5px 16px;
-  color: var(--text-soft);
+  /* Encre, pas la douce du spécimen : dans l'appli la piste d'eau (rgba
+     .38, translucide -- à garder) ne flotte pas sur le ciel mais sur le
+     BUREAU visible à travers la fenêtre ; la douce y tombait à 1.7:1, l'encre
+     bleu nuit tient 4.8 même sur un fond gris moyen. */
+  color: var(--text-primary);
   font-weight: 400;
 }
 .tab-btn:hover:not(.active) {
   filter: none;
   background: none;
-  color: var(--fa-blue-deep);
+  color: var(--text-legend);
 }
 .tab-btn.active {
   background: var(--gloss), var(--fa-white);
@@ -455,13 +500,22 @@ button:disabled {
 }
 
 /* Le défaut est VERT prairie glossy (doctrine §7/§10.5) -- jamais bleu. */
+/* La goutte reste entière (signature §2) ; le blanc tient grâce à la sève
+   profonde (--fa-green-matter) et à un halo vert nuit autour des lettres,
+   qui les détache de la moitié haute blanchie par le reflet. */
 .start-btn {
-  background: var(--gloss), linear-gradient(180deg, var(--fa-green), var(--fa-green-deep));
+  background: var(--gloss), var(--fa-green-matter);
   border: 1px solid var(--fa-green-deep);
   border-radius: var(--radius-control);
   padding: 0 24px;
   color: var(--text-inverse);
-  text-shadow: 0 1px 1px rgba(0, 0, 0, .18);
+  text-shadow: 0 1px 1px rgba(22, 58, 6, .6), 0 0 3px rgba(22, 58, 6, .55);
+}
+/* Contraste élevé (AAA) : la goutte se retire au-dessus des lettres
+   (arrêt à 26 % au lieu de 52 %) -- elle décore encore la capsule mais ne
+   passe plus derrière le blanc, posé sur la sève plate (8.5:1). */
+[data-theme="hc"] .start-btn {
+  background: linear-gradient(180deg, rgba(255,255,255,.75) 0%, rgba(255,255,255,.2) 22%, rgba(255,255,255,0) 26%), var(--fa-green-matter);
 }
 .start-btn:not(:disabled):hover {
   border-color: var(--fa-green-deep);
@@ -489,7 +543,7 @@ textarea,
   height: var(--control-height);
   padding: 0 12px;
   background: var(--fa-white);
-  border: 1px solid var(--fa-line);
+  border: 1px solid var(--border-field);
   border-radius: var(--radius-field);
   color: var(--text-primary);
   font: 400 13.5px var(--font-ui);
@@ -523,10 +577,10 @@ select {
   height: var(--control-height);
   padding: 0 30px 0 12px;
   background-color: var(--fa-white);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%231B7FD4' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-image: var(--fa-chevron);
   background-repeat: no-repeat;
   background-position: right 11px center;
-  border: 1px solid var(--fa-line);
+  border: 1px solid var(--border-field);
   border-radius: var(--radius-control);
   color: var(--text-primary);
   font: 400 13.5px var(--font-ui);
@@ -547,7 +601,7 @@ input[type="radio"] {
   width: var(--checkbox-size);
   height: var(--checkbox-size);
   background: var(--fa-face);
-  border: 1px solid var(--fa-line);
+  border: 1px solid var(--border-field);
   border-radius: 5px;
   margin: 0 6px 0 0;
   position: relative;
@@ -560,7 +614,7 @@ input[type="radio"]:not(:disabled):hover {
   border-color: var(--fa-blue);
 }
 input[type="checkbox"]:checked {
-  background: var(--gloss), linear-gradient(180deg, var(--fa-green), var(--fa-green-deep));
+  background: var(--gloss), var(--fa-green-matter);
   border-color: var(--fa-green-deep);
 }
 input[type="checkbox"]:checked::after {
@@ -618,7 +672,7 @@ input[type="radio"]:disabled {
 
 .downloads-row-header {
   background: var(--gloss-soft), var(--surface-window);
-  color: var(--fa-blue-deep);
+  color: var(--text-legend);
   font-weight: 600;
   border-bottom: 1px solid var(--fa-line);
   border-radius: 10px 10px 0 0;
@@ -638,7 +692,7 @@ input[type="radio"]:disabled {
 }
 .profile-group h3,
 .details-group h3 {
-  color: var(--fa-blue-deep);
+  color: var(--text-legend);
   font-weight: 600;
   font-size: 12.5px;
 }
@@ -688,7 +742,7 @@ input[type="radio"]:disabled {
 }
 ::-webkit-scrollbar-thumb {
   background: var(--fa-thumb);
-  border: 1px solid var(--fa-line);
+  border: 1px solid var(--border-field);
   border-radius: 999px;
   background-clip: padding-box;
 }

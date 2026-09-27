@@ -6,8 +6,9 @@ QWebEngineView (same QT_QPA_PLATFORM=offscreen convention as the rest of the
 test suite -- see tests/test_theme_cursor.py etc.), then for each theme calls
 the app's own setActiveTheme() JS (theme_switcher.js swaps the
 #themeTokensLink <link> href live, no reload -- see spike_window.py /
-theme_switcher.js), grabs a full-window screenshot, and compares it to a
-reference PNG stored at tests/fixtures/theme_snapshots/<theme_id>.png.
+theme_switcher.js), grabs a full-window screenshot in each appearance mode,
+and compares it to a reference PNG stored at
+tests/fixtures/theme_snapshots/<theme_id>[__dark|__dark_hc].png.
 
 The diff is a generous, sampled mean per-channel color difference -- not a
 strict pixel-for-pixel diff -- because antialiasing/sub-pixel rendering
@@ -24,6 +25,13 @@ from __future__ import annotations
 import os
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+# The offscreen platform gives the QQuickWidget inside QWebEngineView no RHI
+# surface, so grab() only ever returned the widget's own background: every
+# reference PNG was a blank white 980x640 and the test compared nothing. The
+# software scene graph renders Chromium's frames into the widget, so grab()
+# sees the real page. Set at import (collection runs before any test creates
+# the first Qt Quick scene).
+os.environ.setdefault("QT_QUICK_BACKEND", "software")
 
 from pathlib import Path
 
@@ -35,6 +43,8 @@ from PySide6.QtTest import QTest
 from PySide6.QtWebEngineWidgets import QWebEngineView
 from PySide6.QtWidgets import QApplication
 
+from theme_probe import NO_MOTION_JS, run_js, set_mode, set_theme
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 THEMES_DIR = REPO_ROOT / "resources" / "web" / "spike" / "themes"
 INDEX_HTML = REPO_ROOT / "resources" / "web" / "spike" / "index.html"
@@ -42,11 +52,10 @@ SNAPSHOTS_DIR = REPO_ROOT / "tests" / "fixtures" / "theme_snapshots"
 
 VIEW_SIZE = (980, 640)  # matches SpikeWindow's default resize()
 
-# Established this session: grabbing right after runJavaScript(setActiveTheme)
-# races Chromium's own repaint (the <link> href swap is applied async) and
-# produces flaky false diffs -- a fixed settle delay after every theme switch
-# avoids that, at the cost of ~34s total for the full parametrized run.
-THEME_SWITCH_SETTLE_MS = 1000
+# Grabbing right after setActiveTheme() races the async <link> swap, and
+# grabbing mid-transition reads in-between colours: set_theme()/set_mode()
+# (theme_probe.py) wait for the sheet's load event and two painted frames,
+# and CSS transitions/animations are switched off for the test page.
 LOAD_TIMEOUT_MS = 10_000
 
 # Generous on purpose (2-3% suggested by the task) -- catches a theme that's
@@ -93,6 +102,7 @@ def view(app):
     assert state["done"] and state["ok"], (
         f"index.html failed to load in the offscreen QWebEngineView within {LOAD_TIMEOUT_MS}ms"
     )
+    assert run_js(v, NO_MOTION_JS) == "ok"
 
     yield v
 
@@ -132,35 +142,46 @@ def _mean_diff_fraction(img_a: QImage, img_b: QImage) -> float:
     return (total / count) / 255.0 if count else 0.0
 
 
+# Dark and high-contrast modes are where most theme defects hid (swallowed
+# dark blocks, light-on-light fields), so each theme is checked in all three.
+# Light keeps its historical reference name.
+MODES = (("light", ""), ("dark", "__dark"), ("dark_hc", "__dark_hc"))
+# Once Chromium has painted (set_mode waits two frames), one event-loop
+# turn more for the frame to reach the widget that grab() reads.
+GRAB_DELAY_MS = 60
+
+
 @pytest.mark.parametrize("theme_id", _theme_ids())
 def test_theme_visual_regression(view: QWebEngineView, theme_id: str) -> None:
-    view.page().runJavaScript(f"setActiveTheme({theme_id!r});")
-    QTest.qWait(THEME_SWITCH_SETTLE_MS)
-
-    rendered = view.grab().toImage().convertToFormat(QImage.Format_RGB888)
-    assert not rendered.isNull(), f"grab() produced an empty image for theme '{theme_id}'"
-
+    set_theme(view, theme_id)
     SNAPSHOTS_DIR.mkdir(parents=True, exist_ok=True)
-    ref_path = SNAPSHOTS_DIR / f"{theme_id}.png"
-
-    if not ref_path.is_file():
-        assert rendered.save(str(ref_path), "PNG"), f"failed to write new reference {ref_path}"
-        print(
-            f"\n[test_theme_visual_regression] No reference snapshot existed for "
-            f"theme '{theme_id}' -- created {ref_path}. Re-run the test suite once "
-            "to actually verify future renders against it."
-        )
-        return
-
-    reference = QImage(str(ref_path)).convertToFormat(QImage.Format_RGB888)
-    assert not reference.isNull(), f"reference image {ref_path} exists but failed to load"
-
-    diff = _mean_diff_fraction(rendered, reference)
-    assert diff <= MAX_MEAN_DIFF_FRACTION, (
-        f"theme '{theme_id}': visual regression detected -- {diff:.4f} mean "
-        f"per-channel diff exceeds tolerance {MAX_MEAN_DIFF_FRACTION} against {ref_path} "
-        "(delete the reference to intentionally re-baseline)"
-    )
+    problems = []
+    try:
+        for mode, suffix in MODES:
+            set_mode(view, mode)
+            QTest.qWait(GRAB_DELAY_MS)
+            rendered = view.grab().toImage().convertToFormat(QImage.Format_RGB888)
+            assert not rendered.isNull(), f"grab() produced an empty image for theme '{theme_id}' ({mode})"
+            ref_path = SNAPSHOTS_DIR / f"{theme_id}{suffix}.png"
+            if not ref_path.is_file():
+                assert rendered.save(str(ref_path), "PNG"), f"failed to write new reference {ref_path}"
+                print(
+                    f"\n[test_theme_visual_regression] No reference snapshot existed for "
+                    f"theme '{theme_id}' ({mode}) -- created {ref_path}. Re-run the test suite once "
+                    "to actually verify future renders against it."
+                )
+                continue
+            reference = QImage(str(ref_path)).convertToFormat(QImage.Format_RGB888)
+            assert not reference.isNull(), f"reference image {ref_path} exists but failed to load"
+            diff = _mean_diff_fraction(rendered, reference)
+            if diff > MAX_MEAN_DIFF_FRACTION:
+                problems.append(
+                    f"{mode}: {diff:.4f} mean per-channel diff exceeds tolerance {MAX_MEAN_DIFF_FRACTION} "
+                    f"against {ref_path} (delete the reference to intentionally re-baseline)"
+                )
+    finally:
+        set_mode(view, "light")
+    assert not problems, f"theme '{theme_id}': visual regression detected --\n  " + "\n  ".join(problems)
 
 
 def test_theme_dirs_found():

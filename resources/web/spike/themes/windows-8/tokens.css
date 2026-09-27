@@ -18,14 +18,17 @@
   --mt-white: #FFFFFF;
   --mt-ink:   #171717;
   --mt-ink-soft: #6D6D6D;
-  --mt-ink-faint: #8A8A8A;      /* pivots inactifs */
+  --mt-ink-faint: #767676;      /* pivots inactifs — #8A8A8A du charter (3,4:1)
+                                   assombri dans la même famille : 4,5:1 */
   --mt-ink-disabled: #9E9E9E;
   --mt-gray-line:  #7A7A7A;     /* bordure des champs au repos */
   --mt-gray-soft:  #E6E6E6;     /* piste de jauge, désactivé */
   --mt-gray-hover: #E5E5E5;     /* survol des captions */
 
   /* L'ACCENT — bleu du Démarrer 8.1 */
-  --accent:         #2672EC;
+  /* #2672EC du charter assombri d'un cran imperceptible : le texte blanc
+     posé dessus (sélection, primaire, appui) passe de 4,47 à 4,51:1. */
+  --accent:         #2571EC;
   --accent-hover:   #4383EE;
   --accent-pressed: #1D5CC8;
 
@@ -51,6 +54,12 @@
   --tooltip-bg: #FFFFFF;
   --tooltip-border: #767676;
   --tooltip-fg: var(--mt-ink);
+  /* Défilement (§9) : valeurs du charter, redéfinies en dark/hc */
+  --scroll-track: #F2F2F2;
+  --scroll-thumb: #CDCDCD;
+  --scroll-thumb-hover: #A6A6A6;
+  --scroll-arrow-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='6'%3E%3Cpath d='M4.5 0L9 6H0Z' fill='%23606060'/%3E%3C/svg%3E");
+  --scroll-arrow-down: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='6'%3E%3Cpath d='M4.5 6L0 0H9Z' fill='%23606060'/%3E%3C/svg%3E");
 
   /* Alias de contrat manquants dans le charter d'origine : Metro n'a
      qu'UNE seule surface (tout est blanc, style plat, pas de "panneau"
@@ -227,24 +236,34 @@
 }
 
 /* DARK:BEGIN — thème sombre (phase 3). L'encre et le blanc s'ÉCHANGENT ;
-   toutes les propriétés "extras" ci-dessus référencent --mt-*/--accent/
-   --shadow-window en var(), elles se re-résolvent donc seules ici — pas
-   besoin de les répéter (même logique que luna_xp §2). */
+   toutes les propriétés "extras" ci-dessus référencent les primitives
+   --mt-(…), --accent et --shadow-window en var(), elles se re-résolvent
+   donc seules ici — pas besoin de les répéter (même logique que luna_xp §2). */
 [data-theme="dark"] {
   --mt-white: #1A1A1A;            /* le fond prend l'encre */
   --mt-ink: #FFFFFF;
   --mt-ink-soft: rgba(255,255,255,.62);
-  --mt-ink-faint: rgba(255,255,255,.45);
+  --mt-ink-faint: rgba(255,255,255,.5);   /* .45 du charter : 4,5:1 sur #1A1A1A */
   --mt-ink-disabled: rgba(255,255,255,.32);
   --mt-gray-line: #3A3A3A;
   --mt-gray-soft: #2E2E2E;
   --mt-gray-hover: #333333;
+  /* Bordure des champs et de la jauge : #3A3A3A (1,5:1) ne les dessinait
+     plus sur #1A1A1A ; même gris qu'en clair (4:1). Les filets de liste
+     gardent --mt-gray-line. */
+  --border-field: #7A7A7A;
+  --border-progress: #7A7A7A;
   --desktop: #101010;
   --surface-window: #1A1A1A;
   --window-border: #4A4A4A;
   --window-border-inactive: #303030;
   --tooltip-bg: #FFFFFF; --tooltip-fg: #1A1A1A; --tooltip-border: #FFFFFF;
   --shadow-window: 0 10px 30px rgba(0,0,0,.7);
+  --scroll-track: #262626;
+  --scroll-thumb: #707070;
+  --scroll-thumb-hover: #8A8A8A;
+  --scroll-arrow-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='6'%3E%3Cpath d='M4.5 0L9 6H0Z' fill='%23C8C8C8'/%3E%3C/svg%3E");
+  --scroll-arrow-down: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='6'%3E%3Cpath d='M4.5 6L0 0H9Z' fill='%23C8C8C8'/%3E%3C/svg%3E");
   /* icônes surchargées pour le fond sombre */
   --icon-folder: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M2.6 5.6h6.6l2 2.5h10.2v10.7H2.6z' fill='%23FFFFFF'/%3E%3C/svg%3E");
   --icon-folder-open: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M2.6 5.6h6.6l2 2.5h6.4v2.5H2.6z' fill='%23FFFFFF'/%3E%3Cpolygon points='4.9,11.8 21.4,11.8 19.2,18.8 2.6,18.8' fill='%23FFFFFF'/%3E%3C/svg%3E");
@@ -287,6 +306,11 @@
   --desktop: #000000;
   --surface-window: #000000;
   --shadow-window: 0 0 0 2px #FFEE32;
+  --scroll-track: #000000;
+  --scroll-thumb: #B8B8B8;
+  --scroll-thumb-hover: #FFFFFF;
+  --scroll-arrow-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='6'%3E%3Cpath d='M4.5 0L9 6H0Z' fill='%23FFFFFF'/%3E%3C/svg%3E");
+  --scroll-arrow-down: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='6'%3E%3Cpath d='M4.5 6L0 0H9Z' fill='%23FFFFFF'/%3E%3C/svg%3E");
   /* icônes en contraste élevé */
   --icon-folder: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M2.6 5.6h6.6l2 2.5h10.2v10.7H2.6z' fill='%23FFFFFF'/%3E%3C/svg%3E");
   --icon-folder-open: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M2.6 5.6h6.6l2 2.5h6.4v2.5H2.6z' fill='%23FFFFFF'/%3E%3Cpolygon points='4.9,11.8 21.4,11.8 19.2,18.8 2.6,18.8' fill='%23FFFFFF'/%3E%3C/svg%3E");
@@ -474,10 +498,13 @@ button:not(:disabled):hover {
   background: var(--mt-ink);
   color: var(--text-inverse);
 }
+/* Pleins accent : texte BLANC dans les trois modes (--selection-text).
+   --text-inverse suit --mt-white (#1A1A1A dark, #000 hc) : il ne sert
+   qu'à l'inversion sur fond --mt-ink. */
 button:not(:disabled):active {
   background: var(--accent);
   border-color: var(--accent);
-  color: var(--text-inverse);
+  color: var(--selection-text);
 }
 button:focus-visible {
   outline: var(--focus-ring);
@@ -494,7 +521,7 @@ button:disabled {
   background: var(--accent);
   border: 2px solid var(--accent);
   border-radius: var(--radius-control);
-  color: var(--text-inverse);
+  color: var(--selection-text);
   font-weight: 400;
   box-shadow: none;
 }
@@ -529,7 +556,14 @@ button:disabled {
 .row-actions button:active {
   background: var(--accent);
   border-color: var(--accent);
-  color: var(--text-inverse);
+  color: var(--selection-text);
+}
+/* Ligne survolée (fond --mt-ink) ou sélectionnée (fond accent) : les
+   boutons tracés en encre s'y fondaient — ils prennent l'encre de la ligne. */
+.row:hover .row-actions button:not(:hover):not(:active),
+#downloadsList .row.selected .row-actions button:not(:hover):not(:active) {
+  color: inherit;
+  border-color: currentColor;
 }
 
 /* ---------- 4. Champs (bordés 2px, plats — même hauteur que les boutons) */
@@ -599,8 +633,10 @@ input[type="checkbox"] {
   vertical-align: middle;
   transition: background var(--transition-state), border-color var(--transition-state);
 }
-input[type="checkbox"]:not(:disabled):hover {
-  background: #EDEDED;
+/* Survol gris sur la case VIDE seulement (la cochée garde son plein accent,
+   sinon la coche blanche disparaissait) ; gris qui suit le mode. */
+input[type="checkbox"]:not(:disabled):not(:checked):hover {
+  background: var(--mt-gray-hover);
 }
 input[type="checkbox"]:checked {
   background: var(--accent);
@@ -633,7 +669,10 @@ input[type="checkbox"]:disabled {
   transition: background var(--transition-state), color var(--transition-state);
 }
 .row:last-child, .scan-row:last-child { border-bottom: none; }
-.row:hover, .scan-row:hover {
+/* Les lignes de santé de style.css (#downloadsList .row[data-health]) gardaient
+   leur fond teinté sous le texte inversé : texte blanc sur teinte claire. */
+.row:hover, .scan-row:hover,
+#downloadsList .row[data-health]:not(.selected):hover {
   background: var(--mt-ink);
   color: var(--text-inverse);
 }
@@ -711,17 +750,17 @@ input[type="checkbox"]:disabled {
 
 /* ---------- 10. Défilement — pleine, carrée, flèches plates ------------ */
 ::-webkit-scrollbar { width: var(--scrollbar-size); height: var(--scrollbar-size); }
-::-webkit-scrollbar-track { background: #F2F2F2; }
-::-webkit-scrollbar-thumb { background: #CDCDCD; border: 0; }
-::-webkit-scrollbar-thumb:hover { background: #A6A6A6; }
-::-webkit-scrollbar-button { background: #F2F2F2; height: 14px; width: 14px; }
+::-webkit-scrollbar-track { background: var(--scroll-track); }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border: 0; }
+::-webkit-scrollbar-thumb:hover { background: var(--scroll-thumb-hover); }
+::-webkit-scrollbar-button { background: var(--scroll-track); height: 14px; width: 14px; }
 ::-webkit-scrollbar-button:vertical:decrement {
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='6'%3E%3Cpath d='M4.5 0L9 6H0Z' fill='%23606060'/%3E%3C/svg%3E") center/9px 6px no-repeat, #F2F2F2;
+  background: var(--scroll-arrow-up) center/9px 6px no-repeat, var(--scroll-track);
 }
 ::-webkit-scrollbar-button:vertical:increment {
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='6'%3E%3Cpath d='M4.5 6L0 0H9Z' fill='%23606060'/%3E%3C/svg%3E") center/9px 6px no-repeat, #F2F2F2;
+  background: var(--scroll-arrow-down) center/9px 6px no-repeat, var(--scroll-track);
 }
-::-webkit-scrollbar-corner { background: #F2F2F2; }
+::-webkit-scrollbar-corner { background: var(--scroll-track); }
 
 /* ---------- 11. Jauge de progression — 6px, piste grise, angles vifs --- */
 canvas.tetris {
@@ -730,3 +769,7 @@ canvas.tetris {
   background: var(--mt-gray-soft);
   box-shadow: none;
 }
+
+/* Erreur RSS en clair : le rouge orangé Metro (6,6:1 sur blanc), plus
+   reconnaissable que le mélange partagé tiré vers l'encre. */
+:root:not([data-theme]) { --status-danger-text: #A33B12; }

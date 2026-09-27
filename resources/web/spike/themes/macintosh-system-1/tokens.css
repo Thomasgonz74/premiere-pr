@@ -12,6 +12,10 @@
 
 :root {
 
+  /* Un bit : pas de gris. Les textes secondaires (notes, statuts) gardent
+     l'encre pleine plutôt que le mélange gris calculé par style.css. */
+  --text-secondary: var(--text-primary);
+
   /* ========================================================
      1. PRIMITIVES — un bit, deux couleurs
      ======================================================== */
@@ -59,6 +63,17 @@
   /* Recettes tokenisées */
   --stripes: repeating-linear-gradient(180deg, var(--s1-black) 0 1px, var(--s1-white) 1px 3px);
   --hatch-err: repeating-linear-gradient(45deg, var(--s1-black) 0 2px, var(--s1-white) 2px 6px);
+  /* Chevron des listes déroulantes : data-URI de couleur fixe, donc redéfini
+     dans le bloc sombre (sinon noir sur champ noir, invisible). */
+  --s1-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='%23000'/%3E%3C/svg%3E");
+  /* La mosaïque Tetris est peinte en vert Game Boy par tetris.js (couleurs
+     en dur). Interdit #1 : on la seuille en un bit -- cases vides blanches,
+     pièces posées ET pièce active noires (seuil entre #9BBC0F et #8BAC0F). */
+  --s1-tetris-filter: grayscale(1) brightness(.794) contrast(100);
+  --s1-tetris-edge: var(--s1-black);
+  /* Interdit #9 : pas de rouge d'erreur (lu par rss.css) -- l'encre reste
+     pleine, l'échec se marque par la graisse et le soulignement. */
+  --status-danger-text: var(--text-primary);
 
   /* ========================================================
      3. LA TRAME — la signature du style (pas de "plastique").
@@ -191,13 +206,22 @@
   --icon-refresh: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M18.9 13a7 7 0 1 1-1.8-6.3' fill='none' stroke='%23000000' stroke-width='1.6' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M19.4 3.6v4.9h-4.9' fill='none' stroke='%23000000' stroke-width='1.6' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
   /* ICONS:END */
 }
-/* DARK:BEGIN — thème sombre (phase 3) */
-[data-theme="dark"] {
+/* DARK:BEGIN — thème sombre (phase 3)
+   Le mode « Sombre (contraste élevé) » de l'app pose data-theme="hc" : il
+   reprend la même inversion vidéo (le 1-bit est déjà à 21:1) et le bloc HC
+   ci-dessous n'y ajoute que l'ombre et le pointillé épaissis. */
+[data-theme="dark"], [data-theme="hc"] {
   --s1-white: #000000;             /* l'inversion vidéo */
   --s1-black: #FFFFFF;
   --s1-desktop: #000000;
   --tooltip-bg: #000000;
   --tooltip-fg: #FFFFFF;
+  --s1-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='%23FFF'/%3E%3C/svg%3E");
+  /* seuil puis négatif : cases vides noires, pièces blanches. Le cadre du
+     canvas subit aussi le filtre : on le pose en encre « blanche » (noire
+     ici) pour que le négatif le rende blanc. */
+  --s1-tetris-filter: grayscale(1) brightness(.794) contrast(100) invert(1);
+  --s1-tetris-edge: var(--s1-white);
   --dither50: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='2' height='2'%3E%3Crect width='1' height='1' fill='%23FFF'/%3E%3Crect x='1' y='1' width='1' height='1' fill='%23FFF'/%3E%3C/svg%3E");
   --dither25: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Crect width='1' height='1' fill='%23FFF'/%3E%3Crect x='2' y='2' width='1' height='1' fill='%23FFF'/%3E%3C/svg%3E");
   /* icônes surchargées pour le fond sombre */
@@ -378,6 +402,7 @@ button:disabled {
   color: var(--text-primary);
   font-weight: 700;
   box-shadow: 0 0 0 2px var(--s1-white), 0 0 0 3.5px var(--s1-black);   /* bouton par DÉFAUT : le double cadre */
+  margin: 4px;   /* le halo est une ombre : réserve sa place, sinon il souligne la ligne ou le champ voisin */
 }
 .start-btn:hover { box-shadow: 0 0 0 2px var(--s1-white), 0 0 0 3.5px var(--s1-black); }   /* le halo reste, aucun survol ne l'efface */
 .start-btn:active { background: var(--s1-black); color: var(--s1-white); }
@@ -392,6 +417,15 @@ button:disabled {
   color: var(--text-primary);
 }
 .row-actions button:not(:disabled):hover { box-shadow: none; }
+/* Avis « action suggérée » des Téléchargements : style.css le teinte de
+   jaune (interdit #1) -- ici l'avis de la charte, blanc à double bordure
+   d'alerte ; son ✕ hérite sinon des 92 px de `button`. */
+.suggestion-banner {
+  background: var(--s1-white);
+  border: 2px solid var(--s1-black);
+  box-shadow: inset 0 0 0 1px var(--s1-white), inset 0 0 0 2px var(--s1-black);
+}
+.suggestion-banner-close { min-width: 0; height: auto; padding: 3px 10px; }
 .row-actions button:not(:disabled):active { background: var(--s1-black); color: var(--s1-white); }
 
 /* ---------- Champs : PLATS et CARRÉS, même quand les boutons sont
@@ -431,7 +465,7 @@ select {
   appearance: none;
   -webkit-appearance: none;
   padding-right: 26px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='%23000'/%3E%3C/svg%3E");
+  background-image: var(--s1-chevron);
   background-repeat: no-repeat;
   background-position: right 8px center;
 }
@@ -569,8 +603,50 @@ input[type="checkbox"]:disabled { background: var(--s1-white); background-image:
    blanche bordée de noir, angles vifs, sans ombre -- pas le vert Game Boy
    posé par défaut dans style.css ---------- */
 canvas.tetris {
-  border: 1px solid var(--s1-black);
+  border: 1px solid var(--s1-tetris-edge);
   border-radius: 0;
   background: var(--s1-white);
   box-shadow: none;
+  filter: var(--s1-tetris-filter);   /* vert Game Boy -> un bit (v. §1) */
 }
+/* Sur la ligne sélectionnée (inversion vidéo), le plateau s'inverse lui
+   aussi : cadre et pièces reprennent la couleur opposée à la surbrillance.
+   En sombre/HC les deux invert s'annulent (cadre et pièces noirs sur blanc). */
+#downloadsList .row.selected canvas.tetris { filter: var(--s1-tetris-filter) invert(1); }
+
+/* ---------- Badges de risque / réputation : les pastels de style.css
+   deviennent les badges de la charte (components.html §12) -- blanc bordé,
+   trame pour l'attention, inversion pour le danger, inversion ET
+   soulignement pour le critique. Aucune teinte (interdits #1 et #9). ---------- */
+.risk-badge, .reputation-badge {
+  border: 1px solid var(--s1-black);
+  padding: 0 6px;   /* le filet de 1 px remplace le padding vertical : la rangée garde sa hauteur */
+  font-weight: 700;
+}
+.risk-safe, .risk-low, .reputation-good {
+  background: var(--s1-white);
+  color: var(--text-primary);
+}
+/* La trame pleine sous 11 px de texte mangeait les jambages : elle ne
+   couvre que les deux bouts du badge, le libellé reste sur blanc. */
+.risk-medium, .reputation-neutral {
+  background:
+    linear-gradient(var(--s1-white), var(--s1-white)) center / calc(100% - 16px) 100% no-repeat,
+    var(--dither50) var(--s1-white);
+  color: var(--text-primary);
+}
+.risk-high, .risk-critical, .reputation-bad {
+  background: var(--s1-black);
+  color: var(--s1-white);
+}
+.risk-critical, .reputation-bad { text-decoration: underline; }
+
+/* Journal RSS : l'encre est pleine (--status-danger-text), l'échec se
+   souligne -- la graisse vient déjà de rss.css. */
+.rss-log-error { text-decoration: underline; }
+
+/* 1 bit : le liseré de santé partagé est en couleur (interdits #1 et #9).
+   Encre noire seulement, l'épaisseur porte le niveau. */
+#downloadsList .row[data-health="critical"]:not(.selected) { box-shadow: inset 5px 0 0 var(--s1-black); }
+#downloadsList .row[data-health="warning"]:not(.selected) { box-shadow: inset 2px 0 0 var(--s1-black); }
+#downloadsList .row[data-health="healthy"]:not(.selected) { box-shadow: none; }

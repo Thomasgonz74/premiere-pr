@@ -32,8 +32,10 @@
   --accent-link:    #0071E3;
   --accent-ring:    rgba(0,122,255,.45);   /* le halo (héritier d'Aqua) */
 
-  /* Sélection : pilule pleine pour les listes, voile pâle pour le texte */
-  --selection-bg:      var(--accent);
+  /* Sélection : pilule pleine pour les listes, voile pâle pour le texte.
+     Blanc sur #007AFF = 4,0:1 (< 4,5) : la pilule prend l'état pressé de
+     l'accent (#0064D6, 5,5:1) -- même bleu système, un cran plus dense. */
+  --selection-bg:      var(--accent-pressed);
   --selection-text:    #FFFFFF;
   --selection-text-bg: #B4D8FE;   /* ::selection — texte noir dessus */
 
@@ -110,6 +112,17 @@
 
   --track-fill:       rgba(120,120,128,.16);
   --track-fill-hover: rgba(120,120,128,.24);
+  /* Piste du segmenté (onglets) et voile de survol des listes : = --track-fill
+     en clair/HC. Jeton à part parce que le bloc sombre de la charte fait de
+     --track-fill la piste ALLUMÉE du commutateur (#0A84FF). */
+  --seg-track: var(--track-fill);
+  --seg-hover: rgba(255,255,255,.45);
+
+  /* Chevrons ↕ du menu déroulant, à l'accent du mode (recette components.html) */
+  --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='13'%3E%3Cpath d='M4.5 0L8 4.5H1Z' fill='%23007AFF'/%3E%3Cpath d='M4.5 13L1 8.5H8Z' fill='%23007AFF'/%3E%3C/svg%3E");
+  /* Contour de la case NON cochée : la hairline (1,25:1 sur blanc) la rendait
+     invisible ; 3:1 minimum pour un contrôle (lisibilité > §10.5). */
+  --check-border: rgba(0,0,0,.45);
 
   --tooltip-bg: rgba(246,246,248,.88);
   --tooltip-fg: var(--th-ink);
@@ -324,6 +337,10 @@
   --glass-panel: rgba(44,44,46,.66);
   --progress-rail: rgba(255,255,255,.14);
   --track-fill: #0A84FF; --track-fill-hover: #2E95FF;
+  --seg-track: rgba(255,255,255,.10);   /* piste grise, pas la piste allumée bleue */
+  --seg-hover: rgba(255,255,255,.08);
+  --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='13'%3E%3Cpath d='M4.5 0L8 4.5H1Z' fill='%230A84FF'/%3E%3Cpath d='M4.5 13L1 8.5H8Z' fill='%230A84FF'/%3E%3C/svg%3E");
+  --check-border: rgba(255,255,255,.40);
   --scroll-thumb: rgba(255,255,255,.3);
   --tooltip-bg: #3A3A3C; --tooltip-fg: rgba(255,255,255,.9);
   --gradient-desktop: linear-gradient(160deg,#1A2230,#0D111A);
@@ -331,7 +348,7 @@
   --shadow-window: 0 18px 50px rgba(0,0,0,.65);
   --shadow-knob: 0 1px 3px rgba(0,0,0,.6), 0 0 0 .5px rgba(255,255,255,.15);
   --p2-warn-fg: #3A2E00;
-  --seg-active: #6E6E70;
+  --seg-active: #636366;   /* #6E6E70 : libellé blanc 88 % à 4,4:1 ; gris système 2 : 5,1:1 */
   /* icônes surchargées pour le fond sombre */
   --icon-back: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M20 12H5.5M11.5 5.5L5 12l6.5 6.5' fill='none' stroke='%23D1D1D6' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   --icon-forward: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M4 12h14.5M12.5 5.5L19 12l-6.5 6.5' fill='none' stroke='%23D1D1D6' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
@@ -376,6 +393,8 @@
   --progress-rail: #C8C8C8;
   --track-fill: #B8B8BC;           /* la piste reste une piste */
   --track-fill-hover: #A8A8AC;
+  --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='13'%3E%3Cpath d='M4.5 0L8 4.5H1Z' fill='%23002FA8'/%3E%3Cpath d='M4.5 13L1 8.5H8Z' fill='%23002FA8'/%3E%3C/svg%3E");
+  --check-border: #000000;
   --shadow-segment: 0 0 0 1.5px #000000;
   --scroll-thumb: #555555;
   --seg-active: #FFFFFF;
@@ -428,8 +447,19 @@ input[type=text], textarea { cursor: var(--cursor-text); }
   border-bottom: 1px solid var(--hairline-soft);
   box-shadow: var(--glass-shine);
 }
+/* Bande des onglets (sous la barre d'outils, autour du segmenté) : .tabbar
+   n'est plus qu'une capsule en retrait, et body est transparent -- la bande
+   était un trou dans la plaque. Elle devient le prolongement de la barre
+   d'outils de verre (le segmenté est du pilotage, §2.1) : même verre
+   translucide, peint sur body à partir de la barre de titre seulement (le
+   verre de la barre de titre doit garder le bureau derrière lui). */
+body {
+  background: linear-gradient(var(--glass-chrome), var(--glass-chrome))
+              0 var(--titlebar-height) / 100% 100% no-repeat;
+}
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .titlebar, .context-menu, .modal-box { background: var(--window-fallback); }
+  body { background-image: linear-gradient(var(--window-fallback), var(--window-fallback)); }
 }
 .titlebar-buttons {
   order: -1;             /* billes à GAUCHE, jamais à droite (interdit §10.3) */
@@ -474,7 +504,7 @@ input[type=text], textarea { cursor: var(--cursor-text); }
 
 /* ---------- Onglets : segmenté à segment blanc flottant (§9) ------------- */
 .tabbar {
-  background: var(--track-fill);
+  background: var(--seg-track);
   border-bottom: none;
   border-radius: var(--radius-capsule);
   padding: 2px;
@@ -492,7 +522,7 @@ input[type=text], textarea { cursor: var(--cursor-text); }
   font-weight: 500;
   transition: background var(--transition-state), box-shadow var(--transition-state);
 }
-.tab-btn:hover:not(.active) { filter: none; background: rgba(255,255,255,.45); }
+.tab-btn:hover:not(.active) { filter: none; background: var(--seg-hover); }
 .tab-btn.active {
   background: var(--seg-active);
   box-shadow: var(--shadow-segment);
@@ -518,16 +548,24 @@ button:focus-visible { outline: none; box-shadow: var(--capsule-shadow), var(--g
 button:disabled { opacity: .4; }
 
 /* Une SEULE capsule pleine accent par vue (interdit §10.6) : le CTA
-   "Démarrer" de chaque page (Add / Share ne sont jamais visibles ensemble). */
+   "Démarrer" de chaque page (Add / Share ne sont jamais visibles ensemble).
+   Blanc sur --accent = 4,0:1 en clair, 3,7:1 en sombre (< 4,5) : la capsule
+   part de l'état pressé de l'accent (5,5 / 5,4:1), s'éclaircit à peine au
+   survol (4,8 / 4,7:1) et fonce à l'appui -- le survol existe toujours. */
 .start-btn {
-  background: var(--accent);
+  background: var(--accent-pressed);
   border-color: transparent;
   color: #fff;
   font-weight: 500;
   box-shadow: var(--capsule-shadow);
 }
-.start-btn:hover { background: var(--accent-hover); }
-.start-btn:active { background: var(--accent-pressed); }
+.start-btn:hover { background: color-mix(in srgb, var(--accent-pressed) 92%, #fff); }
+.start-btn:active { background: color-mix(in srgb, var(--accent-pressed) 85%, #000); }
+/* HC : blanc sur --accent passe déjà (> 10:1) -- le CTA reprend l'accent
+   HC des coches / pilule / chevrons et les états de la charte. */
+[data-theme="hc"] .start-btn { background: var(--accent); }
+[data-theme="hc"] .start-btn:hover { background: var(--accent-hover); }
+[data-theme="hc"] .start-btn:active { background: var(--accent-pressed); }
 
 .row-actions button {
   min-width: 0;
@@ -569,12 +607,12 @@ select {
   border: 1px solid var(--hairline);
   border-radius: var(--radius-capsule);
   color: var(--text-primary);
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='13'%3E%3Cpath d='M4.5 0L8 4.5H1Z' fill='%23007AFF'/%3E%3Cpath d='M4.5 13L1 8.5H8Z' fill='%23007AFF'/%3E%3C/svg%3E") right 10px center/9px 13px no-repeat, var(--capsule);
+  background: var(--select-chevron) right 10px center/9px 13px no-repeat, var(--capsule);
   box-shadow: var(--capsule-shadow), var(--glass-shine);
   transition: background var(--transition-state), box-shadow var(--transition-state);
 }
 select:hover {
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='13'%3E%3Cpath d='M4.5 0L8 4.5H1Z' fill='%23007AFF'/%3E%3Cpath d='M4.5 13L1 8.5H8Z' fill='%23007AFF'/%3E%3C/svg%3E") right 10px center/9px 13px no-repeat, var(--capsule-hover);
+  background: var(--select-chevron) right 10px center/9px 13px no-repeat, var(--capsule-hover);
 }
 select:focus { outline: none; box-shadow: var(--capsule-shadow), var(--glass-shine), var(--focus-ring); }
 
@@ -584,7 +622,7 @@ input[type="checkbox"] {
   margin: 0;
   width: var(--checkbox-size);
   height: var(--checkbox-size);
-  border: 1px solid var(--hairline);
+  border: 1px solid var(--check-border);
   border-radius: 5px;
   background: var(--surface-field);
   box-shadow: 0 1px 1px rgba(0,0,0,.06);
@@ -592,7 +630,7 @@ input[type="checkbox"] {
   place-content: center;
   transition: background var(--transition-state), border-color var(--transition-state);
 }
-input[type="checkbox"]:hover { border-color: var(--hairline-strong); }
+input[type="checkbox"]:hover { border-color: var(--text-soft); }
 input[type="checkbox"]:checked { background: var(--accent); border-color: transparent; }
 input[type="checkbox"]:checked::after {
   content: "";
@@ -615,24 +653,24 @@ input[type="checkbox"]:disabled { opacity: .4; }
   margin: 1px 4px;
   transition: background var(--transition-state), color var(--transition-state);
 }
-.row:hover, .share-row:hover, .downloads-row:hover, .scan-row:hover { background: var(--track-fill); }
+.row:hover, .share-row:hover, .downloads-row:hover, .scan-row:hover { background: var(--seg-track); }
 .downloads-row-header {
   border-radius: 0;
   margin: 0;
   background: none;
   border-bottom: 1px solid var(--hairline-strong);
 }
+/* Jetons de sélection du mode (pilule accent en clair/HC, voile blanc en
+   sombre -- DARKMD de la charte) : même rendu avec ou sans data-health.
+   Les cellules héritent l'encre de la ligne (style.css). */
 #downloadsList .row.selected {
-  background: var(--accent);
-  color: #fff;
+  background: var(--selection-bg);
+  color: var(--selection-text);
   border-radius: var(--radius-item);
 }
 .row-name { font-weight: 600; }
 .row-state, .row-eta, .row-peers, .row-category { color: var(--text-soft); }
 .row-rate { color: var(--text-primary); }
-/* Texte secondaire "délavé blanc" sur pilule accent, comme .menu-item.is-hl */
-.row.selected .row-state, .row.selected .row-eta,
-.row.selected .row-peers, .row.selected .row-category { color: rgba(255,255,255,.75); }
 .scan-path { font-weight: 500; }
 .scan-size { color: var(--text-soft); }
 

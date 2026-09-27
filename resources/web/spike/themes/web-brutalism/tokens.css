@@ -33,6 +33,7 @@
   --bt-desktop: #EFEFEF;
   --bt-on-black: #FFFFFF;    /* le texte du pavé noir (stable) */
   --bt-marker-ink: #000000;  /* l'encre du surligneur (stable) */
+  --bt-red-ink: #000000;     /* l'encre du pavé rouge : noir (5.3 sur #FF0000 ; le blanc n'y fait que 4.0) */
   --tooltip-bg: #FFFFE1;    /* le jaune d'infobulle des 90s */
   --tooltip-fg: #000000;
 
@@ -227,6 +228,9 @@
   --icon-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M12 19.5V6M6.5 11.5L12 6l5.5 5.5' fill='none' stroke='%23000000' stroke-width='1.6' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M5.5 21h13' fill='none' stroke='%23000000' stroke-width='1.6' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
   --icon-refresh: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M18.9 13a7 7 0 1 1-1.8-6.3' fill='none' stroke='%23000000' stroke-width='1.6' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M19.4 3.6v4.9h-4.9' fill='none' stroke='%23000000' stroke-width='1.6' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
   /* ICONS:END */
+  /* Chevron des <select> (appearance:none) : tokenisé comme les icônes pour
+     suivre l'encre du mode -- codé en noir en dur, il disparaissait en sombre. */
+  --bt-select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23000000' stroke-width='2'/%3E%3C/svg%3E");
 }
 /* DARK:BEGIN — thème sombre (phase 3) */
 [data-theme="dark"] {
@@ -254,6 +258,7 @@
   --icon-forward: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M9.5 5.5L16 12l-6.5 6.5' fill='none' stroke='%23F2F2F2' stroke-width='1.6' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
   --icon-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M12 19.5V6M6.5 11.5L12 6l5.5 5.5' fill='none' stroke='%23F2F2F2' stroke-width='1.6' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M5.5 21h13' fill='none' stroke='%23F2F2F2' stroke-width='1.6' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
   --icon-refresh: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M18.9 13a7 7 0 1 1-1.8-6.3' fill='none' stroke='%23F2F2F2' stroke-width='1.6' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M19.4 3.6v4.9h-4.9' fill='none' stroke='%23F2F2F2' stroke-width='1.6' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+  --bt-select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23F2F2F2' stroke-width='2'/%3E%3C/svg%3E");
 }
 /* DARK:END */
 
@@ -263,6 +268,7 @@
   --bt-red:  #B00000;        /* 7.7 en texte, 9.0 sous blanc */
   --bt-disabled: #767676;
   --text-soft: #545454;
+  --bt-red-ink: #FFFFFF;     /* le pavé rouge fonce : encre blanche (7.4) */
 }
 /* HC:END */
 
@@ -427,6 +433,20 @@ button:disabled {
 .row-actions button:not(:disabled):hover { background: var(--bt-marker); color: var(--bt-marker-ink); }
 .row-actions button:not(:disabled):active { transform: translate(3px, 3px); box-shadow: none; }
 
+/* Fermer du bandeau de suggestion : le ".to-close" des avis de la charte
+   (components.html §13) -- un lien bleu nu, pas un bouton de 96 px à ombre
+   3x3 hérité de la règle "button" ci-dessus. Survol = surligneur (générique). */
+.suggestion-banner-close {
+  min-width: 24px; height: 24px;   /* cible de 24 px, sans le gabarit 96x32 */
+  padding: 0;
+  border: none;
+  background: none;
+  box-shadow: none;
+  color: var(--bt-link);
+  font: 700 18px/1 var(--font-ui);
+}
+.suggestion-banner-close:not(:disabled):active { transform: none; color: var(--bt-visited); }
+
 /* ---------- Champs : blancs, bordure 1px noire, SANS OMBRE (on écrit
    dedans, on ne les pousse pas -- §7). Le survol épaissit le trait à 2px
    (la charte compense le padding pour que rien ne saute), le focus pose le
@@ -467,11 +487,15 @@ input::placeholder, textarea::placeholder { color: var(--bt-gray); }
 select {
   cursor: var(--cursor-interactive);
   appearance: none; -webkit-appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23000000' stroke-width='2'/%3E%3C/svg%3E");
+  background-image: var(--bt-select-arrow);
   background-repeat: no-repeat;
   background-position: right 10px center;
   padding-right: 28px;
 }
+/* Les règles survol/focus ci-dessus remettent "padding: 0 9px/10px" et
+   rendaient au texte la place du chevron : on la lui reprend. */
+select:not(:disabled):hover { padding-right: 27px; }
+select:focus { padding-right: 28px; }
 
 /* ---------- Cases à cocher : carrées, coche = X noir dessiné en croix de
    deux dégradés 45°/-45° (pas d'image), survol = surligneur. ---------- */
@@ -506,12 +530,40 @@ input[type="checkbox"]:disabled:checked::after { opacity: .5; }
 .listbox { padding: 0; }
 .row, .share-row, .downloads-row, .scan-row { border-bottom: 1px solid var(--bt-black); }
 .row:hover:not(.selected) { background: var(--bt-marker); color: var(--bt-marker-ink); }
+/* Le fond teinté des lignes santé de style.css (#downloadsList .row[data-health])
+   bat la règle ci-dessus : au survol l'encre noire tombait sur la teinte
+   sombre en mode sombre. L'id rend le surligneur au survol de ces lignes. */
+#downloadsList .row:hover:not(.selected) { background: var(--bt-marker); }
 .row.selected { font-weight: 700; }
 .row-name { font-weight: 700; }
-.row-state, .row-rate, .row-eta, .row-category, .row-peers { color: var(--text-primary); }
+/* Pas de couleur propre sur .row-state/-rate/-eta/-category/-peers : elles
+   héritent de la ligne (body porte --text-primary depuis style.css). Forcées
+   à --text-primary, elles restaient blanches sur le surligneur en sombre. */
 .downloads-row-header { font-weight: 700; border-bottom: 2px solid var(--bt-black); }
 .scan-path { color: var(--text-primary); }
 .scan-size { font-variant-numeric: tabular-nums; color: var(--text-primary); }
+
+/* ---------- Badges de risque (liste d'analyse) : les badges de la charte
+   (components.html §12) au lieu des pastels fixes de style.css, qui
+   faisaient des pavés vert/rose pâle sur la page noire et n'atteignaient
+   pas 7:1 en contraste élevé. Plaque bordée à ombre pleine 2x2 ; « moyen »
+   = b-warn (surligneur, encre noire) ; « élevé » = b-err, le rouge sur la
+   bordure et l'ombre mais l'encre normale (#FF0000 en texte sur blanc ne
+   fait que 4.0) ; « critique » = le pavé rouge. ---------- */
+.risk-badge {
+  border: 1px solid var(--bt-black);
+  border-radius: 0;
+  background: var(--bt-white);
+  color: var(--text-primary);
+  box-shadow: 2px 2px 0 var(--bt-black);
+  font-weight: 700;
+}
+/* « sûr » = plaque plate bordée de gris, pour le distinguer de « faible »
+   (plaque encre ombrée) : gradation plat gris > ombré > surligneur > rouge. */
+.risk-safe { border-color: var(--bt-gray); box-shadow: none; }
+.risk-medium { background: var(--bt-marker); color: var(--bt-marker-ink); }
+.risk-high { border-color: var(--bt-red); box-shadow: 2px 2px 0 var(--bt-red); }
+.risk-critical { border-color: var(--bt-red); background: var(--bt-red); color: var(--bt-red-ink); box-shadow: 2px 2px 0 var(--bt-black); }
 
 /* ---------- Group box : fieldset doctrinal -- bordure 1px noire, légende
    en gras, aucune ombre (seuls page/contrôles/menu/infobulle en portent). ---------- */

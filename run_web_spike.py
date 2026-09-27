@@ -4,12 +4,14 @@ shipped v1.1.1 QWidget app while the QWebEngineView architecture is being
 validated. Run: python run_web_spike.py
 """
 
+import os
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "src"))
 
 from PySide6.QtCore import QTimer
+from PySide6.QtGui import QSurfaceFormat
 from PySide6.QtWidgets import QApplication
 
 from torrent2000.config.paths import get_history_db_path, get_rss_seen_db_path, get_stats_db_path
@@ -53,6 +55,20 @@ from torrent2000.ui.web.spike_window import SpikeWindow
 
 
 def main() -> int:
+    # Resize fluidity: the window presents through a D3D11 DirectComposition
+    # swapchain, and with vsync each WM_SIZE of the modal resize loop blocks
+    # the GUI thread -- which also runs Chromium's UI thread -- on Present(1)
+    # (measured: 16-25 Hz loop, 80-110 ms content lag). swapInterval 0 keeps
+    # the loop at mouse pace; transparency is untouched (the premultiplied
+    # alpha path depends on alphaBufferSize, not swapInterval).
+    # T2K_VSYNC=1 restores the old behaviour for A/B testing.
+    # ponytail: global default format -- scope it with windowHandle().setFormat()
+    # if another RHI surface ever appears.
+    if os.environ.get("T2K_VSYNC") != "1":
+        os.environ.pop("QT_D3D_NO_FLIP", None)  # legacy swapchain + no vsync fails (DXGI 0x887a0001)
+        fmt = QSurfaceFormat.defaultFormat()
+        fmt.setSwapInterval(0)
+        QSurfaceFormat.setDefaultFormat(fmt)
     app = QApplication(sys.argv)
     # Checked before any other startup work so a second launch -- e.g.
     # double-clicking another .torrent file while the app is already open,

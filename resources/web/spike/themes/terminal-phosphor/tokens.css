@@ -41,6 +41,7 @@
 
   --text-primary:  var(--p1-soft);
   --text-soft:     var(--p1-dim);
+  --status-danger-text: var(--p1);  /* l'erreur en trait plein + gras, jamais une teinte */
   --text-disabled: #0F4A0F;
   --text-inverse:  #041004;   /* encre inversee sur fond plein */
 
@@ -196,12 +197,15 @@
    piste passe au filet ; le trait plein ne peut pas monter plus haut,
    il reste --p1. Les alias generiques (border-*, text-legend, plastic-*,
    gradient-*) referencent tous --p1-dim/--p1-dark/--text-disabled via
-   var() : ils se re-resolvent seuls, sans surcharge supplementaire. */
+   var() : ils se re-resolvent seuls, sans surcharge supplementaire.
+   Le texte secondaire (notes, ligne d'etat, depot, raisons d'analyse,
+   indications de champ) monte lui aussi d'un cran : --p1-soft, 8.3:1 sur
+   les plaques --ph-raise au lieu de 5.3:1 (cible AAA du mode). */
 [data-theme="hc"] {
   --p1-dim: #23C623;
   --p1-dark: #157815;
   --text-disabled: #157815;
-  --ph-raise: #0A120A;
+  --text-secondary: var(--p1-soft);
 }
 /* HC:END */
 
@@ -244,7 +248,7 @@ input[type=text], textarea { cursor: var(--cursor-text); }
 }
 .titlebar-title::before {
   content: "> ";
-  color: var(--p1-dim);
+  color: var(--p1);   /* components.html .tb-left : le prompt est en trait plein (--p1-dim = 3.6:1) */
   font-weight: 700;
 }
 .titlebar-buttons { gap: 6px; }
@@ -260,6 +264,10 @@ input[type=text], textarea { cursor: var(--cursor-text); }
 .cap-btn:active { filter: none; background: var(--p1-soft); }
 .cap-btn:hover span::before, .cap-btn:active span::before { color: var(--selection-text); }
 .cap-close { margin-left: 0; background: none; }
+/* Un seul cadre : le filet de .cap-btn. Les crochets typographiques du
+   `button` generique (plus bas) s'imprimaient en plus, a cote du glyphe et
+   sous la boite (components.html : .wm::before { content: none }). */
+.cap-btn::before, .cap-btn::after { content: none; }
 /* Each cap button's <span> is the glyph plate (still position:absolute;inset:0
    from style.css, kept) -- turned into a centered flex box so a single typed
    glyph character replaces style.css's drawn bars/rotated-line "x". */
@@ -270,6 +278,7 @@ input[type=text], textarea { cursor: var(--cursor-text); }
 }
 .cap-min span::before, .cap-max span::before, .cap-close span::before {
   position: static;
+  height: auto;   /* style.css donne 2 px (barres dessinees) : le glyphe debordait sous le centre */
   background: none;
   border: none;
   transform: none;
@@ -282,23 +291,25 @@ input[type=text], textarea { cursor: var(--cursor-text); }
 .cap-close span::before { content: "x"; }
 
 /* ---------- Tabs : soldered filets, no brackets, active = full inversion ---------- */
+/* Filets des onglets en --p1-dim (STYLE.md §2 : « --p1-dim filet ») et non
+   --p1-dark (1.6:1, bords de controle quasi invisibles) : 3.6:1 sur le verre. */
 .tabbar {
   gap: 0;
-  border-bottom: 1px solid var(--p1-dark);
+  border-bottom: 1px solid var(--p1-dim);
 }
 .tab-btn {
   height: auto;
   min-width: 0;
   padding: 5px 14px;
   background: none;
-  border: 1px solid var(--p1-dark);
+  border: 1px solid var(--p1-dim);
   border-right: none;
   border-radius: 0;
   color: var(--p1-soft);
   font-weight: 400;
 }
 .tab-btn::before, .tab-btn::after { content: none; }
-.tab-btn:last-of-type { border-right: 1px solid var(--p1-dark); }
+.tab-btn:last-of-type { border-right: 1px solid var(--p1-dim); }
 .tab-btn:not(.active):hover {
   background: var(--p1);
   color: var(--selection-text);
@@ -354,10 +365,28 @@ button:disabled::before, button:disabled::after { color: var(--text-disabled); }
 /* Per-row pause/remove commands: cancel the generic <button> sizing so they
    fit a dense row; hover/active inversion is already inherited from the
    plain `button` rules above (same element, no need to repeat it). */
+/* Fond nu sans cadre (le filet de style.css doublait les crochets) et une
+   seule ligne : « [ ⏸ ] » passait sur 3 lignes dans la colonne Action de
+   70 px. Crochets serres [⏸] [x], la notation des glyphes de titre. */
 .row-actions button {
   height: auto;
   min-width: 0;
+  border: none;
+  padding: 0 2px;
+  white-space: nowrap;
 }
+.row-actions button::before { content: "["; }
+.row-actions button::after { content: "]"; }
+/* Ligne selectionnee = inversion video : le glyphe --p1 et les crochets
+   --p1-dim se fondaient dans le fond --p1. Encre verre ; au survol, la
+   commande se re-inverse. */
+.row.selected .row-actions button,
+.row.selected .row-actions button::before,
+.row.selected .row-actions button::after { color: var(--selection-text); }
+.row.selected .row-actions button:not(:disabled):hover { background: var(--selection-text); }
+.row.selected .row-actions button:not(:disabled):hover,
+.row.selected .row-actions button:not(:disabled):hover::before,
+.row.selected .row-actions button:not(:disabled):hover::after { color: var(--p1); }
 
 /* ---------- Fields : fond nu, filet bas seul, focus = filet + halo (STYLE.md
    §7's own per-control table grants the halo here even though §2's prose
@@ -399,7 +428,9 @@ input[type="text"]:focus, textarea:focus, select:focus {
   text-shadow: var(--glow);
 }
 input:disabled, textarea:disabled { border-bottom-color: var(--text-disabled); color: var(--text-disabled); }
-input::placeholder, textarea::placeholder { color: var(--p1-dim); }
+/* --p1-dim (charte) = 3.6:1 : sous le seuil texte. Meme encre attenuee que
+   les notes (5.6:1 ; --p1-soft en HC), toujours en retrait du --p1 saisi. */
+input::placeholder, textarea::placeholder { color: var(--t2k-text-secondary); }
 input[type="text"]:not(:disabled), textarea:not(:disabled) { cursor: var(--cursor-text); }
 select {
   appearance: none;
@@ -440,7 +471,7 @@ input[type="checkbox"]:disabled { border-color: var(--text-disabled); }
 /* ---------- Lists / rows : piste --p1-dark border, name carries the trait,
    hover brightens (text + halo, no fill) -- selection is full inversion,
    already correct out of the box via --selection-bg/--selection-text. ---------- */
-.listbox { background: none; border: 1px solid var(--p1-dark); border-radius: 0; }
+.listbox { background: none; border: 1px solid var(--p1-dim); border-radius: 0; }
 .row { border-bottom: 1px solid var(--p1-dark); }
 .row-name { color: var(--p1); }
 .row-state, .row-rate, .row-eta, .row-peers, .row-category { color: var(--p1-soft); }
@@ -448,13 +479,30 @@ input[type="checkbox"]:disabled { border-color: var(--text-disabled); }
 .downloads-row-header { border-bottom: 1px solid var(--p1-dim); color: var(--p1); }
 .scan-row { border-bottom: 1px solid var(--p1-dark); }
 .scan-path { color: var(--p1-soft); }
-.scan-size { color: var(--p1-dim); }
+.scan-size { color: var(--t2k-text-secondary); }   /* --p1-dim = 3.6:1 pour du texte */
+/* Badges de risque : les pastels partages (#DFF3DF...) sont une seconde
+   teinte (interdit n°1). Badges d'intensites de components.html : filet dim
+   au calme, trait plein qui monte, « ! » a l'alerte, inversion au critique. */
+.risk-badge, .reputation-badge {
+  background: none;
+  border: 1px solid var(--p1-dim);
+  border-radius: 0;
+  color: var(--p1-soft);
+}
+.risk-low { border-color: var(--p1-soft); }
+.risk-medium, .risk-high, .reputation-bad { border-color: var(--p1); color: var(--p1); }
+.risk-high, .risk-critical, .reputation-bad { font-weight: 700; }
+.risk-high::before, .risk-critical::before, .reputation-bad::before { content: "! "; }
+.risk-critical { background: var(--p1); border-color: var(--p1); color: var(--selection-text); }
+/* Partage : colonnes chiffrees a la chasse du monospace 14 px (8.4 px/car.) --
+   « ↑ 205.1 Ko/s », « 1.12 Go / 1.86 Go », « 1h30 / 2h00 » tenaient sur deux lignes. */
+.share-row { grid-template-columns: 1fr 104px 150px 100px 130px 70px; }
 
 /* ---------- Group boxes : panels "à peine allumées" (--ph-raise) with a
    filet, heading plays the legend role in solid ink. ---------- */
 .profile-group, .details-group {
   background: var(--ph-raise);
-  border: 1px solid var(--p1-dark);
+  border: 1px solid var(--p1-dim);
   border-radius: 0;
 }
 .profile-group h3, .details-group h3 {

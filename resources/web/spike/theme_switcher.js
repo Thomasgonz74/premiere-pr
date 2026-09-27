@@ -23,7 +23,25 @@ const DEFAULT_THEME_ID = "luna_xp";
 
 function setActiveTheme(themeId) {
   const id = VALID_THEME_IDS.has(themeId) ? themeId : DEFAULT_THEME_ID;
-  document.getElementById("themeTokensLink").href = `themes/${id}/tokens.css`;
+  const link = document.getElementById("themeTokensLink");
+  link.onload = syncColorScheme;  // the new sheet resolves asynchronously
+  link.href = `themes/${id}/tokens.css`;
+  syncColorScheme();
+}
+
+// Native widgets (scrollbars, sliders, the text of form fields) follow
+// `color-scheme`. Several themes keep a light palette in "dark" or "hc" (no
+// dark block, or a white high-contrast mode), so the scheme is read off the
+// resolved ink rather than the mode name: light ink means a dark theme.
+// style.css maps data-scheme="dark" to color-scheme: dark.
+const _schemeProbe = document.createElement("canvas").getContext("2d", { willReadFrequently: true });
+function syncColorScheme() {
+  _schemeProbe.clearRect(0, 0, 1, 1);
+  _schemeProbe.fillStyle = "#000";
+  _schemeProbe.fillStyle = getComputedStyle(document.documentElement).color;
+  _schemeProbe.fillRect(0, 0, 1, 1);
+  const [r, g, b] = _schemeProbe.getImageData(0, 0, 1, 1).data;
+  document.documentElement.dataset.scheme = 0.2126 * r + 0.7152 * g + 0.0722 * b > 128 ? "dark" : "light";
 }
 
 function setAppearanceMode(mode) {
@@ -36,4 +54,5 @@ function setAppearanceMode(mode) {
   } else {
     document.documentElement.removeAttribute("data-theme");
   }
+  syncColorScheme();
 }

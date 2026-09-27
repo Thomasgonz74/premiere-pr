@@ -44,6 +44,13 @@
   --cerne: 2px solid var(--bh-ink);          /* LE trait */
   --cerne-fin: 1.5px solid var(--bh-ink);
 
+  /* Sante des lignes (liseré + teinte, style.css) : les trois roles des
+     badges de components.html -- pret = bleu, attente = jaune, erreur =
+     rouge -- au lieu du vert/ocre/brique generiques (interdit §10.1). */
+  --status-ok:       var(--bh-blue);
+  --status-warning:  var(--bh-yellow);
+  --status-critical: var(--bh-red);
+
   /* Generic aliases consumed by resources/web/spike/*.css -- every theme
      must define these (this charter has no separate "field/desktop/panel/
      tooltip" surfaces of its own beyond papier+plaque blanche, so they
@@ -226,11 +233,17 @@
   --bh-ink: #EFEAD8;               /* la craie */
   --bh-soft: #B8B0A0;
   --bh-disabled: #6E675C;
-  --bh-red: #D6485A;               /* la trinité s'éclaire d'un cran… */
+  --bh-red: #CF4053;               /* la trinité s'éclaire d'un cran… (#D6485A
+                                      laissait le blanc du pavé à 4,3:1 ; ici
+                                      4,6:1, et 3,1:1 sur le champ de nuit) */
   --bh-red-press: #BE1E2D;         /* …et l'appui redescend au jour */
   --bh-blue: #5B7FE0;
   --bh-blue-press: #21409A;
   --bh-desktop: #191713;
+  /* Bandeau de sélection : le bleu de nuit #5B7FE0 ne portait le texte blanc
+     qu'à 3,8:1 ; un cran plus profond (4,6:1), encore 3,2:1 sur le champ. Les
+     traits bleus (survol, chevron, cercle) gardent #5B7FE0. */
+  --selection-bg: #4C6FD4;
   /* Toutes les propriétés "extra" (--border-*, --plastic-*, --gradient-*,
      --frame-shadow, --title-text-shadow, --radius-*…) re-résolvent seules
      via var(--bh-*) -- rien à répéter ici. */
@@ -538,8 +551,8 @@ input[type="checkbox"]:disabled { border-color: var(--bh-disabled); }
 }
 #downloadsList .row.selected,
 .share-row.selected, .downloads-row.selected, .scan-row.selected {
-  background: var(--bh-blue);
-  color: #FFFFFF;
+  background: var(--selection-bg);
+  color: var(--selection-text);
 }
 .row-name { font-weight: 700; }
 .row-state, .row-rate, .row-eta, .row-category, .row-peers { color: var(--text-primary); }
@@ -580,8 +593,8 @@ input[type="checkbox"]:disabled { border-color: var(--bh-disabled); }
   cursor: var(--cursor-interactive);
 }
 .context-menu-item:hover {
-  background: var(--bh-blue);
-  color: #FFFFFF;
+  background: var(--selection-bg);
+  color: var(--selection-text);
 }
 .context-menu-separator {
   height: 1.5px;
@@ -625,4 +638,18 @@ canvas.tetris {
   border: var(--cerne-fin);
   border-radius: 0;
   box-shadow: none;
+}
+
+/* Surfaces claires : la teinte de santé partagée (6-8 %) disparaissait sur le
+   blanc Bauhaus ; aplats proches des pastels d'origine, encre intacte
+   (20 % du rouge de la trinite, plus dense que l'ancien #E0443E).
+   Liseré « attente » : le jaune de la trinité tiré à 60 % vers l'encre
+   (75 % partagé) -- 3,7:1 sur blanc, 3,2:1 sur l'aplat jaune (clair et HC). */
+:root:not([data-theme="dark"]) #downloadsList .row[data-health="critical"]:not(.selected) { background: color-mix(in srgb, var(--status-critical, #E0443E) 20%, var(--surface-field)); }
+:root:not([data-theme="dark"]) #downloadsList .row[data-health="warning"]:not(.selected) { background: color-mix(in srgb, var(--status-warning, #E8B400) 30%, var(--surface-field)); box-shadow: inset 5px 0 0 color-mix(in srgb, var(--status-warning) 60%, var(--text-primary)); }
+
+/* Sombre : le chevron bleu #21409A ne tenait que 1,6:1 sur le champ de nuit ;
+   le bleu nocturne du bloc sombre y tient 3,9:1. */
+[data-theme="dark"] select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%235B7FE0' stroke-width='2'/%3E%3C/svg%3E");
 }

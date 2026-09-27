@@ -58,6 +58,9 @@
   --border-progress: var(--pm-soft);  /* piste creuse : encre douce */
   --border-tab:      var(--pm-ink);   /* onglets soudes au bandeau : encre */
   --text-legend:     var(--pm-ink);   /* pas d'accent colore : la graisse fait l'accent */
+  /* Interdit #1 : pas de rouge d'erreur (lu par rss.css) -- l'encre reste
+     pleine, le danger parle en graisse soulignee (cf. .rss-log-error). */
+  --status-danger-text: var(--pm-ink);
 
   /* ========================================================
      3. LE CRISTAL — la signature du style (charte d'origine)
@@ -84,6 +87,9 @@
   --gradient-titlebtn-close: linear-gradient(transparent, transparent);
 
   --gradient-progress: linear-gradient(var(--pm-ink), var(--pm-ink)); /* remplissage d'encre plat */
+  /* Fleche du picker : un data-URI ne suit pas var(), d'ou un jeton
+     redefini dans [data-theme="dark"] (encre -> lumiere). */
+  --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='6'%3E%3Cpath d='M0 0h9L4.5 6z' fill='%231C241A'/%3E%3C/svg%3E");
 
   /* ========================================================
      4. OMBRES (charte d'origine + alias generiques)
@@ -206,6 +212,8 @@
   --pm-ghost: #3E5236;             /* l'ombre d'un pixel devient lueur */
   --pm-disabled: #54654C;
   --pm-case: #23271F;              /* le boîtier, de nuit */
+  /* flèche du picker en lumière (l'encre #1C241A tombait à 1,1:1 sur le verre éteint) */
+  --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='6'%3E%3Cpath d='M0 0h9L4.5 6z' fill='%23BFE3AE'/%3E%3C/svg%3E");
   /* icônes surchargées pour le fond sombre (mêmes tracés, encre -> lumière) */
   --icon-folder: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M2.5 6h6.5l2 2.5h10.5v11h-19z' fill='%230B0F0A' stroke='%23BFE3AE' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M2.5 6h6.5l2 2.5h-9z' fill='%23BFE3AE' stroke='%23BFE3AE' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
   --icon-folder-open: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M2.5 6h6.5l2 2.5h9.5v3h-18z' fill='%23BFE3AE' stroke='%23BFE3AE' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M4.8 11.5h16.7l-2.6 8H2.5z' fill='%230B0F0A' stroke='%23BFE3AE' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
@@ -231,6 +239,9 @@
   --pm-ghost: #7E8C70;       /* l'ombre-pixel s'affirme */
   --text-soft: #2E3A2A;
   --text-disabled: #4A5844;
+  /* notes, statut, zone de dépôt, « ? » : la douce HC (7,5) au lieu du
+     mélange générique de style.css (5,8), sous la cible AAA */
+  --text-secondary: var(--pm-soft);
 }
 /* HC:END */
 
@@ -392,7 +403,7 @@ select {
   padding: 0 24px 0 8px;
   color: var(--text-primary);
   cursor: var(--cursor-interactive);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='6'%3E%3Cpath d='M0 0h9L4.5 6z' fill='%231C241A'/%3E%3C/svg%3E");
+  background-image: var(--select-arrow);
   background-repeat: no-repeat;
   background-position: right 7px center;
 }
@@ -494,3 +505,61 @@ canvas.tetris {
   background: var(--pm-lcd-dk);
   box-shadow: none;
 }
+
+/* LCD sans couleur : la teinte de sante assombrit le verre et noie l'encre
+   douce des colonnes chiffrees -- seul le lisere d'etat porte la sante. */
+#downloadsList .row[data-health]:not(.selected) { background: var(--surface-field); }
+
+/* ---------- Infobulle : INVERSEE (encre, texte LCD -- STYLE.md §9). style.css
+   la pose en couleurs de fenetre ; ici le couple encre/verre se re-resout
+   dans chaque mode (10,0 clair/HC, 12,5 sombre). ---------- */
+.info-tooltip-bubble {
+  background: var(--surface-tooltip);
+  color: var(--tooltip-fg);
+  border-color: var(--tooltip-bg);
+}
+
+/* ---------- Badges de risque / reputation : les pastels de style.css
+   deviennent les badges de la charte (components.html §12) -- verre borde
+   d'encre a ombre d'un pixel ; la graisse pour l'attention, la graisse
+   soulignee pour le danger, l'inversion pour le critique. Aucune teinte
+   (interdit #1), plus d'ilots clairs en sombre. ---------- */
+.risk-badge, .reputation-badge {
+  background: var(--pm-lcd);
+  color: var(--pm-ink);
+  border: 1px solid var(--pm-ink);
+  padding: 0 5px;                  /* le filet d'encre prend 1px : la boite garde la taille de style.css */
+  box-shadow: var(--pixel-shadow);
+}
+.risk-medium { font-weight: 700; }
+.risk-high { font-weight: 700; text-decoration: underline; }
+.risk-critical, .reputation-bad {
+  background: var(--pm-ink);
+  color: var(--pm-lcd);
+  font-weight: 700;
+  text-decoration: underline;
+  box-shadow: none;
+}
+
+/* Journal RSS : l'encre est pleine (--status-danger-text), l'echec se
+   souligne -- la graisse vient deja de rss.css. */
+.rss-log-error { text-decoration: underline; }
+
+/* ---------- Curseur de valeur (Volume) : piste creuse bordee d'encre,
+   poignee d'encre (components.html, P2) -- au lieu du bleu natif. ---------- */
+input[type="range"] {
+  -webkit-appearance: none; appearance: none;
+  height: 8px;
+  background: var(--pm-lcd-dk);
+  border: 1px solid var(--pm-ink);
+  border-radius: 2px;
+  cursor: var(--cursor-interactive);
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 11px; height: 16px;
+  background: var(--pm-ink);
+  border: none;
+  border-radius: 2px;
+}
+input[type="range"]:focus-visible { outline: var(--focus-ring); outline-offset: 3px; }

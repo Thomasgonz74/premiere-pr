@@ -12,6 +12,30 @@ html, body {
   font: 400 var(--font-size-base) / var(--line-height) var(--font-ui);
   -webkit-font-smoothing: antialiased;
   cursor: var(--cursor-default);
+  /* Every theme's tokens.css carries `body { color }` only inside its
+     commented-out "Base recommandée" block, so without this any text that
+     has no class of its own (share/RSS/search row cells, modal message,
+     Profile checkbox labels) fell back to the browser's black -- black on
+     black in dark/hc, and even in light for the dark-by-nature themes. */
+  color: var(--text-primary, CanvasText);
+}
+
+/* Native widgets (scrollbars without theme styling, select popups, date
+   pickers) follow the appearance mode instead of staying light. */
+/* data-scheme is derived from the resolved ink by theme_switcher.js: several
+   themes keep a light palette in "dark" or "hc", where a dark color-scheme
+   turned field text white on light fields and native sliders dark. */
+:root[data-scheme="dark"] { color-scheme: dark; }
+
+/* Placeholders derive from their field's own text color, so they stay
+   readable on any theme's field surface in any mode. */
+::placeholder { color: color-mix(in srgb, currentColor 72%, transparent); opacity: 1; }
+
+/* Baseline keyboard focus ring. Zero specificity (:where) so any theme's
+   own focus styling wins; this only guarantees there is always one. */
+:where(button, [tabindex], input, select, textarea, a):focus-visible {
+  outline: 2px solid var(--focus-ring-color, var(--selection-bg, Highlight));
+  outline-offset: 1px;
 }
 
 /* spike_window.py now uses real per-pixel window translucency
@@ -217,8 +241,15 @@ body {
   overflow: auto;
 }
 
+/* --text-disabled is each theme's color for *disabled controls* (often
+   deliberately faint, 1.5-3.5:1). Informative text -- notes, status lines,
+   empty states, the drop zone, scan reasons, the "?" hint -- must stay
+   readable, so it gets a secondary color derived from the theme's own
+   primary text instead (overridable per theme with --text-secondary). */
+:root { --t2k-text-secondary: var(--text-secondary, color-mix(in srgb, var(--text-primary) 78%, var(--surface-field))); }
+
 .empty-note {
-  color: var(--text-disabled);
+  color: var(--t2k-text-secondary);
   margin: var(--space-4);
 }
 
@@ -235,20 +266,39 @@ body {
 .row-name-cell { display: flex; align-items: center; gap: var(--space-2); overflow: hidden; min-width: 0; }
 .row-name-cell .row-name { flex: 1; min-width: 0; }
 .identicon { flex-shrink: 0; border-radius: 2px; image-rendering: pixelated; }
+/* The pin is a <button>, so it inherits each theme's generic
+   `button { min-width: 64-112px; height; box-shadow; clip-path }` recipe --
+   which swallowed the whole Name column in 27 of 34 themes. Reset every
+   sizing/decoration property a theme's bare `button` rule can set; this
+   class selector outranks any bare `button` rule regardless of load order. */
 .row-pin-btn {
   flex-shrink: 0;
   background: none;
   border: none;
   padding: 0;
+  min-width: 0;
+  min-height: 0;
+  width: auto;
+  height: auto;
+  box-shadow: none;
+  clip-path: none;
   font-size: 0.9em;
   line-height: 1;
   cursor: var(--cursor-default);
-  opacity: 0.3;
+  /* Unpinned: a grey glyph, not a faded red one. At 30 % the red emoji fell
+     to 1.3-1.7:1 on every surface and the control vanished; grey at 85 %
+     keeps >= 3:1 on light fields, and dark schemes lighten it. The red
+     glyph is kept for hover and for pinned rows. Themes can tune it. */
+  opacity: var(--pin-idle-opacity, .85);
+  filter: var(--pin-idle-filter, grayscale(1));
 }
-.row-pin-btn:hover { opacity: 0.7; }
-.row-pin-btn.active { opacity: 1; }
+/* :not() keeps this dark-scheme idle rule from outranking .active and :hover. */
+:root[data-scheme="dark"] .row-pin-btn:not(.active):not(:hover) { filter: var(--pin-idle-filter, grayscale(1) brightness(1.8)); }
+.row-pin-btn::before, .row-pin-btn::after { content: none; }
+.row-pin-btn:hover { opacity: 1; filter: none; box-shadow: none; }
+.row-pin-btn:active { background: none; box-shadow: none; }
+.row-pin-btn.active { opacity: 1; filter: none; }
 .row-name { font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.row-state { color: var(--text-primary); }
 .row-rate { font-variant-numeric: tabular-nums; text-align: right; }
 
 .row-actions { display: flex; gap: var(--space-2); }
@@ -262,6 +312,8 @@ body {
 .row-actions button:hover { box-shadow: var(--glow-hover); }
 .row-actions button:active { background: var(--plastic-pressed); }
 
+/* Drawn at the cell size the column asks for (--tetris-cell, see tetris.js),
+   never scaled by CSS: a non-integer scale broke the grid. */
 canvas.tetris {
   image-rendering: pixelated;
   border: 1px solid var(--border-progress);
@@ -291,34 +343,61 @@ canvas.tetris {
 .tab-btn:hover:not(.active) { filter: brightness(1.05); }
 
 /* ---------- Pages (Add / Share) ---------- */
+/* overflow-y: themes with larger controls (Metro, Memphis, Ubuntu...) push
+   the Add page past the window height; it scrolls instead of crushing the
+   scan list to 0 rows or clipping the Start button. */
 .page { display: none; flex-direction: column; gap: var(--space-3); flex: 1; min-height: 0; }
+/* Ajout is the one page taller than a 640 px window, so it scrolls. The
+   8 px padding (cancelled by the negative margin, so nothing moves) keeps
+   edge decorations -- default-button rings, offset shadows -- from being
+   clipped and the scrollbar off the fields. */
+#page-add { overflow-y: auto; padding: 0 8px 8px; margin: 0 -8px -8px; }
 .page.active { display: flex; }
 
 .form-grid { display: flex; flex-direction: column; gap: var(--space-2); }
 .field-label { font-size: var(--font-size-base); color: var(--text-primary); }
 .field-label.inline { margin: 0; }
+/* background-COLOR, not the `background` shorthand: this selector outranks
+   a theme's bare `select {}`/`input {}` rules, and the shorthand silently
+   reset their chevron/gradient background-image and background-repeat --
+   selects lost their arrow in 25 themes, and dark overrides that set only
+   background-image turned into a tiled mosaic of chevrons over the text. */
 .form-grid input[type="text"],
-.form-grid input[type="number"],
-.form-grid select {
-  background: var(--surface-field);
+.form-grid input[type="number"] {
+  background-color: var(--surface-field);
   border: 1px solid var(--border-field);
   border-radius: var(--radius-control);
   padding: 4px 6px;
   font: inherit;
 }
-.form-grid select { color: var(--text-primary); }
+/* Form controls outside .form-grid (tag filter, SSID field…) kept the
+   browser's font in themes that don't restyle them. Zero specificity: any
+   theme rule still wins. */
+:where(input, select, textarea) { font: inherit; }
+/* :where() keeps the select at element specificity: a theme's own `select`
+   rule (the padding that reserves room for its arrow, its border, its
+   color) wins, since tokens.css loads after this file. Form controls
+   don't inherit color, hence the explicit one. */
+:where(.form-grid) select {
+  background-color: var(--surface-field);
+  border: 1px solid var(--border-field);
+  border-radius: var(--radius-control);
+  padding: 4px 6px;
+  font: inherit;
+  color: var(--text-primary);
+}
 .field-row { display: flex; gap: var(--space-2); align-items: center; }
 .field-row input[type="text"] { flex: 1; }
 .limits-row { flex-wrap: wrap; }
-.field-note { color: var(--text-disabled); font-size: 0.9em; }
-.status-line { min-height: 1.2em; color: var(--text-disabled); font-size: 0.9em; }
+.field-note { color: var(--t2k-text-secondary); font-size: 0.9em; }
+.status-line { min-height: 1.2em; color: var(--t2k-text-secondary); font-size: 0.9em; }
 
 .drop-zone {
   border: 2px dashed var(--border-field);
   border-radius: var(--radius-group);
   padding: var(--space-4);
   text-align: center;
-  color: var(--text-disabled);
+  color: var(--t2k-text-secondary);
   background: var(--surface-field);
 }
 .drop-zone.dragover { border-style: solid; filter: brightness(0.97); }
@@ -345,8 +424,11 @@ canvas.tetris {
 }
 
 /* ---------- Danger-scan results (Add page) ---------- */
-.scan-toolbar { display: flex; gap: var(--space-2); }
-.scan-list { flex: 1; min-height: 0; }
+.scan-toolbar { display: flex; gap: var(--space-2); align-items: center; }
+.scan-toolbar > .start-btn { margin-left: auto; }
+/* Keeps about 5 result rows visible; beyond that the list scrolls on its
+   own, and if even 5 rows don't fit the page scrolls (#page-add). */
+.scan-list { flex: 1 1 auto; min-height: calc(5 * 2.5em); }
 .scan-row {
   display: grid;
   grid-template-columns: 24px 1fr 90px 90px 1fr;
@@ -358,7 +440,7 @@ canvas.tetris {
 .scan-row:last-child { border-bottom: none; }
 .scan-path { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .scan-size { font-variant-numeric: tabular-nums; text-align: right; }
-.scan-reasons { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-disabled); font-size: 0.9em; }
+.scan-reasons { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--t2k-text-secondary); font-size: 0.9em; }
 
 .risk-badge { padding: 1px 6px; border-radius: var(--radius-control); font-size: 0.85em; text-align: center; }
 .risk-safe { background: #DFF3DF; color: #1F7A1F; }
@@ -485,18 +567,23 @@ canvas.tetris {
   border-radius: 50%;
   border: 1px solid var(--border-field);
   background: var(--surface-field);
-  color: var(--text-disabled);
+  color: var(--t2k-text-secondary);
   font-size: 0.75em;
   line-height: 1;
   cursor: help;
   user-select: none;
 }
+/* No `outline: none` here any more: keyboard users need to see which "?"
+   has focus (the baseline :focus-visible ring near the top applies). */
 .info-hint:hover,
 .info-hint:focus {
   color: var(--text-primary);
   border-color: var(--border-control);
-  outline: none;
 }
+/* Deliberately NOT --surface-tooltip/--tooltip-fg: several themes define
+   the light tooltip surface without a matching ink in every mode, and
+   wiring them in made the bubble unreadable in 9 theme/mode combinations.
+   Window colors are always a consistent pair. */
 .info-tooltip-bubble {
   display: none;
   position: fixed;
@@ -518,13 +605,34 @@ canvas.tetris {
   background: var(--selection-bg);
   color: var(--selection-text);
 }
+/* Themes color individual cells (.row-rate/.row-eta/... secondary ink,
+   .row-state primary ink); those class rules beat the inherited selection
+   color and left 21 themes with 1.0-2.1:1 text on the selection band.
+   `inherit`, not --selection-text: many themes restyle the selected row
+   themselves (own background + own color on the row), so the cells must
+   follow whatever ink the row ends up with. The id + classes here outrank
+   any theme's plain class rule. */
+#downloadsList .row.selected :is(.row-name, .row-state, .row-rate, .row-eta, .row-peers, .row-category) {
+  color: inherit;
+}
 
 /* ---------- Downloads page: full 9-column layout + details panel ----------
    Overrides .row's base 5-column grid (same pattern as .share-row) to match
    DownloadsTab's real column set: Name/Progress/ETA/DL/UL/Peers/State/
    Category/Action. */
 .downloads-row {
-  grid-template-columns: 1fr 140px 70px 80px 80px 90px 110px 90px 70px;
+  /* Name keeps a floor (pin + identicon + lock eat ~60 px of it); the
+     figure columns keep the widths their usual values fit in ("107h 38m",
+     "↑ 205.1 Ko/s", "23 (11 seeds)"); a narrower column gap than the
+     generic .row buys room (8 gaps). The progress track is computed from
+     the mosaic (18 cells of --tetris-cell px, plus up to 2 px of theme
+     border on each side), so the header and every row get the same track
+     and the bitmap is never rescaled. --tetris-cell is read by tetris.js. */
+  --tetris-cell: 6;
+  /* 168 px floor: leaves room for the list's own vertical scrollbar (it
+     scrolls as soon as there are more rows than fit) in the tightest theme. */
+  grid-template-columns: minmax(168px, 1fr) calc(18px * var(--tetris-cell) + 4px) 70px 80px 80px 90px 124px 84px 70px;
+  column-gap: var(--space-3);
 }
 .downloads-row-header {
   font-weight: bold;
@@ -533,13 +641,60 @@ canvas.tetris {
   padding: var(--space-2) var(--space-3);
 }
 .downloads-row-header span { text-align: left; }
+/* At the default 980 px window the page is narrow: the mosaic is redrawn
+   with 4 px cells (72 px instead of 108) rather than scaled down, and the
+   36 px go to Name. The "Progression" header must not widen the track
+   (contain: inline-size drops its text from track sizing): right-aligned
+   (direction: rtl), it overflows to the left into the empty end of the
+   "Nom" header instead of being cut. */
+#page-downloads { container: downloads / inline-size; }
+@container downloads (max-width: 1040px) {
+  .downloads-row { --tetris-cell: 4; }
+  .downloads-row-header > span:nth-child(2) { contain: inline-size; white-space: nowrap; direction: rtl; }
+}
 
 .row-eta, .row-peers, .row-category { font-variant-numeric: tabular-nums; }
+/* Themes with wide uppercase/letter-spaced type overflowed the fixed tracks
+   ("TÉLÉCHARGEMENTLOGICIELS"): keep every cell inside its track. Figures
+   ("1.2 Mo/s", "23 (11 seeds)") and states ("Partage (seed)") wrap like
+   before; the category ends in an ellipsis. */
+#downloadsList .downloads-row > :is(.row-eta, .row-rate, .row-peers, .row-state, .row-category) {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#downloadsList .downloads-row > .row-state { overflow-wrap: anywhere; }
+#downloadsList .downloads-row > .row-category { white-space: nowrap; }
+/* The upload rate is right-aligned and Peers left-aligned: with the narrower
+   column gap their figures ran together ("↑ 62.5 23 (11"). */
+.downloads-row > :nth-child(6) { padding-left: var(--space-2); }
 
-/* Health background -- mirrors downloads_tab.py's _HEALTH_COLORS. */
-#downloadsList .row[data-health="critical"] { background: #ffcdcd; }
-#downloadsList .row[data-health="warning"] { background: #fff4b4; }
-#downloadsList .row[data-health="healthy"] { background: #cdf5cd; }
+/* Health background -- mirrors downloads_tab.py's _HEALTH_COLORS in light
+   mode, but derived from the theme's own field surface instead of fixed
+   pastels: a fixed #fff4b4 under a dark/hc theme's light text read at
+   1.0-1.6:1 in every theme. The status is carried mainly by a 4px stripe
+   on the leading edge (pulled toward the theme's ink so it reads on light
+   and dark surfaces alike); the background tint stays light so the row's
+   own ink keeps nearly the contrast of a plain row. Overridable per theme
+   with --status-critical / --status-warning / --status-ok. */
+#downloadsList .row[data-health="critical"] {
+  background: color-mix(in srgb, var(--status-critical, #E0443E) 7%, var(--surface-field));
+}
+#downloadsList .row[data-health="critical"]:not(.selected) {
+  box-shadow: inset 5px 0 0 color-mix(in srgb, var(--status-critical, #E0443E) 75%, var(--text-primary));
+}
+#downloadsList .row[data-health="warning"] {
+  background: color-mix(in srgb, var(--status-warning, #E8B400) 8%, var(--surface-field));
+}
+#downloadsList .row[data-health="warning"]:not(.selected) {
+  box-shadow: inset 5px 0 0 color-mix(in srgb, var(--status-warning, #E8B400) 75%, var(--text-primary));
+}
+#downloadsList .row[data-health="healthy"] {
+  background: color-mix(in srgb, var(--status-ok, #3FAE4A) 6%, var(--surface-field));
+}
+#downloadsList .row[data-health="healthy"]:not(.selected) {
+  box-shadow: inset 5px 0 0 color-mix(in srgb, var(--status-ok, #3FAE4A) 75%, var(--text-primary));
+}
 #downloadsList .row[data-health="critical"].selected,
 #downloadsList .row[data-health="warning"].selected,
 #downloadsList .row[data-health="healthy"].selected {
@@ -560,7 +715,8 @@ canvas.tetris {
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
-  background: #fff4b4;
+  background: color-mix(in srgb, var(--status-warning, #E8B400) 22%, var(--surface-field));
+  color: var(--text-primary);
   border: 1px solid var(--border-field);
   border-radius: var(--radius-group);
   padding: var(--space-2) var(--space-3);
@@ -568,6 +724,9 @@ canvas.tetris {
 .suggestion-banner[hidden] {
   display: none;
 }
+/* Same trap as the pin: a theme's bare `button { min-width; height }` recipe
+   turned the one-glyph close button into a wide capsule. */
+.suggestion-banner-close { min-width: 0; height: auto; }
 .suggestion-banner-message {
   flex: 1;
 }

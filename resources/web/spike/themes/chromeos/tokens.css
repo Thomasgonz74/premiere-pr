@@ -370,9 +370,28 @@
   --tooltip-bg: #3C4043; --tooltip-fg: #E8EAED;
   --gradient-desktop: linear-gradient(150deg,#17181B,#0D0E10);
   --shadow-window: 0 12px 34px rgba(0,0,0,.6);
+  /* L'ombre grise .15 du clair est invisible sur #202124 : le menu se
+     fondait dans la liste. Ombre noire, toujours sans bordure (§9). */
+  --shadow-menu: 0 2px 6px rgba(0,0,0,.5), 0 8px 24px rgba(0,0,0,.45);
   --p2-ok-bg: rgba(129,201,149,.18);  --p2-ok-fg: #81C995;
   --p2-warn-bg: rgba(253,214,99,.16); --p2-warn-fg: #FDD663;
   --p2-on-accent: #202124;
+  /* Primitives encore lues directement par la STRUCTURE (cases, états
+     désactivés) : restées claires, elles donnaient une bordure de case à
+     2,7:1 et des pilules/champs désactivés presque blancs. Même méthode que
+     le bloc HC (--g-grey-700 remappé). */
+  --g-grey-50:  #292A2D;   /* « surfaces #292A2D » du dark Google (STYLE.md) */
+  --g-grey-100: #303134;
+  --g-grey-200: #3C4043;
+  --g-grey-400: #5F6368;   /* case désactivée : plus terne que l'active */
+  --g-grey-700: #9AA0A6;   /* bordure de case : 6,1:1 sur #202124 */
+  /* Bordures : Grey 300/400 (clair) faisaient des contours blanc cassé.
+     Contrôles en Grey 600 (4,4:1, ≥ 3:1), cartes/champs en Grey 700 --
+     l'« outline » Material sombre. */
+  --border-control:  #80868B;
+  --border-field:    #5F6368;
+  --border-group:    #5F6368;
+  --border-progress: #80868B;
   /* Panneau interne : Grey 50 (clair) n'a plus de sens sur fond sombre --
      reprend le survol de conteneur, un cran plus clair que la fenêtre. */
   --surface-panel: var(--surface-hover);
@@ -538,7 +557,7 @@ button {
   min-width: var(--button-min-width);
   height: var(--control-height);
   padding: 0 20px;
-  border: 1px solid var(--g-grey-300);
+  border: 1px solid var(--border-control);  /* Grey 300 en clair ; noir en HC, Grey 600 en sombre */
   border-radius: var(--radius-pill);
   background: var(--surface-window);
   color: var(--accent);
@@ -597,15 +616,15 @@ input[type="text"], input[type="number"], select, textarea, .search-input,
 textarea { height: auto; min-height: 76px; padding: 8px 14px; resize: none; }
 input[type="text"]:not(:disabled):hover, input[type="number"]:not(:disabled):hover,
 textarea:not(:disabled):hover, select:not(:disabled):hover, .search-input:not(:disabled):hover {
-  background: var(--surface-press);
+  background-color: var(--surface-press);  /* -color : garde le chevron du select */
 }
 input[type="text"]:focus, input[type="number"]:focus, textarea:focus,
 select:focus, .search-input:focus {
-  background: var(--surface-window);
+  background-color: var(--surface-window);
   box-shadow: 0 0 0 2px var(--accent-ring);
   outline: none;
 }
-input:disabled, textarea:disabled, select:disabled { background: var(--g-grey-50); color: var(--text-disabled); }
+input:disabled, textarea:disabled, select:disabled { background-color: var(--g-grey-50); color: var(--text-disabled); }
 select {
   appearance: none;
   -webkit-appearance: none;
@@ -748,7 +767,40 @@ input[type="checkbox"]:disabled:checked { background: var(--g-grey-400); border-
 
 /* ---------- Cadre de la jauge Tetris : carte plate, pas d'ombre -------- */
 canvas.tetris {
-  border: 1px solid var(--g-grey-300);
+  border: 1px solid var(--border-group);
   border-radius: var(--radius-card);
   box-shadow: none;
 }
+
+/* HC : le menu blanc sans bordure se perdait sur les lignes claires. */
+[data-theme="hc"] .context-menu { border: 1px solid var(--window-outline); }
+
+/* HC : l'aplat de champ (--surface-field) y vaut #FFFFFF -> champs blanc sur
+   blanc, sans bordure (interdit #7). Les « bordures franches » du bloc HC
+   (STYLE.md phase 4) l'emportent : contour noir sur tous les champs. */
+[data-theme="hc"] :is(input[type="text"], input[type="number"], select, textarea, .search-input) {
+  border: 1px solid var(--border-field);
+}
+
+/* Sombre : le menu était #202124 sur #202124. Élévation Material sombre =
+   surface un cran plus claire (+ ombre noire, cf. --shadow-menu), toujours
+   sans bordure. Le dialogue garde #202124 : ses champs #303134 sans bordure
+   (interdit #7) doivent s'en détacher ; c'est le voile qui l'isole. */
+[data-theme="dark"] .context-menu { background: var(--surface-field); }
+[data-theme="dark"] .context-menu-item:hover { background: var(--surface-press); }
+[data-theme="dark"] .modal-overlay { background: rgba(0,0,0,.5); }
+
+/* Sombre : icônes data-URI de couleur fixe. Chevron Grey 700 sur #303134
+   (2,1:1) -> Grey 500 (5:1) ; coche blanche sur Blue 300 (2,1:1) -> encre
+   nuit, comme le texte des pilules pleines (--p2-on-accent). */
+[data-theme="dark"] select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Cpath d='M4 6.5l4 4 4-4' fill='none' stroke='%239AA0A6' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+[data-theme="dark"] input[type="checkbox"]:checked::after {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12'%3E%3Cpath d='M2 6.5l3 3 5-7' fill='none' stroke='%23202124' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+/* La liste de ce thème est une carte --surface-window, pas --surface-field
+   comme le suppose style.css : la teinte de santé part donc du même fond.
+   En sombre, le secondaire tombait sinon à 4,2:1 sur la ligne avertissement. */
+#downloadsList .row[data-health] { --surface-field: var(--surface-window); }

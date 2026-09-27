@@ -41,6 +41,8 @@
   --border-strong:         #8A8A8A;  /* cases, radios, commutateur éteint */
   --border-menu:           rgba(0,0,0,.09);
   --border-disabled:       #E5E5E5;
+  --border-strong-hover:   #616161;  /* case survolée (WinUI clair) */
+  --w11-check-disabled:    #BFBFBF;  /* case désactivée (cadre + fond coché) */
 
   /* Fenêtre */
   --window-border:          rgba(0,0,0,.16);  /* trait 1 px */
@@ -138,6 +140,7 @@
   /* Indicateur de sélection (pilule accent des listes/navigation) */
   --indicator-w: 3px;
   --indicator-h: 16px;
+  --indicator-bg: var(--accent);   /* pilule + soulignement de focus ; jaune en hc */
 
   /* Le "plastique" des aînées n'existe pas ici (interdit #2/#9 STYLE.md :
      pas de biseau, pas de lustre) — Fluent 2 pose des APLATS sur ses
@@ -241,7 +244,10 @@
      ======================================================== */
   --transition-state: .15s ease;
   --transition: var(--transition-state);
-  --focus-ring: 2px solid #000;   /* anneau continu, offset 1 px — fini le pointillé */
+  /* Couleur seule en jeton : re-résolue en dark/hc, et consommée aussi par
+     l'anneau de base de style.css (cases, selects, liens). */
+  --focus-ring-color: #000;
+  --focus-ring: 2px solid var(--focus-ring-color);   /* anneau continu, offset 1 px — fini le pointillé */
   /* outline shorthand attendu par le CSS partagé : même valeur, même
      intention (anneau continu, jamais pointillé — interdit #7 STYLE.md). */
   --focus-outline: var(--focus-ring);
@@ -331,7 +337,7 @@
   --border-control-bottom: rgba(255,255,255,.05);
   --border-card-bottom: rgba(255,255,255,.05);
   --border-field-bottom: rgba(255,255,255,.36);
-  --border-strong: rgba(255,255,255,.24);
+  --border-strong: rgba(255,255,255,.54);  /* .24 : case vide à 2.2:1 ; .54 = ControlStrongStroke WinUI sombre (≈5:1) */
   --border-menu: #3A3A3A;
   --border-disabled: rgba(255,255,255,.05);
   --window-border: #565656;
@@ -353,6 +359,14 @@
   --p2-err-bg: #442726;  --p2-err-fg: #FF99A4;
   --p2-shadow-thumb: 0 1px 3px rgba(0,0,0,.6);
   --p2-shadow-toast: 0 4px 14px rgba(0,0,0,.5);
+  /* Jetons clairs que la charte ne redéfinissait pas en sombre : anneau de
+     focus noir invisible, rail #D6D6D6 seul trait clair de l'écran, face
+     désactivée #F5F5F5 en plaque blanche, survol de case #616161. */
+  --focus-ring-color: #FFFFFF;
+  --w11-progress-rail: rgba(255,255,255,.36);   /* = soulignement de champ, 3:1 */
+  --w11-face-disabled: rgba(255,255,255,.04);   /* ControlFillColorDisabled WinUI */
+  --w11-check-disabled: rgba(255,255,255,.16);
+  --border-strong-hover: rgba(255,255,255,.62);
   /* icônes surchargées pour le fond sombre */
   --icon-back: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M20 12H5.5M11.5 5.5L5 12l6.5 6.5' fill='none' stroke='%23E6E6E6' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   --icon-forward: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M4 12h14.5M12.5 5.5L19 12l-6.5 6.5' fill='none' stroke='%23E6E6E6' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
@@ -401,6 +415,16 @@
   --gradient-desktop: linear-gradient(#000000,#000000);
   --p2-shadow-thumb: 0 0 0 1.5px #FFEE32;
   --p2-shadow-toast: 0 0 0 2px #FFEE32;
+  /* Dessin en jaune (charte : bordures, pilule de sélection) : l'accent
+     #164FA8 n'atteint que 2.7:1 sur noir pour la pilule et l'anneau. */
+  --focus-ring-color: #FFEE32;
+  --indicator-bg: #FFEE32;
+  --scroll-thumb: #FFEE32;        /* pouce jaune (charte, phase 4) */
+  --w11-progress-rail: #FFEE32;
+  --w11-progress: #FFEE32;        /* remplissage de jauge : #164FA8 à 2.6:1 sur la piste */
+  --border-strong-hover: #FFEE32;
+  --w11-face-disabled: #000000;   /* texte #808080 à 5.3:1 */
+  --w11-check-disabled: #808080;
   /* icônes en contraste élevé */
   --icon-back: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M20 12H5.5M11.5 5.5L5 12l6.5 6.5' fill='none' stroke='%23FFFFFF' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   --icon-forward: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M4 12h14.5M12.5 5.5L19 12l-6.5 6.5' fill='none' stroke='%23FFFFFF' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
@@ -561,7 +585,7 @@ button:disabled { background: var(--w11-face-disabled); border-color: var(--bord
   box-shadow: none;
 }
 .start-btn:hover { background: var(--accent-hover); filter: none; }
-.start-btn:active { background: var(--accent-pressed); color: rgba(255,255,255,.8); }
+.start-btn:active { background: var(--accent-pressed); color: color-mix(in srgb, var(--p2-on-accent) 80%, transparent); }  /* blanc .8 sur #47A9D9 en sombre : 2:1 */
 
 /* Boutons de ligne (pause/suppr.) : même recette que les boutons, compacts. */
 .row-actions button {
@@ -598,13 +622,21 @@ input[type="text"], input[type="number"], select, textarea, .search-input,
 textarea { height: auto; min-height: 72px; padding: 6px 12px; resize: none; }
 input[type="text"]:hover, input[type="number"]:hover, select:hover, textarea:hover, .search-input:hover,
 .form-grid input[type="text"]:hover, .form-grid input[type="number"]:hover {
-  background: var(--control-bg-hover);
+  background-color: var(--control-bg-hover);   /* pas le raccourci : il effaçait le chevron */
 }
 input[type="text"]:focus, input[type="number"]:focus, select:focus, textarea:focus, .search-input:focus,
 .form-grid input[type="text"]:focus, .form-grid input[type="number"]:focus {
-  background: var(--w11-white);
-  box-shadow: inset 0 -2px 0 var(--accent);   /* sans décalage, cf. checklist */
+  background-color: var(--w11-white);
+  box-shadow: inset 0 -2px 0 var(--indicator-bg);   /* sans décalage, cf. checklist ; jaune en hc + anneau ci-dessous */
   outline: none;
+}
+/* HC : soulignement jaune au repos comme au focus -- seul un anneau jaune
+   détaché (celui des boutons) distingue l'état focus. */
+[data-theme="hc"] input[type="text"]:focus, [data-theme="hc"] input[type="number"]:focus,
+[data-theme="hc"] select:focus, [data-theme="hc"] textarea:focus, [data-theme="hc"] .search-input:focus,
+[data-theme="hc"] .form-grid input[type="text"]:focus, [data-theme="hc"] .form-grid input[type="number"]:focus {
+  outline: var(--focus-ring);
+  outline-offset: 1px;
 }
 select {
   appearance: none; -webkit-appearance: none;
@@ -622,6 +654,11 @@ select {
 [data-theme="dark"] select {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Cpath d='M4 6.5l4 4 4-4' fill='none' stroke='%23E6E6E6' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 }
+/* HC : #5F5F5F sur le champ #0A0A0A = 3.1:1, terne à côté du contour jaune --
+   blanc, comme les autres icônes du bloc hc. */
+[data-theme="hc"] select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Cpath d='M4 6.5l4 4 4-4' fill='none' stroke='%23FFFFFF' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
 
 /* ---------- Case à cocher : carrée arrondie 4 px, cochée = pleine accent ---------- */
 input[type="checkbox"] {
@@ -634,7 +671,7 @@ input[type="checkbox"] {
   display: inline-grid; place-content: center;
   transition: border-color var(--transition-state), background var(--transition-state);
 }
-input[type="checkbox"]:hover { border-color: #616161; background: var(--control-bg-hover); }
+input[type="checkbox"]:hover { border-color: var(--border-strong-hover); background: var(--control-bg-hover); }
 input[type="checkbox"]:checked { background: var(--accent); border-color: var(--accent); }
 input[type="checkbox"]:checked::after {
   content: "";
@@ -649,8 +686,8 @@ input[type="checkbox"]:checked::after {
 [data-theme="dark"] input[type="checkbox"]:checked::after {
   background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14'%3E%3Cpath d='M3 7.5l3.2 3.2L11 4' fill='none' stroke='%230A1A2A' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat center;
 }
-input[type="checkbox"]:disabled { border-color: #BFBFBF; background: var(--w11-face-disabled); }
-input[type="checkbox"]:disabled:checked { background: #BFBFBF; border-color: #BFBFBF; }
+input[type="checkbox"]:disabled { border-color: var(--w11-check-disabled); background: var(--w11-face-disabled); }
+input[type="checkbox"]:disabled:checked { background: var(--w11-check-disabled); border-color: var(--w11-check-disabled); }
 
 /* ---------- Listes (Téléchargements/Partage/Analyse) : pilule d'indicateur ----------
    Le gabarit modélise ces listes comme un tableau à colonnes (grille CSS) :
@@ -704,7 +741,7 @@ input[type="checkbox"]:disabled:checked { background: #BFBFBF; border-color: #BF
   transform: translateY(-50%);
   width: var(--indicator-w); height: var(--indicator-h);
   border-radius: 2px;
-  background: var(--accent);
+  background: var(--indicator-bg);
 }
 
 /* ---------- Group box (Profil / détails Téléchargements) : une carte ---------- */
@@ -756,7 +793,9 @@ input[type="checkbox"]:disabled:checked { background: #BFBFBF; border-color: #BF
 }
 .modal-box {
   background: var(--surface-card);
-  border: none;
+  /* --border-menu : trait discret en clair/sombre (ContentDialog), jaune en
+     hc où la carte #0A0A0A se perdait sur le voile noir. */
+  border: 1px solid var(--border-menu);
   border-radius: var(--radius-surface);
   box-shadow: var(--shadow-window);
   padding: 20px;

@@ -3,8 +3,18 @@
 #rssFeedList { flex: 1; }
 #rssLogList { flex: 1; }
 
-.rss-feed-row { grid-template-columns: 1fr 160px 24px 60px; }
+/* Last track `auto`: the actions cell holds two buttons ("Filtres…" + ✕),
+   which never fit 60px once a theme's own button padding/font applied. */
+.rss-feed-row { grid-template-columns: 1fr 160px 24px auto; }
 
 .rss-log-row { padding: 2px var(--space-2); margin: 0; font-size: 0.9em; border-bottom: 1px solid var(--border-group); }
 .rss-log-row:last-child { border-bottom: none; }
-.rss-log-error { color: #A33B12; }
+/* Red pulled toward the theme's own text color: dark red on light themes,
+   light red on dark ones -- a fixed #A33B12 read at 1.1-3.2:1 on dark/blue
+   surfaces. Overridable per theme with --status-danger-text. */
+/* Fallback red pulled toward the theme ink just enough to keep 4.5:1 on
+   mid-gray surfaces (#C0C0C0): 68 % in light schemes (45 % read as brown
+   ink); dark schemes start from a light red. Themes can pin
+   --status-danger-text. data-scheme comes from theme_switcher.js. */
+.rss-log-error { color: var(--status-danger-text, color-mix(in srgb, #D0342C 68%, var(--text-primary))); font-weight: 600; }
+:root[data-scheme="dark"] .rss-log-error { color: var(--status-danger-text, color-mix(in srgb, #FF6B60 70%, var(--text-primary))); }

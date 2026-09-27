@@ -32,7 +32,7 @@
   --u-orange:    #DD4814;
   --u-orange-hi: #E96233;
   --u-orange-dk: #B93C10;
-  --u-select:    #F07746;      /* la selection Ambiance */
+  --u-select:    #C4501C;      /* la selection Ambiance, assombrie : le blanc y tient 4,7:1 (2,8:1 sur #F07746) */
   --u-ring: rgba(221,72,20,.40);
 
   /* Le cercle Fermer (orange) et ses freres sombres */
@@ -80,13 +80,20 @@
      séparément, on les fait pointer vers ses propres traits/traits doux :
      boutons/champs/onglets/jauge partagent --u-border (le trait unique
      de la charte), le regroupement prend le trait plus doux --u-line,
-     et la "légende" (titres de section) reprend l'orange d'état. */
+     et la "légende" (titres de section) reprend l'orange d'état -- dans
+     sa nuance d'appui --u-orange-dk : #DD4814 ne tient que 4,2:1 sur
+     blanc pour du texte courant, #B93C10 tient 5,6:1 (HC : #6E2500). */
   --border-control:  var(--u-border);
   --border-field:    var(--u-border);
   --border-group:    var(--u-line);
   --border-progress: var(--u-border);
   --border-tab:      var(--u-border);
-  --text-legend:     var(--u-orange);
+  --text-legend:     var(--u-orange-dk);
+
+  /* Contrôle désactivé (§7 STYLE.md : fond #EBEAE7) -- tokenisé pour que
+     le mode sombre ne garde pas une plaque crème vive. */
+  --u-disabled-bg:   #EBEAE7;
+  --u-disabled-edge: #C6C4BE;
 
   /* ========================================================
      3. RECETTES — les seuls dégradés admis (charte + alias requis)
@@ -94,8 +101,12 @@
   --chrome-grad: linear-gradient(180deg, #454440, #3C3B37);
   --btn-grad:    linear-gradient(180deg, #FCFCFB, #EFEDEA);
   --btn-press:   linear-gradient(180deg, #DDDBD6, #E8E6E1);
-  --btn-orange:  linear-gradient(180deg, #F1815B, #DD4814);
-  --btn-orange-press: linear-gradient(180deg, #D8511F, #C6420F);
+  /* Le plein orange du défaut porte du texte blanc (§7) : le dégradé
+     Ambiance #F1815B -> #DD4814 ne lui laissait que 2,6 à 4,2:1. Même
+     orange, un cran plus bas (#C64E1D -> l'appui #B93C10) : 4,7 à 5,6:1. */
+  --btn-orange:  linear-gradient(180deg, #C64E1D, #B93C10);
+  --btn-orange-hover: linear-gradient(180deg, #CC4C18, #BE4412);
+  --btn-orange-press: linear-gradient(180deg, #A8380E, #B23F0E);
   --ball-orange: linear-gradient(180deg, #F79B77, #DF4A16);
   --gradient-desktop: radial-gradient(115% 95% at 30% 22%,
                       #A65D8A, #5E2750 55%, #2C001E 95%);
@@ -193,6 +204,11 @@
      bordure orange, §7 STYLE.md) -- un outline plein de la même couleur
      est la traduction fidèle plutôt qu'un style pointillé étranger. */
   --focus-outline: 1px solid var(--u-orange);
+  /* Anneau de base de style.css (:where(...):focus-visible, 2px, offset 1px) :
+     le halo --u-ring a 40 % reste dessous (charte), mais c'est cet anneau
+     plein --u-orange-dk qui porte le 3:1 -- 5,6 clair, 3,8 sombre, 10,9 HC --
+     sur boutons (Demarrer compris), champs, cases et elements [tabindex]. */
+  --focus-ring-color: var(--u-orange-dk);
   --transition: var(--transition-state);
 
   /* ========================================================
@@ -263,7 +279,13 @@
 [data-theme="dark"] {
   --u-bg: #3C3B37;
   --u-view: #3F3E3A;
-  --u-border: #1E1D1B;
+  /* Trait des contrôles : un trait plus sombre que #3C3B37 plafonne à
+     1,9:1 (même noir pur) -- il faut un gris chaud CLAIR pour tenir 3:1
+     (3,2 sur la fenêtre, 3,0 sur les vues). */
+  --u-border: #8A8880;
+  --text-legend: #F79B77;       /* l'orange clair de --ball-orange : 5,1:1 sur #3F3E3A */
+  --u-disabled-bg: #34332F;
+  --u-disabled-edge: #55534E;
   --u-line: #55534E;
   --u-ink: #DFDBD2;               /* la crème devient l'encre */
   --u-ink-soft: #B5B1A8;
@@ -307,6 +329,10 @@
   --hl-soft: #FFEDE2;
   --selection-text: #FFFFFF;
   --btn-grad: linear-gradient(#FFFFFF,#FFFFFF);
+  /* Défaut : aplat rouille, blanc à 8,4:1 (survol 10,9:1) */
+  --btn-orange: linear-gradient(#8A2F00,#8A2F00);
+  --btn-orange-hover: linear-gradient(#6E2500,#6E2500);
+  --btn-orange-press: linear-gradient(#5C1F00,#5C1F00);
   --btn-hover: #E8E8E8;
   --btn-press: #D5D5D5;
   --list-hot: #E8E8E8;
@@ -468,8 +494,12 @@ button {
 }
 button:not(:disabled):hover { background: var(--btn-hover); }
 button:not(:disabled):active { background: var(--btn-press); box-shadow: inset 0 1px 2px rgba(0,0,0,.2); }
-button:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-button:disabled { background: #EBEAE7; color: var(--text-disabled); border-color: #C6C4BE; }
+/* Le halo --u-ring (orange a 40 %) ne tient que 1,4 a 1,7:1 sur ses fonds :
+   la bordure passe a l'orange d'appui, comme celle des champs (§7), et
+   l'anneau de base (--focus-ring-color, section 7) porte le 3:1 -- y compris
+   sur Demarrer, dont la bordure est deja orange au repos. */
+button:focus-visible { box-shadow: var(--focus-ring); border-color: var(--u-orange-dk); }
+button:disabled { background: var(--u-disabled-bg); color: var(--text-disabled); border-color: var(--u-disabled-edge); }
 
 /* Le defaut : orange plein, un seul par vue (interdit #7 : "deux pleins
    orange par vue" -- Demarrer est CE bouton). */
@@ -484,7 +514,7 @@ button:disabled { background: #EBEAE7; color: var(--text-disabled); border-color
   font-weight: 400;
   text-shadow: 0 -1px 0 rgba(0,0,0,.2);
 }
-.start-btn:hover { background: linear-gradient(180deg, #F3906F, #E4571F); }
+.start-btn:hover { background: var(--btn-orange-hover); }
 .start-btn:active { background: var(--btn-orange-press); box-shadow: inset 0 1px 2px rgba(0,0,0,.2); }
 
 .row-actions button {
@@ -525,11 +555,10 @@ input[type="text"], input[type="number"], select, textarea, .search-input {
 textarea { height: auto; min-height: 64px; padding: 5px 8px; resize: none; }
 input[type="text"]:not(:disabled), textarea:not(:disabled) { cursor: var(--cursor-text); }
 input[type="text"]:focus, textarea:focus, select:focus {
-  outline: none;
-  border-color: var(--u-orange);
+  border-color: var(--u-orange-dk);   /* #DD4814 : 2,7:1 sur l'anthracite dark */
   box-shadow: var(--focus-ring);
 }
-input:disabled, textarea:disabled { background: #EBEAE7; color: var(--text-disabled); }
+input:disabled, textarea:disabled { background: var(--u-disabled-bg); color: var(--text-disabled); }
 select {
   appearance: none; -webkit-appearance: none;
   padding-right: 28px;
@@ -564,21 +593,23 @@ input[type="checkbox"]:checked::after {
   width: 11px; height: 11px;
   background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11'%3E%3Cpath d='M2 6l2.6 2.6L9 2.5' fill='none' stroke='%23fff' stroke-width='2'/%3E%3C/svg%3E") no-repeat center;
 }
-input[type="checkbox"]:disabled { background: #EBEAE7; border-color: #C6C4BE; }
+input[type="checkbox"]:disabled { background: var(--u-disabled-bg); border-color: var(--u-disabled-edge); }
 input[type="checkbox"]:disabled:checked::after { filter: grayscale(1) opacity(.55); }
 
 /* ---------- Listes / lignes : fond blanc plat, survol --u-bg (le meme
    token que le survol de table/arbre du composant etendu -- STYLE.md
    "copier les patterns CSS de components.html", pas --list-hot qui n'est
    ici que la teinte du listbox de demo). Selection deja correcte via
-   --selection-bg = --u-select (alias du bloc racine). ---------- */
+   --selection-bg = --u-select (alias du bloc racine). En dark/HC, --u-bg
+   et --u-view se confondent (#3C3B37/#3F3E3A, blanc/blanc) : le survol
+   y prend --list-hot, que seuls ces deux blocs definissent. ---------- */
 .listbox { background: var(--u-view); border: 1px solid var(--u-border); border-radius: 3px; padding: 0; }
 .row { border-bottom: 1px solid var(--u-line); }
-.row:hover:not(.selected) { background: var(--u-bg); }
+.row:hover:not(.selected) { background: var(--list-hot, var(--u-bg)); }
 .row-name { font-weight: 700; }
 
 .scan-row { border-bottom: 1px solid var(--u-line); }
-.scan-row:hover { background: var(--u-bg); }
+.scan-row:hover { background: var(--list-hot, var(--u-bg)); }
 .scan-path { color: var(--text-primary); }
 .scan-size { color: var(--text-soft); }
 
@@ -655,6 +686,12 @@ input[type="checkbox"]:disabled:checked::after { filter: grayscale(1) opacity(.5
   color: var(--u-chrome-text);
   font-weight: 700;
   text-align: left;
+}
+/* Dark : le corps du dialogue prend lui-meme l'anthracite #3C3B37, le
+   bandeau --chrome-grad s'y fondait -- aplat du contour #2E2D29 + filet. */
+[data-theme="dark"] .modal-box h3 {
+  background: #2E2D29;
+  border-bottom: 1px solid var(--u-line);
 }
 
 /* ---------- Defilement : overlay ORANGE fin qui s'epaissit au survol,

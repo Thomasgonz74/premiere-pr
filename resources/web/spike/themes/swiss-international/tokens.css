@@ -26,10 +26,13 @@
   /* LE rouge d'affiche (unique) */
   --sw-red:       #E4032E;
   --sw-red-press: #B00021;
+  --status-danger-text: var(--sw-red);   /* erreur RSS : le rouge suisse, pas un brun */
 
   --sw-desktop: #EBEBEB;
   --tooltip-bg: var(--sw-ink);
   --tooltip-fg: #FFFFFF;
+  /* chevron des listes déroulantes : trait d'encre, redéfini en sombre */
+  --sw-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23111111' stroke-width='1.6'/%3E%3C/svg%3E");
 
   /* ========================================================
      2. SÉMANTIQUES
@@ -231,11 +234,13 @@
   --sw-white: #161616;             /* la page au négatif */
   --sw-ink: #F4F4F4;
   --sw-gray: #A2A2A2;
-  --sw-line: #3E3E3E;
+  --sw-line: #666666;              /* hairline 3,1:1 sur la nuit (#3E3E3E : 1,7, bords de champs perdus) */
   --sw-disabled: #5C5C5C;
   --sw-desktop: #0E0E0E;
+  --status-danger-text: #FF5A6E;   /* #E4032E ne tient que 3,9:1 sur la nuit */
   --selection-text: var(--sw-white);  /* l'inversion inversée : encre de nuit */
   --tooltip-fg: var(--sw-white);
+  --sw-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23F4F4F4' stroke-width='1.6'/%3E%3C/svg%3E");
   /* icônes surchargées pour le fond sombre */
   --icon-folder: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M2.5 6h6.5l2 2.5h10.5v11h-19z' fill='%23161616' stroke='%23F4F4F4' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M2.5 6h6.5l2 2.5h-9z' fill='%23E4032E' stroke='%23F4F4F4' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
   --icon-folder-open: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M2.5 6h6.5l2 2.5h9.5v3h-18z' fill='%23E4032E' stroke='%23F4F4F4' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M4.8 11.5h16.7l-2.6 8H2.5z' fill='%23161616' stroke='%23F4F4F4' stroke-width='1.3' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
@@ -259,7 +264,8 @@
   --sw-gray:  #575757;       /* 7.0 sur la page */
   --sw-red:       #B00021;   /* 11.3 — tient texte ET fond */
   --sw-red-press: #8E001A;
-  --sw-line:  #B8B8B8;       /* hairlines plus fermes */
+  --sw-line:  #8A8A8A;       /* hairlines franches : 3.4 (le #B8B8B8 ne tenait que 2.0) */
+  --sw-disabled: #767676;    /* 4.5 : désactivé lisible, encore plus pâle que le gris */
   --text-soft: #575757;
 }
 /* HC:END */
@@ -341,6 +347,7 @@ input[type=text], textarea { cursor: var(--cursor-text); }
   width: auto; height: auto;
   border: none;
   background: none;
+  transform: none;           /* style.css pivote le trait du × de 45° : le glyphe deviendrait « + » */
   font: 700 13px/1 var(--font-ui);
   color: currentColor;
 }
@@ -468,7 +475,7 @@ input[type="text"]:not(:disabled), textarea:not(:disabled), .search-input:not(:d
 select {
   appearance: none; -webkit-appearance: none;
   padding-right: 28px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23111111' stroke-width='1.6'/%3E%3C/svg%3E");
+  background-image: var(--sw-chevron);
   background-repeat: no-repeat;
   background-position: right 10px center;
 }
@@ -535,9 +542,20 @@ input[type="checkbox"]:disabled:checked::after { background: var(--sw-disabled);
 .context-menu-item { padding: 6px 14px; }
 .context-menu-separator { background: var(--sw-line); margin: 4px 0; }
 
+/* ---------- Infobulle : INVERSEE (S9 -- la legende d'affiche). style.css
+   la peint aux couleurs de la fenetre ; ici la paire --surface-tooltip /
+   --tooltip-fg est coherente dans les trois modes (encre/blanc, et au
+   negatif en sombre). ---------- */
+.info-tooltip-bubble {
+  background: var(--surface-tooltip);
+  color: var(--tooltip-fg);
+  border-color: var(--surface-tooltip);
+}
+
 /* ---------- Dialogue : page a hairline, LE FILET DE TETE (3px) sous le
    titre gros ancre le dialogue exactement comme la fenetre ---------- */
-.modal-overlay { background: color-mix(in srgb, var(--sw-ink) 55%, transparent); }
+/* Voile noir fixe : --sw-ink blanchit en sombre et délavait la page. */
+.modal-overlay { background: rgba(0, 0, 0, .55); }
 .modal-box {
   background: var(--sw-white);
   border: 1px solid var(--sw-line);

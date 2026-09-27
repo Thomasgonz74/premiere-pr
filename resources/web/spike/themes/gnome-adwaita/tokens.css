@@ -42,7 +42,10 @@
   --accent-hover:   #4990E7;  /* + blanc 10 % */
   --accent-pressed: #2A6AB6;  /* + noir 20 % */
   --accent-text:    #1C71D8;  /* accent autonome : liens, texte accentué */
-  --accent-ring:    rgba(53,132,228,.55);  /* anneau de focus */
+  /* Anneau de focus : .55 tombait à 2,0:1 sur la vue blanche et 2,2:1 sur
+     la vue sombre (< 3:1 exigé pour un indicateur non textuel) ; .9 reste
+     un voile d'accent translucide et passe 3,1:1 (#FAFAFA) / 3,5:1 (#242424). */
+  --accent-ring:    rgba(53,132,228,.9);
   --accent-soft:    #99C1F1;  /* Blue1 : arc clair de l'anneau d'attente */
 
   /* DESTRUCTIF — existe dans ce style (Red3 → nuances) */
@@ -90,7 +93,11 @@
   --text-primary:      var(--adw-fg);
   --text-soft:         var(--adw-fg-dim);
   --text-disabled:     var(--adw-fg-disabled);
-  --selection-bg:      var(--accent);
+  /* Sélection pleine accent (§2, interdit 6) mais dans la nuance foncée de
+     la même famille : le blanc sur #3584E4 ne donne que 3,77:1 ; sur
+     --accent-text (#1C71D8, Blue4 de la charte) 4,77:1. En HC --accent-text
+     = --accent (#17549E), la sélection n'y change pas. */
+  --selection-bg:      var(--accent-text);
   --selection-text:    #FFFFFF;
 
   /* Alias génériques consommés par resources/web/spike/*.css -- chaque thème
@@ -366,6 +373,17 @@
   --gradient-desktop: linear-gradient(#E8E8E8,#E8E8E8);
   --shadow-window: 0 0 0 2px #000000;
   --shadow-knob: 0 0 0 1.5px #000000;
+  --accent-ring: #17549E;   /* anneau de focus plein : 7,5:1 sur blanc */
+  /* « Bordures franches » (§HC de la charte) : en clair/sombre les contrôles
+     n'ont pas de trait (interdit 2), mais ici les pilules .14 et les champs
+     .07 ne se détachent qu'à 1,4:1 / 1,2:1 du blanc. Ces jetons, transparents
+     hors HC, sont posés en anneau inset (box-shadow, sans effet de gabarit)
+     par les règles boutons/champs de la STRUCTURE, et en trait par style.css
+     (zone de dépôt, « ? », infobulle, bandeau). */
+  --border-control:  #000000;
+  --border-field:    #000000;
+  --border-tab:      #000000;
+  --border-progress: #000000;
 }
 /* HC:END */
 
@@ -405,8 +423,10 @@
 /* Boutons de fenêtre : CERCLES neutres 24 px, jamais un rectangle décoré
    (interdit 3) -- Fermer n'est jamais rouge, le rouge appartient au seul
    bouton destructif. Par défaut GNOME n'affiche QUE Fermer (section 6.2) :
-   Réduire/Agrandir n'ont pas d'équivalent affiché ici. */
-.cap-min, .cap-max { display: none; }
+   Réduire/Agrandir n'ont pas d'équivalent affiché ici. Sélecteur à deux
+   classes : `.cap-min` seul (0,1,0) perdait contre le `display: grid` de la
+   règle `.cap-btn` ci-dessous, et les deux cercles restaient affichés. */
+.cap-btn.cap-min, .cap-btn.cap-max { display: none; }
 .cap-btn {
   width: var(--circle-size);
   height: var(--circle-size);
@@ -464,6 +484,10 @@ button {
   border-radius: var(--radius-control);
   background: var(--pill-rest);
   color: var(--text-primary);
+  /* Transparent hors HC ; en HC, contour noir (dont le cercle Fermer, blanc
+     sur headerbar blanche). Un anneau plutôt qu'un trait : aucun gabarit ne
+     bouge, et l'épingle de ligne (box-shadow: none, style.css) reste nue. */
+  box-shadow: inset 0 0 0 1px var(--border-control);
   transition: background var(--transition-state), color var(--transition-state);
 }
 button:not(:disabled):hover { background: var(--pill-hover); }
@@ -498,6 +522,9 @@ button:disabled { color: var(--text-disabled); opacity: .6; }
 }
 .row-actions button:hover { background: var(--pill-hover); }
 .row-actions button:active { background: var(--pill-pressed); }
+/* Sur la bande de sélection, le glyphe ‖/× gardait l'encre du thème :
+   noir sur bleu marine en HC (1,9:1), encre bleutée sur bleu en clair. */
+#downloadsList .row.selected .row-actions button { color: var(--selection-text); }
 
 /* ---------- 4. Champs : voile d'encre, anneau accent au focus ---------- */
 /* Adwaita ne connait qu'une seule hauteur de controle (34 px, section 5) --
@@ -509,8 +536,10 @@ input[type="text"], input[type="number"], select, textarea, .search-input,
   padding: 0 12px;
   background: var(--field-rest);
   border: 0;
+  box-shadow: inset 0 0 0 1px var(--border-field);  /* noir en HC seulement */
   border-radius: var(--radius-control);
   font: inherit;
+  color: var(--text-primary);  /* un champ n'hérite pas la couleur du texte */
   transition: background var(--transition-state), box-shadow var(--transition-state);
 }
 textarea { height: auto; min-height: 76px; padding: 8px 12px; resize: none; }
@@ -551,14 +580,21 @@ input[type="checkbox"] {
   width: var(--checkbox-size);
   height: var(--checkbox-size);
   border: 0;
-  border-radius: var(--radius-control);
+  /* 4 px comme components.html (§7 : 4-6) : à 6 px sur 16, la case vide
+     désormais cerclée se lisait comme un bouton radio. */
+  border-radius: 4px;
   background: var(--pill-rest);
+  /* Décochée, la seule pilule .08 ne se détachait qu'à 1,2-1,4:1 de la carte.
+     Liseré inset (pas une bordure, cf. interdit 2 -- libadwaita dessine
+     lui-même un anneau sur la case vide) à l'encre atténuée : 4,7:1 clair,
+     5,9:1 sombre, 12,6:1 HC. */
+  box-shadow: inset 0 0 0 1px var(--text-soft);
   display: inline-grid;
   place-content: center;
-  transition: background var(--transition-state);
+  transition: background var(--transition-state), box-shadow var(--transition-state);
 }
 input[type="checkbox"]:not(:disabled):hover { background: var(--pill-hover); }
-input[type="checkbox"]:checked { background: var(--accent); }
+input[type="checkbox"]:checked { background: var(--accent); box-shadow: none; }
 input[type="checkbox"]:checked:not(:disabled):hover { background: var(--accent-hover); }
 input[type="checkbox"]:checked::after {
   content: "";
@@ -636,6 +672,29 @@ input[type="checkbox"]:disabled { opacity: .5; }
   margin: 6px 4px;
 }
 
+/* Infobulle « ? » : SOMBRE, texte blanc, radius 8, sans bordure (§9 ;
+   interdit 9 « infobulles claires »). style.css peint la bulle aux couleurs
+   de la fenêtre -- claire en mode clair, fondue dans le fond en sombre ;
+   ici --tooltip-bg/--tooltip-fg forment une paire fixe dans les trois modes.
+   Teinte de --tooltip-bg rendue opaque : à 92 % le texte recouvert
+   transparaissait en fantôme entre les lignes de la bulle. */
+.info-tooltip-bubble {
+  background: rgb(28, 28, 32);
+  color: var(--tooltip-fg);
+  border-color: transparent;
+  border-radius: 8px;
+}
+/* Bulle sombre sur fenêtre sombre : un filet (permis aux popovers, §10.2)
+   la détache du fond. */
+[data-theme="dark"] .info-tooltip-bubble { border-color: var(--hairline); }
+/* HC : canon HighContrast (fond clair, encre noire, bordure franche) -- la
+   bulle sombre translucide n'y donnait que 15,5:1 contre 21:1. */
+[data-theme="hc"] .info-tooltip-bubble {
+  background: var(--surface-window);
+  color: var(--text-primary);
+  border-color: var(--border-field);
+}
+
 /* ---------- 9. Boites de dialogue : carte flottante, pas la surface fenetre ---------- */
 .modal-overlay { background: rgba(0, 0, 6, .45); }
 .modal-box {
@@ -672,3 +731,10 @@ canvas.tetris {
   border-radius: var(--radius-control);
   box-shadow: none;
 }
+
+/* Police large : « Documents » ne tenait pas dans les 84 px de la colonne
+   Catégorie ; les 8 px viennent du plancher de la colonne Nom. */
+.downloads-row { grid-template-columns: minmax(168px, 1fr) calc(18px * var(--tetris-cell) + 4px) 70px 80px 80px 90px 124px 92px 70px; }
+
+/* Ligne critique : l'encre atténuée tombait à 4,46:1 sur la teinte rose. */
+#downloadsList .row[data-health="critical"] { --text-soft: color-mix(in srgb, var(--adw-fg-dim) 90%, var(--adw-fg)); }

@@ -39,7 +39,11 @@
   --f-menu-hover:     #91C9F7;
 
   /* Bordures fonctionnelles */
-  --f-border-control:  #ADADAD;  /* boutons au repos */
+  /* Boutons au repos : #ADADAD du charter assombri dans la même famille de
+     gris -- à 2,2:1 sur la fenêtre blanche le liseré disparaissait ; #8A8A8A
+     tient 3,4:1 sur blanc et 3:1 sur le bandeau #F0F0F0, et reste plus clair
+     que le bord des champs (#7A7A7A), hiérarchie du charter conservée. */
+  --f-border-control:  #8A8A8A;
   --f-border-field:    #7A7A7A;  /* champs (gris sombre, signature W10) */
   --f-border-check:    #333333;  /* cases, radios, commutateur */
   --f-border-disabled: #BFBFBF;
@@ -70,13 +74,22 @@
   --f-progress-paused: #E6C60A;
   --f-progress-error:  #E81123;
 
-  /* Défilement (plat, sans bordure) */
+  /* Défilement (plat, sans bordure). Pouce : #CDCDCD du charter (1,4:1 sur
+     sa piste, quasi invisible) assombri dans la même famille jusqu'à 3:1,
+     survol/appui décalés d'autant pour garder la progression du §9. */
   --f-scroll-track:        #F0F0F0;
-  --f-scroll-thumb:        #CDCDCD;
-  --f-scroll-thumb-hover:  #A6A6A6;
+  --f-scroll-thumb:        #8A8A8A;
+  --f-scroll-thumb-hover:  #737373;
   --f-scroll-thumb-active: #606060;
   --f-scroll-btn-hover:    #DADADA;
   --f-scroll-arrow:        #606060;
+  /* Glyphes en data-URI (var() ne se résout pas dans une URL) : encre
+     --f-scroll-arrow / flèche de liste déroulante, redéfinies par mode. */
+  --f-scroll-img-up:    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='17' height='17'%3E%3Cpath d='M5 10.5h7L8.5 6.5z' fill='%23606060'/%3E%3C/svg%3E");
+  --f-scroll-img-down:  url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='17' height='17'%3E%3Cpath d='M5 6.5h7L8.5 10.5z' fill='%23606060'/%3E%3C/svg%3E");
+  --f-scroll-img-left:  url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='17' height='17'%3E%3Cpath d='M10.5 5v7L6.5 8.5z' fill='%23606060'/%3E%3C/svg%3E");
+  --f-scroll-img-right: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='17' height='17'%3E%3Cpath d='M6.5 5v7l4-3.5z' fill='%23606060'/%3E%3C/svg%3E");
+  --f-select-arrow:     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Cpath d='M4.5 6.5h7L8 10z' fill='%23606060'/%3E%3C/svg%3E");
 
   /* Bureau (papier peint "héros" : bleu nuit lumineux) */
   --gradient-desktop: radial-gradient(100% 90% at 35% 40%,
@@ -99,7 +112,8 @@
      colors), so the app's shared CSS never hardcodes one theme's palette
      names directly. Defined once here (not repeated in [data-theme="dark"]/
      [data-theme="hc"] below) since var() re-resolves live against whatever
-     --f-border-*/--f-text currently resolve to in the active mode. */
+     the --f-border-... and --f-text primitives currently resolve to in the
+     active mode. */
   --border-control:  var(--f-border-control);
   --border-field:    var(--f-border-field);
   --border-group:    var(--f-border-group);
@@ -229,7 +243,9 @@
      JAMAIS position, taille, transform, ombre.
      ======================================================== */
   --transition-state: .1s linear;
-  --focus-outline: 1px dotted #000;   /* offset -3 px */
+  /* offset -3 px ; encre du texte courant pour rester visible en dark/hc
+     (un #000 fixe disparaissait sur les faces #383838 / #000). */
+  --focus-outline: 1px dotted var(--f-text);
   --cursor-interactive: var(--cursor-default);
   /* Ajouts web (suite ombres/typo/métriques/états) */
 
@@ -377,9 +393,12 @@
   --f-list-hover: rgba(255,255,255,.08);
   --f-list-selected: #103D5F;
   --f-menu-hover: #404040;
-  --f-border-control: #5A5A5A;
+  /* #5A5A5A / #8A8A8A du charter éclaircis dans la même famille : le liseré
+     des boutons (2,4:1 sur #1F1F1F) et le bord des cases (2,4:1 sur la
+     liste #2D2D2D) passent à ≥ 3:1 sur la fenêtre comme sur les listes. */
+  --f-border-control: #767676;
   --f-border-field: #6B6B6B;
-  --f-border-check: #8A8A8A;
+  --f-border-check: #A0A0A0;
   --f-border-disabled: #3A3A3A;
   --f-border-tab: #4A4A4A;
   --f-border-menu: #4A4A4A;
@@ -387,11 +406,24 @@
   --f-border-progress: #5A5A5A;
   --f-border-tooltip: #5A5A5A;
   --f-scroll-track: #171717;
-  --f-scroll-thumb: #4D4D4D;
-  --f-scroll-thumb-hover: #5F5F5F;
-  --f-scroll-thumb-active: #757575;
+  /* pouce #4D4D4D du charter (2,1:1 sur la piste) éclairci jusqu'à ~3,9:1 */
+  --f-scroll-thumb: #767676;
+  --f-scroll-thumb-hover: #8A8A8A;
+  --f-scroll-thumb-active: #A0A0A0;
   --f-scroll-btn-hover: #333333;
   --f-scroll-arrow: #E6E6E6;
+  --f-scroll-img-up:    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='17' height='17'%3E%3Cpath d='M5 10.5h7L8.5 6.5z' fill='%23E6E6E6'/%3E%3C/svg%3E");
+  --f-scroll-img-down:  url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='17' height='17'%3E%3Cpath d='M5 6.5h7L8.5 10.5z' fill='%23E6E6E6'/%3E%3C/svg%3E");
+  --f-scroll-img-left:  url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='17' height='17'%3E%3Cpath d='M10.5 5v7L6.5 8.5z' fill='%23E6E6E6'/%3E%3C/svg%3E");
+  --f-scroll-img-right: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='17' height='17'%3E%3Cpath d='M6.5 5v7l4-3.5z' fill='%23E6E6E6'/%3E%3C/svg%3E");
+  --f-select-arrow:     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Cpath d='M4.5 6.5h7L8 10z' fill='%23E6E6E6'/%3E%3C/svg%3E");
+  /* Boutons de titre : les plaques claires #E5E5E5/#CACACB effaçaient le
+     glyphe blanc au survol ; voiles blancs comme les listes de ce mode. */
+  --caption-hover: rgba(255,255,255,.10);
+  --caption-pressed: rgba(255,255,255,.18);
+  /* Instruction de dialogue : #0078D7 plafonne à 3,7:1 sur #1F1F1F ; la
+     nuance claire Light1 de ce même accent (#429CE3) tient 5,6:1. */
+  --text-instruction: #429CE3;
   --accent-light: #103D5F;
   --accent-lighter: #0E2E47;
   --surface-window: #1F1F1F;
@@ -451,6 +483,14 @@
   --f-scroll-thumb-active: #FFFFFF;
   --f-scroll-btn-hover: #333333;
   --f-scroll-arrow: #FFEE32;
+  --f-scroll-img-up:    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='17' height='17'%3E%3Cpath d='M5 10.5h7L8.5 6.5z' fill='%23FFEE32'/%3E%3C/svg%3E");
+  --f-scroll-img-down:  url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='17' height='17'%3E%3Cpath d='M5 6.5h7L8.5 10.5z' fill='%23FFEE32'/%3E%3C/svg%3E");
+  --f-scroll-img-left:  url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='17' height='17'%3E%3Cpath d='M10.5 5v7L6.5 8.5z' fill='%23FFEE32'/%3E%3C/svg%3E");
+  --f-scroll-img-right: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='17' height='17'%3E%3Cpath d='M6.5 5v7l4-3.5z' fill='%23FFEE32'/%3E%3C/svg%3E");
+  --f-select-arrow:     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Cpath d='M4.5 6.5h7L8 10z' fill='%23FFEE32'/%3E%3C/svg%3E");
+  /* boutons de titre : plaque sombre sous le glyphe blanc */
+  --caption-hover: #333333;
+  --caption-pressed: #4D4D4D;
   --accent: #164FA8;
   --accent-text: #9DBEFF;
   --f-progress-error: #8E0000;
@@ -634,29 +674,33 @@ input[type="text"], input[type="number"], select, textarea, .search-input {
   border: 1px solid var(--border-field);
   border-radius: 0;
   background: var(--surface-field);
+  color: var(--text-primary);
   transition: border-color var(--transition-state);
+}
+/* Champs hors .form-grid (SSID, sélecteur d'étiquettes) : Segoe UI 12 px et
+   marge intérieure du charter (§7 : padding 2px 6px) au lieu de la police
+   UA collée au bord. :where() = spécificité nulle, les réglages propres
+   .form-grid / .search-input de style.css et `select` ci-dessous gagnent. */
+:where(input[type="text"], input[type="number"], select) {
+  font: inherit;
+  padding: 2px 6px;
 }
 input[type="text"]:hover, input[type="number"]:hover, select:hover, textarea:hover, .search-input:hover,
 input[type="text"]:focus, input[type="number"]:focus, select:focus, textarea:focus, .search-input:focus {
   border-color: var(--accent);
   outline: none;
 }
+/* Recette du charter (components.html) : flèche 16×16 à taille réelle (elle
+   était écrasée en 10×6 → un point de 4 px) sur une zone-bouton --f-gray-face
+   de 19 px. L'encre de la flèche suit le mode via --f-select-arrow. */
 select {
   appearance: none;
   -webkit-appearance: none;
-  padding-right: 24px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Cpath d='M4.5 6.5h7L8 10z' fill='%23606060'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 6px center;
-  background-size: 10px 6px;
-}
-/* Dark mode: the arrow's #606060 fill (fine on the light --surface-field
-   white/near-white) drops to ~2.2:1 against the dark field (#2D2D2D) --
-   illegible. Re-drawn with the same #E6E6E6 already used by this file's
-   dark-mode icon overrides above (--icon-back/-forward/-up/-refresh/-search),
-   not an invented value. */
-[data-theme="dark"] select {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Cpath d='M4.5 6.5h7L8 10z' fill='%23E6E6E6'/%3E%3C/svg%3E");
+  padding-right: 26px;
+  background-image: var(--f-select-arrow), linear-gradient(var(--f-gray-face), var(--f-gray-face));
+  background-repeat: no-repeat, no-repeat;
+  background-position: right 2px center, right 1px center;
+  background-size: 16px 16px, 19px calc(100% - 2px);
 }
 
 /* ---------- CHECKBOXES (STYLE.md 7) ---------- */
@@ -749,6 +793,13 @@ input[type="checkbox"]:disabled:checked { background: var(--f-border-disabled); 
 .modal-overlay { background: rgba(0, 0, 0, 0.4); }
 
 /* ---------- SCROLLBARS (STYLE.md 9: flat, no bevel) ---------- */
+/* Without a ::-webkit-scrollbar rule Chromium ignores every pseudo-element
+   below and draws its native bar -- the --f-scroll-* tokens never applied. */
+::-webkit-scrollbar {
+  width: var(--scrollbar-size);
+  height: var(--scrollbar-size);
+  background: var(--f-scroll-track);
+}
 ::-webkit-scrollbar-track { background: var(--f-scroll-track); }
 ::-webkit-scrollbar-thumb { background: var(--f-scroll-thumb); border-radius: 0; }
 ::-webkit-scrollbar-thumb:hover { background: var(--f-scroll-thumb-hover); }
@@ -761,23 +812,13 @@ input[type="checkbox"]:disabled:checked { background: var(--f-border-disabled); 
   background-position: center;
 }
 ::-webkit-scrollbar-button:single-button:hover { background-color: var(--f-scroll-btn-hover); }
-::-webkit-scrollbar-button:single-button:vertical:decrement {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='17' height='17'%3E%3Cpath d='M5 10.5h7L8.5 6.5z' fill='%23606060'/%3E%3C/svg%3E");
-}
-::-webkit-scrollbar-button:single-button:vertical:increment {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='17' height='17'%3E%3Cpath d='M5 6.5h7L8.5 10.5z' fill='%23606060'/%3E%3C/svg%3E");
-}
+/* Arrow glyphs come from the per-mode --f-scroll-img-* tokens (#606060 /
+   #E6E6E6 / #FFEE32 = --f-scroll-arrow of each mode). */
+::-webkit-scrollbar-button:single-button:vertical:decrement { background-image: var(--f-scroll-img-up); }
+::-webkit-scrollbar-button:single-button:vertical:increment { background-image: var(--f-scroll-img-down); }
+::-webkit-scrollbar-button:single-button:horizontal:decrement { background-image: var(--f-scroll-img-left); }
+::-webkit-scrollbar-button:single-button:horizontal:increment { background-image: var(--f-scroll-img-right); }
 ::-webkit-scrollbar-corner { background: var(--f-scroll-track); }
-/* Dark mode: same #606060-on-light-track arrow problem as the select arrow
-   above -- against the dark scroll track (#171717) it falls to ~2.9:1.
-   Reuses the file's own --f-scroll-arrow dark value (#E6E6E6, line ~394)
-   baked into the glyph since var() can't resolve inside a data-URI string. */
-[data-theme="dark"] ::-webkit-scrollbar-button:single-button:vertical:decrement {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='17' height='17'%3E%3Cpath d='M5 10.5h7L8.5 6.5z' fill='%23E6E6E6'/%3E%3C/svg%3E");
-}
-[data-theme="dark"] ::-webkit-scrollbar-button:single-button:vertical:increment {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='17' height='17'%3E%3Cpath d='M5 6.5h7L8.5 10.5z' fill='%23E6E6E6'/%3E%3C/svg%3E");
-}
 
 /* ---------- PROGRESS INDICATOR FRAME (STYLE.md 9) ---------- */
 canvas.tetris {

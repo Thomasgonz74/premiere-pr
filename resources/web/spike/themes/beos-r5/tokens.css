@@ -86,6 +86,12 @@
      ======================================================== */
   --bevel-out: inset 1px 1px 0 #F4F4F4, inset -1px -1px 0 #989898;
   --bevel-in:  inset 1px 1px 0 #989898, inset -1px -1px 0 #F4F4F4;
+  /* Puits (champs, cases, listes, jauge) : ombre haut-gauche seule en clair ;
+     gouttière d'ascenseur #C4C4C4 (§7) ; puits désactivé. Jetons plutôt que
+     hex figés pour que le bloc sombre puisse les recalculer. */
+  --well-bevel:    inset 1px 1px 0 #B4B4B4;
+  --well-disabled: #EFEFEF;
+  --scroll-track:  #C4C4C4;
   --tab-bevel: inset 1px 1px 0 var(--be-yellow-hi),
                inset -1px 0 0 var(--be-yellow-dk);
 
@@ -150,6 +156,9 @@
   --transition: var(--transition-state);
   --focus-ring: 0 0 0 2px var(--be-navy);      /* anneau navy (§7 : Focus/Défaut) */
   --focus-outline: 2px solid var(--be-navy);
+  /* Anneau de secours de style.css (curseur, « ? », éléments [tabindex]) :
+     navy lui aussi, au lieu de --selection-bg (~1.1:1 sur le gris). */
+  --focus-ring-color: var(--be-navy);
   --cursor-interactive: var(--cursor-default); /* la main partout, y compris sur les boutons */
 
   /* ========================================================
@@ -221,11 +230,16 @@
   --be-face-pressed: #262C36;
   --be-view: #262C36;
   --be-border: #10151C;
-  --be-line: #3E4654;
+  /* --be-line (cadres de groupe, séparateurs, filets de lignes) : #3E4654
+     tombait à 1.07:1 sur la plaque, invisible ; #5E6878 (le biseau clair
+     sombre) le ramène à 1.8:1, l'écart du clair (#B0B0B0/#D8D8D8, 1.5:1). */
+  --be-line: #5E6878;
   --be-ink: #ECEFF4;
   --be-ink-soft: #AEB8C6;
   --be-ink-disabled: #6A7482;
-  --be-navy: #7E9CD8;
+  /* navy éclairci (légendes, en-têtes d'historique, anneau de focus) :
+     #7E9CD8 = 3.7:1 sur la plaque #3A424E ; #9CB4E4 = 4.9:1. */
+  --be-navy: #9CB4E4;
   --be-blue: #5E88CC;
   --be-select: #2E4A7C;
   --be-menu-hl: #2E4A7C;
@@ -238,6 +252,14 @@
   --btn-hover: #4E5866;
   --bevel-out: inset 1px 1px 0 #5E6878, inset -1px -1px 0 #10151C;
   --bevel-in: inset 1px 1px 0 #10151C, inset -1px -1px 0 #5E6878;
+  /* Puits : recette creuse sombre (ombre #10151C en haut-gauche) au lieu du
+     liseré clair #B4B4B4 ; son reflet bas-droit est porté de #5E6878 à
+     #8A94A4 pour que champs et cases restent repérables (3.3:1 sur la
+     plaque, 4.6:1 dans une liste ; #5E6878 = 1.8 et 2.5:1). Gouttière et
+     puits désactivé recalculés (restaient gris clair). */
+  --well-bevel: inset 1px 1px 0 #10151C, inset -1px -1px 0 #8A94A4;
+  --well-disabled: #30373F;
+  --scroll-track: #262C36;
   --desktop: #141A22;
   --tooltip-bg: #FFF9C8; --tooltip-border: #8A8250;
   --surface-window: #3A424E;
@@ -465,7 +487,7 @@ input[type="text"], input[type="number"], textarea, .search-input {
   background: var(--be-view);
   border: 1px solid var(--be-border);
   border-radius: 2px;
-  box-shadow: inset 1px 1px 0 #B4B4B4;
+  box-shadow: var(--well-bevel);
   height: var(--control-height);
   padding: 0 7px;
   font: inherit;
@@ -474,11 +496,19 @@ input[type="text"], input[type="number"], textarea, .search-input {
 textarea { height: auto; min-height: 58px; padding: 4px 7px; resize: none; }
 input[type="text"]:focus, input[type="number"]:focus, textarea:focus, .search-input:focus {
   outline: none;
-  box-shadow: inset 1px 1px 0 #B4B4B4, var(--focus-ring);
+  box-shadow: var(--well-bevel), var(--focus-ring);
 }
 input[type="text"]:disabled, input[type="number"]:disabled, textarea:disabled {
-  background: #EFEFEF;
+  background: var(--well-disabled);
   color: var(--text-disabled);
+}
+/* style.css cerne les champs de .form-grid (spécificité 0,2,1, plus forte
+   que la règle ci-dessus) en --border-field = --be-line, le trait de GROUPE :
+   les puits d'Ajout et de Profil perdaient leur cerne --be-border (1.5:1 au
+   lieu de 3.8:1 en clair). */
+.form-grid input[type="text"], .form-grid input[type="number"] {
+  border-color: var(--be-border);
+  border-radius: 2px;
 }
 /* Le select N'EST PAS un puits : c'est une plaque biseautée comme un
    bouton (composant "select" de components.html — seul champ à sortir de
@@ -517,7 +547,7 @@ input[type="checkbox"] {
   border: 1px solid var(--be-border);
   border-radius: 2px;
   background: var(--be-view);
-  box-shadow: inset 1px 1px 0 #B4B4B4;
+  box-shadow: var(--well-bevel);
   display: inline-grid;
   place-content: center;
 }
@@ -528,14 +558,14 @@ input[type="checkbox"]:checked::after {
 }
 input[type="checkbox"]:focus-visible {
   outline: none;
-  box-shadow: inset 1px 1px 0 #B4B4B4, var(--focus-ring);
+  box-shadow: var(--well-bevel), var(--focus-ring);
 }
-input[type="checkbox"]:disabled { background: #EFEFEF; box-shadow: none; }
+input[type="checkbox"]:disabled { background: var(--well-disabled); box-shadow: none; }
 /* Coche figée navy #22448C ; en dark le puits (--be-view) devient quasi
    noir (#262C36) et cette navy n'y tient plus (~1.5:1, quasi invisible) --
    on reprend la navy déjà éclaircie du thème sombre (--be-navy dark). */
 [data-theme="dark"] input[type="checkbox"]:checked::after {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10'%3E%3Cpath d='M1.5 5.5l2.6 2.6L8.5 2' fill='none' stroke='%237E9CD8' stroke-width='2.2'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10'%3E%3Cpath d='M1.5 5.5l2.6 2.6L8.5 2' fill='none' stroke='%239CB4E4' stroke-width='2.2'/%3E%3C/svg%3E");
 }
 
 /* ---------- Listes / lignes : puits blanc, sélection #B8CCE8 à encre NOIRE ----------
@@ -546,7 +576,7 @@ input[type="checkbox"]:disabled { background: #EFEFEF; box-shadow: none; }
   background: var(--be-view);
   border: 1px solid var(--be-border);
   border-radius: 0;
-  box-shadow: inset 1px 1px 0 #B4B4B4;
+  box-shadow: var(--well-bevel);
   padding: 0;
 }
 .row { border-bottom: 1px solid var(--be-line); }
@@ -613,9 +643,57 @@ input[type="checkbox"]:disabled { background: #EFEFEF; box-shadow: none; }
 }
 .modal-box h3 { font-weight: 700; color: var(--be-ink); }
 
+/* ---------- Infobulle : jaune pâle cernée, carrée, encre noire (§9 ; .tooltip de components.html) ----------
+   style.css peint la bulle aux couleurs de la fenêtre (choix prudent commun
+   à toutes les chartes) ; ici le jaune reste pâle dans les trois modes, d'où
+   l'encre noire fixe de components.html (19.6:1), et non --be-ink. */
+.info-tooltip-bubble {
+  background: var(--surface-tooltip);
+  border-color: var(--tooltip-border);
+  border-radius: 0;
+  color: #000000;
+}
+
+/* ---------- Curseur de valeur (phase 2) : piste en puits, poignée plateau à trait navy ----------
+   Remplace le curseur Chromium. La poignée n'accepte pas de pseudo-élément :
+   son trait navy 2×10 est le fond, recouvert de face grise par quatre ombres
+   internes (aucun dégradé, interdit §8). */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 21px;
+  margin: 0;
+  background: transparent;
+  overflow: hidden; /* découpe l'ombre de remplissage à la boîte du curseur */
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 7px;
+  background: var(--be-view);
+  box-shadow: var(--bevel-in);
+}
+/* Remplissage --be-blue (.sl-fill) : ombre de la poignée tirée vers la gauche,
+   ramenée à la bande de la piste (y 7 à 14 de la poignée) par deux cache-plaques --be-face.
+   ponytail: les cache-plaques supposent une plaque = --be-face (vrai dans les 3 modes du Profil) ;
+   si le curseur sort de la plaque, passer à une variable --val posée en JS. */
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  box-sizing: border-box;
+  width: 13px;
+  height: 21px;
+  margin-top: -7px;
+  border: 1px solid var(--be-border);
+  background: var(--be-navy);
+  box-shadow: var(--bevel-out),
+    inset 5px 0 0 var(--be-face), inset -4px 0 0 var(--be-face),
+    inset 0 4px 0 var(--be-face), inset 0 -5px 0 var(--be-face),
+    -100vw calc(-100vw - 14px) 0 100vw var(--be-face),
+    -100vw calc(100vw + 14px) 0 100vw var(--be-face),
+    -100vw 0 0 100vw var(--be-blue);
+}
+
 /* ---------- Ascenseurs : gouttiere cernee, pouce biseaute, fleches noires ---------- */
 ::-webkit-scrollbar { width: var(--scrollbar-size); height: var(--scrollbar-size); }
-::-webkit-scrollbar-track { background: #C4C4C4; border: 1px solid var(--be-border); }
+::-webkit-scrollbar-track { background: var(--scroll-track); border: 1px solid var(--be-border); }
 ::-webkit-scrollbar-thumb { background: var(--be-face); border: 1px solid var(--be-border); box-shadow: var(--bevel-out); }
 ::-webkit-scrollbar-button { background: var(--be-face); border: 1px solid var(--be-border); box-shadow: var(--bevel-out); height: 16px; width: 16px; }
 ::-webkit-scrollbar-button:vertical:decrement {
@@ -639,5 +717,5 @@ input[type="checkbox"]:disabled { background: #EFEFEF; box-shadow: none; }
 canvas.tetris {
   border: 1px solid var(--be-border);
   border-radius: 0;
-  box-shadow: inset 1px 1px 0 #B4B4B4;
+  box-shadow: var(--well-bevel);
 }

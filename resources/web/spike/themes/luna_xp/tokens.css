@@ -27,13 +27,17 @@
 
   /* Bordures fonctionnelles */
   --xp-border-control:  #003C74;  /* boutons */
-  --xp-border-field:    #7F9DB9;  /* champs, listes (plat, sans biseau) */
+  --xp-border-field:    #6488AA;  /* champs, listes (plat, sans biseau) -- même
+                                     bleu que l'authentique #7F9DB9, encre plus
+                                     sombre : 3,05:1 sur la crème (2,3:1 avant) */
   --xp-border-check:    #1D5281;  /* cases & radios */
   --xp-border-tab:      #919B9C;  /* onglets & panneaux */
   --xp-border-group:    #D0D0BF;  /* group box */
   --xp-border-progress: #686868;
   --xp-border-menu:     #ACA899;
   --xp-border-disabled: #C9C2B8;
+  --xp-disabled-bg:     #ECEBE5;  /* fond uni des contrôles désactivés (STYLE.md §7) */
+  --xp-menu-sep:        #E0DECF;  /* filet de menu (components.html .menu-sep) */
 
   /* Textes */
   --xp-text:          #000000;
@@ -53,6 +57,7 @@
   --xp-scroll-thumb:  #C8D6FB;
   --xp-scroll-grip:   #8CB0F8;
   --xp-scroll-arrow:  #4D6185;
+  --xp-scroll-edge:   #FFFFFF;  /* liseré du pouce et des flèches */
 
   /* ========================================================
      2. SÉMANTIQUES
@@ -77,7 +82,9 @@
      colors), so the app's shared CSS never hardcodes one theme's palette
      names directly. Defined once here (not repeated in [data-theme="dark"]/
      [data-theme="hc"] below) since var() re-resolves live against whatever
-     --xp-border-*/--xp-legend currently resolve to in the active mode. */
+     --xp-border-... / --xp-legend currently resolve to in the active mode.
+     (Never write star-slash inside a comment: it closes it early and
+     swallows the next declaration -- --border-control was lost that way.) */
   --border-control:  var(--xp-border-control);
   --border-field:    var(--xp-border-field);
   --border-group:    var(--xp-border-group);
@@ -123,6 +130,13 @@
   --gradient-scroll-track-h: linear-gradient(180deg,#EEEDE5,#F6F5F0 30%,#FEFEFB);
   --gradient-scroll-btn:     linear-gradient(180deg,#FDFDFA,#C2D3FC 55%,#AFC5F4);
   --scroll-thumb-shadow:     inset -3px 0 #BAD1FC, inset 1px 1px #B7CAF5;
+  /* Flèches (select, ascenseurs) et coche : data-URI à couleur figée,
+     donc redéfinis dans les blocs dark/hc (--xp-scroll-arrow / --xp-green
+     ne peuvent pas entrer dans une url()). */
+  --xp-arrow-select:      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Cpath d='M4.5 6.5h7L8 10z' fill='%234D6185'/%3E%3C/svg%3E");
+  --xp-arrow-scroll-up:   url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='17' height='17'%3E%3Cpath d='M5 10.5h7L8.5 6.5z' fill='%234D6185'/%3E%3C/svg%3E");
+  --xp-arrow-scroll-down: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='17' height='17'%3E%3Cpath d='M5 6.5h7L8.5 10.5z' fill='%234D6185'/%3E%3C/svg%3E");
+  --xp-check-mark:        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 -0.5 11 11' width='11' height='11'%3E%3Cpath stroke='%2321A121' d='M8 2h1M7 3h2M2 4h1m3 0h3M2 5h2m1 0h3M2 6h5M3 7h3M4 8h1'/%3E%3C/svg%3E");
 
   /* ========================================================
      4. LUEURS D'ÉTAT — l'autre signature de Luna
@@ -281,7 +295,9 @@
   --xp-blue-sky: #5E86B0;
   --xp-blue-royal: #4E7CB0;
   --xp-blue-deep: #2A4A70;
-  --xp-blue-frame: #10233A;
+  /* Cadre du dialogue : #10233A se fondait dans le voile (1,04:1) ;
+     il reprend le bleu royal sombre (3,75:1 sur le voile). */
+  --xp-blue-frame: #4E7CB0;
   --xp-blue-frame-dark: #0A1828;
   --xp-selection: #2E5A8C;
   /* --title-active-text and --selection-text alias --xp-white in :root,
@@ -290,13 +306,18 @@
      dark, so both aliases would go dark-on-dark without these overrides. */
   --title-active-text: #E8ECF2;
   --selection-text: #E8ECF2;
-  --xp-border-control: #4A5468;
-  --xp-border-field: #3E4858;
-  --xp-border-check: #4E5C74;
+  /* Bordures de contrôles >= 3:1 sur la fenêtre (#2A2F3A) et les panneaux
+     (#2E3540) : 1,5-2:1 avant, boutons, champs et cases s'y perdaient. */
+  --xp-border-control: #7A889F;
+  --xp-border-field: #6F89AE;
+  --xp-border-check: #7690B4;
   --xp-border-tab: #3E4858;
   --xp-border-group: #38424F;
   --xp-border-menu: #3E4858;
   --xp-border-disabled: #333B48;
+  --xp-disabled-bg: #252A33;
+  --xp-menu-sep: #3E4858;
+  --xp-scroll-edge: var(--xp-border-control);
   --xp-text: #E8ECF2;
   --xp-text-disabled: #6E7A8E;
   --xp-legend: #8FB4E0;
@@ -310,6 +331,15 @@
   --gradient-check: linear-gradient(180deg,#2C3542,#4A586C);
   --gradient-scroll-track-v: linear-gradient(90deg,#1C2129,#242A34);
   --gradient-scroll-track-h: linear-gradient(180deg,#1C2129,#242A34);
+  /* Flèches d'ascenseur et bouton de select : gel anthracite (plus de
+     carrés bleu clair Luna sur le chrome sombre), flèche claire. */
+  --gradient-scroll-btn: linear-gradient(180deg,#3E4654,#2E3542 55%,#262C38);
+  --scroll-thumb-shadow: inset -3px 0 #2E3542, inset 1px 1px #4A5468;
+  --xp-arrow-select:      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Cpath d='M4.5 6.5h7L8 10z' fill='%23C8D6FB'/%3E%3C/svg%3E");
+  --xp-arrow-scroll-up:   url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='17' height='17'%3E%3Cpath d='M5 10.5h7L8.5 6.5z' fill='%23C8D6FB'/%3E%3C/svg%3E");
+  --xp-arrow-scroll-down: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='17' height='17'%3E%3Cpath d='M5 6.5h7L8.5 10.5z' fill='%23C8D6FB'/%3E%3C/svg%3E");
+  /* coche verte éclaircie : #21A121 tombait à 2,1:1 sur le bas de la case */
+  --xp-check-mark:        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 -0.5 11 11' width='11' height='11'%3E%3Cpath stroke='%234EDC4E' d='M8 2h1M7 3h2M2 4h1m3 0h3M2 5h2m1 0h3M2 6h5M3 7h3M4 8h1'/%3E%3C/svg%3E");
   --frame-shadow: 0 6px 20px rgba(0,0,0,.6);
   --shadow-menu: 3px 3px 6px rgba(0,0,0,.55);
   --title-text-shadow: 0 1px 2px rgba(0,0,0,.8);
@@ -340,6 +370,9 @@
   --xp-border-group: #FFEE32;
   --xp-border-menu: #FFEE32;
   --xp-border-disabled: #808080;
+  --xp-disabled-bg: #000000;
+  --xp-menu-sep: #FFEE32;
+  --xp-scroll-edge: #FFEE32;
   --xp-blue-frame: #FFEE32;
   --xp-blue-frame-dark: #C8B400;
   --xp-blue-sky: #FFF6A0;
@@ -359,6 +392,14 @@
   --gradient-check: linear-gradient(#000000,#000000);
   --gradient-scroll-track-v: linear-gradient(#1A1A1A,#1A1A1A);
   --gradient-scroll-track-h: linear-gradient(#1A1A1A,#1A1A1A);
+  /* Ascenseurs et select : aplat noir, liseré et flèche jaunes (plus de
+     gel bleu clair ni de reflets bleus sur le pouce jaune). */
+  --gradient-scroll-btn: linear-gradient(#000000,#000000);
+  --scroll-thumb-shadow: none;
+  --xp-arrow-select:      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Cpath d='M4.5 6.5h7L8 10z' fill='%23FFEE32'/%3E%3C/svg%3E");
+  --xp-arrow-scroll-up:   url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='17' height='17'%3E%3Cpath d='M5 10.5h7L8.5 6.5z' fill='%23FFEE32'/%3E%3C/svg%3E");
+  --xp-arrow-scroll-down: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='17' height='17'%3E%3Cpath d='M5 6.5h7L8.5 10.5z' fill='%23FFEE32'/%3E%3C/svg%3E");
+  --xp-check-mark:        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 -0.5 11 11' width='11' height='11'%3E%3Cpath stroke='%234EDC4E' d='M8 2h1M7 3h2M2 4h1m3 0h3M2 5h2m1 0h3M2 6h5M3 7h3M4 8h1'/%3E%3C/svg%3E");
   --frame-shadow: 0 0 0 2px #FFEE32;
   --shadow-menu: 0 0 0 2px #FFEE32;
   --title-text-shadow: 0 0 0 transparent;
@@ -485,7 +526,7 @@ button {
 button:not(:disabled):hover { box-shadow: var(--glow-hover); }
 button:not(:disabled):active { background: var(--plastic-pressed); box-shadow: none; }
 button:focus-visible { box-shadow: var(--glow-focus); outline: var(--focus-outline); outline-offset: -4px; }
-button:disabled { color: var(--text-disabled); border-color: var(--xp-border-disabled); background: #ECEBE5; }
+button:disabled { color: var(--text-disabled); border-color: var(--xp-border-disabled); background: var(--xp-disabled-bg); }
 
 .start-btn {
   min-width: var(--button-min-width);
@@ -532,13 +573,11 @@ input[type="text"], input[type="number"], select, textarea, .search-input {
 }
 textarea { height: auto; min-height: 56px; resize: none; }
 input[type="text"]:not(:disabled), textarea:not(:disabled) { cursor: var(--cursor-text); }
-input:disabled, textarea:disabled { background: #EBEBE4; color: var(--text-disabled); border-color: var(--xp-border-disabled); }
+input:disabled, textarea:disabled { background: var(--xp-disabled-bg); color: var(--text-disabled); border-color: var(--xp-border-disabled); }
 select {
   appearance: none; -webkit-appearance: none;
   padding-right: 24px;
-  background-image:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Cpath d='M4.5 6.5h7L8 10z' fill='%234D6185'/%3E%3C/svg%3E"),
-    linear-gradient(180deg,#FDFDFA,#C2D3FC 55%,#AFC5F4);
+  background-image: var(--xp-arrow-select), var(--gradient-scroll-btn);
   background-repeat: no-repeat, no-repeat;
   background-position: right 1px center, right;
   background-size: 16px 16px, 17px calc(100% - 2px);
@@ -558,9 +597,9 @@ input[type="checkbox"]:not(:disabled):active { background: var(--gradient-check-
 input[type="checkbox"]:checked::after {
   content: "";
   width: 11px; height: 11px;
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 -0.5 11 11' width='11' height='11'%3E%3Cpath stroke='%2321A121' d='M8 2h1M7 3h2M2 4h1m3 0h3M2 5h2m1 0h3M2 6h5M3 7h3M4 8h1'/%3E%3C/svg%3E") no-repeat center;
+  background: var(--xp-check-mark) no-repeat center;
 }
-input[type="checkbox"]:disabled { border-color: var(--xp-border-disabled); background: #fff; }
+input[type="checkbox"]:disabled { border-color: var(--xp-border-disabled); background: var(--surface-field); }
 input[type="checkbox"]:disabled:checked::after { filter: grayscale(1) opacity(.55); }
 
 /* ---------- Listes : fond blanc plat (carré, pas de radius-group), survol
@@ -568,6 +607,10 @@ input[type="checkbox"]:disabled:checked::after { filter: grayscale(1) opacity(.5
 .listbox { border-radius: var(--radius-field); padding: 1px; }
 .row:hover:not(.selected) { background: var(--xp-panel); }
 .row.selected { background: var(--selection-bg); color: var(--selection-text); }
+/* Survol : --xp-panel, comme la ligne « is-hot » de components.html (quasi
+   imperceptible en clair, choix de la charte). En HC il vaut #000 sur #000 :
+   le contraste élevé reçoit un liseré jaune à la place. */
+[data-theme="hc"] .row:hover:not(.selected) { outline: 1px solid var(--xp-border-field); outline-offset: -1px; }
 
 /* ---------- Group box : bordure --border-group, légende BLEUE en gras
    (signature discrète de Luna -- STYLE.md §4) ---------- */
@@ -589,7 +632,7 @@ input[type="checkbox"]:disabled:checked::after { filter: grayscale(1) opacity(.5
   padding: 2px;
 }
 .context-menu-item { padding: 4px 18px 4px 24px; }
-.context-menu-separator { background: #E0DECF; margin: 3px 2px; }
+.context-menu-separator { background: var(--xp-menu-sep); margin: 3px 2px; }
 
 /* ---------- Dialogue : chrome de fenêtre (cadre bleu + bandeau de titre
    dégradé), pas une boîte crème neutre. Bordure pleine plutôt que le biseau
@@ -623,27 +666,21 @@ input[type="checkbox"]:disabled:checked::after { filter: grayscale(1) opacity(.5
 ::-webkit-scrollbar-track:horizontal { background: var(--gradient-scroll-track-h); }
 ::-webkit-scrollbar-thumb {
   background: var(--xp-scroll-thumb);
-  border: 1px solid #fff;
+  border: 1px solid var(--xp-scroll-edge);
   border-radius: 2px;
   box-shadow: var(--scroll-thumb-shadow);
 }
 ::-webkit-scrollbar-button:single-button {
   width: 17px; height: 17px;
-  border: 1px solid #fff;
+  border: 1px solid var(--xp-scroll-edge);
   border-radius: 2px;
-  background-color: #C6D6FB;
-  background-repeat: no-repeat;
-  background-position: center;
+  background: var(--gradient-scroll-btn);
 }
 ::-webkit-scrollbar-button:single-button:vertical:decrement {
-  background-image:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='17' height='17'%3E%3Cpath d='M5 10.5h7L8.5 6.5z' fill='%234D6185'/%3E%3C/svg%3E"),
-    linear-gradient(180deg,#FDFDFA,#C2D3FC 55%,#AFC5F4);
+  background: var(--xp-arrow-scroll-up) no-repeat center, var(--gradient-scroll-btn);
 }
 ::-webkit-scrollbar-button:single-button:vertical:increment {
-  background-image:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='17' height='17'%3E%3Cpath d='M5 6.5h7L8.5 10.5z' fill='%234D6185'/%3E%3C/svg%3E"),
-    linear-gradient(180deg,#FDFDFA,#C2D3FC 55%,#AFC5F4);
+  background: var(--xp-arrow-scroll-down) no-repeat center, var(--gradient-scroll-btn);
 }
 ::-webkit-scrollbar-corner { background: var(--surface-window); }
 

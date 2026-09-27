@@ -23,7 +23,11 @@
   /* Les traits (quatre graisses d'un blanc bleute) */
   --bp-line:      #E8F0F8;   /* trait fort, textes */
   --bp-line-soft: #9FB8CC;   /* trait courant, textes doux */
-  --bp-line-dim:  #4A6B8A;   /* trait de construction, filets */
+  /* Construction : #4A6B8A de la charte, eclairci dans la meme teinte (a
+     mi-chemin vers le courant) -- a 2.0-2.8:1 les cases vides, champs et
+     boutons au repos ne se voyaient plus ; #6D8BA5 tient >= 3:1 sur les
+     trois bleus (panneau 3.1, feuille 3.7, champ 4.4). */
+  --bp-line-dim:  #6D8BA5;   /* trait de construction, filets */
   --bp-disabled:  #3D5A75;
 
   /* Le crayon de verification */
@@ -219,6 +223,9 @@
   --bp-red:       #FFC9BE;   /* le crayon s'eclaircit : 7.2 */
   --text-soft:    #C4D6E4;
   --text-disabled:#8FA6BC;
+  /* Notes, lignes d'etat, zone de depot : le texte doux au trait courant
+     (7.5 sur cartouche) au lieu du melange par defaut de style.css (6.2). */
+  --text-secondary: var(--bp-line-soft);
 }
 /* HC:END */
 
@@ -283,13 +290,15 @@ input[type=text], textarea { cursor: var(--cursor-text); }
 
 /* Gadgets dessines au trait : le span porte le glyphe (pas de fond) */
 .cap-min span, .cap-max span, .cap-close span { position: absolute; inset: 0; }
+/* height:auto : style.css donne height:2px a ce pseudo -- la cote etait
+   ecrasee en haut du gadget. */
 .cap-min span::before {
   content: "";
-  position: absolute; inset: 0;
+  position: absolute; inset: 4px; height: auto;
   background:
     linear-gradient(currentColor, currentColor) left center / 1px 6px no-repeat,
     linear-gradient(currentColor, currentColor) right center / 1px 6px no-repeat,
-    linear-gradient(currentColor, currentColor) center / 8px 1px no-repeat;
+    linear-gradient(currentColor, currentColor) center / 100% 1px no-repeat;
 }
 .cap-max span::before {
   content: "";
@@ -398,6 +407,15 @@ button:disabled { border-color: var(--bp-disabled); color: var(--text-disabled);
   filter: none;
 }
 .row-actions button:active { background: var(--hatch); }
+/* Sur le calque detoure (bandeau blanc), le glyphe et le trait passent a
+   l'encre de Prusse : en --text-primary ils disparaissaient dans le fond. */
+#downloadsList .row.selected .row-actions button {
+  color: var(--selection-text);
+  border-color: var(--selection-text);
+}
+#downloadsList .row.selected .row-actions button:not(:disabled):hover {
+  box-shadow: inset 0 0 0 1px var(--selection-text);
+}
 
 /* ---------- Champs : trait de construction, carres, focus a l'axe ---------- */
 input[type="text"], input[type="number"], select, textarea, .search-input {
@@ -426,7 +444,12 @@ select:focus,
   border-color: var(--bp-line);
 }
 input:disabled, textarea:disabled, select:disabled { border-color: var(--bp-disabled); color: var(--text-disabled); }
-input::placeholder, textarea::placeholder { color: var(--bp-line-dim); }
+/* Trait courant (7.7:1 sur --bp-deep) : plus leger que le texte saisi, mais
+   lisible -- au trait de construction il tombait a 2.8:1. */
+input::placeholder, textarea::placeholder { color: var(--text-soft); }
+/* En contraste eleve le courant monte a #C4D6E4, trop pres du texte saisi :
+   la construction (#9FB8CC, 7.7:1) garde l'ecart. */
+[data-theme="hc"] input::placeholder, [data-theme="hc"] textarea::placeholder { color: var(--bp-line-dim); }
 select {
   cursor: var(--cursor-interactive);
   appearance: none;

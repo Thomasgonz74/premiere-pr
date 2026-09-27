@@ -77,8 +77,12 @@
   --gel-ball-max:   linear-gradient(180deg,#9FE8A8,#28C840 45%,#17B231 55%,#0FA02A);
   --gel-ball-off:   linear-gradient(180deg,#E8E8E8,#C9C9C9 45%,#B5B5B5 55%,#A8A8A8);
 
-  /* Bande de sélection des menus (pleine largeur, texte blanc) */
-  --menu-band: linear-gradient(180deg, #7AA6EC, #3E6FD0);
+  /* Bande de sélection des menus (pleine largeur, texte blanc). Portée
+     par les deux bleus de la charte (sélection #3875D7 -> --aq-blue-lo)
+     plutôt que #7AA6EC -> #3E6FD0 : le haut clair ne tenait que 2,5:1
+     sous le texte blanc (3,4:1 en moyenne sur la ligne sélectionnée des
+     Téléchargements) ; même dégradé clair-en-haut, encre ≥ 4,5:1. */
+  --menu-band: linear-gradient(180deg, var(--aq-select), var(--aq-blue-lo));
 
   /* Jauge : gélule bleue ; « indéterminée » = rayures figées */
   --gel-track: linear-gradient(180deg, #E4E4E4, #F6F6F6 55%, #FFFFFF);
@@ -329,9 +333,14 @@
   --aq-stripe-title-a: #333A48;
   --aq-stripe-title-b: #39414F;
   --aq-white: #1C222C;
-  --aq-border: #10151D;
+  /* Bordures éclaircies : #10151D (plus sombre que la fenêtre ET que les
+     champs) ne tenait que 1,5:1 -- champs vides, listes et cadres de
+     groupe se fondaient dans les rayures. #7A8698 : 3,3:1 sur la fenêtre,
+     4,3:1 sur les champs ; autour des gels clairs il redonne le filet
+     gris moyen du mode clair (#9B9B9B). */
+  --aq-border: #7A8698;
   --aq-border-strong: #0A0E15;
-  --aq-border-soft: #39414E;
+  --aq-border-soft: #4A5468;
   --aq-text: #ECF0F6;
   --aq-text-soft: #A8B2C0;
   --aq-text-disabled: #616D7D;
@@ -345,9 +354,9 @@
   /* --surface-desktop est une teinte plate (pas un var()) : surcharge
      manuelle pour suivre le --gradient-desktop nocturne ci-dessus. Les
      GELS et les trois billes restent intacts (STYLE.md DARKMD) -- donc
-     --plastic-*/--gradient-titlebtn*/--gradient-progress ne sont PAS
-     surchargés ici, volontairement : ils héritent déjà de recettes gel
-     non modifiées par ce bloc. */
+     --plastic-raised/-pressed, --gradient-titlebtn(-close) et
+     --gradient-progress ne sont PAS surchargés ici, volontairement : ils
+     héritent déjà de recettes gel non modifiées par ce bloc. */
   --surface-desktop: #101C2E;
   /* icônes surchargées pour le fond sombre */
   --icon-search: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='10.4' cy='10.4' r='4.9' fill='none' stroke='%239FC4EC' stroke-width='1.9'/%3E%3Cpath d='M14.2 14.2l5.2 5.2' fill='none' stroke='%239FC4EC' stroke-width='2.1999999999999997' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
@@ -380,6 +389,7 @@
   --shadow-window: 0 0 0 2px #000000;
   --shadow-menu: 0 0 0 2px #000000;
   --p2-zebra: #F2F2F2;
+  --tooltip-border: #000000;   /* bordures franches : la bulle reste jaune */
   /* --surface-desktop suit le même aplatissement que --gradient-desktop
      ci-dessus (repli non-gradient, cf. commentaire du bloc :root). */
   --surface-desktop: #E8E8E8;
@@ -683,6 +693,17 @@ input[type="checkbox"]:disabled { opacity: .5; }
 .context-menu-item:hover { background: var(--menu-band); color: #fff; }
 .context-menu-separator { background: var(--aq-border-soft); }
 
+/* ---------- Infobulle : JAUNE Mac, radius 2, texte noir (§9, interdit
+   §10.8). style.css peint la bulle aux couleurs de fenêtre (grise ici) ;
+   les trois --tooltip-* d'Aqua forment une paire fond/encre stable dans
+   les trois modes (« la bulle jaune veille » en sombre), donc sûrs. ---- */
+.info-tooltip-bubble {
+  background: var(--tooltip-bg);
+  border-color: var(--tooltip-border);
+  color: var(--tooltip-fg);
+  border-radius: 2px;
+}
+
 /* ---------- Rideau de dialogue : PAS d'assombrissement plein écran -- en
    2001 l'alerte Mac flotte simplement sur le bureau, séparée par sa seule
    ombre profonde (--shadow-window, §6) ; le voile noir semi-opaque posé par
@@ -752,3 +773,6 @@ canvas.tetris {
   background: var(--gel-track);
   box-shadow: inset 0 1px 2px rgba(0,0,0,.15);
 }
+
+/* Sombre : le curseur natif en schéma sombre perdait la bille bleu gel. */
+[data-theme="dark"] input[type="range"] { color-scheme: light; accent-color: var(--aq-blue); }

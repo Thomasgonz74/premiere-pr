@@ -30,6 +30,7 @@
   --ad-brass-dk: #8A7126;     /* filets discrets */
   --ad-emerald:  #0E3B2E;     /* la sélection */
   --ad-red:      #C9524E;     /* laque rouge : le danger (texte, filet) */
+  --ad-red-text: #DE6A66;     /* laque rouge éclaircie pour le texte (5,2:1 sur lacquer-hi) */
   --ad-red-deep: #7A1E1E;     /* laque rouge : le plein (irréversible) */
 
   --ad-desktop: #0C0B08;
@@ -79,6 +80,13 @@
     calc(100% - 10px) 0, calc(100% - 10px) 5px, calc(100% - 5px) 5px, calc(100% - 5px) 10px, 100% 10px,
     100% calc(100% - 10px), calc(100% - 5px) calc(100% - 10px), calc(100% - 5px) calc(100% - 5px), calc(100% - 10px) calc(100% - 5px), calc(100% - 10px) 100%,
     10px 100%, 10px calc(100% - 5px), 5px calc(100% - 5px), 5px calc(100% - 10px), 0 calc(100% - 10px));
+  /* La même ziggourat à l'échelle des actions de ligne (24 px de haut) :
+     deux crans de 3 px au lieu de 5 -- à 5/10 px, les marches mangeaient
+     80 % de la hauteur et découpaient le bouton en croix. */
+  --zigg-sm: polygon(0 6px, 3px 6px, 3px 3px, 6px 3px, 6px 0,
+    calc(100% - 6px) 0, calc(100% - 6px) 3px, calc(100% - 3px) 3px, calc(100% - 3px) 6px, 100% 6px,
+    100% calc(100% - 6px), calc(100% - 3px) calc(100% - 6px), calc(100% - 3px) calc(100% - 3px), calc(100% - 6px) calc(100% - 3px), calc(100% - 6px) 100%,
+    6px 100%, 6px calc(100% - 3px), 3px calc(100% - 3px), 3px calc(100% - 6px), 0 calc(100% - 6px));
   --double-line: 0 0 0 1px var(--ad-brass-dk), inset 0 0 0 1px var(--ad-brass-dk);
 
   /* Propriétés "extra" attendues par le CSS partagé (contrat structurel
@@ -254,6 +262,7 @@
   --ad-disabled: #8A8062;
   --ad-brass-dk: #D4AF37;
   --ad-red: #FF8A80;
+  --ad-red-text: #FF8A80;
 }
 /* HC:END */
 
@@ -330,6 +339,7 @@ input[type=text], textarea { cursor: var(--cursor-text); }
   border-radius: 0;
   background: none;
   box-shadow: none;
+  clip-path: none;   /* <button> : la ziggourat de `button` rognait les losanges */
   transition: transform var(--transition-state);
 }
 .cap-btn:hover { filter: none; transform: scale(1.15); }
@@ -387,6 +397,10 @@ input[type=text], textarea { cursor: var(--cursor-text); }
   border: 1px solid var(--ad-brass-dk);
   border-right: none;
   border-radius: 0;
+  /* Onglets SOUDÉS à filets (charte §9, .tab de components.html) : ni
+     ziggourat ni largeur mini de bouton -- <button> héritait des deux. */
+  clip-path: none;
+  min-width: 0;
   padding: 7px 18px;
   color: var(--ad-ivory-dim);
   text-transform: uppercase;
@@ -423,7 +437,9 @@ button {
 }
 button:not(:disabled):hover { border-color: var(--ad-brass-hi); color: var(--ad-brass-hi); }
 button:not(:disabled):active { background: var(--ad-brass); border-color: var(--ad-brass); color: var(--ad-lacquer); }
-button:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
+/* Trait d'ivoire DEDANS : clip-path rogne tout ce qui dépasse la boîte,
+   l'anneau à offset 2 px (charte §7) était donc invisible sur tout bouton. */
+button:focus-visible { outline: var(--focus-ring); outline-offset: -4px; }
 button:disabled { border-color: var(--ad-disabled); color: var(--text-disabled); cursor: var(--cursor-default); }
 
 /* Démarrer / Démarrer le partage : le bouton "défaut" -- le seul dégradé
@@ -436,15 +452,20 @@ button:disabled { border-color: var(--ad-disabled); color: var(--text-disabled);
 }
 .start-btn:hover { border-color: var(--ad-brass-hi); color: var(--ad-lacquer); }
 .start-btn:active { background: var(--ad-brass-dk); color: var(--ad-ivory); }
+/* Trait de focus à l'encre de laque sur le laiton : l'ivoire n'y faisait que 1,4-2,4:1. */
+.start-btn:focus-visible { outline-color: var(--ad-lacquer); }
 
-/* Actions de ligne (pause/suppression) : même ziggourat, taille réduite --
-   pas de min-width, l'espace de la ligne est compté. */
-.row-actions button {
+/* Actions de ligne (pause/suppression) et fermeture du bandeau de
+   suggestion : même ziggourat à l'échelle réduite (--zigg-sm) -- pas de
+   min-width, l'espace de la ligne est compté. */
+.row-actions button, .suggestion-banner-close {
   min-width: 0;
   height: 24px;
   padding: 0 10px;
   font-size: 11px;
+  clip-path: var(--zigg-sm);
 }
+.row-actions button:focus-visible, .suggestion-banner-close:focus-visible { outline-offset: -3px; }
 
 /* ---------- Champs : laque plate, miroir droit (pas de ziggourat) ------- */
 input[type="text"], input[type="number"], select, textarea, .search-input {
@@ -531,6 +552,18 @@ input[type="checkbox"]:disabled { border-color: var(--ad-disabled); }
 .scan-path { color: var(--text-primary); }
 .scan-size { color: var(--ad-ivory-dim); }
 
+/* Badges de risque / réputation : les aplats pastel codés en dur du CSS
+   partagé sont interdits ici (interdit n°2). Badges du foyer (P2 de la
+   charte) : émeraude = sûr, plaque neutre = faible, laiton = moyen, filet
+   laque rouge = élevé, plein laque rouge = critique (l'irréversible).
+   Filets en box-shadow inset : une bordure changerait la hauteur de ligne. */
+.risk-badge, .reputation-badge { border-radius: 0; }
+.risk-safe, .reputation-good { background: var(--ad-emerald); color: var(--ad-ivory); }
+.risk-low, .reputation-neutral { background: var(--ad-lacquer-hi); color: var(--ad-ivory); box-shadow: inset 0 0 0 1px var(--ad-brass-dk); }
+.risk-medium { background: var(--brass); color: var(--ad-lacquer); }
+.risk-high, .reputation-bad { background: var(--ad-lacquer-hi); color: var(--ad-red-text); font-weight: 700; box-shadow: inset 0 0 0 1px var(--ad-red); }   /* §7 Destructif : filet ET texte laque rouge */
+.risk-critical { background: var(--ad-red-deep); color: var(--ad-ivory); box-shadow: inset 0 0 0 1px var(--ad-red); }
+
 /* ---------- Group box (Profil, détails) : filet double, légende laiton -- */
 .profile-group, .details-group {
   background: var(--ad-lacquer-hi);
@@ -574,7 +607,10 @@ input[type="checkbox"]:disabled { border-color: var(--ad-disabled); }
   border: 1px solid var(--ad-brass);
   border-radius: 0;
   clip-path: var(--zigg);
-  box-shadow: var(--double-line), var(--shadow-window);
+  /* clip-path rogne tout ce qui déborde : l'anneau extérieur de
+     --double-line et l'ombre ne pouvaient pas s'afficher. Le double filet
+     passe donc DEDANS (filet laiton, 3 px de laque, filet discret). */
+  box-shadow: inset 0 0 0 3px var(--ad-lacquer), inset 0 0 0 4px var(--ad-brass-dk);
 }
 .modal-box h3 {
   text-align: center;
@@ -609,3 +645,8 @@ canvas.tetris {
   box-shadow: var(--double-line);
   background: var(--ad-lacquer-hi);
 }
+
+/* Colonnes ÉTAT (124 px) et CATÉGORIE (84 px) : en capitales Bodoni espacées,
+   « TÉLÉCHARGEMENT » passait à la ligne au milieu du mot et « DOCUMENTS »
+   finissait en points de suspension. */
+#downloadsList .downloads-row > :is(.row-state, .row-category) { letter-spacing: 0; font-size: .86em; }

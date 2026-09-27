@@ -43,7 +43,13 @@
      ======================================================== */
   --surface-window: var(--bz-window);
   --text-primary:   var(--bz-ink);
-  --text-soft:      var(--bz-ink-soft);
+  /* Texte secondaire (ETA, pairs, catégorie, tailles) : l'inactif officiel
+     #707D8A ne tient que 4,2:1 sur la vue blanche et 3,8:1 sur les lignes
+     santé teintées. Même famille gris-bleu, tirée d'un quart vers l'encre
+     (≈ #5D6772, 5,8:1 sur blanc, ≥ 5,2:1 sur les lignes santé) ; la primitive
+     --bz-ink-soft reste l'officielle (barre de titre inactive). Le mélange
+     suit chaque mode : plus clair en sombre, plus noir en contraste élevé. */
+  --text-soft:      color-mix(in srgb, var(--bz-ink-soft) 75%, var(--bz-ink));
   --text-disabled:  var(--bz-ink-disabled);
   --selection-bg:   var(--accent);
   --selection-text: #FFFFFF;
@@ -78,7 +84,12 @@
      le "legend" (titre de groupe) porte le lisere -- seul le poids change
      ailleurs, ici c'est la couleur qui distingue le titre du corps. */
   --border-control:  var(--bz-border);
-  --border-field:    var(--bz-border);
+  /* Le trait officiel #B9BDC0 ne tient que 1,7:1 sur la fenêtre #EFF0F1 :
+     un champ blanc (ou une case vide) n'y a pas d'autre contour que lui.
+     Pour les CHAMPS et les cases seulement, le même trait 1 px est tiré vers
+     l'encre (≈ #84888B, 3,1:1 sur #EFF0F1) ; boutons (identifiés par leur
+     libellé), groupes, onglets, séparateurs et vues gardent #B9BDC0. */
+  --border-field:    color-mix(in srgb, var(--bz-border) 65%, var(--bz-ink));
   --border-group:    var(--bz-line);
   --border-progress: #C8CCCF;
   --border-tab:      var(--bz-border);
@@ -180,7 +191,12 @@
      7. ÉTATS & MOUVEMENT
      ======================================================== */
   --transition-state: .12s ease;
-  --focus-ring: inset 0 0 0 1px var(--accent);   /* le lisere, double le trait */
+  /* L'accent #3DAEE9 ne tient que 2,5:1 sur le blanc : le liseré intérieur
+     du focus (et le bord d'une case cochée) prend le texte accent officiel
+     #1D6EA8 (5,5:1) -- le trait extérieur reste #3DAEE9, le liseré reste
+     double et bleu. En sombre l'accent lui-même tient 6,7:1 (bloc dark). */
+  --accent-edge: var(--accent-dk);
+  --focus-ring: inset 0 0 0 1px var(--accent-edge);   /* le lisere, double le trait */
   --cursor-interactive: var(--cursor-default);
 
   /* Alias de contrat : le fondu couleur/lisere de la charte. Pas
@@ -247,9 +263,11 @@
   /* ICONS:END */
 }
 /* DARK:BEGIN — thème sombre (phase 3). Toutes les propriétés "extras"
-   ci-dessus référencent --bz-*/--accent/--shadow-window/--gradient-desktop
-   en var(), elles se re-résolvent donc seules ici -- pas besoin de les
-   répéter (même logique que luna_xp §2). */
+   ci-dessus référencent les primitives --bz-xxx, --accent, --shadow-window
+   et --gradient-desktop en var(), elles se re-résolvent donc seules ici --
+   pas besoin de les répéter (même logique que luna_xp §2). Ne jamais écrire
+   la glob « étoile-barre » dans un commentaire : elle le ferme et avale le
+   bloc qui suit (c'est ce qui avait fait disparaître tout le mode sombre). */
 [data-theme="dark"] {
   --bz-window: #2A2E32;
   --bz-view: #1B1E20;
@@ -267,6 +285,18 @@
   --gradient-desktop: linear-gradient(150deg,#1A1E22,#101315);
   --shadow-window: 0 12px 34px rgba(0,0,0,.65), 0 0 0 1px rgba(0,0,0,.7);
   --shadow-menu: 0 6px 18px rgba(0,0,0,.6);
+  /* Relecture du mode sombre (il était avalé par un commentaire) :
+     - le texte accent #1D6EA8 (légendes et en-têtes des tableaux du Profil)
+       tombe à 3:1 sur la vue #1B1E20 : il reprend l'accent, 6,7:1 ;
+     - le liseré intérieur du focus et le bord des cases cochées aussi ;
+     - le trait des champs #5C6368 ne tient que 2,2:1 sur la fenêtre #2A2E32 :
+       tiré d'un cinquième vers l'encre claire (≈ #7C8286, 3,5:1) ;
+     - la piste de jauge #C8CCCF du mode clair devenait un filet blanc cru :
+       elle reprend ce même trait de champ. */
+  --text-legend: var(--accent);
+  --accent-edge: var(--accent);
+  --border-field: color-mix(in srgb, var(--bz-border) 80%, var(--bz-ink));
+  --border-progress: var(--border-field);
   /* icônes surchargées pour le fond sombre */
   --icon-back: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M20 12H5.5M11.5 5.5L5 12l6.5 6.5' fill='none' stroke='%23EFF0F1' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   --icon-forward: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M4 12h14.5M12.5 5.5L19 12l-6.5 6.5' fill='none' stroke='%23EFF0F1' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
@@ -533,7 +563,7 @@ select,
 textarea,
 .search-input {
   background: var(--bz-view);
-  border: 1px solid var(--bz-border);
+  border: 1px solid var(--border-field);
   border-radius: var(--radius-control);
   box-shadow: none;
   font: inherit;
@@ -579,7 +609,7 @@ input[type="checkbox"] {
   margin: 0;
   width: var(--checkbox-size);
   height: var(--checkbox-size);
-  border: 1px solid var(--bz-border);
+  border: 1px solid var(--border-field);
   border-radius: 2px;
   background: var(--bz-view);
   display: inline-grid;
@@ -588,7 +618,7 @@ input[type="checkbox"] {
   transition: border-color var(--transition-state), background var(--transition-state);
 }
 input[type="checkbox"]:not(:disabled):hover { border-color: var(--accent); }
-input[type="checkbox"]:checked { background: var(--accent); border-color: var(--accent); }
+input[type="checkbox"]:checked { background: var(--accent); border-color: var(--accent-edge); }
 input[type="checkbox"]:checked::after {
   content: "";
   width: 12px; height: 12px;
@@ -604,6 +634,9 @@ input[type="checkbox"]:disabled { border-color: var(--bz-line); background: var(
 .share-row:hover:not(.selected),
 .downloads-row:hover:not(.selected),
 .scan-row:hover { background: var(--accent-veil); }
+/* Les vues (listes) gardent le trait officiel : --border-field, plus foncé,
+   est réservé aux champs et aux cases (cf. section 2). */
+.listbox { border-color: var(--bz-border); }
 
 .downloads-row-header {
   font-weight: 700;
@@ -698,3 +731,9 @@ canvas.tetris {
   border-radius: var(--radius-control);
   box-shadow: none;
 }
+
+/* Ligne sélectionnée des Téléchargements : l'encre Breeze sur le bleu
+   d'accent (6,1:1). Le blanc de --selection-text n'y tenait que 2,5:1 depuis
+   que les cellules héritent de la couleur de la ligne. Le contraste élevé
+   garde sa propre paire. */
+:root:not([data-theme="hc"]) #downloadsList .row.selected { color: #232627; }

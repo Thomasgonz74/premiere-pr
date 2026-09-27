@@ -189,14 +189,43 @@ const COLOR_ACTIVE = "#8BAC0F";
 const COLOR_SETTLED = "#306230";
 const COLOR_BORDER = "#0F380F";
 
+// Downloads rows ask for smaller cells on a narrow page (style.css sets
+// --tetris-cell per container width). Scaling the 6 px bitmap down in CSS
+// blurred the grid (non-integer factor), so the bitmap itself is resized to
+// whole-pixel cells. The size can only be read once the board is laid out
+// (a hidden tab has no container width): a ResizeObserver catches the
+// board's first appearance, a window resize invalidates every board, and
+// neither costs anything per frame.
+let _tetrisCellEpoch = 0;
+window.addEventListener("resize", () => { _tetrisCellEpoch++; });
+const _tetrisFitObserver = new ResizeObserver((entries) => {
+  for (const entry of entries) {
+    const board = entry.target._tetrisBoard;
+    if (board && entry.contentRect.width > 0 && board.fitCells()) board.render();
+  }
+});
+
 class TetrisCanvas {
   constructor(canvasEl, rows = BOARD_ROWS, cols = BOARD_COLS) {
     this.canvas = canvasEl;
     this.ctx = canvasEl.getContext("2d");
     this.model = new TetrisBoardModel(rows, cols);
     this.progressFraction = 0;
+    this._cellEpoch = -1;
     canvasEl.width = cols * DEFAULT_CELL_PX;
     canvasEl.height = rows * DEFAULT_CELL_PX;
+  }
+
+  // True when the bitmap was resized (and so needs a render). A board that
+  // is not laid out yet is left unfitted, so the next tick retries.
+  fitCells() {
+    if (!this.canvas.getClientRects().length) return false;
+    this._cellEpoch = _tetrisCellEpoch;
+    const px = parseInt(getComputedStyle(this.canvas).getPropertyValue("--tetris-cell"), 10) || DEFAULT_CELL_PX;
+    if (this.canvas.width === this.model.cols * px) return false;
+    this.canvas.width = this.model.cols * px;
+    this.canvas.height = this.model.rows * px;
+    return true;
   }
 
   setProgress(fraction) {
@@ -249,8 +278,9 @@ function registerTetrisCanvas(canvasEl) {
   if (_tetrisTimer === null) {
     _tetrisTimer = setInterval(() => {
       for (const b of _tetrisInstances) {
-        if (!b.canvas.isConnected) { _tetrisInstances.delete(b); continue; }
-        if (b.tick()) b.render();
+        if (!b.canvas.isConnected) { _tetrisInstances.delete(b); _tetrisFitObserver.unobserve(b.canvas); continue; }
+        const refit = b._cellEpoch !== _tetrisCellEpoch && b.fitCells();
+        if (b.tick() || refit) b.render();
       }
       if (_tetrisInstances.size === 0) {
         clearInterval(_tetrisTimer);
@@ -259,5 +289,7 @@ function registerTetrisCanvas(canvasEl) {
     }, ANIMATION_INTERVAL_MS);
   }
   board.render();
+  canvasEl._tetrisBoard = board;
+  _tetrisFitObserver.observe(canvasEl);
   return board;
 }

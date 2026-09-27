@@ -223,6 +223,8 @@
   --su-paper: #151312;
   --su-paper-hi: #1D1A18;
   --su-ink: #F1E9D6;               /* l'encre devient crème */
+  --selection-text: var(--su-ink);   /* crème sur le bandeau rouge : 4,6:1 (l'encre de nuit y tombait à 3,3:1) */
+  --text-soft: #B5AE9F;              /* le gris d'encre du jour restait sombre sur la nuit (3,2:1) */
   --su-anthracite: #262421;
   --su-anthracite-hi: #302D29;
   --su-gray: #6E675C;
@@ -261,6 +263,7 @@
   --su-anthracite-hi: #1A1A1A;
   --su-gray: #575757;
   --text-soft: #575757;
+  --text-disabled: #575757;        /* le gris du jour (#9B968A) tombait à 2,9:1 sur le blanc ; la trame + le bord gris marquent déjà l'épuisé */
   --su-red: #8E0000;
   --su-red-dk: #700000;
   --band-ink: #FFFFFF;
@@ -513,6 +516,9 @@ input[type="text"], input[type="number"], select, textarea, .search-input {
   padding: 0 9px;
 }
 textarea { height: auto; min-height: 66px; padding: 5px 9px; resize: none; }
+/* style.css pose un bord 1 px sur les champs de .form-grid (sélecteur plus
+   lourd que le nôtre) : on rétablit le bord d'encre 2 px de la charte (§7). */
+.form-grid input[type="text"], .form-grid input[type="number"] { border-width: 2px; }
 input[type="text"]:focus, input[type="number"]:focus, select:focus,
 textarea:focus, .search-input:focus {
   outline: var(--focus-ring);
@@ -605,6 +611,16 @@ input[type="checkbox"]:disabled {
   padding: var(--space-2) var(--space-3);
 }
 .downloads-row-header span { color: var(--su-paper); }
+/* Le « ? » d'aide est carré (interdit §10.1 : seul le radio s'arrondit).
+   Dans le bandeau d'encre, la règle ci-dessus le peignait papier sur son
+   propre disque papier (1,1:1) : on l'évide — liseré et « ? » papier sur
+   l'encre du bandeau, comme les capitales voisines. */
+.info-hint { border-radius: 0; }
+.downloads-row-header .info-hint {
+  background: transparent;
+  border-color: var(--su-paper);
+  color: var(--su-paper);
+}
 .scan-path { color: var(--text-primary); }
 .scan-size { font-variant-numeric: tabular-nums; color: var(--text-soft); }
 
@@ -720,4 +736,13 @@ canvas.tetris {
    d'origine. */
 [data-theme="dark"] select {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7'%3E%3Cpath d='M5 7L0 0h10z' fill='%23F1E9D6'/%3E%3C/svg%3E");
+}
+/* Même piège pour les flèches d'ascenseur (encre #1A1817 figée, sur la
+   gouttière su-paper devenue nuit). Inertes tant que scrollbar-color est
+   honoré par le moteur, mais justes si ::-webkit-scrollbar reprend la main. */
+[data-theme="dark"] ::-webkit-scrollbar-button:vertical:decrement {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='6'%3E%3Cpath d='M4 0L8 6H0Z' fill='%23F1E9D6'/%3E%3C/svg%3E");
+}
+[data-theme="dark"] ::-webkit-scrollbar-button:vertical:increment {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='6'%3E%3Cpath d='M4 6L0 0H8Z' fill='%23F1E9D6'/%3E%3C/svg%3E");
 }

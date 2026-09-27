@@ -222,7 +222,14 @@
   /* ========================================================
      7. ÉTATS & DIVERS
      ======================================================== */
-  --focus-outline: 1px dotted var(--w95-black);  /* offset -4px dans les boutons */
+  /* Encre du texte, pas le noir primitif : le pointillé restait noir sur les
+     faces/champs noirs du hc et sur le champ de nuit du dark (1,3:1). */
+  --focus-outline: 1px dotted var(--text-primary);  /* offset -4px dans les boutons */
+  /* Flèches de liste déroulante et d'ascenseur : SVG à encre fixe, donc
+     tokenisés et redessinés dans l'encre du texte de chaque mode (noir ici,
+     clair en dark, blanc en hc) -- sinon noir sur champ de nuit / fond noir. */
+  --glyph-arrow-down: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Cpath d='M4.5 6.5h7L8 10z' fill='%23000'/%3E%3C/svg%3E");
+  --glyph-arrow-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Cpath d='M4.5 9.5h7L8 6z' fill='%23000'/%3E%3C/svg%3E");
   --cursor-interactive: var(--cursor-default); /* flèche, même sur les boutons (authentique) */
   --transition: none;             /* changements d'état instantanés */
 
@@ -300,10 +307,25 @@
   --surface-panel: #4C5666;
   --text-primary: #E8ECF2;
   --text-disabled: #66738A;
+  /* Notes, lignes d'état, pastille « ? » : le mélange partagé (texte 78 % +
+     champ) tombait à 4,06:1 sur la face #4C5666 -- encre dédiée, 5,1:1 sur
+     la face et 10,4:1 sur le champ. */
+  --text-secondary: #D0D6E0;
+  /* Bordures plates (pointillé de la zone de dépôt, séparateurs de lignes,
+     bords des champs de formulaire) : l'alias gris foncé #262C36 disparaissait
+     sur les champs de nuit (1,1:1) et la face (1,9:1). On prend la lumière des
+     biseaux (#9AA8BD : 3,1:1 sur la face, 6,3:1 sur le champ) pour les bords de
+     contrôles, un cran plus sourd pour les séparateurs ; les biseaux gardent
+     --w95-gray-dark. */
+  --border-field: #9AA8BD;
+  --border-group: #8A97AD;
+  --border-tab: #8A97AD;
+  --glyph-arrow-down: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Cpath d='M4.5 6.5h7L8 10z' fill='%23E8ECF2'/%3E%3C/svg%3E");
+  --glyph-arrow-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Cpath d='M4.5 9.5h7L8 6z' fill='%23E8ECF2'/%3E%3C/svg%3E");
   --surface-desktop: #1A2028;
-  /* Tous les alias --border-*, --text-legend, les biseaux, --plastic-*,
-     --gradient-*, --frame-shadow et --shadow-menu ci-dessus sont exprimés en
-     var(--w95-*) : ils se recalculent seuls, rien à répéter ici. Navy des
+  /* Hors --border-field/-group/-tab ci-dessus, --text-legend, les biseaux,
+     --plastic-*, --gradient-*, --frame-shadow et --shadow-menu sont exprimés
+     en var(--w95-*) : ils se recalculent seuls, rien à répéter ici. Navy des
      titres et bulle jaune conservés (STYLE.md phase 3), donc --w95-navy et
      --w95-info ne sont pas touchés. */
   /* icônes surchargées pour le fond sombre */
@@ -335,9 +357,15 @@
   --selection-bg: #D5B4FD;
   --selection-text: #000000;
   --link: #9D9DFF;
-  /* Idem : tout le relief/dégradé/ombre dérive de var(--w95-*) redéfinis
-     ci-dessus, rien à répéter pour --border-*, --plastic-*, --gradient-*,
-     --frame-shadow, --shadow-menu. */
+  /* La jauge reprend le rôle du navy (sélection) : blocs mauves, puisque
+     --w95-navy passe au noir et les rendait invisibles sur la piste noire. */
+  --gradient-progress:
+    repeating-linear-gradient(90deg, var(--selection-bg) 0 9px, transparent 9px 11px);
+  --glyph-arrow-down: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Cpath d='M4.5 6.5h7L8 10z' fill='%23FFFFFF'/%3E%3C/svg%3E");
+  --glyph-arrow-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Cpath d='M4.5 9.5h7L8 6z' fill='%23FFFFFF'/%3E%3C/svg%3E");
+  /* Idem : hors la jauge ci-dessus, tout le relief/dégradé/ombre dérive de
+     var(--w95-*) redéfinis ci-dessus, rien à répéter pour --border-*,
+     --plastic-*, --gradient-*, --frame-shadow, --shadow-menu. */
   /* icônes en contraste élevé */
   --icon-back: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='16.5,5 7,12 16.5,19 16.5,14.4 21,14.4 21,9.6 16.5,9.6' fill='%23FFFFFF'/%3E%3C/svg%3E");
   --icon-forward: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='7.5,5 17,12 7.5,19 7.5,14.4 3,14.4 3,9.6 7.5,9.6' fill='%23FFFFFF'/%3E%3C/svg%3E");
@@ -469,7 +497,7 @@ input[type=text], textarea { cursor: var(--cursor-text); }
   left: 50%; bottom: 3px;
   transform: translateX(-50%);
   width: 6px; height: 2px;
-  background: var(--w95-black);
+  background: var(--text-primary);
 }
 .cap-max span::before {
   content: "";
@@ -477,7 +505,7 @@ input[type=text], textarea { cursor: var(--cursor-text); }
   left: 50%; top: 50%;
   transform: translate(-50%, -50%);
   width: 8px; height: 7px;
-  border: 1px solid var(--w95-black);
+  border: 1px solid var(--text-primary);
   border-top-width: 2px;
 }
 .cap-close span::before, .cap-close span::after {
@@ -485,7 +513,7 @@ input[type=text], textarea { cursor: var(--cursor-text); }
   position: absolute;
   left: 3px; right: 3px; top: 50%;
   height: 2px;
-  background: var(--w95-black);
+  background: var(--text-primary);
 }
 .cap-close span::before { transform: translateY(-50%) rotate(45deg); }
 .cap-close span::after  { transform: translateY(-50%) rotate(-45deg); }
@@ -626,9 +654,16 @@ select {
   appearance: none;
   -webkit-appearance: none;
   padding-right: 24px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Cpath d='M4.5 6.5h7L8 10z' fill='%23000'/%3E%3C/svg%3E");
+  background-image: var(--glyph-arrow-down);
   background-repeat: no-repeat;
   background-position: right 4px center;
+}
+/* Dark : le filet 1px que style.css pose sur les champs de .form-grid prend
+   l'ombre du creusé (comme #808080 en light) et non la lumière #9AA8BD de
+   --border-field, qui gravait le champ au lieu de le creuser. */
+[data-theme="dark"] .form-grid input[type="text"],
+[data-theme="dark"] .form-grid input[type="number"] {
+  border-color: var(--w95-gray-dark);
 }
 
 /* ---------- Cases à cocher ------------------------------------------------*/
@@ -645,10 +680,15 @@ input[type="checkbox"] {
   display: inline-grid;
   place-content: center;
 }
+/* Coche du spécimen utilisée comme masque, peinte dans l'encre du texte :
+   le trait noir codé en dur disparaissait sur le champ noir du hc (1:1) et
+   le champ de nuit du dark (1,1:1). */
 input[type="checkbox"]:checked::after {
   content: "";
   width: 7px; height: 7px;
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='7' height='7'%3E%3Cpath d='M1 3.5 2.8 5.3 6.2 1.2' stroke='%23000' stroke-width='1.6' fill='none'/%3E%3C/svg%3E") no-repeat center;
+  background: var(--text-primary);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='7' height='7'%3E%3Cpath d='M1 3.5 2.8 5.3 6.2 1.2' stroke='%23000' stroke-width='1.6' fill='none'/%3E%3C/svg%3E") no-repeat center;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='7' height='7'%3E%3Cpath d='M1 3.5 2.8 5.3 6.2 1.2' stroke='%23000' stroke-width='1.6' fill='none'/%3E%3C/svg%3E") no-repeat center;
 }
 input[type="checkbox"]:disabled { background: var(--surface-window); }
 input[type="checkbox"]:disabled:checked::after { filter: grayscale(1) opacity(.55); }
@@ -663,7 +703,7 @@ input[type="checkbox"]:focus-visible { outline: var(--focus-outline); outline-of
   padding: 3px;
 }
 .row-name { font-weight: var(--font-weight-normal); } /* pas de gras hors §4 (interdit #7) */
-.row-state { color: var(--text-primary); font-weight: var(--font-weight-normal); }
+.row-state { color: inherit; font-weight: var(--font-weight-normal); } /* inherit : suit le blanc de la surbrillance navy au survol */
 .row-rate, .row-eta, .row-category, .row-peers { font-variant-numeric: tabular-nums; }
 .share-row { border-radius: 0; } /* même ligne que .row (biseaux/hover hérités) -- juste une grille plus large */
 /* Exception documentée du §7 : "RIEN sur boutons/champs" mais surbrillance
@@ -679,15 +719,22 @@ input[type="checkbox"]:focus-visible { outline: var(--focus-outline); outline-of
   border-bottom: none;
   padding: 0;
   font-weight: var(--font-weight-normal);
+  align-items: stretch; /* tous les boutons d'en-tête à la même hauteur */
 }
-.downloads-row-header span {
-  display: block;
+/* Enfants directs seulement : « Pairs » imbrique un libellé et la pastille
+   « ? », qui recevaient chacun un second biseau et passaient en bloc sous le
+   libellé. « Temps restant » (≈ 71 px) ne tient pas dans sa colonne de 70 px
+   et passe sur deux lignes : le libellé est centré verticalement dans des
+   boutons de hauteur égale plutôt qu'un bouton isolé deux fois plus haut. */
+.downloads-row-header > span {
+  display: flex;
+  align-items: center;
   background: var(--surface-window);
   box-shadow: var(--bevel-raised);
   padding: var(--space-2) var(--space-3);
   text-align: left;
 }
-.scan-path { color: var(--text-primary); }
+.scan-path { color: inherit; }
 .scan-size { font-variant-numeric: tabular-nums; }
 
 /* ---------- Groupes (profil, détails) — équivalent fieldset/legend ------ */
@@ -747,11 +794,12 @@ input[type="checkbox"]:focus-visible { outline: var(--focus-outline); outline-of
   border-radius: 0;
   box-shadow: var(--bevel-window);
 }
-/* Le <h3> devient la barre de titre de la boîte : marges négatives = à
-   exactement le padding du parent, donc affleure le bord sans jamais le
-   dépasser (pas de clip malgré l'overflow:auto du conteneur). */
+/* Le <h3> devient la barre de titre de la boîte, posée DANS le cadre de 3 px
+   comme .window > .titlebar du spécimen (§6 : cadre, puis barre) : marges
+   négatives = padding du parent moins --window-frame. Affleurer le bord
+   recouvrait l'arête haute du cadre (en hc, barre noire : boîte sans haut). */
 .modal-box h3 {
-  margin: calc(-1 * var(--space-5)) calc(-1 * var(--space-5)) var(--space-4);
+  margin: calc(var(--window-frame) - var(--space-5)) calc(var(--window-frame) - var(--space-5)) var(--space-4);
   padding: 3px var(--space-5);
   background: var(--title-active-bg);
   color: var(--title-active-text);
@@ -772,12 +820,40 @@ input[type="checkbox"]:focus-visible { outline: var(--focus-outline); outline-of
   background-position: center;
 }
 ::-webkit-scrollbar-button:single-button:vertical:decrement {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Cpath d='M4.5 9.5h7L8 6z' fill='%23000'/%3E%3C/svg%3E");
+  background-image: var(--glyph-arrow-up);
 }
 ::-webkit-scrollbar-button:single-button:vertical:increment {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Cpath d='M4.5 6.5h7L8 10z' fill='%23000'/%3E%3C/svg%3E");
+  background-image: var(--glyph-arrow-down);
 }
 ::-webkit-scrollbar-corner { background: var(--surface-window); }
+
+/* ---------- Curseur de valeur (volume) -----------------------------------*/
+/* Peau du spécimen (.slider) : piste fine creusée, sans remplissage, poignée
+   = vrai bouton relevé 11×22 -- au lieu du curseur bleu arrondi de Chromium. */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 22px;
+  background: transparent;
+  cursor: var(--cursor-default);
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  background: var(--surface-field);
+  box-shadow: var(--bevel-thin-sunken);
+  border: none;
+  border-radius: 0;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 11px;
+  height: 22px;
+  margin-top: -9px;
+  background: var(--surface-window);
+  box-shadow: var(--bevel-raised);
+  border: none;
+  border-radius: 0;
+}
 
 /* ---------- Jauge de progression (cadre du canvas Tetris) ---------------*/
 canvas.tetris {
@@ -787,3 +863,8 @@ canvas.tetris {
   background: var(--surface-window);
   image-rendering: pixelated;
 }
+
+/* Erreur RSS : pas de gras hors §4 (interdit #7) ; en clair, le rouge
+   brique d'origine (6,6:1 sur le champ blanc) plutôt que le mélange partagé. */
+.rss-log-error { font-weight: var(--font-weight-normal); }
+:root:not([data-theme]) { --status-danger-text: #A33B12; }

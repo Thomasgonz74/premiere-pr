@@ -80,7 +80,13 @@
      choix authentique de ce style, pas une omission. La distinction de
      lecture (légende, titres) vient de la crème + capitales, pas d'une
      2e couleur de bord. */
-  --border-control:  var(--z-steel);
+  /* Bord des COMMANDES (boutons, champs, cases, touches de fenêtre) : l'acier
+     --z-steel ne faisait que 1,5-1,9:1 sur plaque/panneau, sous le 3:1 exigé
+     pour la limite d'un contrôle. Même famille d'acier, un cran plus clair
+     (70 % filet éveillé + 30 % glyphe) : 3,5:1 sur plaque, 3,1:1 sur panneau.
+     Une seule couleur de bord pour toutes les commandes, comme dans la charte ;
+     les filets de STRUCTURE (groupes, onglets, lignes, listes) restent --z-steel. */
+  --border-control:  color-mix(in srgb, var(--z-steel-hi) 70%, var(--z-metal));
   --border-field:    var(--z-steel);
   --border-group:    var(--z-steel);
   --border-progress: var(--z-steel);
@@ -328,13 +334,13 @@ body.is-inactive .titlebar {
 
 .cap-btn {
   min-width: 0;
-  border: 1px solid var(--z-steel);
+  border: 1px solid var(--border-control);
   border-radius: 3px;
   background: var(--z-field);
   color: var(--z-metal);
   box-shadow: none;
 }
-.cap-btn:not(:disabled):hover { border-color: var(--z-steel-hi); color: var(--z-cream); filter: none; }
+.cap-btn:not(:disabled):hover { border-color: var(--z-metal); color: var(--z-cream); filter: none; }
 .cap-btn:not(:disabled):active { background: #0A121D; filter: none; }
 .cap-close { background: var(--z-field); }
 .cap-close:not(:disabled):hover {
@@ -381,7 +387,9 @@ body.is-inactive .titlebar {
   gap: 5px;
   padding: 0 10px;
   margin-bottom: -1px;
-  background: transparent;
+  /* la plaque, pas transparent : html/body sont transparents (fenêtre
+     translucide), une barre transparente laissait voir le bureau */
+  background: var(--surface-window);
   border-bottom: none;
 }
 .tab-btn {
@@ -448,7 +456,7 @@ button::before {
   box-shadow: inset 0 0 0 1px rgba(10, 14, 23, .5);
   transition: background var(--transition-state), box-shadow var(--transition-state);
 }
-button:not(:disabled):hover { border-color: var(--z-steel-hi); filter: none; }
+button:not(:disabled):hover { border-color: var(--z-metal); filter: none; }
 button:not(:disabled):hover::before { background: var(--z-lamp); box-shadow: var(--lamp-halo); }
 button:not(:disabled):active { background: var(--surface-field); box-shadow: inset 0 2px 4px rgba(0, 0, 0, .5); }
 button:focus-visible { outline: var(--focus-ring); outline-offset: 3px; }
@@ -479,14 +487,17 @@ button:disabled { opacity: .4; }
   background: var(--surface-panel);
 }
 .row-actions button::before { width: 5px; height: 5px; }
-.row-actions button:not(:disabled):hover { border-color: var(--z-steel-hi); box-shadow: none; }
+/* ✕ du bandeau de suggestion : même gabarit compact (il héritait des 108 px) */
+.suggestion-banner-close { min-width: 0; height: auto; padding: 3px 9px; gap: 6px; }
+.suggestion-banner-close::before { width: 5px; height: 5px; }
+.row-actions button:not(:disabled):hover { border-color: var(--z-metal); box-shadow: none; }
 .row-actions button:not(:disabled):hover::before { background: var(--z-lamp); box-shadow: var(--lamp-halo); }
 .row-actions button:not(:disabled):active { background: var(--surface-field); box-shadow: inset 0 1px 3px rgba(0, 0, 0, .5); }
 
 /* ---------- Champs de console : focus = trajectoire pointillée ---------- */
 input[type="text"], input[type="number"], select, textarea, .search-input {
   background: var(--surface-field);
-  border: 1px solid var(--border-field);
+  border: 1px solid var(--border-control);
   border-radius: var(--radius-field);
   height: var(--field-height);
   padding: 0 11px;
@@ -495,7 +506,7 @@ input[type="text"], input[type="number"], select, textarea, .search-input {
 }
 .form-grid input[type="text"], .form-grid input[type="number"] {
   background: var(--surface-field);
-  border: 1px solid var(--border-field);
+  border: 1px solid var(--border-control);
   border-radius: var(--radius-field);
   height: var(--field-height);
   padding: 0 11px;
@@ -503,7 +514,7 @@ input[type="text"], input[type="number"], select, textarea, .search-input {
 textarea { height: auto; min-height: 68px; padding: 7px 11px; resize: none; }
 input[type="text"]:not(:disabled), textarea:not(:disabled) { cursor: var(--cursor-text); }
 input[type="text"]:not(:disabled):hover, textarea:not(:disabled):hover, select:not(:disabled):hover {
-  border-color: var(--z-steel-hi);
+  border-color: var(--z-metal);
 }
 input[type="text"]:focus, textarea:focus, select:focus {
   outline: var(--focus-ring);
@@ -511,7 +522,11 @@ input[type="text"]:focus, textarea:focus, select:focus {
   border-color: var(--z-cream-dk);
 }
 input:disabled, textarea:disabled { opacity: .4; }
-input::placeholder, textarea::placeholder { color: var(--z-cream-dim); }
+/* crème douce, pas --z-cream-dim (3,1:1 sur champ) : un indice se lit */
+input::placeholder, textarea::placeholder { color: var(--text-soft); }
+/* HC : --text-soft y vaut #E8E8E8, trop près de la valeur saisie (#FFF) ;
+   --z-cream-dim (#C8C8C8, 12,5:1) garde l'écart indice/valeur. */
+[data-theme="hc"] input::placeholder, [data-theme="hc"] textarea::placeholder { color: var(--z-cream-dim); }
 select {
   appearance: none;
   -webkit-appearance: none;
@@ -530,13 +545,13 @@ input[type="checkbox"] {
   vertical-align: middle;
   width: var(--checkbox-size);
   height: var(--checkbox-size);
-  border: 1px solid var(--z-steel);
+  border: 1px solid var(--border-control);
   border-radius: 4px;
   background: var(--z-field);
   display: inline-grid;
   place-content: center;
 }
-input[type="checkbox"]:not(:disabled):hover { border-color: var(--z-steel-hi); }
+input[type="checkbox"]:not(:disabled):hover { border-color: var(--z-metal); }
 input[type="checkbox"]:checked::after {
   content: "";
   width: 9px; height: 9px;
@@ -630,3 +645,26 @@ canvas.tetris {
   background: var(--surface-field);
   box-shadow: inset 0 0 0 2px var(--surface-field);
 }
+
+/* Colonnes ÉTAT et CATÉGORIE : l'interlettrage doux faisait passer
+   « TÉLÉCHARGEMENT » à la ligne au milieu du mot et tronquait « DOCUMENTS ». */
+#downloadsList .downloads-row > :is(.row-state, .row-category) { letter-spacing: .02em; }
+
+/* Infobulle (télémétrie, STYLE.md §9) : plaque bordée à SILLON, rayon 4.
+   Bordée --z-steel (1,7:1) sur la même plaque que la barre de titre qu'elle
+   chevauche, elle s'y fondait : bord de commande (3,5:1) + sillon gravé. */
+.info-tooltip-bubble {
+  border-color: var(--border-control);
+  border-radius: var(--radius-field);
+  box-shadow: inset 0 0 0 2px var(--surface-window), inset 0 0 0 3px rgba(78, 100, 128, .4), var(--shadow-menu);
+}
+
+/* Épingle : non épinglée = voyant ÉTEINT (gris clair lisible sur la nuit,
+   au lieu du rouge à 30 % d'opacité presque invisible) ; épinglée ou survolée
+   = allumée (rouge d'origine). Sur le bandeau crème, gris foncé. */
+.row-pin-btn:not(.active) { opacity: .75; filter: grayscale(1) brightness(1.8); }
+#downloadsList .row.selected .row-pin-btn:not(.active):not(:hover) { filter: grayscale(1) brightness(.5); }
+.row-pin-btn:not(.active):hover { opacity: 1; filter: none; }
+/* Identicon pastel sur le bandeau crème : cerné d'encre de nuit pour rester visible.
+   Contour intérieur : .row-name-cell (overflow:hidden) rognerait un box-shadow extérieur. */
+#downloadsList .row.selected .identicon { box-shadow: none; outline: 1px solid var(--selection-text); outline-offset: -1px; }

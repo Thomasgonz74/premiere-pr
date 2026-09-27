@@ -48,7 +48,10 @@
   --accent-hover:   #EB6536;   /* + blanc 10 % (superposition libadwaita) */
   --accent-pressed: #BA431A;   /* + noir 20 % */
   --accent-text:    #CC4414;   /* optimize-contrast(#FAFAFA, accent, 4.51) */
-  --accent-ring:    rgba(233,84,32,.50);
+  /* Anneau de focus : toujours orange translucide, mais à .50 il tombait à
+     1,9:1 sur #FAFAFA (seuil 3:1 d'un indicateur de focus) -- la version
+     texte de l'accent à 80 % donne 3,4:1. */
+  --accent-ring:    rgba(204,68,20,.80);
   --accent-soft:    #F4A98F;   /* arc clair de l'anneau d'attente */
 
   /* DESTRUCTIF — le Red officiel de la palette Yaru */
@@ -65,6 +68,7 @@
   --circle-rest:    rgba(0,0,0,.09);
   --circle-hover:   rgba(0,0,0,.14);
   --circle-pressed: rgba(0,0,0,.20);
+  --circle-ink:     var(--yu-fg);   /* glyphes – ▢ ✕ */
 
   /* Jauge */
   --progress-rail: rgba(0,0,0,.12);
@@ -90,7 +94,11 @@
   --text-primary:      var(--yu-fg);
   --text-soft:         var(--yu-fg-dim);
   --text-disabled:     var(--yu-fg-disabled);
-  --selection-bg:      var(--accent);
+  /* Sélection PLEINE orange à texte blanc, mais dans l'orange « texte »
+     #CC4414 : blanc sur #E95420 = 3,6:1, sous le seuil de 4,5:1 ; sur
+     #CC4414 = 4,8:1. Même démarche que le bloc HC du charter, qui assombrit
+     l'orange pour que le blanc dessus reste lisible. */
+  --selection-bg:      var(--accent-text);
   --selection-text:    #FFFFFF;
 
   /* Generic aliases consumed by resources/web/spike/*.css -- every theme
@@ -355,6 +363,10 @@
   --window-outline: rgba(0,0,0,.65);
   --accent-soft: rgba(233,84,32,.22);
   --circle-rest: #EDEDED; --circle-hover: #FFFFFF; --circle-pressed: #D5D5D5;
+  /* Cercles clairs du charter : l'encre blanche y était invisible (1,2:1) ;
+     glyphes au gris de fenêtre, 11,9:1. */
+  --circle-ink: #2C2C2C;
+  --accent-ring: rgba(233,84,32,.90);   /* focus ≥ 3:1 sur #2C2C2C et #1D1D1D */
   --progress-rail: rgba(255,255,255,.15);
   --scroll-thumb: rgba(255,255,255,.30);
   --surface-desktop: #1A0F16;
@@ -391,6 +403,7 @@
   --window-outline: #000000;
   --accent: #8A2F00;
   --accent-text: #8A2F00;
+  --accent-ring: #8A2F00;   /* focus opaque : 8,4:1 sur blanc */
   --destructive: #700008;
   --destructive-text: #700008;
   --destructive-pressed: #4E0006;
@@ -476,14 +489,14 @@ input[type=text], textarea { cursor: var(--cursor-text); }
   left: 50%; right: auto; top: 50%; bottom: auto;
   width: 10px; height: 1.5px;
   transform: translate(-50%, -50%);
-  background: var(--text-primary);
+  background: var(--circle-ink);
 }
 /* Agrandir : cadre 8×8 d'encre, non rempli */
 .cap-max span::before {
   left: 50%; right: auto; top: 50%; bottom: auto;
   width: 8px; height: 8px;
   transform: translate(-50%, -50%);
-  border: 1.5px solid var(--text-primary);
+  border: 1.5px solid var(--circle-ink);
   border-radius: 2px;
   background: none;
 }
@@ -499,7 +512,7 @@ input[type=text], textarea { cursor: var(--cursor-text); }
   display: flex; align-items: center; justify-content: center;
   background: none; transform: none;
   font: 400 13px/1 var(--font-ui);
-  color: var(--text-primary);
+  color: var(--circle-ink);
 }
 
 /* ---------- Sélecteur de vues : pilules plates centrées, DÉTACHÉES du
@@ -572,6 +585,12 @@ button:disabled { background: var(--veil-hover); color: var(--text-disabled); }
 }
 .row-actions button:not(:disabled):hover { background: var(--pill-hover); }
 .row-actions button:not(:disabled):active { background: var(--pill-pressed); }
+/* Sur la rangée sélectionnée (plein orange), la pilule d'encre claire du
+   sombre éclaircissait l'orange sous des glyphes blancs : voile NOIR et
+   glyphe blanc dans tous les modes (6,8:1). */
+.row.selected .row-actions button { background: rgba(0,0,0,.20); color: var(--selection-text); }
+.row.selected .row-actions button:not(:disabled):hover { background: rgba(0,0,0,.28); }
+.row.selected .row-actions button:not(:disabled):active { background: rgba(0,0,0,.36); }
 
 /* ---------- Champs : MÊME rayon que les boutons (6 px) -- Yaru ne
    distingue pas champs/contrôles comme Luna (STYLE.md §5 : "Boutons ET
@@ -625,7 +644,11 @@ select {
 }
 
 /* ---------- Cases à cocher : pilule d'encre 16px radius 4, remplissage
-   PLEIN orange quand cochée, coche blanche ---------- */
+   PLEIN orange quand cochée, coche blanche. Écart assumé au §10.5 : la
+   pilule .08 seule faisait 1,2:1 sur la carte (une case vide ne se voyait
+   pas) ; un anneau intérieur d'encre --text-soft (4,7:1, pas une bordure :
+   la case garde sa taille) la dessine, comme la case GNOME réelle, et
+   disparaît dès qu'elle est cochée. ---------- */
 input[type="checkbox"] {
   appearance: none; -webkit-appearance: none;
   margin: 0; vertical-align: middle;
@@ -633,11 +656,12 @@ input[type="checkbox"] {
   border: none;
   border-radius: 4px;
   background: var(--pill-rest);
+  box-shadow: inset 0 0 0 2px var(--text-soft);
   display: inline-grid; place-content: center;
-  transition: background var(--transition-state);
+  transition: background var(--transition-state), box-shadow var(--transition-state);
 }
 input[type="checkbox"]:not(:disabled):hover { background: var(--pill-hover); }
-input[type="checkbox"]:checked { background: var(--accent); }
+input[type="checkbox"]:checked { background: var(--accent); box-shadow: none; }
 input[type="checkbox"]:checked:not(:disabled):hover { background: var(--accent-hover); }
 input[type="checkbox"]:checked:not(:disabled):active { background: var(--accent-pressed); }
 input[type="checkbox"]:checked::after {
@@ -645,8 +669,8 @@ input[type="checkbox"]:checked::after {
   width: 12px; height: 12px;
   background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12'%3E%3Cpath d='M2 6.5l3 3 5-7' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat center;
 }
-input[type="checkbox"]:disabled { background: var(--veil-hover); }
-input[type="checkbox"]:disabled:checked { background: rgba(0,0,0,.22); }
+input[type="checkbox"]:disabled { background: var(--veil-hover); box-shadow: inset 0 0 0 2px var(--text-disabled); }
+input[type="checkbox"]:disabled:checked { background: rgba(0,0,0,.22); box-shadow: none; }
 
 /* ---------- Listes : carte blanche 12 px filetée, survol = voile
    d'encre, sélection PLEINE orange à texte blanc (jamais pâle) ---------- */
@@ -739,3 +763,45 @@ canvas.tetris {
   background: var(--progress-rail);
   box-shadow: none;
 }
+/* Jauge de niveau (Profil) : même piste que ci-dessus, 6 px en pilule
+   (STYLE.md §9) -- le --surface-field partagé la rendait blanche sur la
+   carte blanche, donc invisible. */
+.level-progress-track {
+  height: 6px;
+  border: none;
+  border-radius: 3px;
+  background: var(--progress-rail);
+}
+
+/* ---------- Zone de dépôt : filet pointillé 1 px (traits 1 px = cartes,
+   §10.5) ; le --border-field transparent la laissait sans contour, et en
+   HC blanc sur blanc elle disparaissait. ---------- */
+.drop-zone { border: 1px dashed var(--hairline); }
+
+/* ---------- Infobulle « ? » : le jet Yaru, texte blanc, radius 8, sans
+   bordure (§9 ; « infobulles claires » interdites §10.9). --tooltip-bg et
+   --tooltip-fg ne changent dans aucun mode, la paire reste cohérente. ---------- */
+.info-tooltip-bubble {
+  background: var(--tooltip-bg);
+  color: var(--tooltip-fg);
+  border: none;
+  border-radius: 8px;
+}
+
+/* ---------- Contraste élevé : « bordures franches » (charter, phase 4).
+   Les pilules .14 et voiles .07 sur blanc restaient à 1,2-1,4:1 : un
+   filet intérieur --hairline (#000) dessine chaque contrôle, les trois
+   cercles de fenêtre (blancs sur blanc) et l'onglet actif. Filet
+   intérieur = box-shadow inset : aucune taille ne bouge. Un champ en focus
+   garde son seul anneau orange. ---------- */
+[data-theme="hc"] :is(button:not(.row-pin-btn, .tab-btn), .tab-btn.active, .level-progress-track) {
+  box-shadow: inset 0 0 0 1px var(--hairline);
+}
+[data-theme="hc"] :is(input[type="text"], input[type="number"], select, textarea, .search-input):not(:focus) {
+  box-shadow: inset 0 0 0 1px var(--hairline);
+}
+[data-theme="hc"] .row.selected .row-actions button { box-shadow: inset 0 0 0 1px var(--selection-text); }
+
+/* Police large : « Documents » ne tenait pas dans les 84 px de la colonne
+   Catégorie ; les 8 px viennent du plancher de la colonne Nom. */
+.downloads-row { grid-template-columns: minmax(168px, 1fr) calc(18px * var(--tetris-cell) + 4px) 70px 80px 80px 90px 124px 92px 70px; }

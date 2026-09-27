@@ -234,7 +234,11 @@
   --cde-face: #3A3E48;
   --cde-face-hi: #454A56;
   --cde-view: #262A32;
-  --cde-bevel-light: #5A6070;
+  /* Biseau clair relevé de #5A6070 (1.7:1 sur la face) à #858B9C (3.1:1) :
+     le cadre --cde-frame reste sombre (ombre), c'est donc le biseau -- la
+     matière du style (STYLE.md §2) -- qui dessine seul le contour des
+     boutons, cases, onglets et champs en sombre ; il doit franchir 3:1. */
+  --cde-bevel-light: #858B9C;
   --cde-bevel-dark: #1A1D24;
   --cde-frame: #12141A;
   --cde-line: #4A505C;
@@ -377,6 +381,14 @@ input[type=text], textarea { cursor: var(--cursor-text); }
   box-shadow: var(--bevel-in);
   font-weight: 400;
 }
+/* HC : --cde-bevel-light = --cde-bevel-dark (#FFEE32), l'inversion du biseau
+   ne se voit plus et --cde-face-hi (#1A1A1A) ne se distingue pas du noir
+   (1.2:1) -- l'actif prend le poste de sélection de la charte HC (mauve
+   clair #D5B4FD, encre noire, 11.8:1), seule marque encore lisible. */
+[data-theme="hc"] .tab-btn.active { background: var(--cde-select); color: var(--selection-text); }
+/* Le pointillé de focus blanc (--cde-ink HC) tomberait à 1.78:1 sur le mauve :
+   sur l'actif il passe à l'encre noire (11.8:1). */
+[data-theme="hc"] .tab-btn.active:focus-visible { outline-color: var(--selection-text); }
 
 /* ---------- Boutons : plateau biseauté 2 px, jamais de dégradé, jamais de
    survol (§7 "Survolé | N'EXISTE PAS") -- l'appui inverse seul le biseau ---------- */
@@ -465,6 +477,10 @@ input[type="text"]:focus, input[type="number"]:focus, textarea:focus, select:foc
   outline-offset: -4px;
 }
 input:disabled, textarea:disabled { background: var(--cde-face-hi); color: var(--text-disabled); box-shadow: none; }
+/* Sombre : le pointillé de la zone de dépôt (--border-field = --cde-frame
+   #12141A) disparaît sur le puits #262A32 (1.3:1) -- il prend l'encre du
+   biseau clair, comme le bord bas/droit des puits (4.2:1). */
+[data-theme="dark"] .drop-zone { border-color: var(--cde-bevel-light); }
 select {
   appearance: none; -webkit-appearance: none;
   background:

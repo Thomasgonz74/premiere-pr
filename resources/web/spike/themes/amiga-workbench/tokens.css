@@ -11,6 +11,10 @@
 
 :root {
 
+  /* Erreur du journal RSS : rose pâle, lisible sur le bleu de matière
+     (le rouge pur s'y noie à 1,1:1). */
+  --status-danger-text: #FFC4C4;
+
   /* ========================================================
      1. PRIMITIVES — le quadrichrome
      ======================================================== */
@@ -21,7 +25,10 @@
   --am-orange: #FF8800;
 
   --am-ink:          var(--am-white);
-  --am-ink-soft:     #9FC4E8;   /* bleu eclairci : seul "gris" tolere */
+  /* bleu eclairci : seul "gris" tolere. #9FC4E8 (charte) ne tenait que
+     4,0:1 sur le bleu et 3,8:1 sur les lignes teintees (vitesses, temps
+     restant, pairs, tailles) : meme famille, un cran plus clair -> 4,9:1. */
+  --am-ink-soft:     #C4DCF2;
   --am-ink-disabled: #6A93C4;
 
   --tooltip-bg: var(--am-white);
@@ -204,7 +211,7 @@
 [data-theme="dark"] {
   --surface-window: #000000;
   --desktop: #000005;
-  --am-ink-soft: rgba(255,255,255,.65);
+  --am-ink-soft: rgba(255,255,255,.78);   /* .65 = 4,0:1 sur le bleu des listes */
   --am-ink-disabled: rgba(255,255,255,.38);
 }
 /* DARK:END */
@@ -218,7 +225,9 @@
   --desktop: #000005;
   --am-blue: #003D7A;
   --link: #FFD9A0;
-  --am-ink-soft: #B8B8B8;
+  /* bleu eclairci plutot que le gris #B8B8B8 (interdit #1, et 4,9:1 sur
+     les lignes teintees) : >= 7,2:1 partout, cible AAA du mode. */
+  --am-ink-soft: #CCE1F4;
   --am-ink-disabled: #808080;
 }
 /* HC:END */
@@ -538,6 +547,23 @@ input[type="checkbox"]:disabled, input[type="radio"]:disabled {
   background: var(--am-orange);
   color: var(--am-black);
 }
+/* Epingle au repos : l'emoji rouge a 30 % se noyait en tache violette sur
+   le bleu. Silhouette BLANCHE a 60 % (3,5:1) ; NOIRE sur la ligne orange
+   selectionnee (4,2:1). L'epinglee garde sa pleine couleur. Passe par les
+   variables que lisent la regle de base ET la regle data-scheme="dark" de
+   style.css (le theme resout dark dans les trois modes) : pas de course de
+   specificite ; survol et .active restent en filter:none (rouge). */
+:root { --pin-idle-filter: brightness(0) invert(1); --pin-idle-opacity: .6; }
+#downloadsList .row.selected .row-pin-btn:not(.active) { filter: brightness(0); }
+
+/* Bandeau de suggestion : le melange partage (orange 22 % dans le bleu)
+   sortait un gris-bleu hors quadrichrome. Plaque bleue bordee d'ORANGE,
+   comme un requester (System Request) : blanc sur bleu 7,3:1. */
+.suggestion-banner {
+  background: var(--am-blue);
+  border: 2px solid var(--am-orange);
+  border-radius: 0;
+}
 
 /* ---------- Group box (Profil, details Telechargements) ----------
    fieldset/legend adaptes en div+h3 : le titre reste blanc gras, souligne
@@ -609,6 +635,16 @@ input[type="checkbox"]:disabled, input[type="radio"]:disabled {
 ::-webkit-scrollbar-button:vertical:increment {
   background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='6'%3E%3Cpath d='M4 6L0 0H8Z' fill='%23FF8800'/%3E%3C/svg%3E") center/8px 6px no-repeat, var(--am-blue);
 }
+::-webkit-scrollbar-button:horizontal:decrement {
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='8'%3E%3Cpath d='M0 4L6 0V8Z' fill='%23FF8800'/%3E%3C/svg%3E") center/6px 8px no-repeat, var(--am-blue);
+}
+::-webkit-scrollbar-button:horizontal:increment {
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='8'%3E%3Cpath d='M6 4L0 0V8Z' fill='%23FF8800'/%3E%3C/svg%3E") center/6px 8px no-repeat, var(--am-blue);
+}
+/* Une fleche a chaque bout, pas deux : Chromium dessine aussi les boutons
+   "doubles" des qu'on dimensionne ::-webkit-scrollbar-button. */
+::-webkit-scrollbar-button:start:increment,
+::-webkit-scrollbar-button:end:decrement { display: none; }
 ::-webkit-scrollbar-corner { background: var(--am-blue); }
 
 /* ---------- Jauge (canvas Tetris) : puits bleu cerne blanc ---------- */
@@ -618,3 +654,7 @@ canvas.tetris {
   background: var(--am-blue);
   box-shadow: none;
 }
+
+/* Les listes du formulaire gardent la hauteur des champs voisins (28 px)
+   depuis que la règle `select` du thème reprend la main sur la partagée. */
+.form-grid select { height: var(--control-height); }

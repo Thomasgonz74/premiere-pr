@@ -143,15 +143,17 @@
         <p class="status-line" id="addStatus"></p>
       </div>
 
+      <!-- "Démarrer" sits on the toolbar above the list rather than below it:
+           at 640 px the page is taller than the window in most themes, and a
+           button after the list ended up below the fold. -->
       <div class="scan-toolbar">
         <button id="addCheckAllBtn" data-i18n-key="add_tab.check_all">Tout cocher</button>
         <button id="addUncheckAllBtn" data-i18n-key="add_tab.uncheck_all">Tout décocher</button>
+        <button class="start-btn" id="addStartBtn" data-i18n-key="web.add_page.start_button">Démarrer</button>
       </div>
       <div class="listbox scan-list" id="addScanList">
         <p class="empty-note" data-i18n-key="web.add_page.no_scan_note">Aucune analyse pour l'instant.</p>
       </div>
-
-      <button class="start-btn" id="addStartBtn" data-i18n-key="web.add_page.start_button">Démarrer</button>
     </section>
 
     <section class="page" id="page-share">

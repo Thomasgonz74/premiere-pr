@@ -63,6 +63,13 @@
   --border-progress: var(--nx-black);
   --border-tab:      var(--nx-black);
   --text-legend:     var(--nx-ink);   /* legend : pas d'accent, juste gras noir */
+  /* Erreur du journal RSS (rss.css) : pas de rouge (interdit #1) -- encre
+     noire, l'alerte tient au gras 600 déjà posé par rss.css (§3 : « le
+     phrasé protège »). */
+  --status-danger-text: var(--nx-ink);
+  /* Bandeau de suggestion (style.css : 22 % de --status-warning dans le
+     puits blanc) : un gris au lieu du jaune. */
+  --status-warning: var(--nx-dark);
 
   /* ========================================================
      3. LE RELIEF MONOCHROME — la signature du style.
@@ -634,3 +641,65 @@ canvas.tetris {
   background: var(--selection-bg);
   color: var(--selection-text);
 }
+
+/* Le liseré de santé partagé est en couleur : ici, en gris seulement. */
+#downloadsList .row[data-health="critical"]:not(.selected) { box-shadow: inset 5px 0 0 var(--nx-ink); }
+#downloadsList .row[data-health="warning"]:not(.selected) { box-shadow: inset 5px 0 0 var(--nx-dark); }
+#downloadsList .row[data-health="healthy"]:not(.selected) { box-shadow: none; }
+
+/* Ascenseurs à GAUCHE, un seul ▲ en haut et un seul ▼ en bas : la page
+   Ajout défile désormais, elle suit la règle des listes. :where() laisse
+   .listbox { direction: rtl } s'appliquer à la liste d'analyse. */
+#page-add { direction: rtl; }
+:where(#page-add) > * { direction: ltr; }
+::-webkit-scrollbar-button:start:increment,
+::-webkit-scrollbar-button:end:decrement { display: none; }
+/* Le Profil défile lui aussi : ascenseur à GAUCHE (interdit #4). */
+.profile-scroll { direction: rtl; }
+.profile-scroll > * { direction: ltr; }
+
+/* Ligne sélectionnée : blanche sur une liste blanche, elle ne se voyait
+   pas. Recette de .listbox > div.is-selected de components.html : le
+   blanc reste, un filet noir 1 px intérieur la cerne (21:1). En contraste
+   élevé la sélection est noire : le filet s'y fond sans gêne. */
+#downloadsList .row.selected { box-shadow: inset 0 0 0 1px var(--nx-black); }
+
+/* ---------- Curseur de valeur (Volume) : peau .sl-* du spécimen -- piste
+   en puits, poignée-plateau biseautée à tiret --nx-dark, au lieu du
+   curseur bleu de Chromium (interdit #1). Trait noir 1 px comme tous les
+   contrôles du thème, pour que la poignée se détache du plateau gris. ---------- */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 22px;
+  background: transparent;
+  cursor: var(--cursor-default);
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 12px;
+  background: var(--nx-light);
+  border: 1px solid var(--nx-black);
+  box-shadow: var(--well);
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  box-sizing: border-box;
+  width: 14px;
+  height: 22px;
+  margin-top: -5px;
+  border: 1px solid var(--nx-black);
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='2'%3E%3Crect width='6' height='2' fill='%236E6E6E'/%3E%3C/svg%3E") center/6px 2px no-repeat, var(--nx-face);
+  box-shadow: var(--bevel-out);
+}
+input[type="range"]:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
+
+/* ---------- Contraste élevé : états que le bloc de jetons ne suffit pas
+   à porter (--nx-light = --nx-face = blanc, biseaux = noir). ---------- */
+/* Onglet actif : même blanc et même trait que les autres -- il s'inverse,
+   comme la sélection (21:1). */
+[data-theme="hc"] .tab-btn.active {
+  background: var(--nx-black);
+  color: var(--nx-white);
+}
+/* Séparateurs de lignes : --nx-light blanc sur puits blanc = invisibles. */
+[data-theme="hc"] .row, [data-theme="hc"] .scan-row { border-bottom-color: var(--nx-black); }

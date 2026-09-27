@@ -34,6 +34,7 @@
   --a-border-menu:     #979797;
   --a-border-progress: #B2B2B2;
   --a-border-group:    #D5DFE5;  /* group box (STYLE.md §9 "Group box") -- ajouté pour le contrat générique */
+  --a-menu-rule:       #E2E3E3;  /* filet de gouttière + séparateur de menu (components.html §menus), tokenisé pour flipper en sombre/HC */
 
   /* Bleus (l'accent interactif unique) */
   --a-selection:     #3399FF;  /* sélection de texte, barre de menus */
@@ -117,6 +118,7 @@
   --face-hover:   linear-gradient(180deg, #EAF6FD 45%, #BEE6FD 45%, #A7D9F5);
   --face-pressed: linear-gradient(180deg, #E5F4FC, #C4E5F6 30% 50%, #98D1EF 50%, #68B3DB);
   --face-tab:     linear-gradient(180deg, #F4F4F4 45%, #EDEDED 45%, #E0E0E0);
+  --face-disabled: #F4F4F4;       /* "Désactivé : fond plat #F4F4F4" (STYLE.md §7), tokenisé pour sombre/HC */
   --inner-line:   inset 0 0 0 1px rgba(255,255,255,.80); /* filet blanc interne */
   --pressed-shadow: inset 1px 1px 0 rgba(0,0,0,.20), inset -1px 1px 0 rgba(0,0,0,.07);
   --glow-default: 0 0 3px 1px rgba(72,160,220,.80);   /* bouton par défaut */
@@ -124,9 +126,11 @@
   /* Cases & radios (teinte bleutée froide) */
   --gradient-check:   linear-gradient(135deg, #DEE7EE, #FCFDFE);
   --check-inner:      inset 1px 1px 2px rgba(110,145,180,.35);
+  --icon-check: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11'%3E%3Cpath d='M2 5.5l2.6 2.8L9 2.6' fill='none' stroke='%234A5F97' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 
   /* Sélection en liste (dégradé bordé, texte NOIR — signature Win7) */
   --sel-grad:  linear-gradient(180deg, #DCEBFC, #C1DBFC);
+  --sel-text:  var(--a-text);     /* encre de la ligne sélectionnée (≠ --selection-text, blanc, réservé à la sélection de texte) */
   --hot-grad:  linear-gradient(180deg, #F8FCFF, #E6F0FA);
   --sel-inner: inset 0 0 0 1px rgba(255,255,255,.65);
 
@@ -159,6 +163,13 @@
   --gradient-scroll-track: linear-gradient(90deg, #ECECEC, #F5F5F5);
   --gradient-scroll-btn:   var(--face-raised);
   --a-scroll-arrow: #505050;
+  /* Pouce horizontal (two-tone à 90°) et flèches data-URI : couleur figée
+     dans l'URL, donc redéfinis tels quels dans les blocs sombre/HC. */
+  --scroll-thumb:       linear-gradient(90deg, #F2F2F2 45%, #EBEBEB 45%, #CFCFCF);
+  --scroll-thumb-hover: linear-gradient(90deg, #EAF6FD 45%, #BEE6FD 45%, #A7D9F5);
+  --icon-scroll-up:     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='17' height='17'%3E%3Cpath d='M5 10.5h7L8.5 6.5z' fill='%23505050'/%3E%3C/svg%3E");
+  --icon-scroll-down:   url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='17' height='17'%3E%3Cpath d='M5 6.5h7L8.5 10.5z' fill='%23505050'/%3E%3C/svg%3E");
+  --icon-select-arrow:  url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Cpath d='M4.5 6.5h7L8 10z' fill='%23505050'/%3E%3C/svg%3E");
 
   /* ========================================================
      5. OMBRES — la fenêtre Aero PORTE une ombre (nouveauté)
@@ -311,14 +322,17 @@
   --a-text-soft: #9AA8B8;
   --a-text-disabled: #5E6B7A;
   --a-instruction: #7FB4E8;
-  --a-border-control: #46525F;
-  --a-border-field: #3A4552;
-  --a-border-hover: #4E7CA8;
-  --a-border-field-h: #4E7CA8;
-  --a-border-field-f: #5E96C8;
+  /* Bords de contrôles, champs et onglets relevés à ≥ 3:1 sur #262C34 (la
+     charte donnait #46525F / #3A4552 = 1,8 / 1,4:1) ; survol et focus
+     remontés d'autant pour rester plus lumineux que le repos. */
+  --a-border-control: #6A7785;
+  --a-border-field: #6A7785;
+  --a-border-hover: #6FA3D6;
+  --a-border-field-h: #6FA3D6;
+  --a-border-field-f: #8CC0F0;
   --a-border-pressed: #35566E;
   --a-border-disabled: #333C46;
-  --a-border-tab: #3A4552;
+  --a-border-tab: #6A7785;
   --a-border-menu: #3E4854;
   --a-border-progress: #3A4552;
   --a-border-group: #3A4552;
@@ -348,7 +362,20 @@
   --shadow-window: 0 12px 34px rgba(0,0,0,.7);
   --shadow-menu: 0 6px 16px rgba(0,0,0,.6);
   --title-text-shadow: 0 0 3px rgba(0,0,0,.7), 0 0 6px rgba(0,0,0,.5); /* texte de titre clair sur verre sombre : halo sombre plutôt que blanc */
+  --a-menu-rule: var(--a-border-menu);
+  --face-tab: linear-gradient(180deg,#2E3640 45%,#28303A 45%,#1E242B); /* restait clair : libellés blanc-sur-blanc */
+  --face-disabled: #2A3038;
+  --gradient-check: linear-gradient(135deg,#2A333D,#1B2129);
+  --check-inner: inset 1px 1px 2px rgba(0,0,0,.45);
+  --focus-outline: 1px dotted #E9EEF4;   /* le pointillé noir se perdait sur --face-raised */
+  --focus-ring-color: #6FA3D6;   /* anneau de base (style.css) des cases à cocher, [tabindex], liens : #1E3C5C tombait à 1,24:1 sur #262C34 ; #6FA3D6 ≈ 5,3:1, même bleu que le bord de focus des boutons */
+  --scroll-thumb: linear-gradient(90deg,#323A44 45%,#2B333C 45%,#20262E);
+  --scroll-thumb-hover: linear-gradient(90deg,#26445E 45%,#1C3A55 45%,#173049);
   /* icônes surchargées pour le fond sombre */
+  --icon-check: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11'%3E%3Cpath d='M2 5.5l2.6 2.8L9 2.6' fill='none' stroke='%239FC4EC' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-scroll-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='17' height='17'%3E%3Cpath d='M5 10.5h7L8.5 6.5z' fill='%23C8D0DA'/%3E%3C/svg%3E");
+  --icon-scroll-down: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='17' height='17'%3E%3Cpath d='M5 6.5h7L8.5 10.5z' fill='%23C8D0DA'/%3E%3C/svg%3E");
+  --icon-select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Cpath d='M4.5 6.5h7L8 10z' fill='%23C8D0DA'/%3E%3C/svg%3E");
   --icon-search: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='10.4' cy='10.4' r='4.9' fill='none' stroke='%239FC4EC' stroke-width='1.9'/%3E%3Cpath d='M14.2 14.2l5.2 5.2' fill='none' stroke='%239FC4EC' stroke-width='2.1999999999999997' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 }
 /* DARK:END */
@@ -404,7 +431,20 @@
   --shadow-menu: 0 0 0 2px #FFEE32;
   --title-text-shadow: none;                        /* matières décoratives neutralisées en HC (STYLE.md phase 4) */
   --glow-hover: 0 0 0 2px #FFEE32;                   /* le bleu d'accent devient le jaune HC, comme toutes les bordures */
+  --sel-text: #000000;                               /* "la sélection au mauve à encre noire" (STYLE.md phase 4) */
+  --a-menu-rule: #FFEE32;
+  --face-tab: linear-gradient(#000000,#000000);
+  --face-disabled: #000000;
+  --gradient-check: linear-gradient(#000000,#000000);
+  --check-inner: none;
+  --focus-outline: 1px dotted #FFFFFF;               /* le bord de focus = le bord de repos (#FFEE32) : seul le pointillé signale le focus */
+  --scroll-thumb: linear-gradient(#000000,#000000);
+  --scroll-thumb-hover: linear-gradient(#333333,#333333);
   /* icônes en contraste élevé */
+  --icon-check: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11'%3E%3Cpath d='M2 5.5l2.6 2.8L9 2.6' fill='none' stroke='%23FFFFFF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-scroll-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='17' height='17'%3E%3Cpath d='M5 10.5h7L8.5 6.5z' fill='%23FFFFFF'/%3E%3C/svg%3E");
+  --icon-scroll-down: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='17' height='17'%3E%3Cpath d='M5 6.5h7L8.5 10.5z' fill='%23FFFFFF'/%3E%3C/svg%3E");
+  --icon-select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Cpath d='M4.5 6.5h7L8 10z' fill='%23FFFFFF'/%3E%3C/svg%3E");
   --icon-search: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='10.4' cy='10.4' r='4.9' fill='none' stroke='%23FFFFFF' stroke-width='1.9'/%3E%3Cpath d='M14.2 14.2l5.2 5.2' fill='none' stroke='%23FFFFFF' stroke-width='2.1999999999999997' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 }
 /* HC:END */
@@ -544,6 +584,7 @@ button {
   border: 1px solid var(--border-control);
   border-radius: var(--radius-control);
   background: var(--face-raised);
+  color: var(--text-primary);     /* sinon ButtonText système, pas l'encre du thème */
   box-shadow: var(--inner-line);
   transition: border-color var(--transition-state), background var(--transition-state), box-shadow var(--transition-state);
 }
@@ -562,7 +603,7 @@ button:focus-visible {
   outline-offset: -4px;
 }
 button:disabled {
-  background: #F4F4F4;
+  background: var(--face-disabled);
   border-color: var(--a-border-disabled);
   color: var(--text-disabled);
   box-shadow: none;
@@ -611,6 +652,7 @@ input[type="text"], input[type="number"], select, textarea, .search-input,
   height: var(--control-height);
   padding: 2px 6px;
   background: var(--surface-field);
+  color: var(--text-primary);     /* sinon FieldText système, pas l'encre du thème */
   border: 1px solid var(--border-field);
   border-radius: var(--radius-field);
   transition: border-color var(--transition-state);
@@ -627,7 +669,7 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus, textarea:foc
   outline: none;
 }
 input:disabled, textarea:disabled, select:disabled {
-  background: #F4F4F4;
+  background: var(--face-disabled);
   color: var(--text-disabled);
   border-color: var(--a-border-disabled);
 }
@@ -636,7 +678,7 @@ select {
   -webkit-appearance: none;
   padding-right: 26px;
   background-image:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Cpath d='M4.5 6.5h7L8 10z' fill='%23505050'/%3E%3C/svg%3E"),
+    var(--icon-select-arrow),
     var(--face-raised);
     /* était le même dégradé clair figé en dur (identique à --face-raised en
        clair, mais jamais assombri) : opaque, il recouvre le
@@ -669,11 +711,11 @@ input[type="checkbox"]:not(:disabled):hover { border-color: var(--a-border-field
 input[type="checkbox"]:checked::after {
   content: "";
   width: 11px; height: 11px;
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11'%3E%3Cpath d='M2 5.5l2.6 2.8L9 2.6' fill='none' stroke='%234A5F97' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat center;
+  background: var(--icon-check) no-repeat center;
 }
 input[type="checkbox"]:disabled {
   border-color: var(--a-border-disabled);
-  background: #F4F4F4;
+  background: var(--face-disabled);
   box-shadow: none;
 }
 input[type="checkbox"]:disabled:checked::after { filter: grayscale(1) opacity(.55); }
@@ -704,7 +746,7 @@ input[type="checkbox"]:disabled:checked::after { filter: grayscale(1) opacity(.5
 #downloadsList .row[data-health="healthy"].selected {
   /* interdit §10.9 : jamais de texte blanc sur une sélection de liste */
   background: var(--sel-grad);
-  color: var(--a-text);
+  color: var(--sel-text);         /* noir en clair, clair en sombre, noir sur mauve en HC */
   box-shadow: var(--sel-inner);
 }
 .downloads-row-header {
@@ -715,6 +757,11 @@ input[type="checkbox"]:disabled:checked::after { filter: grayscale(1) opacity(.5
 }
 .row-name { font-weight: 400; }
 .row-eta, .row-peers, .row-category, .scan-size { color: var(--a-text-soft); }
+/* Épingle inactive : à 30 % d'opacité (style.css) le 📌 rouge tombait sous
+   1,5:1 sur les fonds sombre et noir. Grisée et éclaircie elle reste
+   discrète mais lisible ; le survol montre l'épingle rouge (état actif). */
+:is([data-theme="dark"], [data-theme="hc"]) .row-pin-btn:not(.active) { opacity: .8; filter: grayscale(1) brightness(1.8); }
+:is([data-theme="dark"], [data-theme="hc"]) .row-pin-btn:not(.active):hover { opacity: 1; filter: none; }
 
 /* ---------- 7. Groupes : cadre seul, jamais de remplissage ---------- */
 .profile-group, .details-group {
@@ -733,7 +780,7 @@ input[type="checkbox"]:disabled:checked::after { filter: grayscale(1) opacity(.5
   border-radius: 0;
   border: 1px solid var(--a-border-menu);
   background: var(--surface-field);
-  background-image: linear-gradient(90deg, var(--a-face) 0 26px, #E2E3E3 26px 27px, transparent 27px);
+  background-image: linear-gradient(90deg, var(--a-face) 0 26px, var(--a-menu-rule) 26px 27px, transparent 27px);
   padding: 2px;
 }
 .context-menu-item {
@@ -750,7 +797,7 @@ input[type="checkbox"]:disabled:checked::after { filter: grayscale(1) opacity(.5
 }
 .context-menu-separator {
   height: 0;
-  border-top: 1px solid #E0E0E0;
+  border-top: 1px solid var(--a-menu-rule);
   background: none;
   margin: 3px 2px 3px 32px;
 }
@@ -773,19 +820,19 @@ input[type="checkbox"]:disabled:checked::after { filter: grayscale(1) opacity(.5
 ::-webkit-scrollbar { width: var(--scrollbar-size); height: var(--scrollbar-size); }
 ::-webkit-scrollbar-track { background: var(--gradient-scroll-track); }
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(90deg, #F2F2F2 45%, #EBEBEB 45%, #CFCFCF);
+  background: var(--scroll-thumb);
   border: 1px solid var(--border-control);
   border-radius: var(--radius-control);
   box-shadow: var(--inner-line);
 }
 ::-webkit-scrollbar-thumb:vertical { background: var(--face-raised); }
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(90deg, #EAF6FD 45%, #BEE6FD 45%, #A7D9F5);
+  background: var(--scroll-thumb-hover);
   border-color: var(--a-border-hover);
 }
 ::-webkit-scrollbar-button:single-button {
   width: var(--scrollbar-size); height: var(--scrollbar-size);
-  background-color: #EBEBEB;
+  background-color: var(--a-face);
   border: 1px solid var(--border-control);
   border-radius: var(--radius-control);
   background-repeat: no-repeat;
@@ -793,13 +840,13 @@ input[type="checkbox"]:disabled:checked::after { filter: grayscale(1) opacity(.5
 }
 ::-webkit-scrollbar-button:single-button:vertical:decrement {
   background-image:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='17' height='17'%3E%3Cpath d='M5 10.5h7L8.5 6.5z' fill='%23505050'/%3E%3C/svg%3E"),
-    linear-gradient(180deg, #F2F2F2 45%, #EBEBEB 45%, #CFCFCF);
+    var(--icon-scroll-up),
+    var(--gradient-scroll-btn);
 }
 ::-webkit-scrollbar-button:single-button:vertical:increment {
   background-image:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='17' height='17'%3E%3Cpath d='M5 6.5h7L8.5 10.5z' fill='%23505050'/%3E%3C/svg%3E"),
-    linear-gradient(180deg, #F2F2F2 45%, #EBEBEB 45%, #CFCFCF);
+    var(--icon-scroll-down),
+    var(--gradient-scroll-btn);
 }
 ::-webkit-scrollbar-corner { background: var(--a-face); }
 
