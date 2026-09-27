@@ -256,7 +256,9 @@ def wait_until(view, condition_js: str, timeout_ms: int = TIMEOUT_MS) -> None:
 
 
 def settle(view) -> None:
-    """Two animation frames: style, layout, ResizeObservers and paint done."""
+    """Two animation frames: style, layout, ResizeObservers and paint done in
+    the page. The composited frame may still be on its way to the widget, so
+    a pixel grab needs more (see _grab_fresh in test_theme_visual_regression)."""
     run_js(view, "window.__t2kFrames = 0; requestAnimationFrame(() => requestAnimationFrame(() => { window.__t2kFrames = 2; })); true")
     wait_until(view, "window.__t2kFrames === 2")
 

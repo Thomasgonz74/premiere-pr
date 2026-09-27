@@ -23,6 +23,7 @@ snapshot-testing setup.
 from __future__ import annotations
 
 import os
+import time
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 # The offscreen platform gives the QQuickWidget inside QWebEngineView no RHI
@@ -54,8 +55,9 @@ VIEW_SIZE = (980, 640)  # matches SpikeWindow's default resize()
 
 # Grabbing right after setActiveTheme() races the async <link> swap, and
 # grabbing mid-transition reads in-between colours: set_theme()/set_mode()
-# (theme_probe.py) wait for the sheet's load event and two painted frames,
-# and CSS transitions/animations are switched off for the test page.
+# (theme_probe.py) wait for the sheet's load event and two animation frames,
+# and CSS transitions/animations are switched off for the test page. That
+# settles the page itself; _grab_fresh() waits for its pixels to reach grab().
 LOAD_TIMEOUT_MS = 10_000
 
 # Generous on purpose (2-3% suggested by the task) -- catches a theme that's
@@ -159,7 +161,7 @@ MARKER_JS = r"""
   if (!m) {
     m = document.createElement('div');
     m.id = 't2k-test-frame-marker';
-    m.style.cssText = 'position:fixed;left:0;top:0;width:1px;height:1px;z-index:2147483647;pointer-events:none';
+    m.style.cssText = 'position:fixed;left:0;top:0;width:1px;height:1px;z-index:2147483647;pointer-events:none;forced-color-adjust:none';
     document.documentElement.appendChild(m);
   }
   const n = (Number(m.dataset.n) || 0) % 200 + 1;
@@ -171,18 +173,17 @@ MARKER_JS = r"""
 FRESH_FRAME_TIMEOUT_MS = 5_000
 
 
-def _grab_fresh(view: QWebEngineView) -> QImage:
+def _grab_fresh(view: QWebEngineView, what: str) -> QImage:
     marker = (int(run_js(view, MARKER_JS)), 64, 192)
-    waited = 0
+    deadline = time.monotonic() + FRESH_FRAME_TIMEOUT_MS / 1000
     while True:
         image = view.grab().toImage().convertToFormat(QImage.Format_RGB888)
-        assert not image.isNull(), "grab() produced an empty image"
+        assert not image.isNull(), f"grab() produced an empty image for {what}"
         c = image.pixelColor(0, 0)
         if (c.red(), c.green(), c.blue()) == marker:
             return image
-        assert waited < FRESH_FRAME_TIMEOUT_MS, f"no grab showed the frame marker within {FRESH_FRAME_TIMEOUT_MS} ms"
+        assert time.monotonic() < deadline, f"{what}: no grab showed the frame marker within {FRESH_FRAME_TIMEOUT_MS} ms"
         QTest.qWait(20)
-        waited += 20
 
 
 @pytest.mark.parametrize("theme_id", _theme_ids())
@@ -193,7 +194,7 @@ def test_theme_visual_regression(view: QWebEngineView, theme_id: str) -> None:
     try:
         for mode, suffix in MODES:
             set_mode(view, mode)
-            rendered = _grab_fresh(view)
+            rendered = _grab_fresh(view, f"theme '{theme_id}' ({mode})")
             ref_path = SNAPSHOTS_DIR / f"{theme_id}{suffix}.png"
             if not ref_path.is_file():
                 assert rendered.save(str(ref_path), "PNG"), f"failed to write new reference {ref_path}"
