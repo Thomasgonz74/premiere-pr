@@ -32,6 +32,7 @@ def _share_row_to_dict(record: TorrentRecord, limit: ShareLimit, elapsed: float,
 
 class ShareBridge(QObject):
     recordUpdated = Signal("QVariantMap")
+    recordsUpdated = Signal("QVariantList")  # one list per status tick
     recordRemoved = Signal(str)
     started = Signal()
 
@@ -43,8 +44,12 @@ class ShareBridge(QObject):
         self._share_limit_service = share_limit_service
         self._settings = settings
         self._torrent_path: str | None = None
-        session_manager.torrent_status_updated.connect(self._on_status_updated)
+        # Same hidden-window switch as DownloadsBridge.set_live.
+        self._live = True
+        session_manager.torrent_status_batch_updated.connect(self._on_status_batch_updated)
         session_manager.torrent_removed.connect(self.recordRemoved.emit)
+        # Pushed even while hidden (not gated by _live): the downloads page's
+        # suggestion banner must not miss a "limit reached" event.
         share_limit_service.limit_reached.connect(lambda ih, _reason: self._push(ih))
 
     def _row_dict(self, info_hash: str) -> dict | None:
@@ -60,10 +65,18 @@ class ShareBridge(QObject):
         if row is not None:
             self.recordUpdated.emit(row)
 
-    def _on_status_updated(self, info_hash: str, record: TorrentRecord) -> None:
-        if not self._share_limit_service.is_tracked(info_hash):
+    def _on_status_batch_updated(self, records: list) -> None:
+        if not self._live:
             return
-        self._push(info_hash)
+        # _row_dict is None for an untracked torrent -- not a Share row.
+        rows = [row for r in records if (row := self._row_dict(r.info_hash)) is not None]
+        if rows:
+            self.recordsUpdated.emit(rows)
+
+    def set_live(self, live: bool) -> None:
+        if live and not self._live:
+            self.recordsUpdated.emit(self.listTorrents())
+        self._live = live
 
     @Slot(result="QVariantList")
     def listTorrents(self) -> list:

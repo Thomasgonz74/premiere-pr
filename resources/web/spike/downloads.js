@@ -784,7 +784,8 @@ function downloadsOpenTagsDialog(infoHash, torrentName) {
 // Discrete "what should I do next" banner above the search bar. Reuses
 // signals already wired elsewhere (disk_space_monitor's lowSpaceWarning via
 // bridge_profile_automation.py, share_limit_service's "reached" field on
-// share.recordUpdated via bridge_share.py) -- no new Python-side detection.
+// share.recordUpdated/recordsUpdated via bridge_share.py) -- no new
+// Python-side detection.
 // Single banner: the latest event replaces whatever was showing, no queue.
 
 const SUGGESTION_BANNER_AUTOHIDE_MS = 15000;
@@ -817,7 +818,7 @@ function wireSuggestionBanner() {
     showSuggestionBanner(`${message} ${t("web.downloads.low_space_suggestion_suffix")}`);
   });
 
-  window.bridge.share.recordUpdated.connect((row) => {
+  const notifyShareReached = (row) => {
     if (!row.reached || shareReachedNotified.has(row.infoHash)) return;
     shareReachedNotified.add(row.infoHash);
     const count = shareReachedNotified.size;
@@ -826,7 +827,11 @@ function wireSuggestionBanner() {
         ? t("web.downloads.share_limit_reached_singular")
         : t("web.downloads.share_limit_reached_plural", { count })
     );
-  });
+  };
+  // recordUpdated: the immediate "limit reached" push (sent even while the
+  // window is hidden); recordsUpdated: the per-tick batch.
+  window.bridge.share.recordUpdated.connect(notifyShareReached);
+  window.bridge.share.recordsUpdated.connect((rows) => rows.forEach(notifyShareReached));
 }
 
 // -------------------------------------------------------------------- wire
@@ -834,6 +839,7 @@ function wireSuggestionBanner() {
 function wireDownloadsPage() {
   const bridge = window.bridge.downloads;
   bridge.recordUpdated.connect(downloadsRenderRecord);
+  bridge.recordsUpdated.connect((rows) => rows.forEach(downloadsRenderRecord));
   bridge.recordRemoved.connect(downloadsRemoveRecord);
   bridge.listTorrents((initial) => initial.forEach(downloadsRenderRecord));
 

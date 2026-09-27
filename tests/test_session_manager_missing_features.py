@@ -59,6 +59,7 @@ def _session_manager_with_mock_handles(**handles):
     sm._peer_reputation_store = PeerReputationStore()
     sm._peer_reputation_tracker = PeerReputationTracker(sm._peer_reputation_store)
     sm.torrent_status_updated = MagicMock()
+    sm.torrent_status_batch_updated = MagicMock()
     sm.torrent_removed = MagicMock()
     sm.storage_moved = MagicMock()
     return sm
@@ -265,6 +266,24 @@ def test_get_speed_history_accumulates_across_ticks():
     sm._on_state_update([_status_stub("hash0", download_rate=300, upload_rate=30)])
 
     assert sm.get_speed_history("hash0") == [(100, 10), (200, 20), (300, 30)]
+
+
+def test_state_update_emits_one_batch_even_when_a_torrent_fails_mid_loop():
+    """One torrent_status_batch_updated per tick (what the web bridges push
+    as a single QWebChannel message), emitted from a finally: a status that
+    raises mid-loop must not hold back the torrents already processed."""
+    handle = MagicMock()
+    handle.torrent_file.return_value = None
+    sm = _session_manager_with_mock_handles(hash0=handle, hash1=handle)
+    sm._records["hash0"] = TorrentRecord(info_hash="hash0")
+    sm._records["hash1"] = TorrentRecord(info_hash="hash1")
+    broken = _status_stub("hash2")
+    broken.info_hashes.has_v1.side_effect = RuntimeError("stale status")
+
+    with pytest.raises(RuntimeError):
+        sm._on_state_update([_status_stub("hash0"), _status_stub("hash1"), broken])
+
+    sm.torrent_status_batch_updated.emit.assert_called_once_with([sm._records["hash0"], sm._records["hash1"]])
 
 
 def test_get_speed_history_unknown_hash_returns_empty_list():

@@ -131,10 +131,12 @@ def _compute_slowness_causes(
 
 class DownloadsBridge(QObject):
     """One instance, constructed after SessionManager and registered on a
-    QWebChannel before the page loads. recordUpdated/recordRemoved push
+    QWebChannel before the page loads. recordUpdated (one torrent, e.g. just
+    added), recordsUpdated (one list per status tick) and recordRemoved push
     changes to JS -- the page never polls."""
 
     recordUpdated = Signal("QVariantMap")
+    recordsUpdated = Signal("QVariantList")
     recordRemoved = Signal(str)
 
     def __init__(
@@ -152,8 +154,11 @@ class DownloadsBridge(QObject):
         # TagService keep working unchanged; those tag slots are simply
         # no-ops (empty list / never called) without one.
         self._tag_service = tag_service
+        # False while the window is hidden to the tray or minimized (see
+        # set_live): per-tick status pushes are skipped outright then.
+        self._live = True
         session_manager.torrent_added.connect(self._on_added_or_updated)
-        session_manager.torrent_status_updated.connect(self._on_status_updated)
+        session_manager.torrent_status_batch_updated.connect(self._on_status_batch_updated)
         session_manager.torrent_removed.connect(self.recordRemoved.emit)
 
     def _on_added_or_updated(self, info_hash: str) -> None:
@@ -161,8 +166,19 @@ class DownloadsBridge(QObject):
         if record is not None:
             self.recordUpdated.emit(_record_to_dict(record))
 
-    def _on_status_updated(self, info_hash: str, record: TorrentRecord) -> None:
-        self.recordUpdated.emit(_record_to_dict(record))
+    def _on_status_batch_updated(self, records: list) -> None:
+        if self._live:
+            self.recordsUpdated.emit([_record_to_dict(r) for r in records])
+
+    def set_live(self, live: bool) -> None:
+        """Called by SpikeWindow on hide/show/minimize. Chromium throttles a
+        hidden page's timers, not QWebChannel messages, so a window sitting
+        in the tray would otherwise keep re-rendering every row each tick.
+        Only a hidden -> visible transition resyncs (once), so the startup
+        show() doesn't replay every row."""
+        if live and not self._live:
+            self.recordsUpdated.emit(self.listTorrents())
+        self._live = live
 
     @Slot(result="QVariantList")
     def listTorrents(self) -> list:

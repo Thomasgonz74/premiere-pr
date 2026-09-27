@@ -44,6 +44,22 @@ _DEADLINE_SWEEP_INTERVAL_S = 10.0
 _STREAMING_HEAD_PIECE_COUNT = 30
 _STREAMING_DEADLINE_STEP_MS = 500
 
+# Periodic autosave (see _save_all_resume_data): how many queued
+# save_resume_data() calls _on_tick posts per 300ms tick. Each one comes
+# back as a save_resume_data_alert costing ~3-5 ms of GUI-thread work
+# (handle.status() + atomic file write), so the whole batch is spread over
+# ticks instead of landing in a single pop_alerts() burst.
+_RESUME_SAVES_PER_TICK = 2
+
+# post_torrent_updates() flags. Without an argument libtorrent uses
+# 0xFFFFFFFF, which also walks every piece to copy two bitfields and compute
+# distributed_copies per changed torrent, on every tick, for fields
+# status_to_record never reads. 64 (query_name) and 128 (query_save_path)
+# are raw literals because the 2.0.13 Python bindings don't expose them;
+# without query_name a magnet's name never fills in once metadata arrives,
+# and without query_save_path status.save_path comes back empty.
+_STATUS_UPDATE_FLAGS = int(lt.torrent_handle.query_accurate_download_counters) | 64 | 128
+
 ALERT_MASK = (
     lt.alert_category.error
     | lt.alert_category.status
@@ -218,6 +234,10 @@ class SessionManager(QObject):
     torrent_added = Signal(str)
     torrent_removed = Signal(str)
     torrent_status_updated = Signal(str, object)  # str info_hash, TorrentRecord
+    # Emitted once per status tick, after every torrent_status_updated of
+    # that tick: list[TorrentRecord]. Lets the web bridges push one
+    # QWebChannel message per tick instead of one per torrent.
+    torrent_status_batch_updated = Signal(list)
     torrent_finished = Signal(str)
     metadata_received = Signal(str)
     tracker_error = Signal(str, str)
@@ -269,6 +289,9 @@ class SessionManager(QObject):
         # time.time() of the last deadline-priority sweep -- see
         # _apply_deadline_priorities, throttling that work inside _on_tick.
         self._last_deadline_sweep = 0.0
+        # info_hashes waiting for their periodic autosave -- filled by
+        # _save_all_resume_data, drained by _drain_resume_save_queue.
+        self._resume_save_queue: collections.deque[str] = collections.deque()
 
         self._dispatcher = AlertDispatcher(
             on_state_update=self._on_state_update,
@@ -297,11 +320,12 @@ class SessionManager(QObject):
     # ------------------------------------------------------------------ tick
 
     def _on_tick(self) -> None:
-        self._session.post_torrent_updates()
+        self._session.post_torrent_updates(_STATUS_UPDATE_FLAGS)
         alerts = self._session.pop_alerts()
         if alerts:
             self._dispatcher.dispatch_all(alerts)
         self._apply_deadline_priorities()
+        self._drain_resume_save_queue()
 
     def _apply_deadline_priorities(self) -> None:
         """Deadline queue priority: a torrent with record.deadline set gets
@@ -334,39 +358,59 @@ class SessionManager(QObject):
                 handle.queue_position_up()
 
     def _save_all_resume_data(self) -> None:
-        for handle in self._handles.values():
-            if handle.is_valid():
+        # Only queues the saves: _on_tick posts _RESUME_SAVES_PER_TICK of
+        # them per tick, so e.g. 200 torrents' resume writes are spread over
+        # ~30 s instead of freezing the GUI thread for 0.5-1 s in one block
+        # every 2 minutes. Trade-off: the crash-loss window for the last
+        # torrent in the queue grows from 120 s to about 150-180 s.
+        # Hashes still queued from the previous round aren't re-added, so a
+        # queue that hasn't finished draining (800+ torrents) just carries on.
+        queued = set(self._resume_save_queue)
+        self._resume_save_queue.extend(ih for ih in self._handles if ih not in queued)
+
+    def _drain_resume_save_queue(self) -> None:
+        for _ in range(min(_RESUME_SAVES_PER_TICK, len(self._resume_save_queue))):
+            # Re-checked at pop time, not at queue time: the torrent may have
+            # been removed (or its handle invalidated) since the queue filled.
+            handle = self._handles.get(self._resume_save_queue.popleft())
+            if handle is not None and handle.is_valid():
                 # only_if_modified skips torrents whose state hasn't changed
-                # since their last save -- this timer fires every 2 minutes
-                # for potentially many torrents, most of which are usually
-                # idle between ticks.
+                # since their last save (in practice mostly paused ones).
                 handle.save_resume_data(lt.torrent_handle.save_info_dict | lt.torrent_handle.only_if_modified)
 
     # ------------------------------------------------------------- alert cbs
 
     def _on_state_update(self, status_list: list) -> None:
-        for status in status_list:
-            info_hash = _hash_hex(status.info_hashes)
-            record = self._records.get(info_hash)
-            if record is None:
-                continue
-            status_to_record(status, record)
-            history = self._speed_history.get(info_hash)
-            if history is None:
-                history = collections.deque(maxlen=200)
-                self._speed_history[info_hash] = history
-            history.append((record.download_rate, record.upload_rate))
-            if info_hash not in self._private_flag_checked:
-                # handle.torrent_file() returns None until metadata has
-                # actually arrived, so this can't be done once at add time --
-                # poll for it lazily here instead, and stop polling as soon
-                # as it's been resolved once (whatever the result).
-                handle = self._handles.get(info_hash)
-                ti = handle.torrent_file() if handle is not None and handle.is_valid() else None
-                if ti is not None:
-                    record.is_private = ti.priv()
-                    self._private_flag_checked.add(info_hash)
-            self.torrent_status_updated.emit(info_hash, record)
+        updated: list[TorrentRecord] = []
+        try:
+            for status in status_list:
+                info_hash = _hash_hex(status.info_hashes)
+                record = self._records.get(info_hash)
+                if record is None:
+                    continue
+                status_to_record(status, record)
+                history = self._speed_history.get(info_hash)
+                if history is None:
+                    history = collections.deque(maxlen=200)
+                    self._speed_history[info_hash] = history
+                history.append((record.download_rate, record.upload_rate))
+                if info_hash not in self._private_flag_checked:
+                    # handle.torrent_file() returns None until metadata has
+                    # actually arrived, so this can't be done once at add time --
+                    # poll for it lazily here instead, and stop polling as soon
+                    # as it's been resolved once (whatever the result).
+                    handle = self._handles.get(info_hash)
+                    ti = handle.torrent_file() if handle is not None and handle.is_valid() else None
+                    if ti is not None:
+                        record.is_private = ti.priv()
+                        self._private_flag_checked.add(info_hash)
+                self.torrent_status_updated.emit(info_hash, record)
+                updated.append(record)
+        finally:
+            # In a finally so an exception mid-loop doesn't hold back the
+            # torrents already processed this tick.
+            if updated:
+                self.torrent_status_batch_updated.emit(updated)
 
     def _on_metadata_received(self, info_hash: str) -> None:
         record = self._records.get(info_hash)

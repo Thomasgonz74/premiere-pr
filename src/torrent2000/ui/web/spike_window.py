@@ -11,7 +11,7 @@ import os
 import time
 from ctypes import wintypes
 
-from PySide6.QtCore import QTimer, QUrl
+from PySide6.QtCore import QEvent, QTimer, QUrl
 from PySide6.QtGui import QColor
 from PySide6.QtWebChannel import QWebChannel
 from PySide6.QtWebEngineCore import QWebEnginePage
@@ -335,6 +335,27 @@ class SpikeWindow(QMainWindow):
         # as a separate constructor argument rather than through the signal.
         action = self._settings.auto_shutdown_action
         self._view.page().runJavaScript(f"showAutoShutdownCountdown({delay_seconds}, {action!r})")
+
+    # Hidden to the tray or minimized: stop pushing per-tick status rows to
+    # the page (see DownloadsBridge.set_live). Minimizing on Windows is a
+    # WindowStateChange, not always a hide event, hence changeEvent too;
+    # set_live is idempotent, so overlapping events resync only once.
+    def showEvent(self, event) -> None:
+        super().showEvent(event)
+        self._set_bridges_live(not self.isMinimized())
+
+    def hideEvent(self, event) -> None:
+        super().hideEvent(event)
+        self._set_bridges_live(False)
+
+    def changeEvent(self, event) -> None:
+        super().changeEvent(event)
+        if event.type() == QEvent.WindowStateChange:
+            self._set_bridges_live(self.isVisible() and not self.isMinimized())
+
+    def _set_bridges_live(self, live: bool) -> None:
+        self._downloads_bridge.set_live(live)
+        self._share_bridge.set_live(live)
 
     def closeEvent(self, event) -> None:
         # Mirrors MainWindow.closeEvent: closing the window minimizes to tray
