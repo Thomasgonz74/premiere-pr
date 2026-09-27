@@ -298,6 +298,9 @@ function downloadsRenderRecord(record) {
 }
 
 function downloadsRemoveRecord(infoHash) {
+  // Its tags were cleared server-side too (see DownloadsBridge.__init__).
+  downloadsTagsCache.delete(infoHash);
+  downloadsRefreshTagFilterOptions();
   const entry = downloadsRows.get(infoHash);
   if (!entry) return;
   entry.el.remove();
@@ -702,6 +705,12 @@ function downloadsRefreshTagFilterOptions() {
       select.appendChild(opt);
     });
     select.value = tags.includes(previous) ? previous : "";
+    if (select.value !== downloadsTagFilterValue) {
+      // The filtered-on tag no longer exists (e.g. its last torrent was
+      // removed): drop the filter instead of hiding every row behind it.
+      downloadsTagFilterValue = select.value;
+      downloadsApplyFilter();
+    }
   });
 }
 

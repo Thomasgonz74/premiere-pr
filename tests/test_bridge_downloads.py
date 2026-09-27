@@ -1,5 +1,10 @@
+from unittest.mock import MagicMock
+
+from PySide6.QtCore import QObject, Signal
+
+from torrent2000.engine.tag_service import TagService
 from torrent2000.engine.torrent_item import TorrentRecord, TorrentState, TrackerInfo
-from torrent2000.ui.web.bridge_downloads import _compute_slowness_causes, _record_to_dict
+from torrent2000.ui.web.bridge_downloads import DownloadsBridge, _compute_slowness_causes, _record_to_dict
 
 
 def _downloading_record(info_hash="h1", **overrides) -> TorrentRecord:
@@ -69,3 +74,25 @@ def test_multiple_causes_can_combine():
     other = _downloading_record(info_hash="h2")
     causes = _compute_slowness_causes(record, [record, other], download_limit_kbps=100)
     assert [c["code"] for c in causes] == ["no_seeds", "tracker_error", "bandwidth_limit"]
+
+
+class _FakeSessionManager(QObject):
+    torrent_added = Signal(str)
+    torrent_status_updated = Signal(str, object)
+    torrent_removed = Signal(str)
+
+
+def test_removing_a_torrent_clears_its_tags(tmp_path, monkeypatch):
+    """Like its category, a removed torrent's tags must not linger in
+    tags.json or in the tag filter (a re-added torrent starts untagged)."""
+    monkeypatch.setenv("TORRENT2000_DATA_DIR", str(tmp_path))
+    tags = TagService()
+    tags.add("h1", "linux")
+    tags.add("h2", "iso")
+    session_manager = _FakeSessionManager()
+    bridge = DownloadsBridge(session_manager, MagicMock(), tag_service=tags)
+
+    session_manager.torrent_removed.emit("h1")
+
+    assert bridge.listAllTags() == ["iso"]
+    assert TagService().get("h1") == []  # persisted, not just in memory

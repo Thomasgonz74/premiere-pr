@@ -104,7 +104,16 @@ class AlertDispatcher:
 
 
 def _hash_of(handle: "lt.torrent_handle") -> str:
-    return _info_hash_hex(handle.status().info_hashes)
+    # info_hashes() reads the hash directly, where status() was a blocking
+    # round-trip to the network thread copying a whole torrent_status just
+    # for this. But on an invalid handle (torrent removed while its alert was
+    # still queued -- see dispatch_all) info_hashes() silently returns an
+    # all-zero hash instead of raising like status() did, so check validity
+    # first: the alert must still be skipped, never routed under a null hash
+    # (e.g. resume data persisted as 0000...0000.fastresume).
+    if not handle.is_valid():
+        raise RuntimeError("invalid torrent handle used")
+    return _info_hash_hex(handle.info_hashes())
 
 
 def _info_hash_hex(hashes) -> str:

@@ -2,7 +2,14 @@
 CIDR blocks, IP ranges, bare addresses, comments/blank lines, and graceful
 skipping of unparsable lines."""
 
+import logging
+from unittest.mock import MagicMock
+
+from PySide6.QtCore import QObject
+
+from torrent2000.engine import session_manager as session_manager_module
 from torrent2000.engine.ip_blocklist import parse_blocklist_file
+from torrent2000.engine.session_manager import SessionManager
 
 
 def _write(tmp_path, content):
@@ -43,3 +50,63 @@ def test_reversed_range_is_skipped(tmp_path):
     ip_filter = parse_blocklist_file(_write(tmp_path, "10.0.0.10 - 10.0.0.1\n1.2.3.0/24\n"))
     assert ip_filter.access("1.2.3.5") == 1
     assert ip_filter.access("10.0.0.5") == 0
+
+
+def test_unparsable_lines_are_logged_individually_only_up_to_a_cap(tmp_path, caplog):
+    """A file in another format makes every line unparsable -- one warning
+    per line was ~30 s of logging for a big list."""
+    content = "".join(f"name{i}:1.2.3.{i}-1.2.3.{i}\n" for i in range(50)) + "1.2.3.0/24\n"
+    with caplog.at_level(logging.WARNING, logger="torrent2000.engine.ip_blocklist"):
+        ip_filter = parse_blocklist_file(_write(tmp_path, content))
+
+    assert ip_filter.access("1.2.3.5") == 1
+    assert len(caplog.records) == 11  # the first 10 lines + one summary
+    assert "50 unparsable lines" in caplog.records[-1].getMessage()
+
+
+def _session_manager_loading_inline(monkeypatch, calls):
+    """SessionManager with a mock lt.session whose blocklist runnable runs
+    synchronously (so its signal is delivered directly), recording the
+    order of pause/parse/set_ip_filter/resume."""
+    sm = SessionManager.__new__(SessionManager)  # bypass __init__, no real libtorrent session needed
+    QObject.__init__(sm)
+    sm._session = MagicMock()
+    sm._session.is_paused.return_value = False
+    sm._session.pause.side_effect = lambda: calls.append("pause")
+    sm._session.set_ip_filter.side_effect = lambda f: calls.append(("filter", f.access("1.2.3.5")))
+    sm._session.resume.side_effect = lambda: calls.append("resume")
+    sm._paused_for_ip_blocklist = False
+    pool = MagicMock()
+    pool.globalInstance.return_value.start.side_effect = lambda runnable: (calls.append("parse"), runnable.run())
+    monkeypatch.setattr(session_manager_module, "QThreadPool", pool)
+    return sm
+
+
+def test_session_stays_paused_until_the_parsed_filter_is_applied(tmp_path, monkeypatch):
+    calls = []
+    sm = _session_manager_loading_inline(monkeypatch, calls)
+
+    sm._load_ip_blocklist(_write(tmp_path, "1.2.3.0/24\n"))
+
+    assert calls == ["pause", "parse", ("filter", 1), "resume"]
+
+
+def test_missing_file_is_logged_and_the_session_resumed_without_a_filter(tmp_path, monkeypatch, caplog):
+    calls = []
+    sm = _session_manager_loading_inline(monkeypatch, calls)
+
+    with caplog.at_level(logging.ERROR, logger="torrent2000.engine.ip_blocklist"):
+        sm._load_ip_blocklist(str(tmp_path / "missing.txt"))
+
+    assert calls == ["pause", "parse", "resume"]
+    assert "Failed to load IP blocklist" in caplog.text
+
+
+def test_a_session_paused_by_someone_else_is_not_resumed(tmp_path, monkeypatch):
+    calls = []
+    sm = _session_manager_loading_inline(monkeypatch, calls)
+    sm._session.is_paused.return_value = True
+
+    sm._load_ip_blocklist(_write(tmp_path, "1.2.3.0/24\n"))
+
+    assert calls == ["parse", ("filter", 1)]

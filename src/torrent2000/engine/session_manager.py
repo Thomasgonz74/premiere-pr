@@ -8,15 +8,15 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import libtorrent as lt
-from PySide6.QtCore import QCoreApplication, QObject, Signal
+from PySide6.QtCore import QCoreApplication, QObject, QThreadPool, Signal
 
 from torrent2000 import APP_VERSION
 from torrent2000.config.paths import get_default_download_dir
 from torrent2000.config.settings import Settings
 from torrent2000.engine import add_params, persistence, proxy, trackers as tracker_ops
-from torrent2000.engine.alerts import AlertDispatcher, status_to_record
+from torrent2000.engine.alerts import AlertDispatcher, _hash_of, status_to_record
 from torrent2000.engine.lan_peer_cache import LanPeerCacheStore, reconnect_cached_peers
-from torrent2000.engine.ip_blocklist import parse_blocklist_file
+from torrent2000.engine.ip_blocklist import BlocklistLoadRunnable, BlocklistSignals
 from torrent2000.engine.peer_reputation import PeerReputationStore, PeerReputationTracker, ip_from_display, score_label
 from torrent2000.engine.torrent_categories import TorrentCategoryService
 from torrent2000.engine.torrent_item import ACTIVE_DOWNLOAD_STATES, PeerInfo, TorrentRecord, TorrentState, TrackerInfo
@@ -214,17 +214,19 @@ def is_safe_move_destination(new_path: str) -> bool:
     return True
 
 
-def _is_confined(file_path: Path, save_path: Path) -> bool:
-    """True if file_path resolves to somewhere under save_path -- guards
-    lock/unlock/get_allocated_size against a torrent whose internal file
-    paths were crafted with a `../` segment or an absolute path, which
-    would otherwise let them touch a file outside the intended download
-    directory. Same resolve-then-contains check as is_safe_move_destination
-    above, applied here to a path built from torrent-internal metadata
-    rather than a user-chosen destination."""
+def _is_confined(file_path: Path, resolved_root: Path) -> bool:
+    """True if file_path resolves to somewhere under resolved_root (the
+    torrent's save_path, already resolved) -- guards lock/unlock/
+    get_allocated_size against a torrent whose internal file paths were
+    crafted with a `../` segment or an absolute path, which would otherwise
+    let them touch a file outside the intended download directory. Same
+    resolve-then-contains check as is_safe_move_destination above, applied
+    here to a path built from torrent-internal metadata rather than a
+    user-chosen destination. The root is resolved once by the caller, not
+    per file: each resolve() opens an NT handle (~1.8 ms), which added up
+    to seconds on a 1000-file torrent."""
     try:
         resolved = file_path.resolve()
-        resolved_root = save_path.resolve()
     except (OSError, ValueError):
         return False
     return resolved == resolved_root or resolved_root in resolved.parents
@@ -256,11 +258,11 @@ class SessionManager(QObject):
         super().__init__(parent)
         self._settings = settings
         self._session = lt.session(_build_session_settings(settings))
+        # See _load_ip_blocklist -- True only while the session is paused by
+        # that code, so it never resumes a pause it didn't make.
+        self._paused_for_ip_blocklist = False
         if settings.ip_blocklist_enabled and settings.ip_blocklist_path:
-            try:
-                self._session.set_ip_filter(parse_blocklist_file(settings.ip_blocklist_path))
-            except OSError:
-                logger.exception("Failed to load IP blocklist from %r", settings.ip_blocklist_path)
+            self._load_ip_blocklist(settings.ip_blocklist_path)
         self._records: dict[str, TorrentRecord] = {}
         self._handles: dict[str, "lt.torrent_handle"] = {}
         self._private_flag_checked: set[str] = set()
@@ -316,6 +318,27 @@ class SessionManager(QObject):
         self._resume_save_timer = start_periodic_timer(self, 120_000, self._save_all_resume_data)
 
         self._restore_previous_session()
+
+    def _load_ip_blocklist(self, path: str) -> None:
+        """Parses the blocklist on a QThreadPool worker instead of blocking
+        startup for seconds. Torrents must not reach a single peer before
+        the filter is in place, so the whole session (every torrent, and
+        incoming connections) stays paused until _on_ip_blocklist_loaded
+        runs back on the GUI thread -- also when the file turns out to be
+        missing or unreadable, in which case it resumes without a filter."""
+        if not self._session.is_paused():
+            self._session.pause()
+            self._paused_for_ip_blocklist = True
+        self._ip_blocklist_signals = BlocklistSignals()
+        self._ip_blocklist_signals.loaded.connect(self._on_ip_blocklist_loaded)
+        QThreadPool.globalInstance().start(BlocklistLoadRunnable(path, self._ip_blocklist_signals))
+
+    def _on_ip_blocklist_loaded(self, ip_filter) -> None:
+        if ip_filter is not None:
+            self._session.set_ip_filter(ip_filter)
+        if self._paused_for_ip_blocklist:
+            self._paused_for_ip_blocklist = False
+            self._session.resume()
 
     # ------------------------------------------------------------------ tick
 
@@ -445,6 +468,7 @@ class SessionManager(QObject):
         self._records.pop(info_hash, None)
         self._handles.pop(info_hash, None)
         self._speed_history.pop(info_hash, None)
+        getattr(self, "_file_entries_cache", {}).pop(info_hash, None)
         self._pending_restore_confirmation.discard(info_hash)
         self._categories.remove(info_hash)
         persistence.delete_resume_file(info_hash)
@@ -578,19 +602,37 @@ class SessionManager(QObject):
         sunburst dialog -- same empty-list-on-not-ready contract as
         get_torrent_files() (handle missing/invalid, or metadata not
         received yet)."""
+        downloaded = self.get_file_downloaded(info_hash)
+        if not downloaded:
+            return []
+        return [
+            {"index": e.index, "path": e.path, "size": e.size, "downloaded": d}
+            for e, d in zip(self._file_entries_cache[info_hash], downloaded)
+        ]
+
+    def get_file_downloaded(self, info_hash: str) -> list[int]:
+        """Just the bytes-downloaded column of get_file_progress(), in the
+        same order -- the only part of it that changes between two polls of
+        the sunburst dialog. The file list itself (paths, sizes) is immutable
+        once metadata is in, so it's built once per torrent and cached
+        (purged in _on_torrent_removed), never while metadata is missing."""
         from torrent2000.engine.torrent_files import files_from_torrent_info
 
         handle = self._handles.get(info_hash)
         if handle is None or not handle.is_valid():
             return []
-        ti = handle.torrent_file()
-        if ti is None:
-            return []
-        downloaded = handle.file_progress()
-        return [
-            {"index": e.index, "path": e.path, "size": e.size, "downloaded": downloaded[e.index]}
-            for e in files_from_torrent_info(ti)
-        ]
+        # Lazily created: several tests build SessionManager via __new__.
+        cache = getattr(self, "_file_entries_cache", None)
+        if cache is None:
+            cache = self._file_entries_cache = {}
+        entries = cache.get(info_hash)
+        if entries is None:
+            ti = handle.torrent_file()
+            if ti is None:
+                return []
+            entries = cache[info_hash] = files_from_torrent_info(ti)
+        progress = handle.file_progress()
+        return [progress[e.index] for e in entries]
 
     def get_allocated_size(self, info_hash: str) -> int:
         """Real on-disk allocated bytes for this torrent's files, as opposed
@@ -608,10 +650,14 @@ class SessionManager(QObject):
         if ti is None:
             return 0
         save_path = Path(record.save_path)
+        try:
+            resolved_root = save_path.resolve()
+        except (OSError, ValueError):
+            return 0
         total = 0
         for entry in files_from_torrent_info(ti):
             file_path = save_path / entry.path
-            if _is_confined(file_path, save_path):
+            if _is_confined(file_path, resolved_root):
                 total += compressed_file_size(file_path)
         return total
 
@@ -668,9 +714,14 @@ class SessionManager(QObject):
         if record is None:
             return
         save_path = Path(record.save_path)
+        try:
+            resolved_root = save_path.resolve()
+        except (OSError, ValueError):
+            logger.warning("lock_torrent: invalid save_path %r, nothing chmod-ed (info_hash=%s)", save_path, info_hash)
+            return
         for entry in self.get_torrent_files(info_hash):
             file_path = save_path / entry.path
-            if not _is_confined(file_path, save_path):
+            if not _is_confined(file_path, resolved_root):
                 logger.warning(
                     "lock_torrent: refusing to chmod %s -- outside save_path (info_hash=%s)", file_path, info_hash
                 )
@@ -1003,7 +1054,7 @@ class SessionManager(QObject):
             alerts = self._session.pop_alerts()
             for alert in alerts:
                 if isinstance(alert, lt.save_resume_data_alert):
-                    info_hash = _hash_hex(alert.handle.status().info_hashes)
+                    info_hash = _hash_of(alert.handle)
                     persistence.save_resume_params(info_hash, alert.params)
                     pending -= 1
                 elif isinstance(alert, (lt.save_resume_data_failed_alert,)):
