@@ -45,7 +45,7 @@ def test_file_scheme_is_rejected_and_never_touches_urlopen(tmp_path):
     secret = tmp_path / "secret.txt"
     secret.write_text("top secret local content", encoding="utf-8")
 
-    with patch("torrent2000.engine.url_fetch.urllib.request.urlopen") as mock_urlopen:
+    with patch("urllib.request.urlopen") as mock_urlopen:
         with pytest.raises(FetchError):
             fetch_url(secret.as_uri(), "UA/1.0", 5)
         mock_urlopen.assert_not_called()
@@ -53,7 +53,7 @@ def test_file_scheme_is_rejected_and_never_touches_urlopen(tmp_path):
 
 @pytest.mark.parametrize("url", ["ftp://example.com/file", "data:text/plain,hello", "not-a-url-at-all"])
 def test_non_http_schemes_are_rejected(url):
-    with patch("torrent2000.engine.url_fetch.urllib.request.urlopen") as mock_urlopen:
+    with patch("urllib.request.urlopen") as mock_urlopen:
         with pytest.raises(FetchError):
             fetch_url(url, "UA/1.0", 5)
         mock_urlopen.assert_not_called()
@@ -61,7 +61,7 @@ def test_non_http_schemes_are_rejected(url):
 
 def test_http_and_https_schemes_are_allowed_through_to_urlopen():
     with patch(
-        "torrent2000.engine.url_fetch.urllib.request.urlopen", return_value=_fake_response(b"payload")
+        "urllib.request.urlopen", return_value=_fake_response(b"payload")
     ) as mock_urlopen:
         assert fetch_url("https://example.com/feed.xml", "UA/1.0", 5) == b"payload"
         assert fetch_url("http://example.com/feed.xml", "UA/1.0", 5) == b"payload"
@@ -73,7 +73,7 @@ def test_http_and_https_schemes_are_allowed_through_to_urlopen():
 
 def test_proxy_none_uses_direct_urlopen_unchanged():
     with patch(
-        "torrent2000.engine.url_fetch.urllib.request.urlopen", return_value=_fake_response(b"payload")
+        "urllib.request.urlopen", return_value=_fake_response(b"payload")
     ) as mock_urlopen:
         assert fetch_url("https://example.com", "UA/1.0", 5, proxy=None) == b"payload"
     mock_urlopen.assert_called_once()
@@ -82,7 +82,7 @@ def test_proxy_none_uses_direct_urlopen_unchanged():
 def test_proxy_disabled_uses_direct_urlopen_unchanged():
     proxy = ProxySettings(enabled=False, proxy_type="http", host="proxy.example.com", port=8080)
     with patch(
-        "torrent2000.engine.url_fetch.urllib.request.urlopen", return_value=_fake_response(b"payload")
+        "urllib.request.urlopen", return_value=_fake_response(b"payload")
     ) as mock_urlopen:
         assert fetch_url("https://example.com", "UA/1.0", 5, proxy=proxy) == b"payload"
     mock_urlopen.assert_called_once()
@@ -93,7 +93,7 @@ def test_http_proxy_without_auth_builds_unauthenticated_proxy_url():
     fake_opener = MagicMock()
     fake_opener.open.return_value = _fake_response(b"payload")
 
-    with patch("torrent2000.engine.url_fetch.urllib.request.build_opener", return_value=fake_opener) as mock_build:
+    with patch("urllib.request.build_opener", return_value=fake_opener) as mock_build:
         assert fetch_url("https://example.com", "UA/1.0", 5, proxy=proxy) == b"payload"
 
     mock_build.assert_called_once()
@@ -117,7 +117,7 @@ def test_http_proxy_with_auth_embeds_credentials_in_proxy_url():
     fake_opener = MagicMock()
     fake_opener.open.return_value = _fake_response(b"payload")
 
-    with patch("torrent2000.engine.url_fetch.urllib.request.build_opener", return_value=fake_opener) as mock_build:
+    with patch("urllib.request.build_opener", return_value=fake_opener) as mock_build:
         assert fetch_url("https://example.com", "UA/1.0", 5, proxy=proxy) == b"payload"
 
     handler = mock_build.call_args[0][0]
@@ -130,8 +130,8 @@ def test_http_proxy_with_auth_embeds_credentials_in_proxy_url():
 def test_socks5_with_force_proxy_raises_without_attempting_any_connection():
     proxy = ProxySettings(enabled=True, proxy_type="socks5", host="proxy.example.com", port=1080, force_proxy=True)
 
-    with patch("torrent2000.engine.url_fetch.urllib.request.urlopen") as mock_urlopen, patch(
-        "torrent2000.engine.url_fetch.urllib.request.build_opener"
+    with patch("urllib.request.urlopen") as mock_urlopen, patch(
+        "urllib.request.build_opener"
     ) as mock_build:
         with pytest.raises(FetchError):
             fetch_url("https://example.com", "UA/1.0", 5, proxy=proxy)
@@ -146,7 +146,7 @@ def test_socks5_without_force_proxy_falls_back_to_unproxied_with_warning(caplog)
 
     with caplog.at_level(logging.WARNING, logger="torrent2000.engine.url_fetch"):
         with patch(
-            "torrent2000.engine.url_fetch.urllib.request.urlopen", return_value=_fake_response(b"payload")
+            "urllib.request.urlopen", return_value=_fake_response(b"payload")
         ) as mock_urlopen:
             assert fetch_url("https://example.com", "UA/1.0", 5, proxy=proxy) == b"payload"
 
@@ -168,7 +168,7 @@ def test_oversized_response_is_rejected_without_buffering_it_all(monkeypatch):
 
     monkeypatch.setattr(url_fetch_module, "_MAX_RESPONSE_BYTES", 10)
     with patch(
-        "torrent2000.engine.url_fetch.urllib.request.urlopen",
+        "urllib.request.urlopen",
         return_value=_fake_response(b"this body is way more than ten bytes long"),
     ):
         with pytest.raises(FetchError, match="maximum allowed size"):
@@ -195,6 +195,35 @@ def test_response_that_never_finishes_within_budget_times_out(monkeypatch):
     response.__enter__.return_value = response
     response.__exit__.return_value = False
 
-    with patch("torrent2000.engine.url_fetch.urllib.request.urlopen", return_value=response):
+    with patch("urllib.request.urlopen", return_value=response):
         with pytest.raises(FetchError, match="too long"):
             fetch_url("https://example.com", "UA/1.0", timeout_seconds=5)
+
+
+def test_cancel_all_fetches_stops_a_fetch_in_flight_and_any_later_one(monkeypatch):
+    """Quit calls cancel_all_fetches(): Qt keeps the process alive until
+    every running pool task returns, so a fetch must stop at its next chunk
+    rather than run to its deadline (600 s for the installer download)."""
+    import threading
+
+    import torrent2000.engine.url_fetch as url_fetch_module
+    from torrent2000.engine.url_fetch import FetchCancelled
+
+    monkeypatch.setattr(url_fetch_module, "_cancel_event", threading.Event())
+
+    def read(size):
+        url_fetch_module.cancel_all_fetches()  # quit arrives mid-download
+        return b"x"  # never EOF: only the cancel check can end this read loop quickly
+
+    response = MagicMock()
+    response.read.side_effect = read
+    response.__enter__.return_value = response
+    response.__exit__.return_value = False
+
+    with patch("urllib.request.urlopen", return_value=response) as mock_urlopen:
+        with pytest.raises(FetchCancelled):
+            fetch_url("https://example.com", "UA/1.0", timeout_seconds=5)
+        assert response.read.call_count == 1
+        with pytest.raises(FetchCancelled):
+            fetch_url("https://example.com", "UA/1.0", timeout_seconds=5)
+        mock_urlopen.assert_called_once()

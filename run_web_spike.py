@@ -4,13 +4,14 @@ shipped v1.1.1 QWidget app while the QWebEngineView architecture is being
 validated. Run: python run_web_spike.py
 """
 
+import logging
 import os
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "src"))
 
-from PySide6.QtCore import QTimer
+from PySide6.QtCore import QThreadPool, QTimer
 from PySide6.QtGui import QSurfaceFormat
 from PySide6.QtWidgets import QApplication
 
@@ -49,7 +50,7 @@ def main() -> int:
     from torrent2000.config.paths import get_history_db_path, get_rss_seen_db_path, get_stats_db_path
     from torrent2000.config.settings import Settings
     from torrent2000.engine.anthem_player import AnthemPlayer
-    from torrent2000.engine.antivirus_scan_service import AntivirusScanService
+    from torrent2000.engine.antivirus_scan_service import AntivirusScanService, cancel_running_scans
     from torrent2000.engine.auto_shutdown_service import AutoShutdownService
     from torrent2000.engine.battery_pause_service import BatteryPauseService
     from torrent2000.engine.bandwidth_scheduler import BandwidthScheduler
@@ -73,6 +74,7 @@ def main() -> int:
     from torrent2000.engine.tag_service import TagService
     from torrent2000.engine.torrent_search_service import TorrentSearchSourceStore
     from torrent2000.engine.update_checker import UpdateChecker
+    from torrent2000.engine.url_fetch import cancel_all_fetches
     from torrent2000.engine.watch_folder_service import WatchFolderService
     from torrent2000.engine.webhook_notification_service import WebhookNotificationService
     from torrent2000.i18n.translator import set_language
@@ -82,6 +84,7 @@ def main() -> int:
     from torrent2000.stats.service import StatsService
     from torrent2000.stats.store import StatsStore
     from torrent2000.ui.notifications import NotificationService
+    from torrent2000.ui.web.dropped_file import cleanup_stale_temp_torrents
     from torrent2000.ui.web.spike_window import SpikeWindow
 
     _setup_logging()
@@ -180,6 +183,22 @@ def main() -> int:
     notification_service.quit_requested.connect(app.quit)
 
     def _shutdown() -> None:
+        # Quit stops everything: Qt waits for every QThreadPool task before
+        # the process can exit, and those include a Defender scan (up to
+        # 300 s) and the installer download (up to 600 s). Queued tasks are
+        # dropped -- including a webhook queued just before Quit, accepted --
+        # and running fetches stop at their next chunk, a scan within a
+        # second. The pool only queues once every thread is busy, so nothing
+        # active means nothing dropped.
+        pool = QThreadPool.globalInstance()
+        if pool.activeThreadCount():
+            logging.getLogger(__name__).info(
+                "Quit: cancelling %d running background task(s); any still queued (e.g. a webhook) is dropped",
+                pool.activeThreadCount(),
+            )
+        pool.clear()
+        cancel_all_fetches()
+        cancel_running_scans()
         share_limit_service.flush_pending_save()
         remote_access_server.stop()
         session_manager.shutdown()
@@ -188,6 +207,8 @@ def main() -> int:
     # Delayed so the update check's network request doesn't compete with the
     # rest of startup (session restore, stats DB open, etc), same as native.
     QTimer.singleShot(3000, update_checker.check_now)
+    # Same delay: a %TEMP% scan has no business slowing the first paint.
+    QTimer.singleShot(3000, cleanup_stale_temp_torrents)
     return app.exec()
 
 

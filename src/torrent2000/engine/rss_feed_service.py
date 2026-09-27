@@ -363,6 +363,15 @@ class RssFeedService(QObject):
         except Exception:
             logger.exception("Failed to add torrent downloaded from RSS feed %s", _redact_url(feed_url))
             return
+        finally:
+            # libtorrent has parsed the file by now (the metadata lives on in
+            # the resume data) -- nothing reads it again, added or not.
+            # Windows can briefly lock it; the startup sweep
+            # (dropped_file.cleanup_stale_temp_torrents) catches a leftover.
+            try:
+                Path(temp_path).unlink(missing_ok=True)
+            except OSError:
+                pass
         self.items_found.emit(feed_url, [item])
 
     def _on_rss_metadata_received(self, info_hash: str) -> None:

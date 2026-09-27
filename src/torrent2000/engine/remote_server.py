@@ -44,6 +44,7 @@ harmless no-op.
 """
 
 import base64
+import functools
 import hmac
 import json
 import logging
@@ -52,13 +53,16 @@ import secrets
 import tempfile
 import threading
 from http import HTTPStatus
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from typing import TYPE_CHECKING
 from urllib.parse import parse_qs, urlsplit
 
 from torrent2000.config.settings import Settings
 from torrent2000.danger_scanner.scanner import auto_exclude_indices, scan_files
 from torrent2000.engine.session_manager import SessionManager
 from torrent2000.engine.torrent_files import files_from_torrent_path
+
+if TYPE_CHECKING:
+    from http.server import ThreadingHTTPServer
 
 # Mirrors dropped_file.py's cap for the same reason: a legitimate .torrent is
 # KB-scale, this just bounds how much a hostile/buggy phone client can force
@@ -234,8 +238,10 @@ def _torrent_to_json(record) -> dict:
     }
 
 
-class _RemoteAccessHandler(BaseHTTPRequestHandler):
-    """session_manager/settings are stashed on `self.server` by
+class _RemoteAccessHandler:
+    """Mixed into http.server.BaseHTTPRequestHandler by _http_classes().
+
+    session_manager/settings are stashed on `self.server` by
     RemoteAccessServer.start() rather than baked into a per-instance
     subclass -- BaseHTTPRequestHandler always instantiates its handler class
     itself (one instance per request) with a fixed (request, client_address,
@@ -356,7 +362,16 @@ class _RemoteAccessHandler(BaseHTTPRequestHandler):
             excluded = auto_exclude_indices(scan_files(files), settings.danger_auto_exclude_threshold)
         except Exception:
             excluded = set()
-        return session_manager.add_torrent_from_file(tmp_path, settings.default_download_dir, excluded)
+        try:
+            return session_manager.add_torrent_from_file(tmp_path, settings.default_download_dir, excluded)
+        finally:
+            # Parsed by libtorrent at this point, never read again (see
+            # rss_feed_service._on_torrent_downloaded) -- a leftover from a
+            # brief Windows lock is caught by the startup sweep.
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
 
     def _send_json(self, status: HTTPStatus, payload: dict) -> None:
         body = json.dumps(payload).encode("utf-8")
@@ -375,15 +390,27 @@ class _RemoteAccessHandler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
 
-class _Server(ThreadingHTTPServer):
-    # Request-handling threads (ThreadingMixIn spawns one per connection)
-    # must not outlive the process/keep it alive on their own -- daemonize
-    # them so a slow/hanging client can never block shutdown.
-    daemon_threads = True
-    # Stashed here by RemoteAccessServer.start() -- see _RemoteAccessHandler's
-    # docstring for why this is how the handler gets at them.
-    session_manager: SessionManager
-    settings: Settings
+@functools.cache
+def _http_classes():
+    """http.server (and the http.client/ssl/email.* stack it pulls in) is
+    imported the first time remote access actually starts, not at launch --
+    the feature is off by default and this module is imported every time."""
+    from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+    class Handler(_RemoteAccessHandler, BaseHTTPRequestHandler):
+        pass
+
+    class Server(ThreadingHTTPServer):
+        # Request-handling threads (ThreadingMixIn spawns one per connection)
+        # must not outlive the process/keep it alive on their own -- daemonize
+        # them so a slow/hanging client can never block shutdown.
+        daemon_threads = True
+        # Stashed here by RemoteAccessServer.start() -- see _RemoteAccessHandler's
+        # docstring for why this is how the handler gets at them.
+        session_manager: SessionManager
+        settings: Settings
+
+    return Handler, Server
 
 
 class RemoteAccessServer:
@@ -393,7 +420,7 @@ class RemoteAccessServer:
     def __init__(self, session_manager: SessionManager, settings: Settings) -> None:
         self._session_manager = session_manager
         self._settings = settings
-        self._httpd: _Server | None = None
+        self._httpd: "ThreadingHTTPServer | None" = None
         self._thread: threading.Thread | None = None
 
     @property
@@ -425,8 +452,9 @@ class RemoteAccessServer:
             # in its config file).
             self._settings.remote_access_token = secrets.token_urlsafe(24)
             self._settings.save()
+        handler_class, server_class = _http_classes()
         try:
-            httpd = _Server((_BIND_HOST, self._settings.remote_access_port), _RemoteAccessHandler)
+            httpd = server_class((_BIND_HOST, self._settings.remote_access_port), handler_class)
         except OSError:
             logger.exception(
                 "Remote access server failed to bind port %s -- leaving the feature effectively off",

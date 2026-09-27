@@ -339,6 +339,24 @@ def test_add_with_invalid_json_is_rejected(running_server):
     assert json.loads(body)["error"]
 
 
+def test_add_from_base64_deletes_its_temp_torrent_after_the_add(running_server):
+    # libtorrent has parsed the file once add_torrent_from_file returns --
+    # a leftover would only pile up in %TEMP% forever.
+    import base64
+    import os
+
+    server, fake_sm, settings = running_server
+    status, _body = _post_json(
+        _url(server, f"/api/torrents/add?token={settings.remote_access_token}"),
+        {"torrentBase64": base64.b64encode(b"d8:announce...e").decode("ascii"), "filename": "x.torrent"},
+    )
+
+    assert status == 200
+    added_path = fake_sm.added_files[0][0]
+    assert os.path.basename(added_path).startswith("remote_add_")
+    assert not os.path.exists(added_path)
+
+
 def test_max_add_body_bytes_accounts_for_base64_inflation():
     # A base64-encoded _MAX_TORRENT_BYTES-sized .torrent must actually fit
     # under the request-body cap, or every legitimate max-size upload would

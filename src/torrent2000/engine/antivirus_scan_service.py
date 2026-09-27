@@ -6,7 +6,7 @@ ever does anything once the user explicitly opts in from the Profile tab's
 Security section. This is entirely local and silent by design, matching the
 project's no-telemetry philosophy: it only ever invokes the OS's own
 already-installed Defender binary (MpCmdRun.exe) against the torrent's own
-save path, nothing is sent anywhere, and nothing is surfaced to the user UI.
+files, nothing is sent anywhere, and nothing is surfaced to the user UI.
 It never creates a Defender exclusion -- only ever scans.
 
 The scan itself runs in a QRunnable submitted to QThreadPool.globalInstance()
@@ -18,12 +18,13 @@ GUI thread.
 import logging
 import shutil
 import subprocess
+import threading
 from pathlib import Path
 
 from PySide6.QtCore import QObject, QRunnable, QThreadPool
 
 from torrent2000.config.settings import Settings
-from torrent2000.engine.session_manager import SessionManager
+from torrent2000.engine.session_manager import SessionManager, _is_confined
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +32,16 @@ SCAN_TIMEOUT_SECONDS = 300
 
 _CLASSIC_MPCMDRUN_PATH = Path(r"C:\Program Files\Windows Defender\MpCmdRun.exe")
 _PLATFORM_DIR = Path(r"C:\ProgramData\Microsoft\Windows Defender\platform")
+
+# Set once at quit (cancel_running_scans): Qt waits for every running
+# QThreadPool task before the process can exit, so a scan in progress must
+# not be allowed to hold it open for up to SCAN_TIMEOUT_SECONDS.
+_cancel_event = threading.Event()
+
+
+def cancel_running_scans() -> None:
+    """Called once at quit: a running scan is killed within about a second."""
+    _cancel_event.set()
 
 
 def find_mpcmdrun() -> str | None:
@@ -51,6 +62,20 @@ def find_mpcmdrun() -> str | None:
     return str(newest)
 
 
+def _scan_target(save_path: str, name: str) -> str:
+    """The torrent's own file/folder -- save_path alone is the download
+    folder every torrent shares (Downloads/Torrent2000 by default), so
+    scanning it re-reads the whole library on each finished torrent. Falls
+    back to save_path when the name is empty, doesn't exist on disk (e.g.
+    renamed), or escapes save_path: the name comes from the torrent's own
+    metadata, so a crafted ".." or absolute name must not widen the scan."""
+    if name:
+        target = Path(save_path) / name
+        if _is_confined(target, Path(save_path)) and target.exists():
+            return str(target)
+    return save_path
+
+
 class _ScanRunnable(QRunnable):
     def __init__(self, save_path: str) -> None:
         super().__init__()
@@ -63,17 +88,31 @@ class _ScanRunnable(QRunnable):
             return
 
         try:
-            result = subprocess.run(
+            process = subprocess.Popen(
                 [mpcmdrun_path, "-Scan", "-ScanType", "3", "-File", self._save_path],
-                capture_output=True,
-                timeout=SCAN_TIMEOUT_SECONDS,
-                check=False,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
             )
-        except (OSError, subprocess.TimeoutExpired):
+        except OSError:
             logger.exception("Defender scan of %s failed to run", self._save_path)
             return
 
-        logger.info("Defender scan of %s finished with return code %s", self._save_path, result.returncode)
+        # Polled in 1 s waits (one per loop turn, so the turn count is the
+        # elapsed time) rather than one wait(SCAN_TIMEOUT_SECONDS), so a quit
+        # in the middle of a long scan is noticed within a second.
+        for _ in range(SCAN_TIMEOUT_SECONDS):
+            if _cancel_event.is_set():
+                break
+            try:
+                returncode = process.wait(timeout=1)
+            except subprocess.TimeoutExpired:
+                continue
+            logger.info("Defender scan of %s finished with return code %s", self._save_path, returncode)
+            return
+
+        process.kill()
+        reason = "the application is quitting" if _cancel_event.is_set() else f"no result after {SCAN_TIMEOUT_SECONDS} s"
+        logger.warning("Defender scan of %s stopped: %s", self._save_path, reason)
 
 
 class AntivirusScanService(QObject):
@@ -90,5 +129,5 @@ class AntivirusScanService(QObject):
         record = self._session_manager.get_record(info_hash)
         if record is None or not record.save_path:
             return
-        runnable = _ScanRunnable(record.save_path)
+        runnable = _ScanRunnable(_scan_target(record.save_path, record.name))
         QThreadPool.globalInstance().start(runnable)

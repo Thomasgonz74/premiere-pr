@@ -21,7 +21,6 @@ that already existed before this. Nothing here ever launches the installer;
 that still requires a second, separate explicit confirmation in MainWindow.
 """
 
-import hashlib
 import json
 import logging
 import tempfile
@@ -32,7 +31,7 @@ from PySide6.QtCore import QObject, QRunnable, QThreadPool, Signal
 
 from torrent2000 import APP_VERSION
 from torrent2000.config.settings import ProxySettings, Settings
-from torrent2000.engine.url_fetch import FetchError, fetch_url
+from torrent2000.engine.url_fetch import FetchCancelled, FetchError, fetch_url, fetch_url_to_file
 
 logger = logging.getLogger(__name__)
 
@@ -144,7 +143,9 @@ class _DownloadVerifiedInstallerRunnable(QRunnable):
     """Re-downloads a single release asset and only reports success if its
     SHA-256 matches the digest GitHub published for it -- never launches
     anything itself, just hands a verified local path back to the GUI
-    thread."""
+    thread. Streamed to disk (fetch_url_to_file): the installer is ~130 MB,
+    over fetch_url's in-memory cap, and fetch_url_to_file removes the file
+    itself on any error or hash mismatch."""
 
     def __init__(self, asset: dict, signals: _UpdateCheckSignals, proxy: ProxySettings | None = None) -> None:
         super().__init__()
@@ -160,25 +161,25 @@ class _DownloadVerifiedInstallerRunnable(QRunnable):
             return
         expected_hash = digest[len("sha256:") :]
 
-        try:
-            data = fetch_url(
-                self._asset.get("browser_download_url", ""), USER_AGENT, DOWNLOAD_TIMEOUT_SECONDS, proxy=self._proxy
-            )
-        except FetchError as exc:
-            self._signals.verify_failed.emit(str(exc))
-            return
-
-        actual_hash = hashlib.sha256(data).hexdigest()
-        if actual_hash != expected_hash:
-            self._signals.verify_failed.emit(f"SHA-256 mismatch for {name}")
-            return
-
+        # Before the download, not after: the new file matches the same glob.
         _cleanup_stale_installers()
         temp_path = Path(tempfile.gettempdir()) / f"torrent2000_update_{uuid.uuid4().hex}_{name}"
         try:
-            temp_path.write_bytes(data)
-        except OSError as exc:
-            self._signals.verify_failed.emit(str(exc))
+            fetch_url_to_file(
+                self._asset.get("browser_download_url", ""),
+                USER_AGENT,
+                DOWNLOAD_TIMEOUT_SECONDS,
+                temp_path,
+                expected_hash,
+                proxy=self._proxy,
+            )
+        except FetchCancelled:
+            # Quitting: verify_failed would open the release page in the
+            # browser (UpdateBridge) while the app shuts down.
+            logger.info("Installer download cancelled: the application is quitting")
+            return
+        except FetchError as exc:
+            self._signals.verify_failed.emit(f"{exc} ({name})")
             return
         self._signals.install_ready.emit(str(temp_path))
 
