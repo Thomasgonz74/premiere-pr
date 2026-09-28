@@ -100,6 +100,14 @@ function downloadsDeadlineRemainingText(record) {
   return t("web.downloads.deadline_remaining", { eta: formatEta(remaining) });
 }
 
+// Name-column glyph (pin/locked/private): an empty span, style.css draws the
+// emoji, or the icon a theme puts in its place (--glyph-*).
+function downloadsGlyph(name) {
+  const span = document.createElement("span");
+  span.className = `row-glyph row-glyph-${name}`;
+  return span;
+}
+
 function downloadsEnsureRow(record) {
   let entry = downloadsRows.get(record.infoHash);
   if (entry) return entry;
@@ -121,13 +129,13 @@ function downloadsEnsureRow(record) {
   nameCell.className = "row-name-cell";
   el.appendChild(nameCell);
 
-  // Pin toggle: unlike the locked/private glyphs (plain text prefixes on
-  // the name, below), this one is interactive -- a small always-present
-  // button so pinning doesn't require opening the context menu.
+  // Pin toggle: unlike the locked/private glyphs (prefixes on the name,
+  // below), this one is interactive -- a small always-present button so
+  // pinning doesn't require opening the context menu.
   const pinBtn = document.createElement("button");
   pinBtn.type = "button";
   pinBtn.className = "row-pin-btn";
-  pinBtn.textContent = "\u{1F4CC}"; // 📌
+  pinBtn.appendChild(downloadsGlyph("pin")); // 📌
   nameCell.appendChild(pinBtn);
   pinBtn.addEventListener("click", (event) => {
     event.stopPropagation(); // don't trigger row selection
@@ -264,11 +272,14 @@ function downloadsRenderRecord(record) {
   // Two distinct glyphs so a torrent that's both private and archived
   // doesn't read as a single doubled-up padlock: \u{1F510} (locked+key) for
   // the archive lock, \u{1F512} (plain padlock) for is_private, unchanged.
-  const icons = [];
-  if (record.locked) icons.push("\u{1F510}");
-  if (record.isPrivate) icons.push("\u{1F512}");
-  const displayName = icons.length ? `${icons.join(" ")} ${record.name}` : record.name;
-  nameEl.textContent = displayName; // safe: DOM property assignment, not HTML parsing
+  // Each glyph is its own span (style.css draws it, a theme can swap it).
+  const prefix = [];
+  if (record.locked) prefix.push(downloadsGlyph("locked"), " ");
+  if (record.isPrivate) prefix.push(downloadsGlyph("private"), " ");
+  nameEl.replaceChildren(...prefix, record.name); // safe: strings become text nodes, not HTML
+  // One text node for " " + name, as before the spans: separate nodes
+  // shifted the name's glyphs by a sub-pixel in some themes.
+  nameEl.normalize();
   const tooltipParts = [record.name];
   if (record.locked) {
     tooltipParts.push(t("web.downloads.locked_tooltip"));

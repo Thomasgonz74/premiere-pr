@@ -24,7 +24,7 @@ const DEFAULT_THEME_ID = "luna_xp";
 function setActiveTheme(themeId) {
   const id = VALID_THEME_IDS.has(themeId) ? themeId : DEFAULT_THEME_ID;
   const link = document.getElementById("themeTokensLink");
-  link.onload = syncColorScheme;  // the new sheet resolves asynchronously
+  link.onload = themeApplied;  // the new sheet resolves asynchronously
   link.href = `themes/${id}/tokens.css`;
   syncColorScheme();
 }
@@ -44,11 +44,19 @@ function syncColorScheme() {
   document.documentElement.dataset.scheme = 0.2126 * r + 0.7152 * g + 0.0722 * b > 128 ? "dark" : "light";
 }
 
+// Canvas colours cannot use var(): identicon.js and tetris.js cache the
+// resolved tokens and repaint on this event, fired once a new theme sheet has
+// loaded and after every mode change.
+function themeApplied() {
+  syncColorScheme();
+  document.dispatchEvent(new Event("t2k-themechange"));
+}
+
 // First paint: index.html's <head> script already set the saved theme,
 // whose sheet may or may not have loaded by the time this file runs.
 {
   const link = document.getElementById("themeTokensLink");
-  if (link.sheet) syncColorScheme(); else link.onload = syncColorScheme;
+  if (link.sheet) syncColorScheme(); else link.onload = themeApplied;
 }
 
 function setAppearanceMode(mode) {
@@ -61,5 +69,5 @@ function setAppearanceMode(mode) {
   } else {
     document.documentElement.removeAttribute("data-theme");
   }
-  syncColorScheme();
+  themeApplied();
 }

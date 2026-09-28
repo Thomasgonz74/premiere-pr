@@ -183,11 +183,29 @@ class TetrisBoardModel {
   }
 }
 
-// Classic DMG (original Game Boy) 4-shade LCD palette -- same as the Python widget.
-const COLOR_EMPTY = "#9BBC0F";
-const COLOR_ACTIVE = "#8BAC0F";
-const COLOR_SETTLED = "#306230";
-const COLOR_BORDER = "#0F380F";
+// Palette from the theme tokens (--tetris-empty/-active/-settled/-border),
+// defaulting to the classic DMG (original Game Boy) 4-shade LCD palette --
+// same as the Python widget. A canvas fill cannot take var(), so the tokens
+// are resolved once and re-read when theme_switcher.js signals a theme or
+// mode change, which also repaints every live board.
+let _tetrisPalette = null;
+function tetrisPalette() {
+  if (!_tetrisPalette) {
+    const cs = getComputedStyle(document.documentElement);
+    const token = (name, fallback) => cs.getPropertyValue(name).trim() || fallback;
+    _tetrisPalette = {
+      empty: token("--tetris-empty", "#9BBC0F"),
+      active: token("--tetris-active", "#8BAC0F"),
+      settled: token("--tetris-settled", "#306230"),
+      border: token("--tetris-border", "#0F380F"),
+    };
+  }
+  return _tetrisPalette;
+}
+document.addEventListener("t2k-themechange", () => {
+  _tetrisPalette = null;
+  for (const board of _tetrisInstances) board.render();
+});
 
 // Downloads rows ask for smaller cells on a narrow page (style.css sets
 // --tetris-cell per container width). Scaling the 6 px bitmap down in CSS
@@ -241,7 +259,8 @@ class TetrisCanvas {
     const { ctx, model, canvas } = this;
     const cellW = canvas.width / model.cols;
     const cellH = canvas.height / model.rows;
-    ctx.fillStyle = COLOR_BORDER;
+    const palette = tetrisPalette();
+    ctx.fillStyle = palette.border;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     for (let row = 0; row < model.rows; row++) {
       const y = Math.round(row * cellH);
@@ -249,7 +268,7 @@ class TetrisCanvas {
       for (let col = 0; col < model.cols; col++) {
         const x = Math.round(col * cellW);
         const w = Math.round((col + 1) * cellW) - x;
-        ctx.fillStyle = model.grid[row][col] ? COLOR_SETTLED : COLOR_EMPTY;
+        ctx.fillStyle = model.grid[row][col] ? palette.settled : palette.empty;
         ctx.fillRect(x + 1, y + 1, Math.max(w - 1, 1), Math.max(h - 1, 1));
       }
     }
@@ -260,7 +279,7 @@ class TetrisCanvas {
         if (row < 0 || row >= model.rows || col < 0 || col >= model.cols) continue;
         const x = Math.round(col * cellW), w = Math.round((col + 1) * cellW) - x;
         const y = Math.round(row * cellH), h = Math.round((row + 1) * cellH) - y;
-        ctx.fillStyle = COLOR_ACTIVE;
+        ctx.fillStyle = palette.active;
         ctx.fillRect(x + 1, y + 1, Math.max(w - 1, 1), Math.max(h - 1, 1));
       }
     }

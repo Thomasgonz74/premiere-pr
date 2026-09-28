@@ -68,6 +68,25 @@ body {
   position: relative;
 }
 
+/* ---------- Optional theme tokens ----------
+   Unset, each falls back to the value in brackets (the stock look).
+   --risk-{safe,low,medium,high,critical}-{bg,text}: Add-page scan badges
+     (#DFF3DF/#1F7A1F, #EAF2C8/#5C6B12, #FCE8B4/#8A5A00, #FBD2C4/#A33B12,
+     #F6BEBE/#8C1010).
+   --reputation-{good,neutral,bad}-{bg,text}: peer-list badges (good and bad
+     follow the safe and high risk pair, neutral #E4E4E4/#555555).
+   --identicon-paper-sl / --identicon-ink-sl: "S% L%" of the Downloads
+     identicon's background and blocks, hue from the info-hash (60% 92% /
+     65% 42%). --identicon-paper / --identicon-ink: any colour, replaces
+     that hsl(). Not safe yet: a known identicon.js bug draws almost no
+     blocks, so a monochrome pair makes every identicon the same square.
+   --tetris-{empty,active,settled,border}: progress mosaic cells and grid
+     (Game Boy greens #9BBC0F, #8BAC0F, #306230, #0F380F).
+   --glyph-{pin,locked,private}: Downloads name-column glyphs, a monochrome
+     SVG url() painted in currentColor instead of the emoji.
+   Canvas colours are read by identicon.js/tetris.js and re-read on the
+   t2k-themechange event that theme_switcher.js fires. */
+
 /* ---------- Title bar ---------- */
 .titlebar {
   height: var(--titlebar-height);
@@ -298,6 +317,26 @@ body {
 .row-pin-btn:hover { opacity: 1; filter: none; box-shadow: none; }
 .row-pin-btn:active { background: none; box-shadow: none; }
 .row-pin-btn.active { opacity: 1; filter: none; }
+/* Name-column glyphs (downloads.js builds empty spans): the emoji is drawn
+   here so a theme can swap each one for a monochrome SVG (--glyph-pin/
+   -locked/-private: url(...)) painted in currentColor. The emoji stays the
+   swapped glyph's alt text, so the pin button keeps its accessible name. */
+.row-glyph-pin { --row-glyph-emoji: "\1F4CC"; --row-glyph: var(--glyph-pin); }
+.row-glyph-locked { --row-glyph-emoji: "\1F510"; --row-glyph: var(--glyph-locked); }
+.row-glyph-private { --row-glyph-emoji: "\1F512"; --row-glyph: var(--glyph-private); }
+.row-glyph::before { content: var(--row-glyph-emoji); }
+@container style(--row-glyph) {
+  .row-glyph::before {
+    content: "" / var(--row-glyph-emoji);
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    vertical-align: -0.125em;
+    background: currentColor;
+    -webkit-mask: var(--row-glyph) center / contain no-repeat;
+    mask: var(--row-glyph) center / contain no-repeat;
+  }
+}
 .row-name { font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .row-rate { font-variant-numeric: tabular-nums; text-align: right; }
 
@@ -318,7 +357,7 @@ canvas.tetris {
   image-rendering: pixelated;
   border: 1px solid var(--border-progress);
   border-radius: 2px;
-  background: #0F380F;
+  background: var(--tetris-border, #0F380F);
 }
 
 /* ---------- Tab bar ---------- */
@@ -443,17 +482,17 @@ canvas.tetris {
 .scan-reasons { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--t2k-text-secondary); font-size: 0.9em; }
 
 .risk-badge { padding: 1px 6px; border-radius: var(--radius-control); font-size: 0.85em; text-align: center; }
-.risk-safe { background: #DFF3DF; color: #1F7A1F; }
-.risk-low { background: #EAF2C8; color: #5C6B12; }
-.risk-medium { background: #FCE8B4; color: #8A5A00; }
-.risk-high { background: #FBD2C4; color: #A33B12; }
+.risk-safe { background: var(--risk-safe-bg, #DFF3DF); color: var(--risk-safe-text, #1F7A1F); }
+.risk-low { background: var(--risk-low-bg, #EAF2C8); color: var(--risk-low-text, #5C6B12); }
+.risk-medium { background: var(--risk-medium-bg, #FCE8B4); color: var(--risk-medium-text, #8A5A00); }
+.risk-high { background: var(--risk-high-bg, #FBD2C4); color: var(--risk-high-text, #A33B12); }
 
 /* Peer list "Reputation" column (Settings.peer_reputation_enabled, opt-in) */
 .reputation-badge { padding: 1px 6px; border-radius: var(--radius-control); font-size: 0.85em; text-align: center; }
-.reputation-good { background: #DFF3DF; color: #1F7A1F; }
-.reputation-neutral { background: #E4E4E4; color: #555555; }
-.reputation-bad { background: #FBD2C4; color: #A33B12; }
-.risk-critical { background: #F6BEBE; color: #8C1010; }
+.reputation-good { background: var(--reputation-good-bg, var(--risk-safe-bg, #DFF3DF)); color: var(--reputation-good-text, var(--risk-safe-text, #1F7A1F)); }
+.reputation-neutral { background: var(--reputation-neutral-bg, #E4E4E4); color: var(--reputation-neutral-text, #555555); }
+.reputation-bad { background: var(--reputation-bad-bg, var(--risk-high-bg, #FBD2C4)); color: var(--reputation-bad-text, var(--risk-high-text, #A33B12)); }
+.risk-critical { background: var(--risk-critical-bg, #F6BEBE); color: var(--risk-critical-text, #8C1010); }
 
 /* ---------- Share page rows (extra columns vs. Downloads' .row) ---------- */
 .share-row { grid-template-columns: 1fr 90px 120px 90px 130px 70px; }
