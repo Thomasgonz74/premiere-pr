@@ -12,8 +12,9 @@
    définit aucun (voir STYLE.md — seules les phases 3 "cursors/icons" et
    4 "contraste élevé" existent ; le mode texte CGA n'a pas de notion
    clair/sombre, sa palette est déjà fixe). C'est un choix fidèle, pas un
-   oubli : var(--surface-window) etc. re-résolvent tel quel si un jour un
-   [data-theme="dark"] générique est ajouté ailleurs.
+   oubli : "Sombre" n'est pas proposé pour ce thème et un mode sombre
+   enregistré s'y affiche en clair (THEMES_WITHOUT_DARK_MODE dans
+   theme_switcher.js).
    ========================================================================== */
 
 :root {

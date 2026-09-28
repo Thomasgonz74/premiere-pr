@@ -18,7 +18,7 @@ from PySide6.QtTest import QTest
 from PySide6.QtWebEngineWidgets import QWebEngineView
 from PySide6.QtWidgets import QApplication
 
-from theme_probe import TIMEOUT_MS, run_js, wait_until
+from theme_probe import TIMEOUT_MS, run_js, set_mode, set_theme, settle, wait_until
 
 INDEX_HTML = Path(__file__).resolve().parents[1] / "resources" / "web" / "spike" / "index.html"
 
@@ -162,17 +162,34 @@ def test_piece_map_decodes_the_bridge_strings(view):
     assert result == "ok"
 
 
+def _switch_theme(view, theme_id):
+    """setActiveTheme(), then waits for the new sheet; returns data-theme as
+    it was right after the call, while the old sheet was still painted."""
+    attr = run_js(view, f"""(function () {{
+      window.__t2kThemeLoaded = false;
+      document.getElementById('themeTokensLink').addEventListener('load', () => {{ window.__t2kThemeLoaded = true; }}, {{once: true}});
+      setActiveTheme({theme_id!r});
+      return String(document.documentElement.getAttribute('data-theme'));
+    }})()""")
+    wait_until(view, "window.__t2kThemeLoaded === true")
+    settle(view)
+    return attr, run_js(view, "String(document.documentElement.getAttribute('data-theme'))")
+
+
 def test_dark_on_a_theme_without_one_is_applied_as_light_and_kept(view):
-    result = run_js(view, """(function () {
-      const attr = () => document.documentElement.getAttribute('data-theme');
-      const seen = [];
-      setActiveTheme('synthwave'); setAppearanceMode('dark'); seen.push(attr());
-      setActiveTheme('win11_mica'); seen.push(attr());  // the saved dark comes back
-      setAppearanceMode('dark_hc'); setActiveTheme('synthwave'); seen.push(attr());
-      setActiveTheme('luna_xp'); setAppearanceMode('light');
-      return JSON.stringify(seen);
-    })()""")
-    assert result == '[null,"dark","hc"]'
+    set_theme(view, "win11_mica")
+    set_mode(view, "dark")
+    # Leaving a dark palette: "dark" stays on until synthwave's sheet is in
+    # (no flash of win11_mica light), then it shows as light.
+    assert _switch_theme(view, "synthwave") == ("dark", "null")
+    # The saved dark comes back, already on before win11_mica's sheet lands.
+    assert _switch_theme(view, "win11_mica") == ("dark", "dark")
+    assert _switch_theme(view, "tui-dos") == ("dark", "null")
+    assert _switch_theme(view, "synthwave") == ("null", "null")
+    set_mode(view, "dark_hc")
+    assert _switch_theme(view, "art-deco") == ("hc", "hc")
+    set_theme(view, "luna_xp")
+    set_mode(view, "light")
 
 
 def test_appearance_selector_offers_dark_only_where_it_exists(view):
