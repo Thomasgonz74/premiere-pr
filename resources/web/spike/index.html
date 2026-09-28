@@ -20,18 +20,18 @@
      script-set href alone is not render-blocking -- the first paint could
      then come before the sheet (measured with a delayed sheet). -->
 <link rel="stylesheet" id="themeTokensLink" blocking="render">
+<script src="theme_switcher.js"></script>
 <script>
   // The saved theme/mode, applied before the first paint: SpikeWindow puts
-  // them in the URL (theme id already checked against the theme list), so a
-  // dark or non-default theme no longer flashes Luna XP light first. No query
-  // (the theme tests) keeps the old default. app.js's getSettings still
-  // re-applies both once the bridge is up, and drives the CCCP panel.
+  // them in the URL, so a dark or non-default theme no longer flashes Luna XP
+  // light first. Same functions as every later switch, so a saved "dark" on a
+  // theme without a dark mode is already light here. No query (the theme
+  // tests) keeps the default. app.js's getSettings still re-applies both once
+  // the bridge is up, and drives the CCCP panel.
   (function () {
     const query = new URLSearchParams(location.search);
-    document.getElementById("themeTokensLink").href = `themes/${query.get("theme") || "luna_xp"}/tokens.css`;
-    const mode = query.get("mode");
-    const attr = mode === "dark" ? "dark" : mode === "dark_hc" ? "hc" : null;  // as setAppearanceMode()
-    if (attr) document.documentElement.setAttribute("data-theme", attr);
+    setActiveTheme(query.get("theme"));
+    setAppearanceMode(query.get("mode"));
   })();
 </script>
 </head>
@@ -242,7 +242,6 @@
   <script src="modal.js"></script>
   <script src="tooltip.js"></script>
   <script src="contextmenu.js"></script>
-  <script src="theme_switcher.js"></script>
   <script src="app.js"></script>
   <script src="identicon.js"></script>
   <script src="downloads.js"></script>

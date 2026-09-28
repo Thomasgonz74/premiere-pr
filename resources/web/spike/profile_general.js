@@ -216,6 +216,20 @@ function wireProfileGeneral() {
 
   themeSelect.addEventListener("change", () => bridge.setTheme(themeSelect.value));
   appearanceSelect.addEventListener("change", () => bridge.setAppearanceMode(appearanceSelect.value));
+  // "Sombre" only for a theme that has a dark palette, and the selector shows
+  // the mode really applied (theme_switcher.js); a saved "dark" is kept while
+  // it shows "Clair", and only a change made here saves a new mode.
+  const appearance = { options: [], theme: null, mode: null };
+  const refreshAppearanceSelect = () => pgPopulateSelect(
+    appearanceSelect,
+    appearance.options.filter((opt) => opt.id !== "dark" || !THEMES_WITHOUT_DARK_MODE.has(appearance.theme)),
+    appliedAppearanceMode(appearance.theme, appearance.mode),
+  );
+  bridge.themeChanged.connect((themeId, mode) => {
+    appearance.theme = themeId;
+    appearance.mode = mode;
+    refreshAppearanceSelect();
+  });
   languageSelect.addEventListener("change", () => bridge.setLanguage(languageSelect.value));
 
   volumeSlider.addEventListener("input", () => {
@@ -240,7 +254,12 @@ function wireProfileGeneral() {
     volumeValue.textContent = `${values.audioVolume}%`;
 
     bridge.getThemeOptions((options) => pgPopulateSelect(themeSelect, options, values.theme));
-    bridge.getAppearanceModeOptions((options) => pgPopulateSelect(appearanceSelect, options, values.appearanceMode));
+    appearance.theme = values.theme;
+    appearance.mode = values.appearanceMode;
+    bridge.getAppearanceModeOptions((options) => {
+      appearance.options = options;
+      refreshAppearanceSelect();
+    });
     bridge.getLanguageOptions((options) => pgPopulateSelect(languageSelect, options, values.language));
   });
 

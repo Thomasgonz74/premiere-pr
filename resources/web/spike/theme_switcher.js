@@ -21,18 +21,36 @@ const VALID_THEME_IDS = new Set([
 
 const DEFAULT_THEME_ID = "luna_xp";
 
+// Themes whose tokens.css has no [data-theme="dark"] block: "dark" would show
+// their light palette, so the Profile selector offers only light and high
+// contrast for them, and a saved "dark" is applied as light while one of them
+// is active -- the saved preference itself is kept for the next theme.
+// tests/test_theme_css_integrity.py fails if this drifts from the CSS.
+const THEMES_WITHOUT_DARK_MODE = new Set([
+  "art-deco", "blueprint", "nextstep", "soviet-cosmic", "synthwave", "terminal-phosphor", "tui-dos",
+]);
+
+let _activeThemeId = DEFAULT_THEME_ID;
+let _savedAppearanceMode = "light";
+
 function setActiveTheme(themeId) {
-  const id = VALID_THEME_IDS.has(themeId) ? themeId : DEFAULT_THEME_ID;
+  _activeThemeId = VALID_THEME_IDS.has(themeId) ? themeId : DEFAULT_THEME_ID;
   const link = document.getElementById("themeTokensLink");
   link.onload = syncColorScheme;  // the new sheet resolves asynchronously
-  link.href = `themes/${id}/tokens.css`;
-  syncColorScheme();
+  link.href = `themes/${_activeThemeId}/tokens.css`;
+  setAppearanceMode(_savedAppearanceMode);  // "dark" may resolve differently here; also syncs the scheme
+}
+
+// The mode a theme really shows for a saved appearance mode.
+function appliedAppearanceMode(themeId, mode) {
+  return mode === "dark" && THEMES_WITHOUT_DARK_MODE.has(themeId) ? "light" : mode;
 }
 
 // Native widgets (scrollbars, sliders, the text of form fields) follow
-// `color-scheme`. Several themes keep a light palette in "dark" or "hc" (no
-// dark block, or a white high-contrast mode), so the scheme is read off the
-// resolved ink rather than the mode name: light ink means a dark theme.
+// `color-scheme`. The mode name does not tell: several themes are already
+// nocturnal in "light" (those without a dark block) or keep a white
+// high-contrast mode, so the scheme is read off the resolved ink rather than
+// the mode name: light ink means a dark theme.
 // style.css maps data-scheme="dark" to color-scheme: dark.
 const _schemeProbe = document.createElement("canvas").getContext("2d", { willReadFrequently: true });
 function syncColorScheme() {
@@ -44,18 +62,13 @@ function syncColorScheme() {
   document.documentElement.dataset.scheme = 0.2126 * r + 0.7152 * g + 0.0722 * b > 128 ? "dark" : "light";
 }
 
-// First paint: index.html's <head> script already set the saved theme,
-// whose sheet may or may not have loaded by the time this file runs.
-{
-  const link = document.getElementById("themeTokensLink");
-  if (link.sheet) syncColorScheme(); else link.onload = syncColorScheme;
-}
-
 function setAppearanceMode(mode) {
+  _savedAppearanceMode = mode;
   // tokens.css files define [data-theme="dark"] / [data-theme="hc"]
   // override blocks on top of :root's light-mode base -- "light" itself
   // means no attribute at all.
-  const attr = mode === "dark" ? "dark" : mode === "dark_hc" ? "hc" : null;
+  const applied = appliedAppearanceMode(_activeThemeId, mode);
+  const attr = applied === "dark" ? "dark" : applied === "dark_hc" ? "hc" : null;
   if (attr) {
     document.documentElement.setAttribute("data-theme", attr);
   } else {
