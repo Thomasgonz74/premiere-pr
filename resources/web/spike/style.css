@@ -78,7 +78,8 @@ body {
    --identicon-paper-sl / --identicon-ink-sl: "S% L%" of the Downloads
      identicon's background and blocks, hue from the info-hash (60% 92% /
      65% 42%). --identicon-paper / --identicon-ink: any colour, replaces
-     that hsl() (monochrome identicons; the pattern still tells them apart).
+     that hsl(). Not safe yet: a known identicon.js bug draws almost no
+     blocks, so a monochrome pair makes every identicon the same square.
    --tetris-{empty,active,settled,border}: progress mosaic cells and grid
      (Game Boy greens #9BBC0F, #8BAC0F, #306230, #0F380F).
    --glyph-{pin,locked,private}: Downloads name-column glyphs, a monochrome

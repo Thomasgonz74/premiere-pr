@@ -1,7 +1,8 @@
 """The optional theme tokens documented in style.css ("Optional theme
 tokens"): unset they give the stock colours, set by a theme they repaint the
 badges, the name-column glyphs and the canvases (identicons, progress mosaic)
--- the canvases through the t2k-themechange event of a mode switch."""
+-- the canvases through the t2k-themechange event of a mode switch or of a
+new theme sheet's load."""
 from __future__ import annotations
 
 import json
@@ -29,6 +30,21 @@ THEME_CSS = f""":root {{
   --tetris-border: #FF0000;
   --glyph-pin: {MASK};
 }}"""
+# Loaded through a theme switch (the sheet's onload path) instead.
+SL_CSS = ":root { --identicon-paper-sl: 0% 100%; --identicon-ink-sl: 0% 0%; --tetris-border: #0000FF; }"
+
+# identicon.js's LCG draws a block for almost no hash (known bug, see its
+# header), so the ink is checked on a canvas whose hash does draw one, before
+# and after the Math.imul fix ("t2k1": 1 block today, 8 once fixed).
+TEST_IDENTICON_JS = r"""
+(function () {
+  const c = document.createElement('canvas');
+  c.className = 'identicon'; c.id = 't2k-test-identicon'; c.width = c.height = 20;
+  document.body.appendChild(c);
+  drawIdenticon(c, 't2k1');
+  return true;
+})()
+"""
 
 # Canvas pixels cannot be read back reliably here (the offscreen GPU context
 # gets lost and clears them), so the canvases are checked through the colours
@@ -55,7 +71,7 @@ STATE_JS = r"""
   const fills = (el) => [...(window.__t2kFills.get(el) || [])].sort();
   const probe = document.createElement('canvas').getContext('2d');
   const hex = (css) => { probe.fillStyle = css; return probe.fillStyle; };
-  const ident = document.querySelector('canvas.identicon');
+  const ident = document.getElementById('t2k-test-identicon');
   const hue = identiconHash(ident._identiconHash) % 360;
   const pin = getComputedStyle(document.querySelector('.row-glyph-pin'), '::before');
   const good = document.createElement('span'); good.className = 'reputation-badge reputation-good'; document.body.appendChild(good);
@@ -89,9 +105,10 @@ def test_optional_tokens_default_to_the_stock_look_and_repaint_on_switch():
         run_js(view, BRIDGE_STUB_JS)
         run_js(view, INJECT_JS)
         run_js(view, RECORD_FILLS_JS)
+        run_js(view, TEST_IDENTICON_JS)
 
         stock = json.loads(run_js(view, STATE_JS))
-        assert stock["identicon"] and set(stock["identicon"]) <= set(stock["stockIdenticon"])
+        assert sorted(stock["identicon"]) == stock["stockIdenticon"]  # paper and ink both painted
         assert "#0f380f" in stock["mosaic"]  # grid, Game Boy darkest
         assert set(stock["mosaic"]) <= {"#0f380f", "#306230", "#8bac0f", "#9bbc0f"}
         assert (stock["pinContent"], stock["pinMask"]) == ('"\U0001F4CC"', "none")
@@ -99,7 +116,7 @@ def test_optional_tokens_default_to_the_stock_look_and_repaint_on_switch():
 
         run_js(view, f"const s = document.createElement('style'); s.id = 't2k-test-tokens'; s.textContent = {json.dumps(THEME_CSS)}; document.head.appendChild(s); true")
         themed = json.loads(run_js(view, STATE_JS))
-        assert "#ffffff" in themed["identicon"] and set(themed["identicon"]) <= {"#000000", "#ffffff"}
+        assert themed["identicon"] == ["#000000", "#ffffff"]
         assert "#ff0000" in themed["mosaic"] and "#0f380f" not in themed["mosaic"]
         assert (themed["pinContent"], themed["pinMask"]) == ('"" / "\U0001F4CC"', "url(")
         assert (themed["riskSafe"], themed["reputationGood"]) == ("rgb(16, 32, 48)", "rgb(240, 224, 208)")
@@ -109,6 +126,21 @@ def test_optional_tokens_default_to_the_stock_look_and_repaint_on_switch():
         assert "#0f380f" in restored.pop("mosaic")  # the pieces keep falling: only the grid is fixed
         stock.pop("mosaic")
         assert restored == stock
+
+        # A theme switch repaints once the new sheet has loaded (link.onload).
+        run_js(view, f"""(function () {{
+            const s = document.createElement('style'); s.textContent = {json.dumps(SL_CSS)}; document.head.appendChild(s);
+            window.__t2kThemeEvents = 0;
+            document.addEventListener('t2k-themechange', () => window.__t2kThemeEvents++);
+            window.__t2kFills.clear();
+            setActiveTheme('win95_classic'); return true;
+        }})()""")
+        wait_until(view, "window.__t2kThemeEvents > 0")
+        switched = json.loads(run_js(view, """JSON.stringify({
+            identicon: [...window.__t2kFills.get(document.getElementById('t2k-test-identicon'))].sort(),
+            mosaic: [...(window.__t2kFills.get(document.querySelector('canvas.tetris')) || [])]})"""))
+        assert switched["identicon"] == ["#000000", "#ffffff"]  # hsl(h 0% 0%) / hsl(h 0% 100%)
+        assert "#0000ff" in switched["mosaic"]
     finally:
         view.close()
         view.deleteLater()
