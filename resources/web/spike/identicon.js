@@ -6,10 +6,6 @@
 // identify the TORRENT, so they are the same in every theme. Only the colour
 // recipe comes from theme tokens (see style.css, "Optional theme tokens"):
 // the saturation/lightness of both colours, or a fixed monochrome pair.
-// Known bug: the LCG below overflows 2^53 before `>>> 0`, its low bit is
-// then always 0 and almost no hash draws a block -- today only the hue tells
-// torrents apart, and a monochrome pair makes every identicon the same plain
-// square. Math.imul fixes it but changes every identicon: left for a later lot.
 // No bridge call needed (record.infoHash is already present client-side on
 // every row).
 
@@ -68,8 +64,12 @@ function drawIdenticon(canvas, infoHash) {
   let bits = seed;
   for (let col = 0; col < 3; col++) {
     for (let row = 0; row < cols; row++) {
-      bits = (bits * 1103515245 + 12345) >>> 0; // ponytail: LCG, fine for a visual pattern (but see the known bug above)
-      if ((bits & 1) === 0) continue;
+      // ponytail: LCG, fine for a visual pattern. Math.imul keeps the product
+      // in 32 bits (a plain * overflowed 2^53 and drew almost no block), and
+      // the TOP bit is read: an LCG's low bit just alternates 0/1 whatever
+      // the seed, which gave every torrent one of two patterns.
+      bits = (Math.imul(bits, 1103515245) + 12345) >>> 0;
+      if (bits >>> 31 === 0) continue;
       ctx.fillRect(col * cell, row * cell, cell, cell);
       if (col < 2) ctx.fillRect((cols - 1 - col) * cell, row * cell, cell, cell);
     }

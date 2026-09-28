@@ -33,9 +33,7 @@ THEME_CSS = f""":root {{
 # Loaded through a theme switch (the sheet's onload path) instead.
 SL_CSS = ":root { --identicon-paper-sl: 0% 100%; --identicon-ink-sl: 0% 0%; --tetris-border: #0000FF; }"
 
-# identicon.js's LCG draws a block for almost no hash (known bug, see its
-# header), so the ink is checked on a canvas whose hash does draw one, before
-# and after the Math.imul fix ("t2k1": 1 block today, 8 once fixed).
+# The ink is checked on a canvas whose hash draws blocks ("t2k1": 12 fills).
 TEST_IDENTICON_JS = r"""
 (function () {
   const c = document.createElement('canvas');
@@ -141,6 +139,50 @@ def test_optional_tokens_default_to_the_stock_look_and_repaint_on_switch():
             mosaic: [...(window.__t2kFills.get(document.querySelector('canvas.tetris')) || [])]})"""))
         assert switched["identicon"] == ["#000000", "#ffffff"]  # hsl(h 0% 0%) / hsl(h 0% 100%)
         assert "#0000ff" in switched["mosaic"]
+    finally:
+        view.close()
+        view.deleteLater()
+        waited = 0
+        while shiboken6.isValid(view) and waited < 10_000:
+            QTest.qWait(50)
+            waited += 50
+
+
+def test_identicons_draw_a_pattern_that_tells_torrents_apart():
+    """With a monochrome pair the 5x5 pattern is all that tells torrents
+    apart: nearly every hash must draw blocks, and different hashes different
+    patterns (the LCG used to overflow 2^53 and draw none for ~97 % of them)."""
+    view = QWebEngineView()
+    view.resize(980, 640)
+    loaded = {}
+    view.page().loadFinished.connect(lambda ok: loaded.setdefault("ok", ok))
+    view.setUrl(QUrl.fromLocalFile(str(INDEX_HTML)))
+    view.show()
+    try:
+        waited = 0
+        while "ok" not in loaded and waited < 10_000:
+            QTest.qWait(50)
+            waited += 50
+        assert loaded.get("ok"), "index.html failed to load"
+        result = run_js(view, r"""(function () {
+          const patterns = new Set();
+          let withBlocks = 0;
+          for (let i = 1; i <= 200; i++) {
+            const c = document.createElement('canvas');
+            c.width = c.height = 20;
+            const ctx = c.getContext('2d');
+            const rects = [];
+            const fill = ctx.fillRect.bind(ctx);
+            ctx.fillRect = (...a) => { rects.push(a.join(',')); fill(...a); };
+            drawIdenticon(c, (Math.imul(i, 2654435761) >>> 0).toString(16).padStart(8, '0').repeat(5));
+            if (rects.length > 1) withBlocks++;  // the first fill is the background
+            patterns.add(rects.slice(1).join(';'));
+          }
+          return JSON.stringify([withBlocks, patterns.size]);
+        })()""")
+        with_blocks, distinct = json.loads(result)
+        assert with_blocks >= 190, f"only {with_blocks}/200 identicons draw a block"
+        assert distinct >= 150, f"only {distinct} distinct patterns for 200 hashes"
     finally:
         view.close()
         view.deleteLater()

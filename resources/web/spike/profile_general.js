@@ -239,6 +239,7 @@ function wireProfileGeneral() {
     volumeSlider.style.setProperty("--value", `${volumeSlider.value}%`);
   };
   volumeSlider.addEventListener("input", syncVolume);
+  syncVolume();  // until getSettings answers: an unset --value would leave no track at all
   volumeSlider.addEventListener("change", () => {
     bridge.setVolume(parseInt(volumeSlider.value, 10));
   });
