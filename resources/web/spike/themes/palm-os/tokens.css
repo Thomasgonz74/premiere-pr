@@ -546,11 +546,12 @@ canvas.tetris {
 .rss-log-error { text-decoration: underline; }
 
 /* ---------- Curseur de valeur (Volume) : piste creuse bordee d'encre,
-   poignee d'encre (components.html, P2) -- au lieu du bleu natif. ---------- */
+   remplie d'encre jusqu'a la poignee d'encre (components.html, P2) -- au
+   lieu du bleu natif. --value = position, posee par profile_general.js. ---------- */
 input[type="range"] {
   -webkit-appearance: none; appearance: none;
   height: 8px;
-  background: var(--pm-lcd-dk);
+  background: linear-gradient(var(--pm-ink), var(--pm-ink)) 0 0 / var(--value) 100% no-repeat, var(--pm-lcd-dk);
   border: 1px solid var(--pm-ink);
   border-radius: 2px;
   cursor: var(--cursor-interactive);

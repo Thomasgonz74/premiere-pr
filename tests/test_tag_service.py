@@ -6,10 +6,11 @@ import os
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 import json
+import logging
 
 import pytest
 
-from torrent2000.config.paths import get_tags_path
+from torrent2000.config.paths import get_resume_dir, get_tags_path
 from torrent2000.engine.tag_service import TagService
 
 
@@ -119,3 +120,22 @@ def test_persistence_file_with_wrong_shape_entries_are_skipped():
 
     assert service.get("hash1") == []
     assert service.get("hash2") == ["ok"]
+
+
+def test_startup_drops_tags_of_torrents_without_a_resume_file(caplog):
+    """Tags of torrents removed before removal purged them linger in
+    tags.json. Kept: any torrent with a resume file, even one whose restore
+    failed this time (not in memory), so its tags survive a missing disk."""
+    service = TagService()
+    service.add("kept", "linux")
+    service.add("gone1", "iso")
+    service.add("gone2", "iso")
+    (get_resume_dir() / "kept.fastresume").write_bytes(b"")
+
+    with caplog.at_level(logging.INFO, logger="torrent2000.engine.tag_service"):
+        dropped = service.drop_orphans()
+
+    assert dropped == 2
+    assert TagService().all_tags() == ["linux"]  # persisted
+    assert "dropped 2 entries" in caplog.text
+    assert service.drop_orphans() == 0

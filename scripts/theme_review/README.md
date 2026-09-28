@@ -20,7 +20,7 @@ python scripts/theme_review/pairs.py %TEMP%\t2k_avant %TEMP%\t2k_apres %TEMP%\t2
 
 `compare_metrics.py` liste les régressions (une combinaison thème × mode qui passait et échoue, ou un contraste qui baisse de plus de 0,3) et tout ce qui échoue encore. Les planches montrent, pour chaque thème, mode et vue, la référence à gauche et le nouveau rendu à droite, avec la part de pixels modifiés.
 
-Options de `capture.py` : `--only=<thème>` (répétable) limite aux thèmes cités ; `--resume` reprend une capture interrompue. Pour lancer plusieurs captures en parallèle, donner à chacune son port et son dossier de données : `T2K_DEVTOOLS_PORT=9301 T2K_SHOTS_DATADIR=…`.
+Options de `capture.py` : `--only=<thème>` (répétable) limite aux thèmes cités ; `--view=<vue>` (répétable) aux vues citées (`profile_audio` montre le curseur de volume) ; `--resume` reprend une capture interrompue. Pour lancer plusieurs captures en parallèle, donner à chacune son port et son dossier de données : `T2K_DEVTOOLS_PORT=9301 T2K_SHOTS_DATADIR=…`.
 
 ## Garde-fous automatiques (pytest)
 

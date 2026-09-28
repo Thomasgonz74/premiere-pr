@@ -594,3 +594,31 @@ canvas.tetris {
   background: var(--sw-white);
   box-shadow: none;
 }
+
+/* ---------- Curseur de valeur (Volume) : piste remplie jusqu'à la poignée
+   (components.html, P2 : .sl-track blanche à filet, .sl-fill d'encre,
+   poignée carrée d'encre) -- au lieu du curseur bleu de Chromium. --value =
+   position, posée par profile_general.js. 16 px de haut comme le curseur
+   natif : la poignée déborde sans décaler la ligne. ---------- */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 16px;
+  background: transparent;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 6px;
+  border: 1px solid var(--sw-line);
+  border-radius: 0;
+  background: linear-gradient(var(--sw-ink), var(--sw-ink)) 0 0 / var(--value) 100% no-repeat, var(--sw-white);
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  box-sizing: border-box;
+  width: 14px;
+  height: 14px;
+  margin-top: -4px;
+  border: none;
+  border-radius: 0;
+  background: var(--sw-ink);
+}

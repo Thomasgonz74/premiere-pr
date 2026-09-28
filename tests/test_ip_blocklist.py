@@ -94,6 +94,19 @@ def test_session_stays_paused_until_the_parsed_filter_is_applied(tmp_path, monke
     assert calls == ["pause", "parse", ("filter", 1), "resume"]
 
 
+def test_the_wait_is_signalled_and_readable_while_it_lasts(tmp_path, monkeypatch):
+    """The Downloads page's notice: shown for the whole pause, hidden once
+    the filter is applied (a page loading late asks the getter)."""
+    calls = []
+    sm = _session_manager_loading_inline(monkeypatch, calls)
+    seen = []
+    sm.ip_blocklist_wait_changed.connect(lambda waiting: seen.append((waiting, sm.is_waiting_for_ip_blocklist())))
+
+    sm._load_ip_blocklist(_write(tmp_path, "1.2.3.0/24\n"))
+
+    assert seen == [(True, True), (False, False)]
+
+
 def test_missing_file_is_logged_and_the_session_resumed_without_a_filter(tmp_path, monkeypatch, caplog):
     calls = []
     sm = _session_manager_loading_inline(monkeypatch, calls)
@@ -103,6 +116,7 @@ def test_missing_file_is_logged_and_the_session_resumed_without_a_filter(tmp_pat
 
     assert calls == ["pause", "parse", "resume"]
     assert "Failed to load IP blocklist" in caplog.text
+    assert not sm.is_waiting_for_ip_blocklist()  # the load ended: notice hidden
 
 
 def test_a_session_paused_by_someone_else_is_not_resumed(tmp_path, monkeypatch):

@@ -746,3 +746,31 @@ canvas.tetris {
 [data-theme="dark"] ::-webkit-scrollbar-button:vertical:increment {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='6'%3E%3Cpath d='M4 6L0 0H8Z' fill='%23F1E9D6'/%3E%3C/svg%3E");
 }
+
+/* ---------- Curseur de valeur (Volume) : piste remplie jusqu'à la poignée
+   (components.html, P2 : .sl-track papier cerné d'encre, .sl-fill rouge,
+   poignée d'encre au coin rouge coupé) -- au lieu du curseur bleu de
+   Chromium. --value = position, posée par profile_general.js. 16 px de haut
+   comme le curseur natif : la poignée déborde sans décaler la ligne. ---------- */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 16px;
+  background: transparent;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 12px;
+  border: 2px solid var(--su-ink);
+  background: linear-gradient(var(--su-red), var(--su-red)) 0 0 / var(--value) 100% no-repeat, var(--su-paper-hi);
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  box-sizing: border-box;
+  width: 18px;
+  height: 24px;
+  margin-top: -6px;
+  border: none;
+  border-radius: 0;
+  background: linear-gradient(225deg, var(--su-red) 0 9px, transparent 9.5px), var(--su-ink);
+  clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 0 100%);
+}

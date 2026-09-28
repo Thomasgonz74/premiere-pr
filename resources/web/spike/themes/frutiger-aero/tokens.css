@@ -764,3 +764,32 @@ canvas.tetris {
   border-radius: 999px;
   box-shadow: var(--shadow-drop);
 }
+
+/* ---------- Curseur de valeur (Volume) : piste remplie jusqu'à la poignée
+   (components.html, P2 : .sl-track translucide, .sl-fill vert glacé, goutte
+   ronde) -- au lieu du curseur bleu de Chromium. --value = position, posée
+   par profile_general.js. 16 px de haut comme le curseur natif : la poignée
+   déborde sans décaler la ligne. ---------- */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 16px;
+  background: transparent;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 10px;
+  border: 1px solid var(--fa-line);
+  border-radius: 999px;
+  background: var(--gloss) 0 0 / var(--value) 100% no-repeat, linear-gradient(180deg, var(--fa-green), var(--fa-green-deep)) 0 0 / var(--value) 100% no-repeat, var(--fa-track);
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  box-sizing: border-box;
+  width: 18px;
+  height: 18px;
+  margin-top: -4px;
+  border: 1px solid var(--fa-line);
+  border-radius: 50%;
+  background: var(--gloss), var(--p2-thumb-face);
+  box-shadow: 0 2px 6px rgba(27,127,212,.25);
+}

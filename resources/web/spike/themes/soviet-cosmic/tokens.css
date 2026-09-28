@@ -48,6 +48,11 @@
 
   --tooltip-bg: var(--z-panel);
   --tooltip-fg: var(--z-cream);
+  /* L'infobulle de la charte (plaque --z-panel, encre crème : 11,3:1 ;
+     noir/blanc en contraste élevé, 21:1) au lieu du couple fenêtre de
+     style.css. Les deux se re-résolvent seuls sous [data-theme="hc"]. */
+  --t2k-tooltip-bg: var(--tooltip-bg);
+  --t2k-tooltip-fg: var(--tooltip-fg);
 
   /* ========================================================
      2. SÉMANTIQUES & alias exigés par le contrat partagé entre
@@ -656,7 +661,7 @@ canvas.tetris {
 .info-tooltip-bubble {
   border-color: var(--border-control);
   border-radius: var(--radius-field);
-  box-shadow: inset 0 0 0 2px var(--surface-window), inset 0 0 0 3px rgba(78, 100, 128, .4), var(--shadow-menu);
+  box-shadow: inset 0 0 0 2px var(--tooltip-bg), inset 0 0 0 3px rgba(78, 100, 128, .4), var(--shadow-menu);
 }
 
 /* Épingle : non épinglée = voyant ÉTEINT (gris clair lisible sur la nuit,
@@ -668,3 +673,31 @@ canvas.tetris {
 /* Identicon pastel sur le bandeau crème : cerné d'encre de nuit pour rester visible.
    Contour intérieur : .row-name-cell (overflow:hidden) rognerait un box-shadow extérieur. */
 #downloadsList .row.selected .identicon { box-shadow: none; outline: 1px solid var(--selection-text); outline-offset: -1px; }
+
+/* ---------- Curseur de valeur (Volume) : piste remplie jusqu'à la poignée
+   (components.html, P2 : .sl-track --z-field, .sl-fill crème, touche crème à
+   voyant allumé) -- au lieu du curseur bleu de Chromium. --value = position,
+   posée par profile_general.js. 16 px de haut comme le curseur natif : la
+   poignée déborde sans décaler la ligne. ---------- */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 16px;
+  background: transparent;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 8px;
+  border: 1px solid var(--z-steel);
+  border-radius: 2px;
+  background: linear-gradient(var(--z-cream), var(--z-cream)) 0 0 / var(--value) 100% no-repeat, var(--z-field);
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  box-sizing: border-box;
+  width: 16px;
+  height: 24px;
+  margin-top: -8px;
+  border: 1px solid var(--z-cream-dk);
+  border-radius: 2px;
+  background: radial-gradient(circle, var(--z-lamp) 0 2.5px, var(--z-lamp-glow) 3px, transparent 6px), var(--z-cream);
+}

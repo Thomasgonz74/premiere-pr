@@ -218,9 +218,13 @@ function wireProfileGeneral() {
   appearanceSelect.addEventListener("change", () => bridge.setAppearanceMode(appearanceSelect.value));
   languageSelect.addEventListener("change", () => bridge.setLanguage(languageSelect.value));
 
-  volumeSlider.addEventListener("input", () => {
+  // --value (0%-100%) is how CSS sees the position: themes whose charter
+  // draws a filled track paint it up to there (see their tokens.css).
+  const syncVolume = () => {
     volumeValue.textContent = `${volumeSlider.value}%`;
-  });
+    volumeSlider.style.setProperty("--value", `${volumeSlider.value}%`);
+  };
+  volumeSlider.addEventListener("input", syncVolume);
   volumeSlider.addEventListener("change", () => {
     bridge.setVolume(parseInt(volumeSlider.value, 10));
   });
@@ -237,7 +241,7 @@ function wireProfileGeneral() {
     updates.input.checked = values.checkForUpdates;
     tray.input.checked = values.minimizeToTray;
     volumeSlider.value = values.audioVolume;
-    volumeValue.textContent = `${values.audioVolume}%`;
+    syncVolume();
 
     bridge.getThemeOptions((options) => pgPopulateSelect(themeSelect, options, values.theme));
     bridge.getAppearanceModeOptions((options) => pgPopulateSelect(appearanceSelect, options, values.appearanceMode));

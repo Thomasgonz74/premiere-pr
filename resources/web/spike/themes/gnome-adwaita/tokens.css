@@ -738,3 +738,32 @@ canvas.tetris {
 
 /* Ligne critique : l'encre atténuée tombait à 4,46:1 sur la teinte rose. */
 #downloadsList .row[data-health="critical"] { --text-soft: color-mix(in srgb, var(--adw-fg-dim) 90%, var(--adw-fg)); }
+
+/* ---------- Curseur de valeur (Volume) : piste remplie jusqu'à la poignée
+   (components.html, P2 : .sl-track --progress-rail, .sl-fill --accent,
+   poignée ronde --circle-rest) -- au lieu du curseur bleu de Chromium.
+   --value = position, posée par profile_general.js. 16 px de haut comme le
+   curseur natif : la poignée déborde sans décaler la ligne. ---------- */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 16px;
+  background: transparent;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(var(--accent), var(--accent)) 0 0 / var(--value) 100% no-repeat, var(--progress-rail);
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  box-sizing: border-box;
+  width: 18px;
+  height: 18px;
+  margin-top: -6px;
+  border: 1px solid var(--hairline);
+  border-radius: 50%;
+  background: var(--circle-rest);
+  box-shadow: var(--shadow-knob);
+}
+input[type="range"]:hover::-webkit-slider-thumb { background: var(--circle-hover); }

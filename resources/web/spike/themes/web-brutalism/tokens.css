@@ -36,6 +36,11 @@
   --bt-red-ink: #000000;     /* l'encre du pavé rouge : noir (5.3 sur #FF0000 ; le blanc n'y fait que 4.0) */
   --tooltip-bg: #FFFFE1;    /* le jaune d'infobulle des 90s */
   --tooltip-fg: #000000;
+  /* L'infobulle de la charte au lieu du couple fenêtre de style.css :
+     jaune #FFFFE1 à encre noire (20,6:1), dans les trois modes -- « l'infobulle
+     garde son jaune de 90s » la nuit aussi (STYLE.md, mode sombre). */
+  --t2k-tooltip-bg: var(--tooltip-bg);
+  --t2k-tooltip-fg: var(--tooltip-fg);
 
   /* ========================================================
      2. SÉMANTIQUES — alias consommés par resources/web/spike/*.css
@@ -630,4 +635,33 @@ canvas.tetris {
   border-radius: 0;
   background: var(--bt-white);
   box-shadow: none;
+}
+
+/* ---------- Curseur de valeur (Volume) : piste remplie jusqu'à la poignée
+   (components.html, P2 : .sl-track blanche cernée, .sl-fill noir, poignée
+   carrée noire à ombre pleine) -- au lieu du curseur bleu de Chromium.
+   --value = position, posée par profile_general.js. 16 px de haut comme le
+   curseur natif : la poignée déborde sans décaler la ligne. ---------- */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 16px;
+  background: transparent;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 10px;
+  border: 1px solid var(--bt-black);
+  border-radius: 0;
+  background: linear-gradient(var(--bt-black), var(--bt-black)) 0 0 / var(--value) 100% no-repeat, var(--bt-white);
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  box-sizing: border-box;
+  width: 16px;
+  height: 16px;
+  margin-top: -3px;
+  border: none;
+  border-radius: 0;
+  background: var(--bt-black);
+  box-shadow: 2px 2px 0 var(--bt-gray);
 }

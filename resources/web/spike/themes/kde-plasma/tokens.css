@@ -737,3 +737,32 @@ canvas.tetris {
    que les cellules héritent de la couleur de la ligne. Le contraste élevé
    garde sa propre paire. */
 :root:not([data-theme="hc"]) #downloadsList .row.selected { color: #232627; }
+
+/* ---------- Curseur de valeur (Volume) : piste remplie jusqu'à la poignée
+   (components.html, P2 : .sl-track --bz-view, .sl-fill --accent, poignée
+   ronde bordée) -- au lieu du curseur bleu de Chromium. --value = position,
+   posée par profile_general.js. 16 px de haut comme le curseur natif : la
+   poignée déborde sans décaler la ligne. ---------- */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 16px;
+  background: transparent;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 5px;
+  border: 1px solid var(--bz-line);
+  border-radius: 3px;
+  background: linear-gradient(var(--accent), var(--accent)) 0 0 / var(--value) 100% no-repeat, var(--bz-view);
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  box-sizing: border-box;
+  width: 16px;
+  height: 16px;
+  margin-top: -5.5px;
+  border: 1px solid var(--bz-border);
+  border-radius: 50%;
+  background: var(--bz-button);
+}
+input[type="range"]:hover::-webkit-slider-thumb { border-color: var(--accent); }
