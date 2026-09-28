@@ -80,6 +80,24 @@ class _FakeSessionManager(QObject):
     torrent_added = Signal(str)
     torrent_status_batch_updated = Signal(list)
     torrent_removed = Signal(str)
+    ip_blocklist_wait_changed = Signal(bool)
+    waiting_for_ip_blocklist = False
+
+    def is_waiting_for_ip_blocklist(self):
+        return self.waiting_for_ip_blocklist
+
+
+def test_ip_blocklist_wait_is_relayed_and_readable_by_a_late_page():
+    session_manager = _FakeSessionManager()
+    bridge = DownloadsBridge(session_manager, MagicMock())
+    relayed = []
+    bridge.ipBlocklistWaitChanged.connect(relayed.append)
+
+    session_manager.waiting_for_ip_blocklist = True
+    assert bridge.isWaitingForIpBlocklist() is True
+    session_manager.ip_blocklist_wait_changed.emit(False)
+
+    assert relayed == [False]
 
 
 def test_removing_a_torrent_clears_its_tags(tmp_path, monkeypatch):

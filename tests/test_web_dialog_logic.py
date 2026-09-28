@@ -98,6 +98,24 @@ def test_share_banner_only_announces_limits_reached_this_session(view):
     assert result == "[true,false,true,false]"
 
 
+def test_ip_blocklist_notice_follows_the_wait(view):
+    result = run_js(view, """(function () {
+      const cbs = [];
+      window.bridge = { downloads: {
+        ipBlocklistWaitChanged: { connect: (f) => cbs.push(f) },
+        isWaitingForIpBlocklist(cb) { cb(true); },  // the wait began before the page loaded
+      } };
+      const notice = document.getElementById('downloadsIpBlocklistNotice');
+      const seen = [notice.hidden];
+      wireIpBlocklistNotice();
+      seen.push(notice.hidden, getComputedStyle(notice).display !== 'none');
+      cbs.forEach((f) => f(false));  // filter applied, or the load ended
+      seen.push(notice.hidden, getComputedStyle(notice).display);
+      return JSON.stringify(seen);
+    })()""")
+    assert result == '[true,false,true,true,"none"]'
+
+
 def test_removing_tagged_torrents_refreshes_the_tag_filter_once(view):
     run_js(view, """
       window.__tagFetches = 0;

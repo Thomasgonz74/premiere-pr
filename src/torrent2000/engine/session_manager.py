@@ -253,6 +253,9 @@ class SessionManager(QObject):
     # A disk/file I/O error (e.g. an external drive dropping out mid-write)
     # paused this torrent automatically. str info_hash, str error message.
     file_error = Signal(str, str)
+    # True while the session is held paused for the IP blocklist, False once
+    # the filter is applied or the load ended (see _load_ip_blocklist).
+    ip_blocklist_wait_changed = Signal(bool)
 
     def __init__(self, settings: Settings, parent=None) -> None:
         super().__init__(parent)
@@ -336,6 +339,7 @@ class SessionManager(QObject):
             self._session.pause()
             self._paused_for_ip_blocklist = True
             logger.info("IP blocklist: session paused until %r is parsed", path)
+            self.ip_blocklist_wait_changed.emit(True)
         self._ip_blocklist_signals = BlocklistSignals()
         self._ip_blocklist_signals.loaded.connect(self._on_ip_blocklist_loaded)
         QThreadPool.globalInstance().start(BlocklistLoadRunnable(path, self._ip_blocklist_signals))
@@ -351,6 +355,12 @@ class SessionManager(QObject):
             self._paused_for_ip_blocklist = False
             self._session.resume()
             logger.info("IP blocklist: %s, session resumed", "filter applied" if ip_filter is not None else "no filter")
+            self.ip_blocklist_wait_changed.emit(False)
+
+    def is_waiting_for_ip_blocklist(self) -> bool:
+        """For a page that loads after the wait began (the pause happens in
+        __init__, before any bridge is connected)."""
+        return self._paused_for_ip_blocklist
 
     # ------------------------------------------------------------------ tick
 

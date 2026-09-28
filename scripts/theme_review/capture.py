@@ -12,7 +12,7 @@ Why DevTools and not QWidget.grab(): a per-pixel translucent host grabs fully
 black, and the harness needs the real composited pixels of the full window.
 
 Usage (from the repo root):
-  python scripts/theme_review/capture.py [--only=<theme>]... [--out=<dir>] [--resume]
+  python scripts/theme_review/capture.py [--only=<theme>]... [--view=<view>]... [--out=<dir>] [--resume]
   python scripts/theme_review/capture.py [--only=<theme>]... --metrics=<file.json>
 Output: <out>/<theme>/<mode>__<view>.png (+ manifest.json), default out dir
 %TEMP%/torrent2000_theme_review/shots. Parallel runs need their own
@@ -96,11 +96,15 @@ SHOTS = [
     ("rss", "switchToTab('rss');"),
     ("search", "switchToTab('search');"),
     ("profile_top", "switchToTab('profile'); (function(){ const s = document.querySelector('.profile-scroll') || document.getElementById('page-profile'); if (s) s.scrollTop = 0; })();"),
+    ("profile_audio", "switchToTab('profile'); (function(){ const v = document.getElementById('pgVolumeSlider'); if (v) v.scrollIntoView({block: 'center'}); })();"),
     ("profile_bottom", "switchToTab('profile'); (function(){ const s = document.querySelector('.profile-scroll') || document.getElementById('page-profile'); if (s) s.scrollTop = 100000; })();"),
     ("modal", "switchToTab('downloads'); try { alertModal('Titre du dialogue', 'Ceci est un message de dialogue de test : le lien magnet n est pas encore disponible pour ce torrent. Reessayez une fois le torrent analyse.', 'Compris'); } catch (e) { console.error(e); }"),
     ("contextmenu", "try { closeModal(); } catch (e) {} switchToTab('downloads'); try { showContextMenu(360, 220, [{label: 'Mettre en pause', onClick(){}}, {label: 'Assigner une categorie...', onClick(){}}, {separator: true}, {label: 'Retirer', onClick(){}}]); } catch (e) { console.error(e); }"),
     ("tooltip", "try { closeContextMenu(); } catch (e) {} switchToTab('downloads'); try { const h = document.querySelector('#page-downloads .info-hint'); if (h) showInfoTooltip(h); } catch (e) { console.error(e); }"),
 ]
+# --view=<name> (repeatable) limits the capture to those views.
+_views = [a.split("=", 1)[1] for a in sys.argv if a.startswith("--view=")]
+SHOTS = [s for s in SHOTS if not _views or s[0] in _views]
 CLEANUP_JS = "try { hideInfoTooltip(); } catch (e) {} try { closeContextMenu(); } catch (e) {} try { closeModal(); } catch (e) {}"
 
 # In-page objective measurements (--metrics mode): real computed colors of the

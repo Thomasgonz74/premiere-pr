@@ -879,6 +879,20 @@ function wireSuggestionBanner() {
   window.bridge.share.listTorrents((rows) => rows.forEach((row) => notifyShareReached(row, false)));
 }
 
+// ------------------------------------------------------ IP blocklist notice
+// The whole session stays paused until the IP blocklist is parsed (see
+// SessionManager._load_ip_blocklist). That starts at app startup, so the
+// getter gives the state a late-loading page missed; the signal hides the
+// notice once the filter is applied or the load ended.
+
+function wireIpBlocklistNotice() {
+  const show = (waiting) => {
+    document.getElementById("downloadsIpBlocklistNotice").hidden = !waiting;
+  };
+  window.bridge.downloads.ipBlocklistWaitChanged.connect(show);
+  window.bridge.downloads.isWaitingForIpBlocklist(show);
+}
+
 // -------------------------------------------------------------------- wire
 
 function wireDownloadsPage() {
@@ -943,5 +957,6 @@ function wireDownloadsPage() {
 
   downloadsUpdateDetailsPanel(); // starts hidden -- nothing selected yet
   wireSuggestionBanner();
+  wireIpBlocklistNotice();
   setInterval(downloadsRefreshDeadlineCountdown, 1000);
 }

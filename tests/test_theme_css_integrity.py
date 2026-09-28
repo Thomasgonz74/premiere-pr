@@ -12,7 +12,8 @@ browser tokenizes them: comments and strings are blanked first, then
   * braces balance,
   * no line outside comments reads like prose (the tell of an early close);
 and every theme defines, in :root, the three tokens style.css cannot do
-without: --text-primary, --surface-window, --border-control. Finally, the
+without: --text-primary, --surface-window, --border-control; a theme
+opting into its own tooltip sets --t2k-tooltip-bg/-fg together. Finally, the
 themes theme_switcher.js declares without a dark mode are exactly those whose
 tokens.css has no [data-theme="dark"] rule.
 """
@@ -132,3 +133,14 @@ def test_themes_without_dark_mode_match_their_css():
     declared = set(re.findall(r'"([\w-]+)"', re.search(r"THEMES_WITHOUT_DARK_MODE = new Set\(\[(.*?)\]\)", js, re.S).group(1)))
     actual = {p.parent.name for p in THEME_CSS if not has_dark_block(p.read_text(encoding="utf-8"))}
     assert declared == actual, f"declared without dark: {sorted(declared)}, CSS without dark: {sorted(actual)}"
+
+
+@pytest.mark.parametrize("path", THEME_CSS, ids=lambda p: p.parent.name)
+def test_theme_tooltip_opt_in_sets_the_pair_together(path: Path):
+    """style.css falls back per property: a block setting only one of the
+    pair would put the theme's tooltip ink on the window surface, or the
+    reverse -- the unreadable mix style.css's comment warns about."""
+    css, _ = blank_comments_and_strings(path.read_text(encoding="utf-8"))
+    for block in re.findall(r"\{([^{}]*)\}", css):
+        has_bg, has_fg = "--t2k-tooltip-bg" in block, "--t2k-tooltip-fg" in block
+        assert has_bg == has_fg, f"{path.parent.name}: a block sets only one of --t2k-tooltip-bg/-fg"

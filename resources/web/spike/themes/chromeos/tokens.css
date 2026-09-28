@@ -804,3 +804,31 @@ canvas.tetris {
    comme le suppose style.css : la teinte de santé part donc du même fond.
    En sombre, le secondaire tombait sinon à 4,2:1 sur la ligne avertissement. */
 #downloadsList .row[data-health] { --surface-field: var(--surface-window); }
+
+/* ---------- Curseur de valeur (Volume) : piste remplie jusqu'à la poignée
+   (components.html, P2 : .sl-track --progress-track, .sl-fill --accent,
+   poignée ronde --accent) -- au lieu du curseur bleu de Chromium. --value =
+   position, posée par profile_general.js. 16 px de haut comme le curseur
+   natif : la poignée déborde sans décaler la ligne. ---------- */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 16px;
+  background: transparent;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(var(--accent), var(--accent)) 0 0 / var(--value) 100% no-repeat, var(--progress-track);
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  box-sizing: border-box;
+  width: 13px;
+  height: 13px;
+  margin-top: -4.5px;
+  border: none;
+  border-radius: 50%;
+  background: var(--accent);
+}
+input[type="range"]:hover::-webkit-slider-thumb { box-shadow: 0 0 0 8px var(--action-tint-hover); }

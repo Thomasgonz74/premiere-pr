@@ -138,6 +138,9 @@ class DownloadsBridge(QObject):
     recordUpdated = Signal("QVariantMap")
     recordsUpdated = Signal("QVariantList")
     recordRemoved = Signal(str)
+    # The page's "waiting for the IP filter" notice; isWaitingForIpBlocklist
+    # gives the state at page load.
+    ipBlocklistWaitChanged = Signal(bool)
 
     def __init__(
         self,
@@ -164,6 +167,7 @@ class DownloadsBridge(QObject):
             # out of the tag filter) -- re-added later, it starts untagged.
             session_manager.torrent_removed.connect(tag_service.clear)
         session_manager.torrent_removed.connect(self.recordRemoved.emit)
+        session_manager.ip_blocklist_wait_changed.connect(self.ipBlocklistWaitChanged.emit)
 
     def _on_added_or_updated(self, info_hash: str) -> None:
         record = self._session_manager.get_record(info_hash)
@@ -189,6 +193,10 @@ class DownloadsBridge(QObject):
         """Called once by the page on load, so it doesn't have to wait for
         the next status tick to see torrents already present at startup."""
         return [_record_to_dict(r) for r in self._session_manager.all_records()]
+
+    @Slot(result=bool)
+    def isWaitingForIpBlocklist(self) -> bool:
+        return self._session_manager.is_waiting_for_ip_blocklist()
 
     @Slot(str)
     def pauseTorrent(self, info_hash: str) -> None:

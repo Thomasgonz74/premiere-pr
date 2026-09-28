@@ -657,24 +657,20 @@ input[type="checkbox"]:disabled { background: var(--well-disabled); box-shadow: 
 /* ---------- Curseur de valeur (phase 2) : piste en puits, poignée plateau à trait navy ----------
    Remplace le curseur Chromium. La poignée n'accepte pas de pseudo-élément :
    son trait navy 2×10 est le fond, recouvert de face grise par quatre ombres
-   internes (aucun dégradé, interdit §8). */
+   internes (aucun dégradé, interdit §8). Remplissage --be-blue (.sl-fill)
+   jusqu'à --value, la position posée par profile_general.js. */
 input[type="range"] {
   -webkit-appearance: none;
   appearance: none;
   height: 21px;
   margin: 0;
   background: transparent;
-  overflow: hidden; /* découpe l'ombre de remplissage à la boîte du curseur */
 }
 input[type="range"]::-webkit-slider-runnable-track {
   height: 7px;
-  background: var(--be-view);
+  background: linear-gradient(var(--be-blue), var(--be-blue)) 0 0 / var(--value) 100% no-repeat, var(--be-view);
   box-shadow: var(--bevel-in);
 }
-/* Remplissage --be-blue (.sl-fill) : ombre de la poignée tirée vers la gauche,
-   ramenée à la bande de la piste (y 7 à 14 de la poignée) par deux cache-plaques --be-face.
-   ponytail: les cache-plaques supposent une plaque = --be-face (vrai dans les 3 modes du Profil) ;
-   si le curseur sort de la plaque, passer à une variable --val posée en JS. */
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   box-sizing: border-box;
@@ -685,10 +681,7 @@ input[type="range"]::-webkit-slider-thumb {
   background: var(--be-navy);
   box-shadow: var(--bevel-out),
     inset 5px 0 0 var(--be-face), inset -4px 0 0 var(--be-face),
-    inset 0 4px 0 var(--be-face), inset 0 -5px 0 var(--be-face),
-    -100vw calc(-100vw - 14px) 0 100vw var(--be-face),
-    -100vw calc(100vw + 14px) 0 100vw var(--be-face),
-    -100vw 0 0 100vw var(--be-blue);
+    inset 0 4px 0 var(--be-face), inset 0 -5px 0 var(--be-face);
 }
 
 /* ---------- Ascenseurs : gouttiere cernee, pouce biseaute, fleches noires ---------- */

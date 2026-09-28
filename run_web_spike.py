@@ -124,6 +124,7 @@ def main() -> int:
     scheduled_recheck_service = ScheduledRecheckService(session_manager, settings)
     webhook_notification_service = WebhookNotificationService(session_manager, share_limit_service, settings)
     tag_service = TagService()
+    tag_service.drop_orphans()
     clipboard_watcher_service = ClipboardWatcherService(settings)
     torrent_search_source_store = TorrentSearchSourceStore()
     settings_profile_store = SettingsProfileStore()

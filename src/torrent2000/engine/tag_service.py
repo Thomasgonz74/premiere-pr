@@ -10,9 +10,12 @@ status-tick updates, so there's no burst to coalesce.
 """
 
 import json
+import logging
 import os
 
-from torrent2000.config.paths import get_tags_path
+from torrent2000.config.paths import get_resume_dir, get_tags_path
+
+logger = logging.getLogger(__name__)
 
 
 class TagService:
@@ -49,6 +52,21 @@ class TagService:
     def clear(self, info_hash: str) -> None:
         if self._tags.pop(info_hash, None) is not None:
             self._save()
+
+    def drop_orphans(self) -> int:
+        """Called once at startup: drops the tags of torrents that have no
+        resume file any more -- removed before removal purged their tags
+        (see DownloadsBridge). Based on resume/, not on the torrents restored
+        in memory, so one whose restore failed this time (its disk missing)
+        keeps its tags. Returns how many entries were dropped."""
+        known = {path.stem for path in get_resume_dir().glob("*.fastresume")}
+        orphans = [info_hash for info_hash in self._tags if info_hash not in known]
+        for info_hash in orphans:
+            del self._tags[info_hash]
+        if orphans:
+            self._save()
+            logger.info("Tags: dropped %d entries of torrents with no resume file", len(orphans))
+        return len(orphans)
 
     # ------------------------------------------------------------- persistence
 
