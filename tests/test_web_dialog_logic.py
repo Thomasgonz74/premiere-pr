@@ -1,5 +1,6 @@
 """Behaviour of a few web-UI scripts that run without any bridge round trip
-(modal.js, profile_stats.js, piece_map_dialog.js, downloads.js), exercised in
+(modal.js, profile_stats.js, piece_map_dialog.js, downloads.js,
+theme_switcher.js, profile_general.js), exercised in
 the real resources/web/spike/index.html loaded in an offscreen QWebEngineView
 with hand-made bridge stubs (same page-loading convention as
 test_theme_readability.py)."""
@@ -17,7 +18,7 @@ from PySide6.QtTest import QTest
 from PySide6.QtWebEngineWidgets import QWebEngineView
 from PySide6.QtWidgets import QApplication
 
-from theme_probe import TIMEOUT_MS, run_js, wait_until
+from theme_probe import TIMEOUT_MS, run_js, set_mode, set_theme, settle, wait_until
 
 INDEX_HTML = Path(__file__).resolve().parents[1] / "resources" / "web" / "spike" / "index.html"
 
@@ -159,3 +160,64 @@ def test_piece_map_decodes_the_bridge_strings(view):
     })()""")
     # A "0" have char is truthy in JS: decoded wrong, every cell turns green.
     assert result == "ok"
+
+
+def _switch_theme(view, theme_id):
+    """setActiveTheme(), then waits for the new sheet; returns data-theme as
+    it was right after the call, while the old sheet was still painted."""
+    attr = run_js(view, f"""(function () {{
+      window.__t2kThemeLoaded = false;
+      document.getElementById('themeTokensLink').addEventListener('load', () => {{ window.__t2kThemeLoaded = true; }}, {{once: true}});
+      setActiveTheme({theme_id!r});
+      return String(document.documentElement.getAttribute('data-theme'));
+    }})()""")
+    wait_until(view, "window.__t2kThemeLoaded === true")
+    settle(view)
+    return attr, run_js(view, "String(document.documentElement.getAttribute('data-theme'))")
+
+
+def test_dark_on_a_theme_without_one_is_applied_as_light_and_kept(view):
+    set_theme(view, "win11_mica")
+    set_mode(view, "dark")
+    # Leaving a dark palette: "dark" stays on until synthwave's sheet is in
+    # (no flash of win11_mica light), then it shows as light.
+    assert _switch_theme(view, "synthwave") == ("dark", "null")
+    # The saved dark comes back, already on before win11_mica's sheet lands.
+    assert _switch_theme(view, "win11_mica") == ("dark", "dark")
+    assert _switch_theme(view, "tui-dos") == ("dark", "null")
+    assert _switch_theme(view, "synthwave") == ("null", "null")
+    set_mode(view, "dark_hc")
+    assert _switch_theme(view, "art-deco") == ("hc", "hc")
+    set_theme(view, "luna_xp")
+    set_mode(view, "light")
+
+
+def test_appearance_selector_offers_dark_only_where_it_exists(view):
+    result = run_js(view, """(function () {
+      const sig = () => { const cbs = []; return { connect: (f) => cbs.push(f), emit: (...a) => cbs.forEach((f) => f(...a)) }; };
+      const saved = [];
+      const profileGeneral = {
+        themeChanged: sig(),
+        getSettings(cb) { cb({ theme: 'synthwave', appearanceMode: 'dark', audioVolume: 50 }); },
+        getThemeOptions(cb) { cb([]); },
+        getAppearanceModeOptions(cb) { cb([{ id: 'light', label: 'Clair' }, { id: 'dark', label: 'Sombre' }, { id: 'dark_hc', label: 'Contraste' }]); },
+        getLanguageOptions(cb) { cb([]); },
+        getLaunchAtStartupActual(cb) { cb(false); },
+        setAppearanceMode(mode) { saved.push(mode); },
+      };
+      window.bridge = { profileGeneral, dialogs: {} };
+      wireProfileGeneral();
+      const select = document.getElementById('pgAppearanceSelect');
+      const seen = [];
+      const look = () => seen.push(Array.from(select.options, (o) => o.value).join() + ' ' + select.value);
+      look();
+      profileGeneral.themeChanged.emit('win11_mica', 'dark');
+      look();
+      profileGeneral.themeChanged.emit('tui-dos', 'dark');
+      look();
+      select.value = 'dark_hc';
+      select.dispatchEvent(new Event('change'));
+      return JSON.stringify([seen, saved]);
+    })()""")
+    # Showing "light" for a saved dark saves nothing; only the user's change does.
+    assert result == '[["light,dark_hc light","light,dark,dark_hc dark","light,dark_hc light"],["dark_hc"]]'

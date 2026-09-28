@@ -21,18 +21,45 @@ const VALID_THEME_IDS = new Set([
 
 const DEFAULT_THEME_ID = "luna_xp";
 
+// Themes whose tokens.css has no [data-theme="dark"] block: "dark" would show
+// their light palette, so the Profile selector offers only light and high
+// contrast for them, and a saved "dark" is applied as light while one of them
+// is active -- the saved preference itself is kept for the next theme.
+// tests/test_theme_css_integrity.py fails if this drifts from the CSS.
+const THEMES_WITHOUT_DARK_MODE = new Set([
+  "art-deco", "blueprint", "nextstep", "soviet-cosmic", "synthwave", "terminal-phosphor", "tui-dos",
+]);
+
+let _activeThemeId = DEFAULT_THEME_ID;  // the theme asked for
+let _sheetThemeId = DEFAULT_THEME_ID;   // the theme whose sheet is painted
+let _savedAppearanceMode = "light";
+
 function setActiveTheme(themeId) {
   const id = VALID_THEME_IDS.has(themeId) ? themeId : DEFAULT_THEME_ID;
+  _activeThemeId = id;
   const link = document.getElementById("themeTokensLink");
-  link.onload = themeApplied;  // the new sheet resolves asynchronously
+  // The new sheet resolves asynchronously and the old one stays painted
+  // until then (nothing is painted yet on the very first call), so the
+  // mode is settled again once it is in; also syncs the scheme.
+  if (!link.sheet) _sheetThemeId = id;
+  link.onload = () => {
+    _sheetThemeId = id;
+    setAppearanceMode(_savedAppearanceMode);
+  };
   link.href = `themes/${id}/tokens.css`;
-  syncColorScheme();
+  setAppearanceMode(_savedAppearanceMode);
+}
+
+// The mode a theme really shows for a saved appearance mode.
+function appliedAppearanceMode(themeId, mode) {
+  return mode === "dark" && THEMES_WITHOUT_DARK_MODE.has(themeId) ? "light" : mode;
 }
 
 // Native widgets (scrollbars, sliders, the text of form fields) follow
-// `color-scheme`. Several themes keep a light palette in "dark" or "hc" (no
-// dark block, or a white high-contrast mode), so the scheme is read off the
-// resolved ink rather than the mode name: light ink means a dark theme.
+// `color-scheme`. The mode name does not tell: several themes are already
+// nocturnal in "light" (those without a dark block) or keep a white
+// high-contrast mode, so the scheme is read off the resolved ink rather than
+// the mode name: light ink means a dark theme.
 // style.css maps data-scheme="dark" to color-scheme: dark.
 const _schemeProbe = document.createElement("canvas").getContext("2d", { willReadFrequently: true });
 function syncColorScheme() {
@@ -45,25 +72,24 @@ function syncColorScheme() {
 }
 
 // Canvas colours cannot use var(): identicon.js and tetris.js cache the
-// resolved tokens and repaint on this event, fired once a new theme sheet has
-// loaded and after every mode change.
+// resolved tokens and repaint on this event, fired after every mode change --
+// including the one setActiveTheme's onload makes once a new sheet is in.
 function themeApplied() {
   syncColorScheme();
   document.dispatchEvent(new Event("t2k-themechange"));
 }
 
-// First paint: index.html's <head> script already set the saved theme,
-// whose sheet may or may not have loaded by the time this file runs.
-{
-  const link = document.getElementById("themeTokensLink");
-  if (link.sheet) syncColorScheme(); else link.onload = themeApplied;
-}
-
 function setAppearanceMode(mode) {
+  _savedAppearanceMode = mode;
   // tokens.css files define [data-theme="dark"] / [data-theme="hc"]
   // override blocks on top of :root's light-mode base -- "light" itself
   // means no attribute at all.
-  const attr = mode === "dark" ? "dark" : mode === "dark_hc" ? "hc" : null;
+  // "dark" is dropped only when neither the painted sheet nor the one
+  // loading has a dark palette: whichever of the two lacks one shows the
+  // same pixels with the attribute, so a switch never flashes the painted
+  // theme's light palette nor the loaded one's before onload.
+  const applied = appliedAppearanceMode(_activeThemeId, mode) === mode ? mode : appliedAppearanceMode(_sheetThemeId, mode);
+  const attr = applied === "dark" ? "dark" : applied === "dark_hc" ? "hc" : null;
   if (attr) {
     document.documentElement.setAttribute("data-theme", attr);
   } else {

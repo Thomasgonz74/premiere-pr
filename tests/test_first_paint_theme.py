@@ -33,7 +33,10 @@ def app():
     return QApplication.instance() or QApplication([])
 
 
-def test_first_frame_uses_the_saved_theme_and_mode():
+# synthwave has no dark palette: its saved "dark" is shown as light from the
+# first frame on, as theme_switcher.js does for every later switch.
+@pytest.mark.parametrize("theme, expected_attr", [("win11_mica", "dark"), ("synthwave", None)])
+def test_first_frame_uses_the_saved_theme_and_mode(theme, expected_attr):
     # An id missing from the theme list never reaches the page (404 sheet).
     assert _index_url(Settings(theme="not-a-theme", appearance_mode="light")).query() == ""
 
@@ -43,12 +46,12 @@ def test_first_frame_uses_the_saved_theme_and_mode():
     script.setInjectionPoint(QWebEngineScript.InjectionPoint.DocumentCreation)
     script.setWorldId(QWebEngineScript.ScriptWorldId.MainWorld)
     view.page().scripts().insert(script)
-    view.setUrl(_index_url(Settings(theme="synthwave", appearance_mode="dark")))
+    view.setUrl(_index_url(Settings(theme=theme, appearance_mode="dark")))
     view.show()
     try:
         wait_until(view, "!!window.__firstFrame")
         first_frame = json.loads(run_js(view, "JSON.stringify(window.__firstFrame)"))
-        assert first_frame == ["themes/synthwave/tokens.css", True, "dark"]
+        assert first_frame == [f"themes/{theme}/tokens.css", True, expected_attr]
     finally:
         # Same teardown as the theme tests: Chromium's C++ side must be gone
         # before interpreter shutdown.

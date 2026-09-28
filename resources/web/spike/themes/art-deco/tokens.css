@@ -246,9 +246,10 @@
 /* Pas de bloc [data-theme="dark"] : cette charte est "nativement nocturne"
    (STYLE.md, en-tête -- même identité que le foyer de théâtre décrit dans
    la charte source, qui ne définit elle-même aucun bloc dark). Le
-   :root ci-dessus EST déjà la nuit de laque ; activer data-theme="dark"
-   sur cette charte retombe simplement sur les mêmes valeurs, ce qui est
-   le comportement correct plutôt qu'un dédoublement inventé. */
+   :root ci-dessus EST déjà la nuit de laque ; "Sombre" n'est donc pas
+   proposé pour ce thème et un mode sombre enregistré s'y affiche en clair
+   (THEMES_WITHOUT_DARK_MODE dans theme_switcher.js), plutôt qu'un
+   dédoublement inventé. */
 
 /* HC:BEGIN — contraste élevé (phase 4), repris tel quel de la charte
    source (Charte graphique/Art déco (Paris 1925)/tokens.css) : le foyer

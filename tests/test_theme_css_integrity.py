@@ -12,7 +12,9 @@ browser tokenizes them: comments and strings are blanked first, then
   * braces balance,
   * no line outside comments reads like prose (the tell of an early close);
 and every theme defines, in :root, the three tokens style.css cannot do
-without: --text-primary, --surface-window, --border-control.
+without: --text-primary, --surface-window, --border-control. Finally, the
+themes theme_switcher.js declares without a dark mode are exactly those whose
+tokens.css has no [data-theme="dark"] rule.
 """
 from __future__ import annotations
 
@@ -105,3 +107,28 @@ def test_theme_defines_required_root_tokens(path: Path):
     decls = root_declarations(path.read_text(encoding="utf-8"))
     missing = [t for t in REQUIRED_ROOT_TOKENS if not decls.get(t)]
     assert not missing, f"{path.parent.name}: :root lacks {missing}"
+
+
+def has_dark_block(src: str) -> bool:
+    """A rule for [data-theme="dark"] outside comments (a :not() does not count).
+    Blanking keeps every offset, so the blanked-out string is read back from src."""
+    css, _ = blank_comments_and_strings(src)
+    return any(
+        re.match(r"""["']?dark["']?\]""", src[m.end():]) and not css[:m.start()].endswith(":not(")
+        for m in re.finditer(r"\[data-theme=", css)
+    )
+
+
+def test_dark_block_detection():
+    assert has_dark_block(':root { --x: 1; }\n[data-theme="dark"] { --x: 2; }\n')
+    assert not has_dark_block('/* no [data-theme="dark"] block */\n[data-theme="hc"] { --x: 2; }\n')
+    assert not has_dark_block(':root:not([data-theme="dark"]) .row { color: red; }\n')
+
+
+def test_themes_without_dark_mode_match_their_css():
+    # theme_switcher.js hides "Sombre" and applies "dark" as light for these:
+    # a theme gaining or losing its dark block must update that list too.
+    js = (SPIKE / "theme_switcher.js").read_text(encoding="utf-8")
+    declared = set(re.findall(r'"([\w-]+)"', re.search(r"THEMES_WITHOUT_DARK_MODE = new Set\(\[(.*?)\]\)", js, re.S).group(1)))
+    actual = {p.parent.name for p in THEME_CSS if not has_dark_block(p.read_text(encoding="utf-8"))}
+    assert declared == actual, f"declared without dark: {sorted(declared)}, CSS without dark: {sorted(actual)}"

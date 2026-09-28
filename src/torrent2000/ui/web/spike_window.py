@@ -64,7 +64,9 @@ def _index_url(settings: Settings) -> QUrl:
     script applies them before the first paint instead of flashing Luna XP
     light until app.js's getSettings round-trip. Only a known theme id goes
     in -- a stale one would load a 404 sheet and an unthemed page -- so the
-    page falls back to its default like setActiveTheme() does."""
+    page falls back to its default like setActiveTheme() does. The mode is
+    the saved preference as is: the page itself shows "dark" as light on a
+    theme without a dark mode (theme_switcher.js), as every later switch."""
     query = QUrlQuery()
     if settings.theme in {theme_id for _, theme_id in WEB_THEME_LABELS}:
         query.addQueryItem("theme", settings.theme)
