@@ -543,6 +543,13 @@ input[type="checkbox"]:disabled { background: var(--s1-white); background-image:
 .row-name { font-weight: 700; }   /* en 1-bit, l'accent est la graisse -- pas une couleur */
 .row-state { font-weight: 400; }
 .row-rate, .row-eta, .row-category, .row-peers { font-variant-numeric: tabular-nums; }
+/* Interdit #1 : les flèches ↓/↑ des vitesses sortaient bleues, rouges ou
+   orange -- le lissage LCD de Chromium colore leur fût d'un pixel posé
+   entre deux pixels. Le filtre isole la cellule dans son propre calque,
+   lissé en niveaux d'encre, et n'y laisse aucune teinte. */
+.downloads-row > .row-rate,
+.share-row > .row-name + .row-rate,
+.downloads-row-header > [data-i18n-key$="_rate"] { filter: grayscale(1); }
 .downloads-row-header { border-bottom: 1px solid var(--s1-black); }
 
 /* ---------- Rangées supplémentaires listées à part par la grille (.scan-row
@@ -603,9 +610,12 @@ input[type="checkbox"]:disabled { background: var(--s1-white); background-image:
 }
 
 /* ---------- Dialogue : l'alerte de 1984 -- double bordure (2px pleine +
-   filet intérieur blanc/noir à 1px d'écart), PAS de barre de titre dégradée ---------- */
+   filet intérieur blanc/noir à 1px d'écart), PAS de barre de titre dégradée.
+   Le voile n'est pas un gris uni (interdit #1) : derrière l'alerte, le
+   contenu s'estompe en trame (§9), le damier 50 % du bureau -- encre noire
+   en clair, blanche sous l'inversion vidéo (--dither50 s'y re-résout). ---------- */
 .modal-overlay {
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--dither50);
 }
 .modal-box {
   background: var(--s1-white);

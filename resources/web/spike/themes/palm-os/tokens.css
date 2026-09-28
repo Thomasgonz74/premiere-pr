@@ -506,6 +506,14 @@ input[type="checkbox"]:disabled { border-color: var(--pm-disabled); background: 
   cursor: var(--cursor-interactive);
 }
 .row-rate, .row-eta, .row-category, .row-peers { color: var(--text-soft); }
+/* Interdit #1 (toute couleur) : les fleches des vitesses sortaient bleues
+   et rouges -- le lissage LCD de Chromium colore leur fut d'un pixel pose
+   entre deux pixels. Le filtre isole la cellule dans son propre calque,
+   lisse en niveaux d'encre ; grayscale(0) et non (1) : l'encre du cristal
+   est teintee de vert, elle doit rester la sienne. */
+.downloads-row > .row-rate,
+.share-row > .row-name + .row-rate,
+.downloads-row-header > [data-i18n-key$="_rate"] { filter: grayscale(0); }
 .downloads-row-header { border-bottom: 2px solid var(--pm-ink); }
 .scan-path, .scan-size { color: var(--text-primary); }
 

@@ -570,6 +570,14 @@ input[type="checkbox"]:disabled {
   color: var(--text-primary);
 }
 .row-name { font-weight: 700; }
+/* Interdit #1 (pas de bleu, pas de rouge, pas d'orange) : les fleches
+   des vitesses sortaient bleues et orange -- le lissage LCD de Chromium
+   colore leur fut d'un pixel pose entre deux pixels. Le filtre isole la
+   cellule dans son propre calque, lisse en niveaux d'encre, et n'y laisse
+   aucune teinte (l'encre est grise : elle ne bouge pas). */
+.downloads-row > .row-rate,
+.share-row > .row-name + .row-rate,
+.downloads-row-header > [data-i18n-key$="_rate"] { filter: grayscale(1); }
 /* En-tete de colonnes : meme recette que .tbl th de components.html
    (plateau clair biseaute, pas une simple ligne noire). */
 .downloads-row-header {
