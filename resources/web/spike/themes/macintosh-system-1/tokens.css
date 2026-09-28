@@ -66,11 +66,53 @@
   /* Chevron des listes déroulantes : data-URI de couleur fixe, donc redéfini
      dans le bloc sombre (sinon noir sur champ noir, invisible). */
   --s1-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='%23000'/%3E%3C/svg%3E");
-  /* La mosaïque Tetris est peinte en vert Game Boy par tetris.js (couleurs
-     en dur). Interdit #1 : on la seuille en un bit -- cases vides blanches,
-     pièces posées ET pièce active noires (seuil entre #9BBC0F et #8BAC0F). */
-  --s1-tetris-filter: grayscale(1) brightness(.794) contrast(100);
-  --s1-tetris-edge: var(--s1-black);
+  /* Jetons optionnels de style.css, tous en un bit : passés par --s1-* et
+     les trames, le bloc sombre les inverse sans les répéter. */
+  /* Mosaïque (tetris.js) : la jauge de la charte, piste blanche et
+     « remplissage noir » ; grille noire. Interdit #1 : pas de troisième ton,
+     la pièce active est noire comme les posées -- c'est sa chute qui la
+     distingue. */
+  --tetris-empty:   var(--s1-white);
+  --tetris-active:  var(--s1-black);
+  --tetris-settled: var(--s1-black);
+  --tetris-border:  var(--s1-black);
+  /* Identicône : paire fixe blanc/noir ; le motif 5x5 tiré du hash suffit à
+     distinguer les torrents. */
+  --identicon-paper: var(--s1-white);
+  --identicon-ink:   var(--s1-black);
+  /* Badges de risque (components.html §12 : « les badges s'inversent ou se
+     trament ; l'erreur s'inverse ET se souligne ») : l'encre croît avec le
+     niveau -- blanc (b-ok), bouts tramés 50 sur blanc, trame 25 pleine
+     (b-warn, « En attente »), noir à bouts hachurés (--hatch-err), noir
+     plein souligné (b-err). Trame et hachures restent aux bouts, hors du
+     libellé ; celles d'Élevé font 12 px (à 6 px il restait aussi noir que
+     Critique, au libellé blanc plus long). Plaque centrale à 200 % de haut :
+     à 100 %, la hauteur fractionnaire laissait une rangée de tirets gris.
+     Le souligné reste une règle (plus bas). */
+  --risk-safe-bg:       var(--s1-white);
+  --risk-safe-text:     var(--s1-black);
+  --risk-low-bg:        linear-gradient(var(--s1-white), var(--s1-white)) center / calc(100% - 12px) 200% no-repeat, var(--dither50) var(--s1-white);
+  --risk-low-text:      var(--s1-black);
+  --risk-medium-bg:     var(--dither25) var(--s1-white);
+  --risk-medium-text:   var(--s1-black);
+  --risk-high-bg:       linear-gradient(var(--s1-black), var(--s1-black)) center / calc(100% - 24px) 200% no-repeat, var(--hatch-err);
+  --risk-high-text:     var(--s1-white);
+  --risk-critical-bg:   var(--s1-black);
+  --risk-critical-text: var(--s1-white);
+  /* Réputation : les trois badges d'état de la charte -- bon = b-ok (le sûr
+     par défaut de style.css), neutre = b-warn, mauvais = b-err (souligné
+     plus bas). */
+  --reputation-neutral-bg:   var(--risk-medium-bg);
+  --reputation-neutral-text: var(--s1-black);
+  --reputation-bad-bg:       var(--risk-critical-bg);
+  --reputation-bad-text:     var(--risk-critical-text);
+  /* Interdit #10 (emoji) : épingle et cadenas en bitmaps 1-bit, peints dans
+     la couleur du texte. Épingle creuse au repos, pleine une fois épinglée
+     (règle plus bas) ; cadenas seul = privé, cadenas + clé = verrouillé. */
+  --glyph-pin:     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' shape-rendering='crispEdges'%3E%3Cpath fill-rule='evenodd' d='M2 1h8v1H2zM3 2h1v4H3zM8 2h1v4H8zM1 6h10v2H1zM5 8h2v4H5z'/%3E%3C/svg%3E");
+  --glyph-private: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 13 13' shape-rendering='crispEdges'%3E%3Cpath fill-rule='evenodd' d='M4 1h5v1H4zM3 2h1v4H3zM9 2h1v4H9zM2 6h9v6H2zM6 8h1v2H6z'/%3E%3C/svg%3E");
+  --glyph-locked:  url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 13 13' shape-rendering='crispEdges'%3E%3Cpath fill-rule='evenodd' d='M2 2h3v1H2zM1 3h1v3H1zM5 3h1v3H5zM0 6h7v6H0zM3 8h1v2H3zM8 0h5v4H8zM9 1h3v2H9zM10 4h1v8H10zM11 8h2v1H11zM11 10h2v1H11z'/%3E%3C/svg%3E");
+  --pin-idle-opacity: 1;   /* pas de gris : c'est le creux qui dit « au repos » */
   /* Interdit #9 : pas de rouge d'erreur (lu par rss.css) -- l'encre reste
      pleine, l'échec se marque par la graisse et le soulignement. */
   --status-danger-text: var(--text-primary);
@@ -217,11 +259,6 @@
   --tooltip-bg: #000000;
   --tooltip-fg: #FFFFFF;
   --s1-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='%23FFF'/%3E%3C/svg%3E");
-  /* seuil puis négatif : cases vides noires, pièces blanches. Le cadre du
-     canvas subit aussi le filtre : on le pose en encre « blanche » (noire
-     ici) pour que le négatif le rende blanc. */
-  --s1-tetris-filter: grayscale(1) brightness(.794) contrast(100) invert(1);
-  --s1-tetris-edge: var(--s1-white);
   --dither50: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='2' height='2'%3E%3Crect width='1' height='1' fill='%23FFF'/%3E%3Crect x='1' y='1' width='1' height='1' fill='%23FFF'/%3E%3C/svg%3E");
   --dither25: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Crect width='1' height='1' fill='%23FFF'/%3E%3Crect x='2' y='2' width='1' height='1' fill='%23FFF'/%3E%3C/svg%3E");
   /* icônes surchargées pour le fond sombre */
@@ -600,46 +637,41 @@ input[type="checkbox"]:disabled { background: var(--s1-white); background-image:
 ::-webkit-scrollbar-corner { background: var(--s1-white); }
 
 /* ---------- Jauge de progression (cadre autour du canvas Tetris) : piste
-   blanche bordée de noir, angles vifs, sans ombre -- pas le vert Game Boy
-   posé par défaut dans style.css ---------- */
+   blanche bordée de noir, angles vifs, sans ombre ; les couleurs des cases
+   viennent des jetons --tetris-* (§2) ---------- */
 canvas.tetris {
-  border: 1px solid var(--s1-tetris-edge);
+  border: 1px solid var(--s1-black);
   border-radius: 0;
   background: var(--s1-white);
   box-shadow: none;
-  filter: var(--s1-tetris-filter);   /* vert Game Boy -> un bit (v. §1) */
 }
-/* Sur la ligne sélectionnée (inversion vidéo), le plateau s'inverse lui
-   aussi : cadre et pièces reprennent la couleur opposée à la surbrillance.
-   En sombre/HC les deux invert s'annulent (cadre et pièces noirs sur blanc). */
-#downloadsList .row.selected canvas.tetris { filter: var(--s1-tetris-filter) invert(1); }
+/* Sur la ligne sélectionnée (« Selection (liste) : inversion pleine ligne »),
+   le plateau et l'identicône s'inversent aussi : le papier prend la couleur
+   de la rangée, l'encre garde la même silhouette qu'ailleurs. */
+#downloadsList .row.selected canvas.tetris,
+#downloadsList .row.selected canvas.identicon { filter: invert(1); }
+/* Interdit #7 (roundrect hors boutons) : l'arrondi de 2 px de style.css
+   lissait en gris chaque coin où l'encre touche le bord de la tuile. */
+canvas.identicon { border-radius: 0; }
 
-/* ---------- Badges de risque / réputation : les pastels de style.css
-   deviennent les badges de la charte (components.html §12) -- blanc bordé,
-   trame pour l'attention, inversion pour le danger, inversion ET
-   soulignement pour le critique. Aucune teinte (interdits #1 et #9). ---------- */
+/* ---------- Badges de risque / réputation : les badges de la charte
+   (components.html §12) -- blanc bordé, trame pour l'attention, inversion
+   pour le danger, inversion ET soulignement pour l'erreur. Fonds et encres :
+   jetons --risk-* / --reputation-* (§2). Aucune teinte (interdits #1 et #9). ---------- */
 .risk-badge, .reputation-badge {
   border: 1px solid var(--s1-black);
   padding: 0 6px;   /* le filet de 1 px remplace le padding vertical : la rangée garde sa hauteur */
   font-weight: 700;
 }
-.risk-safe, .risk-low, .reputation-good {
-  background: var(--s1-white);
-  color: var(--text-primary);
-}
-/* La trame pleine sous 11 px de texte mangeait les jambages : elle ne
-   couvre que les deux bouts du badge, le libellé reste sur blanc. */
-.risk-medium, .reputation-neutral {
-  background:
-    linear-gradient(var(--s1-white), var(--s1-white)) center / calc(100% - 16px) 100% no-repeat,
-    var(--dither50) var(--s1-white);
-  color: var(--text-primary);
-}
-.risk-high, .risk-critical, .reputation-bad {
-  background: var(--s1-black);
-  color: var(--s1-white);
-}
 .risk-critical, .reputation-bad { text-decoration: underline; }
+
+/* Glyphes de la colonne Nom (jetons --glyph-*, §2) : l'épingle suit l'encre
+   de sa rangée (blanche sur la ligne inversée) au lieu du noir de `button`,
+   et se remplit une fois épinglée. 12 px = sa grille de 12 : un pixel par
+   case (à 0,9em = 11,7 px, crispEdges arrondissait le dessin différemment
+   d'une ligne à l'autre). */
+.row-pin-btn { color: inherit; font-size: 12px; }
+.row-pin-btn.active { --glyph-pin: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' shape-rendering='crispEdges'%3E%3Cpath fill-rule='evenodd' d='M2 1h8v1H2zM3 2h6v4H3zM1 6h10v2H1zM5 8h2v4H5z'/%3E%3C/svg%3E"); }
 
 /* Journal RSS : l'encre est pleine (--status-danger-text), l'échec se
    souligne -- la graisse vient déjà de rss.css. */

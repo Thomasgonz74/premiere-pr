@@ -146,6 +146,53 @@
   --cursor-interactive: var(--cursor-default);
 
   /* ========================================================
+     7 bis. JETONS OPTIONNELS DE L'APPLI (style.css, « Optional
+     theme tokens »). AUCUNE couleur (STYLE.md interdit #1) :
+     seules les nuances du cristal (interdit #6 : « le cristal
+     a ses nuances (creux, douce, ombre-pixel) »), en var() pour
+     se re-resoudre d'elles-memes en sombre et en HC.
+     ======================================================== */
+  /* Risque : plus le danger monte, plus l'encre couvre le badge --
+     verre, creux, ombre-pixel, douce, puis l'inversion du b-err
+     (components.html §12). La forme double l'echelle (regles .risk-*
+     plus bas) : faible = cadre en ligne de points, moyen = cadre de
+     2 px + graisse, eleve = graisse, critique = graisse soulignee.
+     Ratios texte/fond en clair. */
+  --risk-safe-bg: var(--pm-lcd);        --risk-safe-text: var(--pm-ink);      /* 10,0 */
+  --risk-low-bg: var(--pm-lcd-dk);      --risk-low-text: var(--pm-ink);       /* 8,3 */
+  --risk-medium-bg: var(--pm-ghost);    --risk-medium-text: var(--pm-ink);    /* 6,0 */
+  --risk-high-bg: var(--pm-soft);       --risk-high-text: var(--pm-lcd);      /* 4,8 */
+  --risk-critical-bg: var(--pm-ink);    --risk-critical-text: var(--pm-lcd);  /* 10,0 */
+  /* Reputation : bonne = le verre (suit --risk-safe-*), neutre =
+     l'ombre-pixel, mauvaise = l'inversion du b-err. */
+  --reputation-neutral-bg: var(--risk-medium-bg); --reputation-neutral-text: var(--risk-medium-text);
+  --reputation-bad-bg: var(--risk-critical-bg);   --reputation-bad-text: var(--risk-critical-text);
+  /* Identicone : encre sur creux, sans teinte (interdit #6 : « le
+     cristal a ses nuances (creux, douce, ombre-pixel) ») -- le motif 5x5
+     tire du hash distingue toujours les torrents. */
+  --identicon-paper: var(--pm-lcd-dk);
+  --identicon-ink: var(--pm-ink);
+  /* Mosaique = la jauge de la charte (§9 « piste creuse bordee ;
+     remplissage d'encre ») : cases vides creuses, posees d'encre, la
+     piece qui tombe en encre douce (le pixel qui commute), le verre
+     entre les pixels. */
+  --tetris-empty: var(--pm-lcd-dk);
+  --tetris-settled: var(--pm-ink);
+  --tetris-active: var(--pm-soft);
+  --tetris-border: var(--pm-lcd);
+  /* Colonne Nom : interdit #10 « Emoji » -- punaise, cadenas a cle
+     (archive) et cadenas (prive) dessines, peints en currentColor.
+     Non epinglee = l'encre estompee a 70 % par le filtre, a peu pres
+     l'encre douce (4,7 sur le verre ; 2,2 contre la punaise epinglee ;
+     sombre et HC : voir leurs blocs), sans grayscale ni brightness(1.8)
+     qui blanchirait l'encre sombre hors du cristal. */
+  --glyph-pin: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4.5 1h7v2H10v4l2.5 2.5V11h-9V9.5L6 7V3H4.5zM7.25 11h1.5v3L8 15.5 7.25 14z'/%3E%3C/svg%3E");
+  --glyph-locked: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M2.8 7V4.8a2.7 2.7 0 0 1 5.4 0V7' fill='none' stroke='%23000' stroke-width='1.7'/%3E%3Cpath fill-rule='evenodd' d='M.5 7h10v8H.5zM4.7 9.5h1.6v3H4.7z'/%3E%3Ccircle cx='13.25' cy='3.5' r='2' fill='none' stroke='%23000' stroke-width='1.5'/%3E%3Cpath d='M12.5 6h1.5v9.5h-1.5zM14 11.5h1.8v1.4H14zM14 13.8h1.2v1.4H14z'/%3E%3C/svg%3E");
+  --glyph-private: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4.5 7.5V5a3.5 3.5 0 0 1 7 0v2.5' fill='none' stroke='%23000' stroke-width='2'/%3E%3Cpath fill-rule='evenodd' d='M2.5 7.5h11V15h-11zM7 9.5h2V13H7z'/%3E%3C/svg%3E");
+  --pin-idle-opacity: 1;
+  --pin-idle-filter: opacity(.7);
+
+  /* ========================================================
      8. CURSEURS — mêmes 14 actions que toutes les chartes.
      Le stylet devenu pointeur : encre a contour LCD ;
      l'attente est le petit SABLIER d'encre ; « ? » encre.
@@ -212,6 +259,14 @@
   --pm-ghost: #3E5236;             /* l'ombre d'un pixel devient lueur */
   --pm-disabled: #54654C;
   --pm-case: #23271F;              /* le boîtier, de nuit */
+  /* risque faible : le creux de nuit (#0B0F0A) se confond avec le verre
+     éteint (1,1:1) -> mi-chemin verre éteint / lueur, mêlé des deux
+     jetons plutôt qu'un hex hors charte (1,4 / 1,5 de part et d'autre ;
+     encre 9,0). */
+  --risk-low-bg: color-mix(in srgb, var(--pm-lcd), var(--pm-ghost));
+  /* punaise au repos : 55 % suffit sur le verre éteint (4,6) et garde
+     l'écart avec la punaise épinglée (2,7) */
+  --pin-idle-filter: opacity(.55);
   /* flèche du picker en lumière (l'encre #1C241A tombait à 1,1:1 sur le verre éteint) */
   --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='6'%3E%3Cpath d='M0 0h9L4.5 6z' fill='%23BFE3AE'/%3E%3C/svg%3E");
   /* icônes surchargées pour le fond sombre (mêmes tracés, encre -> lumière) */
@@ -242,6 +297,18 @@
   /* notes, statut, zone de dépôt, « ? » : la douce HC (7,5) au lieu du
      mélange générique de style.css (5,8), sous la cible AAA */
   --text-secondary: var(--pm-soft);
+  /* Échelle de risque : la charte vise « AAA (≥ 7:1) sur le texte ».
+     L'ombre-pixel HC ne donne que 4,46 sous l'encre -> moyen passe au
+     creux (encre 8,3) et se distingue de faible par sa forme (cadre de
+     2 px et graisse contre ligne de points) ; élevé garde la douce HC
+     (verre 7,5), distinct du critique (10,0) par le soulignement. */
+  --risk-medium-bg: var(--pm-lcd-dk);
+  /* Mosaïque : la douce HC se confond avec l'encre (1,3:1) -> la pièce
+     qui tombe reprend l'ancienne douce, que la charte donne à l'éteint HC
+     (encre 2,1 ; creux 3,9). */
+  --tetris-active: var(--pm-disabled);
+  /* punaise au repos : 75 % d'encre (5,4 sur le verre, 4,7 en clair) */
+  --pin-idle-filter: opacity(.75);
 }
 /* HC:END */
 
@@ -498,13 +565,15 @@ input[type="checkbox"]:disabled { border-color: var(--pm-disabled); background: 
 ::-webkit-scrollbar-corner { background: transparent; }
 
 /* ---------- Jauge de progression (cadre autour du canvas Tetris) : piste
-   creuse bordee d'encre -- pas le vert Game Boy generique de style.css ---------- */
+   bordee d'encre ; ses cases viennent des --tetris-* (section 7 bis) ---------- */
 canvas.tetris {
   border: 1px solid var(--pm-ink);
   border-radius: 2px;
-  background: var(--pm-lcd-dk);
   box-shadow: none;
 }
+/* Ligne selectionnee (le tap inverse) : le cadre s'inverse aussi, sinon
+   les cases d'encre du bord se fondent dans la ligne d'encre. */
+#downloadsList .row.selected canvas.tetris { border-color: var(--pm-lcd); }
 
 /* LCD sans couleur : la teinte de sante assombrit le verre et noie l'encre
    douce des colonnes chiffrees -- seul le lisere d'etat porte la sante. */
@@ -519,27 +588,36 @@ canvas.tetris {
   border-color: var(--tooltip-bg);
 }
 
-/* ---------- Badges de risque / reputation : les pastels de style.css
-   deviennent les badges de la charte (components.html §12) -- verre borde
-   d'encre a ombre d'un pixel ; la graisse pour l'attention, la graisse
-   soulignee pour le danger, l'inversion pour le critique. Aucune teinte
-   (interdit #1), plus d'ilots clairs en sombre. ---------- */
+/* ---------- Badges de risque / reputation : la forme des badges de la
+   charte (components.html §12) -- borde d'encre a ombre d'un pixel ; la
+   graisse pour l'attention, la graisse soulignee pour le danger. Les
+   fonds/encres viennent des --risk-* / --reputation-* (section 7 bis) ;
+   les badges pleins (douce, encre) perdent l'ombre-pixel comme b-err. ---------- */
 .risk-badge, .reputation-badge {
-  background: var(--pm-lcd);
-  color: var(--pm-ink);
   border: 1px solid var(--pm-ink);
   padding: 0 5px;                  /* le filet d'encre prend 1px : la boite garde la taille de style.css */
   box-shadow: var(--pixel-shadow);
 }
-.risk-medium { font-weight: 700; }
-.risk-high { font-weight: 700; text-decoration: underline; }
+/* Faible / neutre : le cadre en LIGNE DE POINTS, la ligne des champs --
+   leur fond ne s'ecarte que de 1,2:1 de celui de sur / bonne. */
+.risk-low, .reputation-neutral { border-style: dotted; }
+/* Moyen : la graisse Palm, cadre de 2 px (button.is-default, .toast.t-ok
+   de components.html) ; la marge rend le pixel gagne, la ligne ne grandit pas. */
+.risk-medium { font-weight: 700; border-width: 2px; padding: 0 4px; margin: -1px 0; }
+.risk-high { font-weight: 700; box-shadow: none; }
+/* Le soulignement reste au seul critique : « le danger parle en graisse
+   soulignee » (STYLE.md §3) -- et le distingue d'eleve en HC (fonds a 1,3:1). */
 .risk-critical, .reputation-bad {
-  background: var(--pm-ink);
-  color: var(--pm-lcd);
   font-weight: 700;
   text-decoration: underline;
   box-shadow: none;
 }
+/* Punaise (glyphe en currentColor) : l'encre de la ligne, pas celle du
+   <button> generique -- sinon encre sur encre dans la ligne selectionnee. */
+.row-pin-btn { color: inherit; }
+/* Interdit #2 « hover interdit partout » : style.css rend la punaise au
+   repos pleine au survol ; elle reste estompee. */
+.row-pin-btn:hover:not(.active) { filter: var(--pin-idle-filter); }
 
 /* Journal RSS : l'encre est pleine (--status-danger-text), l'echec se
    souligne -- la graisse vient deja de rss.css. */

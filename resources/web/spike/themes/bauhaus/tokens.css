@@ -106,6 +106,48 @@
      pas par ce token de base). */
   --gradient-progress: linear-gradient(var(--bh-blue),var(--bh-blue));
 
+  /* Jetons optionnels (style.css, « Optional theme tokens ») : plus aucun
+     pastel ni vert Game Boy -- la trinité + encre + papier (§10.1).
+     Pastilles = les badges de components.html : prêt = bleu, attente =
+     jaune à encre #1D1D1B, erreur = pavé rouge à texte blanc, compteur =
+     inversion d'encre, étiquette = la plaque blanche cernée d'encre (base
+     .badge). Cinq niveaux : bleu (sûr), plaque cernée (faible), jaune cerné
+     (moyen), rouge (élevé), encre (critique) ; cernes posés plus bas
+     (.risk-low…). Définis une fois : var(--bh-*) re-résout seul en sombre
+     et en HC (sûr en sombre = le bandeau #4C6FD4, seul bleu de nuit qui
+     porte le blanc à 4,6:1 ; le b-ok à texte #5B7FE0 n'y tient que 3,9:1). */
+  --risk-safe-bg:       var(--selection-bg);  --risk-safe-text:     #FFFFFF;
+  --risk-low-bg:        var(--bh-white);      --risk-low-text:      var(--bh-ink);
+  --risk-medium-bg:     var(--bh-yellow);     --risk-medium-text:   #1D1D1B;
+  --risk-high-bg:       var(--bh-red);        --risk-high-text:     #FFFFFF;
+  --risk-critical-bg:   var(--bh-ink);        --risk-critical-text: var(--bh-paper);
+  /* bon = sûr, mauvais = élevé (repli de style.css) ; neutre = étiquette */
+  --reputation-neutral-bg: var(--bh-white);   --reputation-neutral-text: var(--bh-ink);
+
+  /* Identicône : encre sur plaque blanche -- le motif 5x5 du hash distingue
+     les torrents, la couleur ne décore pas. */
+  --identicon-paper: var(--bh-white);
+  --identicon-ink:   var(--bh-ink);
+
+  /* Mosaïque de progression = la jauge (§9) : piste blanche, remplissage
+     BLEU. Pièce en chute = ce qui agit : l'inversion d'encre de l'appui
+     (§2, §7) -- le jaune ne tenait que 1,6:1 sur la piste blanche, l'encre
+     16,9:1 (craie 12,2:1 de nuit). Grille = la piste : une grille d'encre
+     tramait le papier (« le papier reste nu », §10.7). */
+  --tetris-empty:   var(--bh-white);
+  --tetris-active:  var(--bh-ink);
+  --tetris-settled: var(--bh-blue);
+  --tetris-border:  var(--bh-white);
+
+  /* Glyphes de la colonne nom (emoji interdits, §10.10), peints en
+     currentColor : cadenas à corps CARRÉ (plein = verrouillé, évidé =
+     privé) ; épingle à tête carrée, évidée au repos -- pleine et rouge une
+     fois épinglée (voir .row-pin-btn.active plus bas), comme la case
+     cochée « carré rouge plein ». */
+  --glyph-pin: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3 1.5h10v7H3z' fill='none' stroke='%23000' stroke-width='2'/%3E%3Cpath d='M7 9.5h2v6H7z'/%3E%3C/svg%3E");
+  --glyph-locked: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4.5 7.5V5a3.5 3.5 0 0 1 7 0v2.5' fill='none' stroke='%23000' stroke-width='2'/%3E%3Cpath fill-rule='evenodd' d='M2.5 7h11v8.5h-11zM7 9.5V13h2V9.5z'/%3E%3C/svg%3E");
+  --glyph-private: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4.5 7.5V5a3.5 3.5 0 0 1 7 0v2.5' fill='none' stroke='%23000' stroke-width='2'/%3E%3Cpath d='M3.5 8h9v6.5h-9z' fill='none' stroke='%23000' stroke-width='2'/%3E%3C/svg%3E");
+
   /* ========================================================
      4. OMBRES — cet atelier n'en a AUCUNE (interdit §10.2 de STYLE.md) :
      "le cerne porte la fenetre". Tout est "none".
@@ -647,6 +689,20 @@ canvas.tetris {
    (75 % partagé) -- 3,7:1 sur blanc, 3,2:1 sur l'aplat jaune (clair et HC). */
 :root:not([data-theme="dark"]) #downloadsList .row[data-health="critical"]:not(.selected) { background: color-mix(in srgb, var(--status-critical, #E0443E) 20%, var(--surface-field)); }
 :root:not([data-theme="dark"]) #downloadsList .row[data-health="warning"]:not(.selected) { background: color-mix(in srgb, var(--status-warning, #E8B400) 30%, var(--surface-field)); box-shadow: inset 5px 0 0 color-mix(in srgb, var(--status-warning) 60%, var(--text-primary)); }
+
+/* Épingle (--glyph-pin) : épinglée = tête carrée PLEINE et ROUGE ; dans le
+   bandeau bleu elle passe au blanc, comme tout le texte de la sélection. */
+.row-pin-btn.active {
+  --glyph-pin: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M2 .5h12v9H9v6H7v-6H2z'/%3E%3C/svg%3E");
+  color: var(--bh-red);
+}
+#downloadsList .row.selected .row-pin-btn { color: var(--selection-text); }
+
+/* Pastilles sans aplat propre : le cerne fin d'encre de .badge (étiquette,
+   et b-warn « border-color:var(--bh-ink) ») -- la plaque blanche et le jaune
+   se perdaient sur la ligne blanche (1,0 et 1,6:1). Contour intérieur : la
+   pastille garde sa taille. */
+.risk-low, .risk-medium, .reputation-neutral { outline: var(--cerne-fin); outline-offset: -1.5px; }
 
 /* Sombre : le chevron bleu #21409A ne tenait que 1,6:1 sur le champ de nuit ;
    le bleu nocturne du bloc sombre y tient 3,9:1. */

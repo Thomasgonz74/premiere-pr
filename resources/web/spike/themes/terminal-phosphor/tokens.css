@@ -190,6 +190,61 @@
   --icon-forward: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M9.5 5.5L16 12l-6.5 6.5' fill='none' stroke='%2333FF33' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
   --icon-up: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M12 19.5V6M6.5 11.5L12 6l5.5 5.5' fill='none' stroke='%2333FF33' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M5.5 21h13' fill='none' stroke='%2333FF33' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
   --icon-refresh: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M18.9 13a7 7 0 1 1-1.8-6.3' fill='none' stroke='%2333FF33' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M19.4 3.6v4.9h-4.9' fill='none' stroke='%2333FF33' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+
+  /* ========================================================
+     10. JETONS OPTIONNELS de style.css (« Optional theme tokens »).
+     STYLE.md §3 : « Aucune seconde teinte, jamais : pas de rouge
+     d'erreur, pas d'ambre — le danger se ponctue, il ne se colore
+     pas ». Les niveaux se disent donc par INTENSITE de l'encre et
+     par INVERSION VIDEO, jamais par une teinte ; le filet, le gras
+     et le « ! » d'alerte des badges restent dans la composition
+     structurelle plus bas.
+     ======================================================== */
+  /* Risque de l'analyse (page Ajout) : l'intensite monte avec le
+     danger — calme (texte, filet dim), trait (filet --p1), piste
+     allumee sous le trait, inversion sur --p1-soft (STYLE.md §7 :
+     « inversion sur --p1-soft »), inversion pleine au critique. */
+  --risk-safe-bg:       transparent;            /* texte 8.8:1 sur le verre */
+  --risk-safe-text:     var(--p1-soft);
+  --risk-low-bg:        transparent;            /* trait 14.9:1 */
+  --risk-low-text:      var(--p1);
+  --risk-medium-bg:     var(--p1-dark);         /* trait sur piste 9.2:1 */
+  --risk-medium-text:   var(--p1);
+  --risk-high-bg:       var(--p1-soft);         /* encre verre 8.5:1 */
+  --risk-high-text:     var(--selection-text);
+  --risk-critical-bg:   var(--p1);              /* encre verre 14.3:1 */
+  --risk-critical-text: var(--selection-text);
+  /* Reputation des pairs : le triplet de statuts de components.html
+     (.b-ok inverse « pret », .badge calme, .b-err au trait + « ! »). */
+  --reputation-good-bg:      var(--p1);         /* 14.3:1 */
+  --reputation-good-text:    var(--selection-text);
+  --reputation-neutral-bg:   transparent;       /* 8.8:1 */
+  --reputation-neutral-text: var(--p1-soft);
+  --reputation-bad-bg:       transparent;       /* 14.9:1 */
+  --reputation-bad-text:     var(--p1);
+  /* Identicon : une paire fixe, piste et trait (le motif 5x5 tire du
+     hash distingue les torrents ; la teinte du hash serait une
+     seconde couleur). */
+  --identicon-paper: var(--p1-dark);
+  --identicon-ink:   var(--p1);
+  /* Mosaique de progression = la jauge de la charte (STYLE.md §9 :
+     « piste --p1-dark ; remplissage par blocs d'encre » ; « indeterminee
+     = blocs --p1-dim ») : piste vide, blocs poses au trait, piece en
+     chute en blocs dim (pas encore comptee). */
+  --tetris-border:  var(--p1-dark);
+  --tetris-empty:   var(--p1-dark);
+  --tetris-settled: var(--p1);
+  --tetris-active:  var(--p1-dim);
+  /* Glyphes de la colonne Nom (STYLE.md §10 : interdit « Emoji ») :
+     punaise, cadenas + cle (verrouille), cadenas (prive), peints en
+     currentColor. L'epingle au repos retombe au filet (luminosite
+     .47 : #33FF33 -> #187818, ~ --p1-dim) au lieu du gris de
+     style.css, qui virait au blanc pur en schema sombre. */
+  --glyph-pin: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4.5 1h7v1.8h-1.3v4l2.3 2.4v1.6h-9V9.2l2.3-2.4v-4H4.5z'/%3E%3Cpath d='M7.3 10.8h1.4V14l-.7 1.8-.7-1.8z'/%3E%3C/svg%3E");
+  --glyph-locked: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M2.6 7.5V4.8a2.4 2.4 0 0 1 4.8 0v2.7' fill='none' stroke='%23000' stroke-width='1.6'/%3E%3Cpath d='M.5 7h9v8.5h-9z'/%3E%3Ccircle cx='12.8' cy='4' r='1.9' fill='none' stroke='%23000' stroke-width='1.5'/%3E%3Cpath d='M12.8 5.9v9.6M12.8 11.5h2.4M12.8 14h2' fill='none' stroke='%23000' stroke-width='1.5'/%3E%3C/svg%3E");
+  --glyph-private: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4.8 7.5V5a3.2 3.2 0 0 1 6.4 0v2.5' fill='none' stroke='%23000' stroke-width='1.8'/%3E%3Cpath fill-rule='evenodd' d='M2.5 7h11v8.5h-11zM7 9.8v3.4h2V9.8z'/%3E%3C/svg%3E");
+  --pin-idle-opacity: 1;
+  --pin-idle-filter:  brightness(.47);
 }
 
 /* HC:BEGIN — contraste élevé (phase 4). Toutes les intensites remontent
@@ -206,6 +261,20 @@
   --p1-dark: #157815;
   --text-disabled: #157815;
   --text-secondary: var(--p1-soft);
+  /* Risque moyen : la plaque garde la piste normale (#0C3D0C) -- sur la
+     piste HC #157815 le trait tomberait a 4.2:1 (9.2:1 ici). */
+  --risk-medium-bg: #0C3D0C;
+  /* Meme piste normale sous la mosaique et l'identicon : sur #157815 les
+     blocs poses et l'encre tomberaient a 4.2:1 (9.2:1 ici ; piece en
+     chute #23C623 a 5.4:1 sur les cases vides). Le cadre --p1-dim du
+     canvas delimite deja la mosaique sur le verre. */
+  --tetris-border:   #0C3D0C;
+  --tetris-empty:    #0C3D0C;
+  --identicon-paper: #0C3D0C;
+  /* L'epingle au repos monte d'un demi-cran seulement : #33FF33 -> #1C8C1C,
+     4.6:1 sur le verre, et reste a 3.2:1 de l'epingle posee (#33FF33).
+     Au texte (#28C728) elle ne s'en distinguait plus (1.7:1). */
+  --pin-idle-filter: brightness(.55);
 }
 /* HC:END */
 
@@ -382,7 +451,21 @@ button:disabled::before, button:disabled::after { color: var(--text-disabled); }
    commande se re-inverse. */
 .row.selected .row-actions button,
 .row.selected .row-actions button::before,
-.row.selected .row-actions button::after { color: var(--selection-text); }
+.row.selected .row-actions button::after,
+.row.selected .row-pin-btn { color: var(--selection-text); }   /* le glyphe --glyph-pin est peint en currentColor */
+/* Epingle au repos sur la ligne inversee : brightness() n'attenue pas
+   l'encre verre (quasi noire) ; a demi-opacite elle retombe a #1A841A,
+   3.5:1 sur la ligne et 4.0:1 de l'epingle posee (#041004). */
+.row.selected .row-pin-btn:not(.active):not(:hover) { opacity: .5; }
+/* STYLE.md §5 : « Rayons : 0 partout » (style.css arrondit l'identicon a 2 px). */
+.identicon { border-radius: 0; }
+/* L'identicon garde son carre sur la ligne inversee (son encre = le fond
+   --p1) : filet encre verre, comme components.html « tr.is-selected
+   .badge{...border-color:var(--selection-text)} ». Une bordure (marge -1 px :
+   la mise en page ne bouge pas), pas un outline : l'outline se peint
+   PAR-DESSUS le <canvas> et fait passer tout le texte des lignes de
+   l'anticrenelage sous-pixel au gris ; la bordure se peint dessous. */
+.row.selected .identicon { border: 1px solid var(--selection-text); margin: -1px; }
 .row.selected .row-actions button:not(:disabled):hover { background: var(--selection-text); }
 .row.selected .row-actions button:not(:disabled):hover,
 .row.selected .row-actions button:not(:disabled):hover::before,
@@ -480,20 +563,27 @@ input[type="checkbox"]:disabled { border-color: var(--text-disabled); }
 .scan-row { border-bottom: 1px solid var(--p1-dark); }
 .scan-path { color: var(--p1-soft); }
 .scan-size { color: var(--t2k-text-secondary); }   /* --p1-dim = 3.6:1 pour du texte */
-/* Badges de risque : les pastels partages (#DFF3DF...) sont une seconde
-   teinte (interdit n°1). Badges d'intensites de components.html : filet dim
-   au calme, trait plein qui monte, « ! » a l'alerte, inversion au critique. */
+/* Badges de risque et de reputation : fond et encre viennent des jetons
+   --risk-... et --reputation-... (section 10). Ici seulement l'anatomie des
+   badges de components.html : filet dim au calme, filet au trait qui monte,
+   filet fondu dans la plaque inversee ; gras des la piste allumee (moyen),
+   « ! » a l'alerte, encadre « !...! » au critique. */
 .risk-badge, .reputation-badge {
-  background: none;
   border: 1px solid var(--p1-dim);
   border-radius: 0;
-  color: var(--p1-soft);
 }
-.risk-low { border-color: var(--p1-soft); }
-.risk-medium, .risk-high, .reputation-bad { border-color: var(--p1); color: var(--p1); }
-.risk-high, .risk-critical, .reputation-bad { font-weight: 700; }
-.risk-high::before, .risk-critical::before, .reputation-bad::before { content: "! "; }
-.risk-critical { background: var(--p1); border-color: var(--p1); color: var(--selection-text); }
+.risk-low, .risk-medium, .reputation-bad { border-color: var(--p1); }
+.risk-high { border-color: var(--p1-soft); }
+.risk-critical, .reputation-good { border-color: var(--p1); }
+/* HC : le filet dim monte au texte (#23C623) et le calme se confondait avec
+   le faible (1.7:1). Le sur garde le filet normal : 4.2:1 du filet --p1 du
+   faible, comme hors HC, et 3.6:1 sur le verre. */
+[data-theme="hc"] .risk-safe { border-color: #157815; }
+.risk-medium, .risk-high, .risk-critical, .reputation-bad { font-weight: 700; }
+.risk-high::before, .reputation-bad::before { content: "! "; }   /* components.html .badge.b-err::before */
+/* STYLE.md §2 : « l'alerte s'ecrit [! purger !] » -- serre, sans espaces :
+   « ! Critique ! » passait sur deux lignes dans la colonne de 90 px. */
+.risk-critical::before, .risk-critical::after { content: "!"; }
 /* Partage : colonnes chiffrees a la chasse du monospace 14 px (8.4 px/car.) --
    « ↑ 205.1 Ko/s », « 1.12 Go / 1.86 Go », « 1h30 / 2h00 » tenaient sur deux lignes. */
 .share-row { grid-template-columns: 1fr 104px 150px 100px 130px 70px; }
@@ -548,10 +638,10 @@ input[type="checkbox"]:disabled { border-color: var(--text-disabled); }
 ::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
 ::-webkit-scrollbar-corner { background: transparent; }
 
-/* ---------- Progress frame : piste border, no Game Boy green, no radius. ---------- */
+/* ---------- Progress frame : filet, no radius. Les couleurs de la mosaique
+   (et son fond) viennent des jetons --tetris-... (section 10). ---------- */
 canvas.tetris {
   border: 1px solid var(--p1-dim);
   border-radius: 0;
-  background: var(--p1-dark);
   box-shadow: none;
 }

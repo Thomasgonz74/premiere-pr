@@ -183,6 +183,61 @@
   --cursor-interactive: var(--cursor-default);
 
   /* ========================================================
+     7 bis. JETONS OPTIONNELS du CSS partagé (style.css, « Optional
+     theme tokens ») : ni aplats pastel ni verts Game Boy (interdit
+     n°2), ni emoji (interdit n°10). Dérivés des primitives, que le
+     bloc hc retend ; le filtre de l'épingle et le fond « moyen » n'en
+     sont pas, le bloc hc les redéfinit à part.
+     ======================================================== */
+  /* Badges de risque / réputation = les « badges du foyer » de
+     components.html §12 : .b-ok émeraude, .badge neutre (plaque),
+     .b-warn --brass à encre de laque, .b-err plein laque rouge ; « élevé »
+     = l'état Destructif du §7 (texte laque rouge). Les filets restent en
+     structure plus bas (un jeton n'est qu'un fond et une encre).
+     Réputation bonne / mauvaise : suivent sûr / élevé (chaîne de style.css). */
+  --risk-safe-bg:     var(--ad-emerald);    --risk-safe-text:     var(--ad-ivory);
+  --risk-low-bg:      var(--ad-lacquer-hi); --risk-low-text:      var(--ad-ivory);
+  --risk-medium-bg:   var(--brass);         --risk-medium-text:   var(--ad-lacquer);
+  --risk-high-bg:     var(--ad-lacquer-hi); --risk-high-text:     var(--ad-red-text);
+  --risk-critical-bg: var(--ad-red-deep);   --risk-critical-text: var(--ad-ivory);
+  --reputation-neutral-bg: var(--ad-lacquer-hi); --reputation-neutral-text: var(--ad-ivory);
+
+  /* Identicône : laque de fenêtre gravée de laiton (le motif 5x5 du hash
+     distingue les torrents ; la teinte arc-en-ciel sortait de la palette).
+     Médaillon sur les lignes teintées ; sur une ligne ordinaire (1,09:1)
+     seul le motif se voit. */
+  --identicon-paper: var(--ad-lacquer);
+  --identicon-ink:   var(--ad-brass);
+
+  /* Mosaïque de progression = la jauge du §9 : « piste laquée bordée ;
+     remplissage --brass » ; la pièce qui tombe est l'élément courant, en
+     ivoire comme le trait de focus (§7) -- en --ad-brass-hi (1,3:1 sur le
+     laiton) elle se fondait dans les cases posées. */
+  --tetris-empty:   var(--ad-lacquer-hi);
+  --tetris-settled: var(--ad-brass);
+  --tetris-active:  var(--ad-ivory);
+  --tetris-border:  var(--ad-lacquer);
+
+  /* Glyphes de la colonne Nom (peints en currentColor) : géométrie seule
+     (interdit n°6), angles vifs. Épingle = punaise de profil tout en
+     droites (collerette, fût, embase évasée, pointe), traits de 2,5/16 em
+     (~1,9 px à 12 px) : creuse au repos (jour de 2,3 x 4,2 px), pleine une
+     fois épinglée (--glyph-pin-on, posé sur .row-pin-btn.active plus
+     bas : le creux / plein des boutons de fenêtre, §6). La tête losange
+     d'avant s'arrondissait en pastille à cette taille (un ankh).
+     Cadenas à anse droite et entrée losange ; archive verrouillée =
+     cadenas + clé. */
+  --glyph-pin: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M2.5.5h11V3H12v3.5l2.5 2V11H9.25v2.6L8 15.8l-1.25-2.2V11H1.5V8.5l2.5-2V3H2.5zM6.5 3h3v5.5h-3z'/%3E%3C/svg%3E");
+  --glyph-pin-on: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M2.5.5h11V3H12v3.5l2.5 2V11H9.25v2.6L8 15.8l-1.25-2.2V11H1.5V8.5l2.5-2V3H2.5z'/%3E%3C/svg%3E");
+  --glyph-private: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4.5 7V3h7v4H9.9V4.6H6.1V7z'/%3E%3Cpath fill-rule='evenodd' d='M2.5 7h11v8.5h-11zM8 9.2l1.4 1.8L8 12.8 6.6 11z'/%3E%3C/svg%3E");
+  --glyph-locked: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M1.8 8.5V5h5.4v3.5H5.8V6.4H3.2v2.1z'/%3E%3Cpath fill-rule='evenodd' d='M.5 8.5h8v7h-8zM4.5 10.4l1.1 1.4-1.1 1.4-1.1-1.4z'/%3E%3Cpath fill-rule='evenodd' d='M12.5.5l3 3-3 3-3-3zM12.5 2.3l1.2 1.2-1.2 1.2-1.2-1.2z'/%3E%3Cpath d='M11.8 5.8h1.4v9.7h-1.4zM13.2 11.5H15v1.3h-1.8zM13.2 13.6h1.3v1.3h-1.3z'/%3E%3C/svg%3E");
+  /* Épingle au repos : laiton à peine voilé (5,9:1 sur lacquer-hi, 4,3:1
+     sur l'émeraude) plutôt que le gris éclairci pensé pour l'emoji ;
+     épinglée = laiton plein (1,37:1 au-dessus) ET forme pleine. */
+  --pin-idle-opacity: 1;
+  --pin-idle-filter: brightness(.85);
+
+  /* ========================================================
      8. CURSEURS — mêmes 14 actions que toutes les chartes.
      Pointeur de LAITON à contour de laque ; l'attente est la
      MONTRE d'or ; « ? » doré.
@@ -264,6 +319,12 @@
   --ad-brass-dk: #D4AF37;
   --ad-red: #FF8A80;
   --ad-red-text: #FF8A80;
+  /* Jetons hors primitives (7 bis) : « matières décoratives neutralisées ».
+     Badge moyen en laiton plein (8,9:1 ; le bas du dégradé --brass donnait
+     6,4:1) ; épingle au repos presque pleine (7,4:1), l'état se lit à la
+     forme creuse / pleine. */
+  --risk-medium-bg: var(--ad-brass);
+  --pin-idle-filter: brightness(.95);
 }
 /* HC:END */
 
@@ -553,17 +614,19 @@ input[type="checkbox"]:disabled { border-color: var(--ad-disabled); }
 .scan-path { color: var(--text-primary); }
 .scan-size { color: var(--ad-ivory-dim); }
 
-/* Badges de risque / réputation : les aplats pastel codés en dur du CSS
-   partagé sont interdits ici (interdit n°2). Badges du foyer (P2 de la
-   charte) : émeraude = sûr, plaque neutre = faible, laiton = moyen, filet
-   laque rouge = élevé, plein laque rouge = critique (l'irréversible).
-   Filets en box-shadow inset : une bordure changerait la hauteur de ligne. */
-.risk-badge, .reputation-badge { border-radius: 0; }
-.risk-safe, .reputation-good { background: var(--ad-emerald); color: var(--ad-ivory); }
-.risk-low, .reputation-neutral { background: var(--ad-lacquer-hi); color: var(--ad-ivory); box-shadow: inset 0 0 0 1px var(--ad-brass-dk); }
-.risk-medium { background: var(--brass); color: var(--ad-lacquer); }
-.risk-high, .reputation-bad { background: var(--ad-lacquer-hi); color: var(--ad-red-text); font-weight: 700; box-shadow: inset 0 0 0 1px var(--ad-red); }   /* §7 Destructif : filet ET texte laque rouge */
-.risk-critical { background: var(--ad-red-deep); color: var(--ad-ivory); box-shadow: inset 0 0 0 1px var(--ad-red); }
+/* Badges de risque / réputation : fonds et encres en jetons (section
+   7 bis) ; restent ici les filets des badges du foyer, que les plaques
+   sombres (faible, élevé) ne peuvent pas porter en fond. Filets en
+   box-shadow inset : une bordure changerait la hauteur de ligne. */
+.risk-low, .reputation-neutral { box-shadow: inset 0 0 0 1px var(--ad-brass-dk); }
+.risk-high, .reputation-bad { font-weight: 700; box-shadow: inset 0 0 0 1px var(--ad-red); }   /* §7 Destructif : filet ET texte laque rouge */
+.risk-critical { box-shadow: inset 0 0 0 1px var(--ad-red); }
+
+/* Épingle et cadenas : des glyphes, donc du laiton (§3 « Laiton : filets,
+   glyphes ») ; survol = --ad-brass-hi par la règle `button` ci-dessus. */
+.row-pin-btn, .row-glyph-locked, .row-glyph-private { color: var(--ad-brass); }
+.row-pin-btn.active { --glyph-pin: var(--glyph-pin-on); }
+.identicon { border-radius: 0; }   /* interdit n°1 : le papier de laque montrait les coins arrondis du CSS partagé */
 
 /* ---------- Group box (Profil, détails) : filet double, légende laiton -- */
 .profile-group, .details-group {
@@ -639,12 +702,11 @@ input[type="checkbox"]:disabled { border-color: var(--ad-disabled); }
 ::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
 ::-webkit-scrollbar-corner { background: transparent; }
 
-/* ---------- Jauge Tetris : le cadre laqué (les pixels restent au canvas) */
+/* ---------- Jauge Tetris : le cadre laqué (les pixels : --tetris-*) ----- */
 canvas.tetris {
   border: 1px solid var(--ad-brass-dk);
   border-radius: 0;
   box-shadow: var(--double-line);
-  background: var(--ad-lacquer-hi);
 }
 
 /* Colonnes ÉTAT (124 px) et CATÉGORIE (84 px) : en capitales Bodoni espacées,

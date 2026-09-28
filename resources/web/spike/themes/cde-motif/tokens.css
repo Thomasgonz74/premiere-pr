@@ -699,7 +699,10 @@ canvas.tetris {
    (components.html, P2 : .sl-track en puits, .sl-fill --cde-select, poignée
    biseautée) -- au lieu du curseur bleu de Chromium. --value = position,
    posée par profile_general.js. 16 px de haut comme le curseur natif : la
-   poignée déborde sans décaler la ligne. ---------- */
+   poignée déborde sans décaler la ligne. Le remplissage couvre le puits comme
+   .sl-fill (enfant) couvre l'ombre de .sl-track : --well est donc peint en
+   bandes 2 px (ses deux ombres, sombre au-dessus aux coins) SOUS la couche
+   de remplissage, et non en box-shadow, qui passerait par-dessus. ---------- */
 input[type="range"] {
   -webkit-appearance: none;
   appearance: none;
@@ -708,8 +711,13 @@ input[type="range"] {
 }
 input[type="range"]::-webkit-slider-runnable-track {
   height: 14px;
-  box-shadow: var(--well);
-  background: linear-gradient(var(--cde-select), var(--cde-select)) 0 0 / var(--value) 100% no-repeat, var(--cde-view);
+  background:
+    linear-gradient(var(--cde-select), var(--cde-select)) 0 0 / var(--value) 100% no-repeat,
+    linear-gradient(var(--cde-bevel-dark), var(--cde-bevel-dark)) 0 0 / 100% 2px no-repeat,
+    linear-gradient(var(--cde-bevel-dark), var(--cde-bevel-dark)) 0 0 / 2px 100% no-repeat,
+    linear-gradient(var(--cde-bevel-light), var(--cde-bevel-light)) 0 100% / 100% 2px no-repeat,
+    linear-gradient(var(--cde-bevel-light), var(--cde-bevel-light)) 100% 0 / 2px 100% no-repeat,
+    var(--cde-view);
 }
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;

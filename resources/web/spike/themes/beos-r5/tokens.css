@@ -658,7 +658,11 @@ input[type="checkbox"]:disabled { background: var(--well-disabled); box-shadow: 
    Remplace le curseur Chromium. La poignée n'accepte pas de pseudo-élément :
    son trait navy 2×10 est le fond, recouvert de face grise par quatre ombres
    internes (aucun dégradé, interdit §8). Remplissage --be-blue (.sl-fill)
-   jusqu'à --value, la position posée par profile_general.js. */
+   jusqu'à --value, la position posée par profile_general.js. Le remplissage
+   couvre le biseau comme .sl-fill (enfant) couvre l'ombre de .sl-track :
+   --bevel-in est donc peint en bandes 1 px SOUS la couche de remplissage
+   (--sl-lo haut/gauche au-dessus aux coins, --sl-hi bas/droite), et non en
+   box-shadow, qui passerait par-dessus. Mêmes teintes que --bevel-in par mode. */
 input[type="range"] {
   -webkit-appearance: none;
   appearance: none;
@@ -667,10 +671,20 @@ input[type="range"] {
   background: transparent;
 }
 input[type="range"]::-webkit-slider-runnable-track {
+  --sl-lo: #989898;
+  --sl-hi: #F4F4F4;
   height: 7px;
-  background: linear-gradient(var(--be-blue), var(--be-blue)) 0 0 / var(--value) 100% no-repeat, var(--be-view);
-  box-shadow: var(--bevel-in);
+  background:
+    linear-gradient(var(--be-blue), var(--be-blue)) 0 0 / var(--value) 100% no-repeat,
+    linear-gradient(var(--sl-lo), var(--sl-lo)) 0 0 / 100% 1px no-repeat,
+    linear-gradient(var(--sl-lo), var(--sl-lo)) 0 0 / 1px 100% no-repeat,
+    linear-gradient(var(--sl-hi), var(--sl-hi)) 0 100% / 100% 1px no-repeat,
+    linear-gradient(var(--sl-hi), var(--sl-hi)) 100% 0 / 1px 100% no-repeat,
+    var(--be-view);
 }
+[data-theme="dark"] input[type="range"]::-webkit-slider-runnable-track { --sl-lo: #10151C; --sl-hi: #5E6878; }
+/* HC : --bevel-in est un anneau noir 1 px sur les quatre côtés. */
+[data-theme="hc"] input[type="range"]::-webkit-slider-runnable-track { --sl-lo: #000000; --sl-hi: #000000; }
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   box-sizing: border-box;

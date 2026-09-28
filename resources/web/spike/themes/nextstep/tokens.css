@@ -71,6 +71,43 @@
      puits blanc) : un gris au lieu du jaune. */
   --status-warning: var(--nx-dark);
 
+  /* Jetons optionnels de style.css (badges, identicône, mosaïque, glyphes),
+     tous pris dans les six tons -- interdit #1 : « pas de couleur nulle
+     part ». Risque : une rampe de gris du blanc au noir, un cran par niveau
+     (les quatre gris + le noir, §3), encre noire sur les clairs, blanche sur
+     les sombres (badge b-count du spécimen : noir, encre blanche). */
+  --risk-safe-bg:     var(--nx-white);  --risk-safe-text:     var(--nx-ink);
+  --risk-low-bg:      var(--nx-light);  --risk-low-text:      var(--nx-ink);
+  --risk-medium-bg:   var(--nx-face);   --risk-medium-text:   var(--nx-ink);
+  --risk-high-bg:     var(--nx-dark);   --risk-high-text:     var(--nx-white);
+  --risk-critical-bg: var(--nx-black);  --risk-critical-text: var(--nx-white);
+  /* Réputation : bon = sûr, mauvais = élevé (repli de style.css), neutre =
+     le cran « faible », entre les deux. */
+  --reputation-neutral-bg:   var(--risk-low-bg);
+  --reputation-neutral-text: var(--risk-low-text);
+  /* Identicône : un seul couple, encre noire sur le plateau --nx-face
+     (9,14:1) ; pas --nx-light, qui est le fond des lignes en alerte et y
+     effaçait la tuile. Le motif 5x5 tiré du hash distingue les torrents. */
+  --identicon-paper: var(--nx-face);
+  --identicon-ink:   var(--nx-black);
+  /* Mosaïque de progression = la jauge de la charte : puits blanc,
+     remplissage --nx-dark (§9) ; la pièce qui tombe en noir, grille
+     --nx-light comme les filets des listes. */
+  --tetris-empty:   var(--nx-white);
+  --tetris-active:  var(--nx-black);
+  --tetris-settled: var(--nx-dark);
+  --tetris-border:  var(--nx-light);
+  /* Glyphes de la colonne Nom : silhouettes monochromes peintes en
+     currentColor au lieu des emoji (interdit #10). Épingle au repos à
+     60 % (encre noire, rendu mesuré : #656565 sur blanc 5,83:1, #545454
+     sur les lignes --nx-light 5,16:1), épinglée en noir plein. Pas .45 :
+     c'est l'opacité des boutons-icônes DÉSACTIVÉS du spécimen
+     (.btn-icon:disabled), or l'épingle au repos reste un bouton actif. */
+  --glyph-pin: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M5 1h6v1.5l-1.2 1.2v4.1l2.2 2.2v1H4v-1l2.2-2.2V3.7L5 2.5z'/%3E%3Cpath d='M7.25 11h1.5L8 16z'/%3E%3C/svg%3E");
+  --glyph-private: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M5 7.5V5a3 3 0 0 1 6 0v2.5' fill='none' stroke='%23000' stroke-width='1.8'/%3E%3Cpath fill-rule='evenodd' d='M3 7h10v8H3zM7.2 9.5h1.6v3.5H7.2z'/%3E%3C/svg%3E");
+  --glyph-locked: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M2.5 7.5V5a2.25 2.25 0 0 1 4.5 0v2.5' fill='none' stroke='%23000' stroke-width='1.6'/%3E%3Crect x='.5' y='7' width='8.5' height='8'/%3E%3Ccircle cx='12.6' cy='4.6' r='2.2' fill='none' stroke='%23000' stroke-width='1.8'/%3E%3Cpath d='M11.8 7.4h1.6v8.4h-1.6zM13.4 11.8h2v1.4h-2zM13.4 14.2h2v1.4h-2z'/%3E%3C/svg%3E");
+  --pin-idle-opacity: .6;
+
   /* ========================================================
      3. LE RELIEF MONOCHROME — la signature du style.
      Le relief remplace le dégradé : plateaux --nx-face à biseaux de
@@ -237,6 +274,23 @@
   --shadow-window: 0 0 0 2px #000000;
   --shadow-window-inactive: 0 0 0 2px #767676;
   --shadow-menu: 0 0 0 2px #000000;
+  /* Badges : ÉCART ASSUMÉ à la doctrine HC (« les quatre gris se résorbent
+     en blanc pur », STYLE.md). Résorbés, faible/moyen se confondraient avec
+     sûr, et élevé avec critique : cinq niveaux exigent trois gris. Faible et
+     moyen reprennent #D5D5D5/#ABABAB de la charte claire (encre noire 14,3
+     et 9,1:1) ; élevé prend #565656, choisi pour garder l'encre blanche en
+     AAA (7,34:1 ; --nx-dark #6E6E6E n'y donnerait que 5,10:1). */
+  --risk-low-bg: #D5D5D5;
+  --risk-medium-bg: #ABABAB;
+  --risk-high-bg: #565656;
+  /* La pièce qui tombe : le gris propre du bloc HC (--nx-ink-disabled,
+     #767676, 4,5:1 contre blanc et noir), sinon noire comme les cases
+     posées. */
+  --tetris-active: var(--nx-ink-disabled);
+  /* Épingle au repos : encre noire à 70 %, rendu mesuré #4B4B4B sur
+     blanc, 8,72:1 (AAA, cible du bloc) ; blanche à 70 % sur la ligne
+     sélectionnée noire, soit #B3B3B3, 10:1. */
+  --pin-idle-opacity: .7;
   /* icônes en contraste élevé */
   --icon-back: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='16.5,5 7,12 16.5,19 16.5,14.4 21,14.4 21,9.6 16.5,9.6' fill='%23000000'/%3E%3C/svg%3E");
   --icon-forward: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='7.5,5 17,12 7.5,19 7.5,14.4 3,14.4 3,9.6 7.5,9.6' fill='%23000000'/%3E%3C/svg%3E");
@@ -611,27 +665,23 @@ input[type="checkbox"]:disabled {
 }
 ::-webkit-scrollbar-corner { background: var(--nx-face); }
 
-/* ---------- Jauge de progression : cadre du canvas Tetris -- puits blanc
-   cerne noir, pas le vert Game Boy generique de style.css. ---------- */
-canvas.tetris {
-  border: 1px solid var(--nx-black);
-  border-radius: var(--radius);
-  background: var(--nx-white);
-  box-shadow: var(--well);
-}
-
-/* ---------- Fuites de couleur residuelles : les badges de risque (page
-   Ajout) et les fonds de sante (page Telechargements) de style.css sont
-   des hex chromatiques bruts (vert/jaune/rouge). L'interdit #1 est "pas de
-   couleur nulle part" -- on les neutralise ici en niveaux de gris, l'alerte
-   protegeant desormais par le gras/le soulignement (STYLE.md section 3 :
-   "l'alerte protege par le phrase"), jamais par la teinte. ---------- */
-.risk-badge {
-  background: var(--nx-white);
-  box-shadow: var(--well);
-  color: var(--nx-ink);
-}
-.risk-critical, .risk-high { font-weight: 700; text-decoration: underline; }
+/* ---------- Fuites de couleur residuelles : les fonds de sante (page
+   Telechargements) de style.css sont des hex chromatiques bruts
+   (vert/jaune/rouge). L'interdit #1 est "pas de couleur nulle part" -- on
+   les neutralise ici en niveaux de gris. Les badges de risque et de
+   reputation prennent leur rampe de gris des jetons --risk-... et
+   --reputation-... (section 2) ; ici seulement la recette .badge du
+   specimen (puits : sans lui, « Bon », blanc sur la liste blanche, n'est
+   plus qu'un mot), celle de .b-count pour le badge noir (box-shadow:none)
+   et, pour eleve/critique/mauvais, celle de .b-err (gras souligne :
+   "l'alerte protege par le phrase", §3). ---------- */
+.risk-badge, .reputation-badge { box-shadow: var(--well); }
+.risk-critical { box-shadow: none; }
+.risk-critical, .risk-high, .reputation-bad { font-weight: 700; text-decoration: underline; }
+/* L'epingle est un <button> : la regle button ci-dessus lui donne l'encre
+   noire, que le glyphe monochrome (currentColor) garderait sur la ligne
+   selectionnee NOIRE du contraste eleve. Elle suit l'encre de sa ligne. */
+.row-pin-btn { color: inherit; }
 #downloadsList .row[data-health="critical"] { background: var(--nx-light); font-weight: 700; }
 #downloadsList .row[data-health="warning"] { background: var(--nx-light); }
 #downloadsList .row[data-health="healthy"] { background: transparent; }
