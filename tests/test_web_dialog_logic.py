@@ -172,8 +172,7 @@ def test_piece_map_decodes_the_bridge_strings(view):
       const fills = [];
       const ctx = { set fillStyle(v) { this.c = v; }, fillRect() { fills.push(this.c); } };
       _drawPieceMap(ctx, null, 2, { numPieces: 4, have: '1000', availability: '0023' }, null);
-      const expected = [PIECE_MAP_COLOR_HAVE, PIECE_MAP_COLOR_MISSING_NONE,
-                        PIECE_MAP_COLOR_MISSING_RARE, PIECE_MAP_COLOR_MISSING_COMMON];
+      const expected = ['--piece-have', '--piece-none', '--piece-rare', '--piece-common'].map(dataColor);
       return fills.join() === expected.join() ? 'ok' : fills.join();
     })()""")
     # A "0" have char is truthy in JS: decoded wrong, every cell turns green.

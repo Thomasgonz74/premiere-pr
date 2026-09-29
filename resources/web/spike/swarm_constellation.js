@@ -3,10 +3,10 @@
 // peer_list.js/piece_map_dialog.js: polls the bridge on its own 2s timer
 // while the dialog is open, poll stops on close.
 //
-// Encoding (deliberately reuses the app's existing color language --
-// green/blue-gray/orange/red already mean have/common/rare/none in
-// piece_map_dialog.js, and green/orange already mean download/upload in
-// speed_graph_dialog.js):
+// Encoding (deliberately reuses the app's existing color language, the theme
+// tokens of piece_map_dialog.js -- green/blue-gray/orange/red already mean
+// have/common/rare/none in the piece map, and green/orange already mean
+// download/upload in speed_graph_dialog.js):
 //   - distance from center = how close the peer is to a complete copy
 //     (further along = drawn closer in, like it's joining us at the center)
 //   - dot size = that peer's combined download+upload speed
@@ -20,19 +20,11 @@ const SWARM_DOT_MIN_RADIUS = 4;
 const SWARM_DOT_MAX_RADIUS = 14;
 const SWARM_SPEED_SCALE = 12; // sqrt(bytes/s) divisor -- ponytail: tuned by eye, not measured against real swarm speed distributions
 
-const SWARM_COLOR_LOCAL = "#4CAF50";
-const SWARM_COLOR_PEER_SEED = "#4CAF50"; // progress 100%
-const SWARM_COLOR_PEER_HALF = "#5B7C99"; // progress 50-99%
-const SWARM_COLOR_PEER_STARTED = "#E67E22"; // progress 0-50%
-const SWARM_COLOR_PEER_NONE = "#C0392B"; // progress 0%
-const SWARM_COLOR_ORBIT = "rgba(128,128,128,0.15)";
-const SWARM_COLOR_LINK = "rgba(128,128,128,0.2)";
-
 function _swarmPeerColor(progress) {
-  if (progress >= 1) return SWARM_COLOR_PEER_SEED;
-  if (progress >= 0.5) return SWARM_COLOR_PEER_HALF;
-  if (progress > 0) return SWARM_COLOR_PEER_STARTED;
-  return SWARM_COLOR_PEER_NONE;
+  if (progress >= 1) return dataColor("--swarm-seed");
+  if (progress >= 0.5) return dataColor("--swarm-half");
+  if (progress > 0) return dataColor("--swarm-started");
+  return dataColor("--swarm-none");
 }
 
 function _swarmPeerRadius(peer) {
@@ -48,7 +40,7 @@ function _drawSwarmConstellation(ctx, canvas, peers) {
   const cy = h / 2;
   ctx.clearRect(0, 0, w, h);
 
-  ctx.strokeStyle = SWARM_COLOR_ORBIT;
+  ctx.strokeStyle = dataColor("--swarm-orbit");
   ctx.lineWidth = 1;
   for (const frac of [1 / 3, 2 / 3, 1]) {
     ctx.beginPath();
@@ -64,7 +56,7 @@ function _drawSwarmConstellation(ctx, canvas, peers) {
     const x = cx + Math.cos(angle) * radius;
     const y = cy + Math.sin(angle) * radius;
 
-    ctx.strokeStyle = SWARM_COLOR_LINK;
+    ctx.strokeStyle = dataColor("--swarm-link");
     ctx.beginPath();
     ctx.moveTo(cx, cy);
     ctx.lineTo(x, y);
@@ -77,11 +69,11 @@ function _drawSwarmConstellation(ctx, canvas, peers) {
   });
 
   // Local torrent drawn last so it sits above the connecting lines.
-  ctx.fillStyle = SWARM_COLOR_LOCAL;
+  ctx.fillStyle = dataColor("--swarm-local");
   ctx.beginPath();
   ctx.arc(cx, cy, SWARM_LOCAL_RADIUS, 0, Math.PI * 2);
   ctx.fill();
-  ctx.strokeStyle = "#ffffff";
+  ctx.strokeStyle = dataColor("--swarm-ring");
   ctx.lineWidth = 2;
   ctx.stroke();
 }
@@ -93,12 +85,12 @@ function _swarmLegend() {
   row.style.marginTop = "6px";
   row.style.flexWrap = "wrap";
 
-  for (const [color, label] of [
-    [SWARM_COLOR_LOCAL, t("web.swarm_constellation.legend_local")],
-    [SWARM_COLOR_PEER_SEED, t("web.swarm_constellation.legend_seed")],
-    [SWARM_COLOR_PEER_HALF, t("web.swarm_constellation.legend_half")],
-    [SWARM_COLOR_PEER_STARTED, t("web.swarm_constellation.legend_started")],
-    [SWARM_COLOR_PEER_NONE, t("web.swarm_constellation.legend_none")],
+  for (const [token, label] of [
+    ["--swarm-local", t("web.swarm_constellation.legend_local")],
+    ["--swarm-seed", t("web.swarm_constellation.legend_seed")],
+    ["--swarm-half", t("web.swarm_constellation.legend_half")],
+    ["--swarm-started", t("web.swarm_constellation.legend_started")],
+    ["--swarm-none", t("web.swarm_constellation.legend_none")],
   ]) {
     const item = document.createElement("div");
     item.style.display = "flex";
@@ -109,7 +101,7 @@ function _swarmLegend() {
     swatch.style.width = "10px";
     swatch.style.height = "10px";
     swatch.style.borderRadius = "50%";
-    swatch.style.backgroundColor = color;
+    swatch.style.backgroundColor = dataColorVar(token);
     item.appendChild(swatch);
 
     const text = document.createElement("span");
@@ -153,6 +145,10 @@ function openSwarmConstellationDialog(infoHash, torrentName) {
   };
   refresh();
   const timer = setInterval(refresh, 2000);
+  document.addEventListener("t2k-themechange", refresh);
 
-  openModal(t("web.swarm_constellation.dialog_title", { name: torrentName }), contentEl, () => clearInterval(timer));
+  openModal(t("web.swarm_constellation.dialog_title", { name: torrentName }), contentEl, () => {
+    clearInterval(timer);
+    document.removeEventListener("t2k-themechange", refresh);
+  });
 }

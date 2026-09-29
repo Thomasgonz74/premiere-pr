@@ -92,6 +92,15 @@ def app():
     return QApplication.instance() or QApplication([])
 
 
+def _dispose(view):
+    view.close()
+    view.deleteLater()
+    waited = 0
+    while shiboken6.isValid(view) and waited < 10_000:
+        QTest.qWait(50)
+        waited += 50
+
+
 def test_optional_tokens_default_to_the_stock_look_and_repaint_on_switch():
     view = QWebEngineView()
     view.resize(980, 640)
@@ -140,12 +149,7 @@ def test_optional_tokens_default_to_the_stock_look_and_repaint_on_switch():
         assert switched["identicon"] == ["#000000", "#ffffff"]  # hsl(h 0% 0%) / hsl(h 0% 100%)
         assert "#0000ff" in switched["mosaic"]
     finally:
-        view.close()
-        view.deleteLater()
-        waited = 0
-        while shiboken6.isValid(view) and waited < 10_000:
-            QTest.qWait(50)
-            waited += 50
+        _dispose(view)
 
 
 def test_identicons_draw_a_pattern_that_tells_torrents_apart():
@@ -184,9 +188,81 @@ def test_identicons_draw_a_pattern_that_tells_torrents_apart():
         assert with_blocks >= 190, f"only {with_blocks}/200 identicons draw a block"
         assert distinct >= 150, f"only {distinct} distinct patterns for 200 hashes"
     finally:
-        view.close()
-        view.deleteLater()
-        waited = 0
-        while shiboken6.isValid(view) and waited < 10_000:
-            QTest.qWait(50)
-            waited += 50
+        _dispose(view)
+
+
+# The four data dialogs, fed fixed bridge answers. A dialog stays open while a
+# mode switch fires t2k-themechange: it must repaint at once, the piece map
+# every cell although its snapshot has not changed.
+DATA_DIALOGS_JS = r"""
+(function () {
+  const base = window.bridge;
+  const snapshot = {numPieces: 4, have: '1000', availability: '0023'};
+  const files = [{path: 'a/x', size: 3, downloaded: 3}, {path: 'a/y', size: 3, downloaded: 1}, {path: 'b/z', size: 3, downloaded: 0}];
+  const stubs = {
+    speedGraph: {getSpeedHistory: (h, cb) => cb([[5, 1], [2, 4], [7, 3]])},
+    pieceMap: {getPieceAvailability: (h, cb) => cb(snapshot)},
+    swarmConstellation: {getPeers: (h, cb) => cb([1, 0.6, 0.2, 0].map((progress) => ({progress})))},
+    storageSunburst: {getFileBreakdown: (h, cb) => cb(files.map((f) => ({...f}))), getFileProgress: (h, cb) => cb(files.map((f) => f.downloaded))},
+  };
+  window.bridge = new Proxy({}, {get: (_, k) => stubs[k] || base[k]});
+  window.__t2kPaints = new Map();  // canvas -> styles; the dialog paints before it is attached
+  const P = CanvasRenderingContext2D.prototype;
+  for (const [op, style] of [['fill', 'fillStyle'], ['fillRect', 'fillStyle'], ['fillText', 'fillStyle'], ['stroke', 'strokeStyle']]) {
+    const orig = P[op];
+    P[op] = function (...a) {
+      if (!window.__t2kPaints.has(this.canvas)) window.__t2kPaints.set(this.canvas, new Set());
+      window.__t2kPaints.get(this.canvas).add(this[style]);
+      return orig.apply(this, a);
+    };
+  }
+  window.__t2kDialogPaints = (repaint) => {
+    if (repaint) { window.__t2kPaints.clear(); setAppearanceMode('light'); }  // fires t2k-themechange
+    const legend = [...document.querySelectorAll('#modalBox div[style*="width: 10px"]')].map((el) => getComputedStyle(el).backgroundColor);
+    const canvas = [...(window.__t2kPaints.get(document.querySelector('#modalBox canvas')) || [])].sort();
+    return JSON.stringify({canvas, legend});
+  };
+  return true;
+})()
+"""
+DATA_TOKENS_CSS = """:root { --piece-have: #000000; --piece-common: #333333; --piece-rare: #666666; --piece-none: #ffffff;
+  --speed-up: #999999; --speed-grid: #aaaaaa; --speed-axis: #bbbbbb;
+  --swarm-ring: #cccccc; --swarm-orbit: #dddddd; --swarm-link: #eeeeee; --sunburst-stroke: #111111; }"""
+G, B, O, R = "#4caf50", "#5b7c99", "#e67e22", "#c0392b"
+RGB = {G: "rgb(76, 175, 80)", B: "rgb(91, 124, 153)", O: "rgb(230, 126, 34)", R: "rgb(192, 57, 43)",
+       "#000000": "rgb(0, 0, 0)", "#333333": "rgb(51, 51, 51)", "#666666": "rgb(102, 102, 102)", "#ffffff": "rgb(255, 255, 255)", "#999999": "rgb(153, 153, 153)"}
+# dialog: (stock canvas paints, stock legend, themed canvas paints, themed legend)
+DATA_DIALOGS = {
+    "openPieceMapDialog": ({G, B, O, R}, [G, B, O, R], {"#000000", "#333333", "#666666", "#ffffff"}, ["#000000", "#333333", "#666666", "#ffffff"]),
+    "openSpeedGraphDialog": ({G, O, "#808080", "rgba(128, 128, 128, 0.24)"}, [G, O],
+                             {"#000000", "#999999", "#aaaaaa", "#bbbbbb"}, ["#000000", "#999999"]),
+    "openSwarmConstellationDialog": ({G, B, O, R, "#ffffff", "rgba(128, 128, 128, 0.15)", "rgba(128, 128, 128, 0.2)"}, [G, G, B, O, R],
+                                     {"#000000", "#333333", "#666666", "#ffffff", "#cccccc", "#dddddd", "#eeeeee"},
+                                     ["#000000", "#000000", "#333333", "#666666", "#ffffff"]),
+    "openStorageSunburstDialog": ({G, O, R, "rgba(0, 0, 0, 0.15)"}, [G, O, R], {"#000000", "#666666", "#ffffff", "#111111"}, ["#000000", "#666666", "#ffffff"]),
+}
+
+
+def test_data_dialog_tokens_default_to_the_stock_colours_and_repaint_open_dialogs():
+    view = QWebEngineView()
+    view.resize(980, 640)
+    view.setUrl(QUrl.fromLocalFile(str(INDEX_HTML)))
+    view.show()
+    try:
+        wait_until(view, "document.readyState === 'complete' && typeof openPieceMapDialog === 'function'")
+        run_js(view, BRIDGE_STUB_JS)
+        run_js(view, DATA_DIALOGS_JS)
+        for opener, (stock_canvas, stock_legend, themed_canvas, themed_legend) in DATA_DIALOGS.items():
+            run_js(view, f"window.__t2kPaints.clear(); {opener}('h', 'n'); true")
+            opened = json.loads(run_js(view, "window.__t2kDialogPaints(false)"))
+            stock = json.loads(run_js(view, "window.__t2kDialogPaints(true)"))  # a repaint, still unthemed
+            assert set(opened["canvas"]) == set(stock["canvas"]) == stock_canvas, opener
+            assert stock["legend"] == [RGB[c] for c in stock_legend], opener
+
+            run_js(view, f"{{ const s = document.createElement('style'); s.id = 't2k-test-data'; s.textContent = {json.dumps(DATA_TOKENS_CSS)}; document.head.appendChild(s); }} true")
+            themed = json.loads(run_js(view, "window.__t2kDialogPaints(true)"))
+            assert set(themed["canvas"]) == themed_canvas, opener
+            assert themed["legend"] == [RGB[c] for c in themed_legend], opener
+            run_js(view, "document.getElementById('t2k-test-data').remove(); closeModal(); setAppearanceMode('light'); true")
+    finally:
+        _dispose(view)

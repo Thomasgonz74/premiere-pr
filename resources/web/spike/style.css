@@ -83,8 +83,20 @@ body {
      (Game Boy greens #9BBC0F, #8BAC0F, #306230, #0F380F).
    --glyph-{pin,locked,private}: Downloads name-column glyphs, a monochrome
      SVG url() painted in currentColor instead of the emoji.
-   Canvas colours are read by identicon.js/tetris.js and re-read on the
-   t2k-themechange event that theme_switcher.js fires. */
+   --piece-{have,common,rare,none}: piece map cells and legend (#4CAF50,
+     #5B7C99, #E67E22, #C0392B). The three dialogs below follow them unless
+     their own token is set (the stock in brackets names the piece token):
+   --speed-{down,up} (have, rare): speed graph curves and legend;
+     --speed-grid (rgba(128,128,128,.24)) and --speed-axis (#808080) its
+     grid lines and scale labels.
+   --swarm-{local,seed,half,started,none} (have, have, common, rare, none):
+     swarm constellation dots and legend; --swarm-ring (#FFFFFF, round the
+     local node), --swarm-orbit (rgba(128,128,128,.15)), --swarm-link
+     (rgba(128,128,128,.2)).
+   --sunburst-{done,partial,missing} (have, rare, none): storage sunburst
+     arcs and legend; --sunburst-stroke (rgba(0,0,0,.15)) between arcs.
+   Canvas colours are read by identicon.js/tetris.js/piece_map_dialog.js and
+   re-read on the t2k-themechange event that theme_switcher.js fires. */
 
 /* ---------- Title bar ---------- */
 .titlebar {

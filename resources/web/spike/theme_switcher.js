@@ -71,9 +71,10 @@ function syncColorScheme() {
   document.documentElement.dataset.scheme = 0.2126 * r + 0.7152 * g + 0.0722 * b > 128 ? "dark" : "light";
 }
 
-// Canvas colours cannot use var(): identicon.js and tetris.js cache the
-// resolved tokens and repaint on this event, fired after every mode change --
-// including the one setActiveTheme's onload makes once a new sheet is in.
+// Canvas colours cannot use var(): identicon.js, tetris.js and the data
+// dialogs (piece_map_dialog.js) cache the resolved tokens and repaint on this
+// event, fired after every mode change -- including the one setActiveTheme's
+// onload makes once a new sheet is in.
 function themeApplied() {
   syncColorScheme();
   document.dispatchEvent(new Event("t2k-themechange"));

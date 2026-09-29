@@ -6,23 +6,19 @@
 // timer while the dialog is open, poll stops on close.
 //
 // Color = download state, not extension -- reuses the app's existing
-// have/missing color language from piece_map_dialog.js (green/orange/red),
-// applied per file (and, for the folder ring, per folder's aggregate
-// progress) rather than per piece.
+// have/missing color language (theme tokens) of piece_map_dialog.js
+// (green/orange/red), applied per file (and, for the folder ring, per
+// folder's aggregate progress) rather than per piece.
 
 const SUNBURST_CANVAS_SIZE = 320;
 const SUNBURST_HOLE_RADIUS = 40;
 const SUNBURST_RING_WIDTH = 55;
 const SUNBURST_PATH_SEP_RE = /[\\/]/;
-const SUNBURST_COLOR_DONE = "#4CAF50"; // fully downloaded -- same green as piece map's "have"
-const SUNBURST_COLOR_PARTIAL = "#E67E22"; // some bytes downloaded, not all
-const SUNBURST_COLOR_MISSING = "#C0392B"; // nothing downloaded yet
-const SUNBURST_COLOR_STROKE = "rgba(0,0,0,0.15)";
 
 function _sunburstColor(downloaded, size) {
-  if (size === 0 || downloaded >= size) return SUNBURST_COLOR_DONE;
-  if (downloaded > 0) return SUNBURST_COLOR_PARTIAL;
-  return SUNBURST_COLOR_MISSING;
+  if (size === 0 || downloaded >= size) return dataColor("--sunburst-done");
+  if (downloaded > 0) return dataColor("--sunburst-partial");
+  return dataColor("--sunburst-missing");
 }
 
 function _sunburstDrawArc(ctx, cx, cy, r0, r1, a0, a1, color) {
@@ -32,7 +28,7 @@ function _sunburstDrawArc(ctx, cx, cy, r0, r1, a0, a1, color) {
   ctx.closePath();
   ctx.fillStyle = color;
   ctx.fill();
-  ctx.strokeStyle = SUNBURST_COLOR_STROKE;
+  ctx.strokeStyle = dataColor("--sunburst-stroke");
   ctx.lineWidth = 1;
   ctx.stroke();
 }
@@ -109,10 +105,10 @@ function _sunburstLegend() {
   row.style.marginTop = "6px";
   row.style.flexWrap = "wrap";
 
-  for (const [color, label] of [
-    [SUNBURST_COLOR_DONE, t("profile_tab.history_column_downloaded")],
-    [SUNBURST_COLOR_PARTIAL, t("web.storage_sunburst_dialog.legend_partial")],
-    [SUNBURST_COLOR_MISSING, t("web.storage_sunburst_dialog.legend_missing")],
+  for (const [token, label] of [
+    ["--sunburst-done", t("profile_tab.history_column_downloaded")],
+    ["--sunburst-partial", t("web.storage_sunburst_dialog.legend_partial")],
+    ["--sunburst-missing", t("web.storage_sunburst_dialog.legend_missing")],
   ]) {
     const item = document.createElement("div");
     item.style.display = "flex";
@@ -122,7 +118,7 @@ function _sunburstLegend() {
     const swatch = document.createElement("div");
     swatch.style.width = "10px";
     swatch.style.height = "10px";
-    swatch.style.backgroundColor = color;
+    swatch.style.backgroundColor = dataColorVar(token);
     item.appendChild(swatch);
 
     const text = document.createElement("span");
@@ -193,6 +189,10 @@ function openStorageSunburstDialog(infoHash, torrentName) {
   };
   refresh();
   const timer = setInterval(refresh, 2000);
+  document.addEventListener("t2k-themechange", refresh);
 
-  openModal(t("web.storage_sunburst_dialog.dialog_title", { name: torrentName }), contentEl, () => clearInterval(timer));
+  openModal(t("web.storage_sunburst_dialog.dialog_title", { name: torrentName }), contentEl, () => {
+    clearInterval(timer);
+    document.removeEventListener("t2k-themechange", refresh);
+  });
 }

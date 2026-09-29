@@ -1,12 +1,9 @@
 // Per-torrent download/upload speed-over-time graph. Mirrors
-// ui/dialogs/speed_graph_dialog.py + ui/widgets/speed_graph.py: same colors,
-// same 3-line grid, same divide-by-zero floor -- drawn on <canvas> instead
-// of QPainter, polled every second while the modal is open.
+// ui/dialogs/speed_graph_dialog.py + ui/widgets/speed_graph.py: same colors
+// (theme tokens, see piece_map_dialog.js), same 3-line grid, same
+// divide-by-zero floor -- drawn on <canvas> instead of QPainter, polled every
+// second while the modal is open.
 
-const SPEED_GRAPH_COLOR_DOWNLOAD = "#4CAF50";
-const SPEED_GRAPH_COLOR_UPLOAD = "#E67E22";
-const SPEED_GRAPH_COLOR_GRID = "rgba(128,128,128,0.24)";
-const SPEED_GRAPH_COLOR_AXIS_TEXT = "#808080";
 const SPEED_GRAPH_MARGIN_LEFT = 40;
 
 function _drawSpeedGraph(ctx, width, height, history) {
@@ -24,10 +21,10 @@ function _drawSpeedGraph(ctx, width, height, history) {
   }
 
   ctx.font = "10px sans-serif";
-  ctx.fillStyle = SPEED_GRAPH_COLOR_AXIS_TEXT;
+  ctx.fillStyle = dataColor("--speed-axis");
   ctx.textBaseline = "middle";
   ctx.textAlign = "right";
-  ctx.strokeStyle = SPEED_GRAPH_COLOR_GRID;
+  ctx.strokeStyle = dataColor("--speed-grid");
   ctx.lineWidth = 1;
 
   for (const fraction of [0, 0.5, 1.0]) {
@@ -40,8 +37,8 @@ function _drawSpeedGraph(ctx, width, height, history) {
   }
 
   if (history.length >= 2) {
-    _drawSpeedCurve(ctx, history, 0, maxRate, plotLeft, plotWidth, plotTop, plotHeight, SPEED_GRAPH_COLOR_DOWNLOAD);
-    _drawSpeedCurve(ctx, history, 1, maxRate, plotLeft, plotWidth, plotTop, plotHeight, SPEED_GRAPH_COLOR_UPLOAD);
+    _drawSpeedCurve(ctx, history, 0, maxRate, plotLeft, plotWidth, plotTop, plotHeight, dataColor("--speed-down"));
+    _drawSpeedCurve(ctx, history, 1, maxRate, plotLeft, plotWidth, plotTop, plotHeight, dataColor("--speed-up"));
   }
 }
 
@@ -69,9 +66,9 @@ function _speedGraphLegend() {
   row.style.gap = "16px";
   row.style.marginTop = "6px";
 
-  for (const [color, label] of [
-    [SPEED_GRAPH_COLOR_DOWNLOAD, t("downloads_tab.state_downloading")],
-    [SPEED_GRAPH_COLOR_UPLOAD, t("web.speed_graph_dialog.legend_upload")],
+  for (const [token, label] of [
+    ["--speed-down", t("downloads_tab.state_downloading")],
+    ["--speed-up", t("web.speed_graph_dialog.legend_upload")],
   ]) {
     const item = document.createElement("div");
     item.style.display = "flex";
@@ -81,7 +78,7 @@ function _speedGraphLegend() {
     const swatch = document.createElement("div");
     swatch.style.width = "10px";
     swatch.style.height = "10px";
-    swatch.style.backgroundColor = color;
+    swatch.style.backgroundColor = dataColorVar(token);
     item.appendChild(swatch);
 
     const text = document.createElement("span");
@@ -111,6 +108,10 @@ function openSpeedGraphDialog(infoHash, torrentName) {
   };
   refresh();
   const timer = setInterval(refresh, 1000);
+  document.addEventListener("t2k-themechange", refresh);
 
-  openModal(t("web.speed_graph_dialog.dialog_title", { name: torrentName }), contentEl, () => clearInterval(timer));
+  openModal(t("web.speed_graph_dialog.dialog_title", { name: torrentName }), contentEl, () => {
+    clearInterval(timer);
+    document.removeEventListener("t2k-themechange", refresh);
+  });
 }
