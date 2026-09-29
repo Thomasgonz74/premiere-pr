@@ -50,6 +50,65 @@
   --status-ok:       var(--bh-blue);
   --status-warning:  var(--bh-yellow);
   --status-critical: var(--bh-red);
+  /* Erreurs du journal RSS : « Destructif | cerne rouge, texte rouge, carre
+     temoin rouge devant le libelle » (§7) -- #BE1E2D 6,2:1 sur la plaque
+     blanche, #9A1723 8,4:1 en HC (le repli partagé tirait un brun #972D27 et
+     un saumon #FA9184 de nuit). La nuit : voir le bloc sombre. */
+  --status-danger-text: var(--bh-red);
+
+  /* Texte secondaire (notes, lignes d'état, zone de dépôt, « ? ») : le doux
+     de la charte, « encre #1D1D1B, doux #6E6A60 » (§3), comme .hint et la
+     barre d'état de components.html -- et non le mélange partagé #4F4F4D.
+     5,4:1 sur blanc, 4,8:1 sur papier ; #B8B0A0 de nuit 6,8:1 ; HC 7,2:1. */
+  --text-secondary: var(--bh-soft);
+
+  /* Épingle au repos : pas de gris ni de voile (« Toute teinte hors trinite
+     + encre + papier », §10.1) -- c'est la tête ÉVIDÉE qui dit « au repos »,
+     la tête pleine et rouge « épinglée ». grayscale(0) est l'identité : le
+     glyphe garde l'encre exacte dans les trois modes. */
+  --pin-idle-opacity: 1;
+  --pin-idle-filter: grayscale(0);
+
+  /* Les quatre dialogues de données (mosaïque des morceaux, vitesse,
+     constellation, répartition du stockage) : « Progression : piste blanche
+     cernee ; remplissage BLEU ; indeterminee = hachures JAUNES obliques ;
+     echec = ROUGE. La trinite rend compte. » (§9) -- plus de vert, d'orange
+     ni de bleu-gris (« pas de vert, pas d'orange », §10.1). Acquis = BLEU
+     (la jauge remplie), manquant courant = la piste BLANCHE, rare ou en
+     cours = JAUNE (« Signal », §3), aucun pair = ROUGE (l'échec). */
+  --piece-have:   var(--bh-blue);
+  --piece-common: var(--bh-white);
+  --piece-rare:   var(--bh-yellow);
+  --piece-none:   var(--bh-red);
+  /* Vitesse : réception = le BLEU de la jauge ; envoi = le trait d'encre
+     (« le rouge ne navigue pas », §10.5 -- aucune troisième teinte).
+     Grille = le gris des cernes éteints, « cernes et formes passent au gris
+     --bh-disabled » (§9), pour qu'elle ne se confonde pas avec la courbe
+     d'encre ; graduations = le doux (§3), 4,8:1 sur le papier du dialogue. */
+  --speed-down: var(--bh-blue);
+  --speed-up:   var(--bh-ink);
+  --speed-grid: var(--bh-disabled);
+  --speed-axis: var(--bh-soft);
+  /* Constellation : « Le cercle est bleu » (§2) -- le torrent local est un
+     disque BLEU à cerne d'encre de 2 px (« cernes d'encre (--cerne, 2 px) »,
+     §2, au lieu d'un anneau blanc) ; pairs complets BLEU, plus de la moitié
+     ENCRE, début JAUNE, aucune donnée ROUGE. Orbites et liens : gris éteint. */
+  --swarm-local:   var(--bh-blue);
+  --swarm-seed:    var(--bh-blue);
+  --swarm-half:    var(--bh-ink);
+  --swarm-started: var(--bh-yellow);
+  --swarm-none:    var(--bh-red);
+  --swarm-ring:    var(--bh-ink);
+  --swarm-orbit:   var(--bh-disabled);
+  --swarm-link:    var(--bh-disabled);
+  /* Stockage : chaque arc est une jauge -- complet BLEU, partiel JAUNE,
+     vide = la piste BLANCHE ; un fichier pas encore commencé n'est pas un
+     échec (le rouge « porte ... le danger », §2). Les arcs sont des plaques
+     cernées : filet d'encre entre eux (« cernes d'encre », §2). */
+  --sunburst-done:    var(--bh-blue);
+  --sunburst-partial: var(--bh-yellow);
+  --sunburst-missing: var(--bh-white);
+  --sunburst-stroke:  var(--bh-ink);
 
   /* Generic aliases consumed by resources/web/spike/*.css -- every theme
      must define these (this charter has no separate "field/desktop/panel/
@@ -286,6 +345,10 @@
      qu'à 3,8:1 ; un cran plus profond (4,6:1), encore 3,2:1 sur le champ. Les
      traits bleus (survol, chevron, cercle) gardent #5B7FE0. */
   --selection-bg: #4C6FD4;
+  /* Journal RSS de nuit : le rouge de nuit ne tient que 3,1:1 sur le champ
+     #2C2823 ; l'erreur garde la craie (15:1), sa graisse et son carré
+     témoin rouge (§7), qui porte seul la couleur. */
+  --status-danger-text: var(--bh-ink);
   /* Toutes les propriétés "extra" (--border-*, --plastic-*, --gradient-*,
      --frame-shadow, --title-text-shadow, --radius-*…) re-résolvent seules
      via var(--bh-*) -- rien à répéter ici. */
@@ -682,13 +745,103 @@ canvas.tetris {
   box-shadow: none;
 }
 
-/* Surfaces claires : la teinte de santé partagée (6-8 %) disparaissait sur le
-   blanc Bauhaus ; aplats proches des pastels d'origine, encre intacte
-   (20 % du rouge de la trinite, plus dense que l'ancien #E0443E).
-   Liseré « attente » : le jaune de la trinité tiré à 60 % vers l'encre
-   (75 % partagé) -- 3,7:1 sur blanc, 3,2:1 sur l'aplat jaune (clair et HC). */
-:root:not([data-theme="dark"]) #downloadsList .row[data-health="critical"]:not(.selected) { background: color-mix(in srgb, var(--status-critical, #E0443E) 20%, var(--surface-field)); }
-:root:not([data-theme="dark"]) #downloadsList .row[data-health="warning"]:not(.selected) { background: color-mix(in srgb, var(--status-warning, #E8B400) 30%, var(--surface-field)); box-shadow: inset 5px 0 0 color-mix(in srgb, var(--status-warning) 60%, var(--text-primary)); }
+/* Santé des lignes : style.css teinte le fond (6-8 %) et tire le liseré à
+   75 % vers l'encre -- des pastels (#F2F4F9, #FCEEB3, #F2D2D5) et un ocre
+   #9F830B, « pas de pastel » (§10.1) ; « le papier reste nu » (§10.7). Ici
+   la plaque reste blanche et le liseré est une couleur pure de la trinité :
+   prêt = BLEU, erreur = ROUGE, attente = JAUNE cerné d'encre, comme le
+   badge b-warn de components.html (« background:var(--bh-yellow);
+   border-color:var(--bh-ink) ») -- le jaune seul ne tient que 1,6:1 sur
+   blanc, son cerne 16,9:1. Bleu 9,3:1 et rouge 6,2:1 sur blanc ; de nuit
+   3,9:1 et 3,1:1 sur le champ. */
+#downloadsList .row:is([data-health="healthy"], [data-health="warning"], [data-health="critical"]):not(.selected) { background: none; }
+#downloadsList .row[data-health="healthy"]:not(.selected) { box-shadow: inset 5px 0 0 var(--bh-blue); }
+#downloadsList .row[data-health="warning"]:not(.selected) { box-shadow: inset 5px 0 0 var(--bh-yellow), inset 6.5px 0 0 var(--bh-ink); }
+#downloadsList .row[data-health="critical"]:not(.selected) { box-shadow: inset 5px 0 0 var(--bh-red); }
+
+/* Avis « action suggérée » (disque faible, ratio atteint) et « En attente du
+   filtre IP » : style.css les teintait de jaune à 22 % (#FDF3C7, ocre
+   #584B1B de nuit -- « pas de pastel », §10.1). Ici le toast de la charte,
+   « .toast{border:2px solid var(--bh-ink);background:var(--bh-white)} »,
+   qui ne crie pas (« seule l'erreur crie ») ; l'attente est dite par le même
+   liseré JAUNE cerné d'encre que la ligne en attente. */
+.suggestion-banner {
+  background: var(--bh-white);
+  border: var(--cerne);
+  box-shadow: inset 5px 0 0 var(--bh-yellow), inset 6.5px 0 0 var(--bh-ink);
+  padding-left: var(--space-5);
+}
+
+/* Glisser-déposer au-dessus de la zone : style.css l'assombrissait
+   (brightness .97 : un gris #F7F7F7 plein). « Survole | le cerne passe au
+   BLEU — fond inchange » (§7) ; « le papier reste nu » (§10.7). */
+.drop-zone.dragover { filter: none; border-color: var(--bh-blue); }
+
+/* Texte indicatif des champs : components.html, « input::placeholder,
+   textarea::placeholder{color:var(--text-soft)} » -- le doux, au lieu d'un
+   gris #5C5C5A mêlé de transparence. */
+input::placeholder, textarea::placeholder { color: var(--text-soft); }
+
+/* Journal RSS : le carré témoin rouge devant l'erreur (§7, « carre temoin
+   rouge devant le libelle ») -- il porte le rouge dans les trois modes, même
+   la nuit où le libellé passe à la craie. */
+.rss-log-error::before {
+  content: "";
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: var(--space-3);
+  background: var(--bh-red);
+}
+
+/* Curseur de valeur (Profil › Audio) : au lieu du curseur bleu #0075FF /
+   #99C8FF de Chromium. components.html P2 : « poignée CARRÉE rouge »,
+   « .sl-thumb{background:var(--bh-red);border:2px solid var(--bh-ink);
+   border-radius:0} » ; la piste et le remplissage suivent la jauge, « piste
+   blanche cernee ; remplissage BLEU » (§9). --value = position, posée par
+   profile_general.js. */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 16px;
+  background: transparent;
+  cursor: var(--cursor-interactive);
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 8px;
+  border: var(--cerne-fin);
+  border-radius: 0;
+  background: linear-gradient(var(--bh-blue), var(--bh-blue)) 0 0 / var(--value, 0%) 100% no-repeat, var(--bh-white);
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  box-sizing: border-box;
+  width: 16px;
+  height: 16px;
+  margin-top: -4px;
+  border: var(--cerne);
+  border-radius: 0;
+  background: var(--bh-red);
+}
+input[type="range"]:hover::-webkit-slider-thumb { border-color: var(--bh-blue); }
+input[type="range"]:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
+
+/* Pastilles de légende des quatre dialogues de données (des div en style
+   inline, sans classe) : « .swatch .chip{border:1.5px solid var(--bh-ink)} »
+   (components.html) -- sans ce cerne, la piste blanche disparaissait sur le
+   papier du dialogue (1,1:1, et 1:1 en HC). */
+#modalBox div:is([style*="var(--piece-"], [style*="var(--speed-"], [style*="var(--swarm-"], [style*="var(--sunburst-"]) {
+  box-sizing: border-box;
+  border: 1.5px solid var(--bh-ink);
+}
+
+/* Flèches ↓ ↑ des vitesses : le lissage LCD de Chromium colorait leur fût
+   d'un pixel en vert et orange (« pas de vert, pas d'orange », §10.1). Un
+   filtre identité isole ces cellules dans leur propre calque, lissé en
+   niveaux d'encre (même remède que System 1, NeXTSTEP et Palm OS). */
+.downloads-row > .row-rate,
+.share-row > .row-name + .row-rate,
+.downloads-row-header > [data-i18n-key$="_rate"] { filter: grayscale(0); }
 
 /* Épingle (--glyph-pin) : épinglée = tête carrée PLEINE et ROUGE ; dans le
    bandeau bleu elle passe au blanc, comme tout le texte de la sélection. */

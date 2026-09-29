@@ -67,9 +67,6 @@
      noire, l'alerte tient au gras 600 déjà posé par rss.css (§3 : « le
      phrasé protège »). */
   --status-danger-text: var(--nx-ink);
-  /* Bandeau de suggestion (style.css : 22 % de --status-warning dans le
-     puits blanc) : un gris au lieu du jaune. */
-  --status-warning: var(--nx-dark);
 
   /* Jetons optionnels de style.css (badges, identicône, mosaïque, glyphes),
      tous pris dans les six tons -- interdit #1 : « pas de couleur nulle
@@ -97,6 +94,39 @@
   --tetris-active:  var(--nx-black);
   --tetris-settled: var(--nx-dark);
   --tetris-border:  var(--nx-light);
+  /* Dialogues de données, lus comme la jauge (§9 « Progression : puits
+     blanc, remplissage --nx-dark ») : reçu = --nx-dark, manquant = le puits
+     blanc ; morceau rare = le plateau --nx-face ; aucun pair = le noir de
+     l'icône du toast d'erreur (.to-ic{background:var(--nx-black)} : « seule
+     l'erreur crie »). La vitesse, l'essaim et le stockage suivent ces
+     quatre jetons, sauf ceux posés ci-dessous. */
+  --piece-have:   var(--nx-dark);
+  --piece-common: var(--nx-white);
+  --piece-rare:   var(--nx-face);
+  --piece-none:   var(--nx-black);
+  /* Vitesse, sur le plateau --nx-face : les deux courbes aux extrêmes (noir
+     9,1:1, blanc), la grille filetée --nx-dark comme les menus
+     (.menu-item{border-bottom:1px solid var(--nx-dark)}), les graduations
+     à l'encre noire (9,1:1 ; --text-soft n'y ferait que 3,9:1). */
+  --speed-down: var(--nx-black);
+  --speed-up:   var(--nx-white);
+  --speed-grid: var(--nx-dark);
+  --speed-axis: var(--nx-ink);
+  /* Essaim : des disques sans trait posés sur le plateau --nx-face, qui ne
+     peuvent donc pas le reprendre -- rampe de progression, plus foncé =
+     plus complet. Le point local suit « reçu » ; son anneau reste le blanc
+     #FFFFFF par défaut, un ton de la charte. */
+  --swarm-seed:    var(--nx-black);
+  --swarm-half:    var(--nx-dark);
+  --swarm-started: var(--nx-light);
+  --swarm-none:    var(--nx-white);
+  --swarm-orbit:   var(--nx-dark);
+  --swarm-link:    var(--nx-dark);
+  /* Stockage = une jauge : fait --nx-dark, partiel --nx-face (rare),
+     manquant = le puits blanc ; chaque arc cerné du trait noir de 1 px qui
+     borde tout contrôle NeXT. */
+  --sunburst-missing: var(--nx-white);
+  --sunburst-stroke:  var(--nx-black);
   /* Glyphes de la colonne Nom : silhouettes monochromes peintes en
      currentColor au lieu des emoji (interdit #10). Épingle au repos à
      60 % (encre noire, rendu mesuré : #656565 sur blanc 5,83:1, #545454
@@ -287,6 +317,16 @@
      #767676, 4,5:1 contre blanc et noir), sinon noire comme les cases
      posées. */
   --tetris-active: var(--nx-ink-disabled);
+  /* Dialogues de données sur le plateau blanc : --nx-dark devient noir,
+     --nx-face et --nx-light blancs. Reçu reste la jauge (noir) ; ce qui
+     s'y confondrait prend #767676 (--nx-ink-disabled, 4,5:1 contre blanc
+     et noir) ou les gris des badges ci-dessus (#ABABAB, #565656, #D5D5D5). */
+  --piece-rare:    #ABABAB;
+  --piece-none:    #565656;
+  --speed-up:      var(--nx-ink-disabled);
+  --swarm-half:    var(--nx-ink-disabled);
+  --swarm-started: #ABABAB;
+  --swarm-none:    #D5D5D5;
   /* Épingle au repos : encre noire à 70 %, rendu mesuré #4B4B4B sur
      blanc, 8,72:1 (AAA, cible du bloc) ; blanche à 70 % sur la ligne
      sélectionnée noire, soit #B3B3B3, 10:1. */
@@ -570,14 +610,17 @@ input[type="checkbox"]:disabled {
   color: var(--text-primary);
 }
 .row-name { font-weight: 700; }
-/* Interdit #1 (pas de bleu, pas de rouge, pas d'orange) : les fleches
-   des vitesses sortaient bleues et orange -- le lissage LCD de Chromium
-   colore leur fut d'un pixel pose entre deux pixels. Le filtre isole la
-   cellule dans son propre calque, lisse en niveaux d'encre, et n'y laisse
-   aucune teinte (l'encre est grise : elle ne bouge pas). */
-.downloads-row > .row-rate,
-.share-row > .row-name + .row-rate,
-.downloads-row-header > [data-i18n-key$="_rate"] { filter: grayscale(1); }
+/* Interdit #1 (« pas de bleu, pas de rouge, pas d'orange, nulle part ») :
+   le lissage LCD de Chromium frange de bleu et d'orange tout fût d'un
+   pixel -- texte, flèches des vitesses, glyphes ⏸ ✕ ▶ ▲ ▼ ? des boutons.
+   Un filtre sur body rend toute la fenêtre en niveaux d'encre ; les gris
+   du thème (R = G = B) n'en bougent pas. body couvre exactement la fenêtre
+   (style.css : margin 0, height 100 %), donc le bloc conteneur qu'il
+   devient pour les position:fixed (menus, bulles, dialogues) ne les
+   déplace pas. Pas sur html : le repère coloré de
+   test_theme_visual_regression, enfant direct de html, doit garder sa
+   couleur. */
+body { filter: grayscale(1); }
 /* En-tete de colonnes : meme recette que .tbl th de components.html
    (plateau clair biseaute, pas une simple ligne noire). */
 .downloads-row-header {
@@ -704,6 +747,26 @@ input[type="checkbox"]:disabled {
 #downloadsList .row[data-health="critical"]:not(.selected) { box-shadow: inset 5px 0 0 var(--nx-ink); }
 #downloadsList .row[data-health="warning"]:not(.selected) { box-shadow: inset 5px 0 0 var(--nx-dark); }
 #downloadsList .row[data-health="healthy"]:not(.selected) { box-shadow: none; }
+
+/* Bandeaux (disque faible, ratio atteint, attente du filtre IP) : le fond
+   des lignes en alerte, un des quatre gris, au lieu du mélange de
+   style.css (#DFDFDF, #C7C7C7 en contraste élevé) -- recette de .tab-panel
+   (trait noir, fond --nx-light). */
+.suggestion-banner { background: var(--nx-light); }
+/* Zone de dépôt survolée d'un glisser : style.css l'assombrit d'un filtre
+   (#F7F7F7, hors des six tons). Ici le puits reste blanc et s'enfonce
+   (§2 « enfoncement par inversion (--bevel-in) »), le pointillé devenant
+   plein. */
+.drop-zone.dragover { filter: none; box-shadow: var(--bevel-in); }
+/* Texte indicatif : l'encre douce de la charte (.hint, barre d'état :
+   --text-soft, 8,9:1 sur le puits blanc) au lieu de 72 % de l'encre. */
+::placeholder { color: var(--text-soft); }
+/* Pastilles de légende des dialogues de données : cernées de noir comme
+   les pastilles du spécimen (.swatch .chip{border:1px solid
+   var(--nx-black)}) -- sans quoi « rare » (--nx-face) disparaît sur le
+   plateau --nx-face. Sans classe, elles se reconnaissent à leur style en
+   ligne : chaque chaîne de var() s'y termine par --piece-*. */
+.modal-box [style*="var(--piece-"] { border: 1px solid var(--nx-black); }
 
 /* Ascenseurs à GAUCHE, un seul ▲ en haut et un seul ▼ en bas : la page
    Ajout défile désormais, elle suit la règle des listes. :where() laisse

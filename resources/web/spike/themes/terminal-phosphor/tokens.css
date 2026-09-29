@@ -245,6 +245,70 @@
   --glyph-private: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4.8 7.5V5a3.2 3.2 0 0 1 6.4 0v2.5' fill='none' stroke='%23000' stroke-width='1.8'/%3E%3Cpath fill-rule='evenodd' d='M2.5 7h11v8.5h-11zM7 9.8v3.4h2V9.8z'/%3E%3C/svg%3E");
   --pin-idle-opacity: 1;
   --pin-idle-filter:  brightness(.47);
+  /* Les quatre dialogues de donnees (mosaique des morceaux, vitesse,
+     essaim, stockage) peignaient vert, bleu-gris, orange, rouge et un
+     anneau blanc. STYLE.md §10 interdit 1 : « TOUTE seconde teinte : pas
+     de rouge d'erreur, pas d'ambre, pas de blanc pur » ; §3 : « L'encre
+     P1 : trait #33FF33 · texte #23C623 · filet #157815 · piste #0C3D0C ».
+     Un canvas ne peint qu'une couleur pleine : l'etat se dit par
+     l'INTENSITE, comme la jauge (§9 : « piste --p1-dark ; remplissage par
+     blocs d'encre » ; « indeterminee = blocs --p1-dim ») -- trait = acquis,
+     la piste = le fond du graphe (vide, graduations) ; le danger monte vers
+     le trait, il ne s'eteint pas (§3 « le danger se ponctue »).
+     Ecarts entre intensites voisines : 1.7:1 (trait/texte), 2.5:1
+     (texte/filet), 2.2:1 (filet/piste) ; sur la plaque --ph-raise des
+     dialogues : trait 14.0, texte 8.3, filet 3.4, piste 1.5. */
+  /* Mosaique : les cases sont les blocs de la jauge, posees sur sa piste
+     (--tetris-border = --p1-dark, l'interstice de 1 px). Parmi les
+     manquants, l'intensite suit la gravite, comme le lisere de sante :
+     courant a la piste (la jauge vide), rare au filet, introuvable au texte. */
+  --piece-have:   var(--p1);        /* « trait #33FF33 » : le morceau est acquis */
+  --piece-none:   var(--p1-soft);   /* « texte #23C623 » : aucun pair ne l'a -- le manquant le plus grave, 5.4:1 de l'interstice */
+  --piece-rare:   var(--p1-dim);    /* « filet #157815 » : 1 ou 2 pairs, l'alerte s'allume sur la piste */
+  --piece-common: var(--p1-dark);   /* « piste #0C3D0C » : manquant, sans souci -- la jauge vide */
+  /* Vitesse : reception au trait, envoi au filet (4.2:1 entre les deux,
+     3.4:1 sur la plaque) ; grille = « --p1-dark : pistes, graduations » ;
+     graduations ecrites au « texte #23C623 » (8.3:1 sur --ph-raise). */
+  --speed-down: var(--p1);
+  --speed-up:   var(--p1-dim);
+  --speed-grid: var(--p1-dark);
+  --speed-axis: var(--p1-soft);
+  /* Essaim : orbites et liens sont des graduations (« --p1-dark : pistes,
+     graduations ») ; un pair a 0 % est pose sur l'orbite exterieure, au
+     bout de son lien : a la piste il s'y fondait (1:1). Il reste trois
+     intensites allumees pour quatre etats : trait (copie complete et
+     torrent local), texte (en partie : 50-99 % comme 1-49 %), filet
+     (aucune donnee, 2.2:1 de l'orbite, 3.4:1 de la plaque). La distance
+     au centre departage les deux « en partie » (legende : « Distance =
+     proximite d'une copie complete »). L'anneau du point local n'est plus
+     blanc (« pas de blanc pur ») : c'est un filet (« --p1-dim : filets,
+     bordures »), 4.2:1 du point -- il distingue le torrent local des pairs
+     complets, peints du meme trait. */
+  --swarm-local:   var(--p1);
+  --swarm-seed:    var(--p1);
+  --swarm-half:    var(--p1-soft);
+  --swarm-started: var(--p1-soft);
+  --swarm-none:    var(--p1-dim);
+  --swarm-ring:    var(--p1-dim);
+  --swarm-orbit:   var(--p1-dark);
+  --swarm-link:    var(--p1-dark);
+  /* Stockage : complet au trait, partiel au filet, rien a la piste ; entre
+     les arcs, le verre (§9 : blocs « 8 px pleins / 3 px vides », le vide
+     est le verre) au lieu d'un voile noir translucide. */
+  --sunburst-done:    var(--p1);
+  --sunburst-partial: var(--p1-dim);
+  --sunburst-missing: var(--p1-dark);
+  --sunburst-stroke:  var(--ph-black);
+  /* Sante des lignes de Telechargements (liseré de 5 px de style.css,
+     jetons documentes --status-*) : §3 « le danger se ponctue, il ne se
+     colore pas » -- critique au trait (14.9:1 sur le verre), alerte au
+     filet (3.6:1), sain a la piste (1.6:1, le calme ; en HC 8.8 et 3.6:1,
+     voir le bloc HC). Les regles plus bas
+     les peignent pleins (style.css les melangeait au texte) et retirent la
+     teinte de fond de la ligne. */
+  --status-critical: var(--p1);
+  --status-warning:  var(--p1-dim);
+  --status-ok:       var(--p1-dark);
 }
 
 /* HC:BEGIN — contraste élevé (phase 4). Toutes les intensites remontent
@@ -275,6 +339,20 @@
      4.6:1 sur le verre, et reste a 3.2:1 de l'epingle posee (#33FF33).
      Au texte (#28C728) elle ne s'en distinguait plus (1.7:1). */
   --pin-idle-filter: brightness(.55);
+  /* Vitesse, stockage, liseres de sante et anneau local suivent le cran de
+     la charte sans surcharge (trois niveaux : trait / texte 1.7:1 / filet
+     HC 2.5:1 ; le lisere sain passe a 3.6:1 sur le verre, au niveau des
+     separateurs de ligne HC). La mosaique et l'essaim codent quatre niveaux
+     (etats + piste) et le HC n'a que trois intensites allumees : un cran
+     de plus confondrait rare et introuvable (#23C623), aucune donnee et
+     « en partie », les orbites et les pairs a 0 %. Ils gardent les valeurs
+     normales, comme la mosaique de progression (--tetris-* plus haut) sur
+     laquelle la mosaique des morceaux est posee. */
+  --piece-rare:       #157815;
+  --piece-common:     #0C3D0C;
+  --swarm-none:       #157815;
+  --swarm-orbit:      #0C3D0C;
+  --swarm-link:       #0C3D0C;
 }
 /* HC:END */
 
@@ -475,7 +553,8 @@ button:disabled::before, button:disabled::after { color: var(--text-disabled); }
    §7's own per-control table grants the halo here even though §2's prose
    names only 4 posts -- components.html's input:focus rule agrees). Square,
    never rounded -- radius tokens already resolve to 0 everywhere. ---------- */
-input[type="text"], input[type="number"], select, textarea, .search-input {
+input[type="text"], input[type="number"], input[type="password"], input[type="datetime-local"],
+select, textarea, .search-input {
   background: none;
   border: none;
   border-bottom: 1px solid var(--p1-dim);
@@ -486,7 +565,7 @@ input[type="text"], input[type="number"], select, textarea, .search-input {
   font: 400 14px var(--font-ui);
   caret-color: var(--p1);
 }
-.form-grid input[type="text"], .form-grid input[type="number"] {
+.form-grid input[type="text"], .form-grid input[type="number"], .form-grid input[type="password"] {
   background: none;
   border: none;
   border-bottom: 1px solid var(--p1-dim);
@@ -502,10 +581,11 @@ textarea {
   border: 1px solid var(--p1-dark);
   border-bottom: 1px solid var(--p1-dim);
 }
-input[type="text"]:not(:disabled):hover, textarea:not(:disabled):hover, select:not(:disabled):hover {
+input:is([type="text"], [type="password"], [type="datetime-local"]):not(:disabled):hover,
+textarea:not(:disabled):hover, select:not(:disabled):hover {
   border-bottom-color: var(--p1-soft);
 }
-input[type="text"]:focus, textarea:focus, select:focus {
+input:is([type="text"], [type="password"], [type="datetime-local"]):focus, textarea:focus, select:focus {
   outline: none;
   border-bottom-color: var(--p1);
   text-shadow: var(--glow);
@@ -514,7 +594,7 @@ input:disabled, textarea:disabled { border-bottom-color: var(--text-disabled); c
 /* --p1-dim (charte) = 3.6:1 : sous le seuil texte. Meme encre attenuee que
    les notes (5.6:1 ; --p1-soft en HC), toujours en retrait du --p1 saisi. */
 input::placeholder, textarea::placeholder { color: var(--t2k-text-secondary); }
-input[type="text"]:not(:disabled), textarea:not(:disabled) { cursor: var(--cursor-text); }
+input:is([type="text"], [type="password"], [type="datetime-local"]):not(:disabled), textarea:not(:disabled) { cursor: var(--cursor-text); }
 select {
   appearance: none;
   -webkit-appearance: none;
@@ -523,6 +603,34 @@ select {
   background-position: right 6px center;
   padding-right: 24px;
 }
+/* Echeance (datetime-local) et mot de passe du proxy : Chromium les
+   dessinait en champ gris #3B3B3B, texte et calendrier blancs (§10 interdit
+   1 : « pas de blanc pur »). Ils prennent le champ de la charte ci-dessus
+   (§7 « Champs : fond nu, filet bas seul ») et le calendrier est redessine
+   au trait. Le segment de date en cours de saisie gardait le Highlight
+   systeme bleu clair, qu'aucune regle auteur n'atteint (:focus ne s'applique
+   pas aux segments) : les segments passent par le moniteur -- une matrice
+   qui ne garde que la luminance, rendue en encre P1 (R = B = G/5 ; le
+   trait et la piste retombent sur eux-memes, le filet et le texte a 4/255
+   pres : #157815 -> #187718, #23C623 -> #27C427, le verre -> #020902). Le
+   bleu devient un bloc quasi au trait (#32FA32) sous encre verre :
+   l'inversion video de la charte (« Selection (liste) : inversion video »). */
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14'%3E%3Cpath d='M1.5 3.5h11v9h-11z' fill='none' stroke='%2333FF33'/%3E%3Cpath d='M1.5 3.5h11v2.5h-11z' fill='%2333FF33'/%3E%3Cpath d='M4 1v3M10 1v3' stroke='%2333FF33'/%3E%3C/svg%3E");
+  cursor: var(--cursor-interactive);
+}
+input[type="datetime-local"]::-webkit-datetime-edit-fields-wrapper {
+  filter: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='p1' color-interpolation-filters='sRGB'%3E%3CfeColorMatrix values='.0551 .1852 .0187 0 0 .2753 .9262 .0935 0 0 .0551 .1852 .0187 0 0 0 0 0 1 0'/%3E%3C/filter%3E%3C/svg%3E#p1");
+}
+/* Echeance vide : le gabarit « jj/mm/aaaa --:-- » est un texte indicatif
+   (« input::placeholder { color: var(--p1-dim) } » de la charte), pas une
+   valeur -- il prend l'encre des indications ci-dessus. Aucune pseudo-classe
+   ne dit « vide » pour ce champ (:placeholder-shown ne s'y applique pas) ;
+   Chromium tient une valeur vide pour :in-range et, sans min ni max, ne
+   l'accorde a aucune valeur saisie -- d'ou les gardes [min]/[max]. Au focus le
+   gabarit se rallume : la saisie d'un segment ne rend la valeur complete
+   qu'au dernier. */
+input[type="datetime-local"]:not([min], [max], :focus, :disabled):in-range { color: var(--t2k-text-secondary); }
 
 /* ---------- Checkboxes : square box, "x" glyph of solid ink ---------- */
 input[type="checkbox"] {
@@ -550,6 +658,39 @@ input[type="checkbox"]:checked::after {
 }
 input[type="checkbox"]:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
 input[type="checkbox"]:disabled { border-color: var(--text-disabled); }
+
+/* ---------- Curseur de valeur (Volume) : Chromium le peignait bleu clair
+   #99C8FF sur piste grise (§10 interdit 1). Peau P2 de la charte :
+   « poignee bloc » (components.html .sl-thumb : fond --p1, filet --p1,
+   16 px, rayon 0) sur une piste de 8 px ; la piste et son remplissage
+   suivent la jauge (§9 « piste --p1-dark ; remplissage par blocs
+   d'encre », --gradient-progress) bordee du filet comme la bascule (§7
+   « piste --p1-dark bordee »). --value = position, posee par
+   profile_general.js. ---------- */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 16px;
+  background: transparent;
+  cursor: var(--cursor-interactive);
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 8px;
+  border: 1px solid var(--p1-dim);
+  border-radius: 0;
+  background: var(--gradient-progress) 0 0 / var(--value, 0%) 100% no-repeat, var(--p1-dark);
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  box-sizing: border-box;
+  width: 16px;
+  height: 16px;
+  margin-top: -5px;
+  border: 1px solid var(--p1);
+  border-radius: 0;
+  background: var(--p1);
+}
+input[type="range"]:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
 
 /* ---------- Lists / rows : piste --p1-dark border, name carries the trait,
    hover brightens (text + halo, no fill) -- selection is full inversion,
@@ -587,6 +728,33 @@ input[type="checkbox"]:disabled { border-color: var(--text-disabled); }
 /* Partage : colonnes chiffrees a la chasse du monospace 14 px (8.4 px/car.) --
    « ↑ 205.1 Ko/s », « 1.12 Go / 1.86 Go », « 1h30 / 2h00 » tenaient sur deux lignes. */
 .share-row { grid-template-columns: 1fr 104px 150px 100px 130px 70px; }
+/* Sante (data-health) : style.css teintait la ligne (#171605, #140C09 --
+   ambre et rouge melanges au verre) et melangeait le lisere au texte. §3
+   « le danger se ponctue, il ne se colore pas » : fond de ligne nu, lisere
+   plein d'une intensite (jetons --status-* de la section 10). La ligne
+   selectionnee garde l'inversion de style.css (selecteur plus specifique). */
+#downloadsList .row[data-health="critical"],
+#downloadsList .row[data-health="warning"],
+#downloadsList .row[data-health="healthy"] { background: none; }
+#downloadsList .row[data-health="critical"]:not(.selected) { box-shadow: inset 5px 0 0 var(--status-critical); }
+#downloadsList .row[data-health="warning"]:not(.selected) { box-shadow: inset 5px 0 0 var(--status-warning); }
+#downloadsList .row[data-health="healthy"]:not(.selected) { box-shadow: inset 5px 0 0 var(--status-ok); }
+/* Avis « action suggeree » (espace disque faible...) et attente du filtre
+   IP : style.css les teintait de jaune (#372E04), la teinte d'alerte. La
+   charte n'a que trois toasts et « seule l'erreur crie » : c'est la peau
+   de l'alerte, .toast.t-err (« border: 1px solid var(--p1); box-shadow:
+   inset 0 0 0 1px var(--p1); color: var(--p1) », sur la plaque
+   --ph-raise de .toast) -- et non celle du succes. Texte 14.0:1. La
+   fermeture est la .to-close de la charte : 22 px, sans crochets
+   (« .to-close::before, .to-close::after { content: none } »). */
+.suggestion-banner {
+  background: var(--ph-raise);
+  border-color: var(--p1);
+  box-shadow: inset 0 0 0 1px var(--p1);
+  color: var(--p1);
+}
+.suggestion-banner-close { width: 22px; height: 22px; padding: 0; display: grid; place-items: center; }
+.suggestion-banner-close::before, .suggestion-banner-close::after { content: none; }
 
 /* ---------- Group boxes : panels "à peine allumées" (--ph-raise) with a
    filet, heading plays the legend role in solid ink. ---------- */
@@ -628,6 +796,23 @@ input[type="checkbox"]:disabled { border-color: var(--text-disabled); }
   text-shadow: var(--glow);
   font-weight: 700;
 }
+/* Pastilles de legende des dialogues de donnees (div de 10 px peints en
+   style inline par var(--piece-...), var(--swarm-...) etc.) : la piste
+   (1.5:1) et le verre (1.1:1) disparaitraient sur la plaque --ph-raise.
+   Chaque pastille prend le filet --p1-dim (3.4:1), comme le cadre de la
+   mosaique (canvas.tetris plus bas) et les badges (« .badge { border: 1px
+   solid var(--p1-dim) } »). */
+#modalBox div[style*="background-color: var(--"] { border: 1px solid var(--p1-dim); }
+/* Essaim : ses pastilles sont toutes allumees au filet ou plus (3.4:1
+   minimum) ; seule celle du torrent local porte un filet, son anneau
+   (--swarm-ring), comme sur le canevas -- sinon « Vous » et « copie
+   complete », peints du meme trait, avaient la meme pastille. */
+#modalBox div[style*="var(--swarm-"] { border: none; }
+#modalBox div[style*="var(--swarm-local"] { border: 1px solid var(--swarm-ring); }
+/* Mosaique : le canevas ne peut pas ponctuer le morceau introuvable ; sa
+   legende le fait, comme « .badge.b-err::before { content: "! " } » et la
+   jauge en echec (« l'echec se legende [! echec !], toujours en vert »). */
+#modalBox div[style*="var(--piece-none"] + span::before { content: "! "; }
 
 /* ---------- Scrollbars : thumb --p1-dim, full --p1 on hover, no arrows
    ("sans flèches" -- STYLE.md §7). ---------- */

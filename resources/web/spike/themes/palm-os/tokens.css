@@ -180,6 +180,58 @@
   --tetris-settled: var(--pm-ink);
   --tetris-active: var(--pm-soft);
   --tetris-border: var(--pm-lcd);
+  /* Dialogues de donnees (mosaique des morceaux, vitesse, essaim,
+     stockage) : interdit #1 « Toute couleur : le cristal ne connait que le
+     vert-gris du verre et l'encre ». Un canvas ne souligne ni ne hachure :
+     l'etat se lit a la quantite d'encre, comme la jauge (§9 « piste creuse
+     bordee ; remplissage d'encre ») et l'echelle de risque ci-dessus. Le
+     mi-ton est la douce (l'eteint en HC, ou la douce touche l'encre : voir
+     ce bloc) ; les var() se re-resolvent seuls en sombre. Ratios en clair.
+     Mosaique : telecharge = le remplissage d'encre ; manquant courant = la
+     piste creuse (comme --tetris-empty) ; rare = l'eteint (l'ombre-pixel ne
+     s'ecartait du creux que de 1,4) ; aucun pair = la douce, le danger qui
+     fonce vers l'encre (ecarts 2,1 / 2,5 / 1,6). En sombre et en HC, rare
+     reprend l'ombre-pixel : voir leurs blocs. */
+  --piece-have: var(--pm-ink);
+  --piece-common: var(--pm-lcd-dk);
+  --piece-rare: var(--pm-disabled);
+  --piece-none: var(--pm-soft);
+  /* Vitesse : reception en encre, envoi en douce (4,8 sur le verre, 2,1
+     contre l'encre) ; grille en ombre-pixel, le filet des listes ;
+     graduations en encre douce (texte 4,8 ; 7,5 en HC ; 6,0 en sombre). */
+  --speed-down: var(--pm-ink);
+  --speed-up: var(--pm-soft);
+  --speed-grid: var(--pm-ghost);
+  --speed-axis: var(--pm-soft);
+  /* Essaim : le point n'a ni piste ni cadre, il se lit sur le verre nu --
+     plus l'encre couvre, plus la copie est complete : complets en encre,
+     plus de la moitie en douce, debut au mi-chemin douce/ombre-pixel (2,7
+     sur le verre : entre les deux, le cristal n'a pas de cran, l'eteint
+     touche l'ombre-pixel), aucune donnee en ombre-pixel (1,7). Le point
+     local est un disque de verre cercle d'encre (le radio du §7, la piste
+     creuse bordee du §9 ; anneau 10,0 sur le verre, 12,5 en sombre) : un
+     anneau de verre se perdait sur le verre et laissait le local identique
+     aux complets. Orbites et liens en creux, plus pales que tout point (le
+     mi-chemin verre/ombre-pixel en sombre et en HC : voir leurs blocs). */
+  --swarm-local: var(--pm-lcd);
+  --swarm-seed: var(--pm-ink);
+  --swarm-half: var(--pm-soft);
+  --swarm-started: color-mix(in srgb, var(--swarm-half), var(--pm-ghost));
+  --swarm-none: var(--pm-ghost);
+  --swarm-ring: var(--pm-ink);
+  --swarm-orbit: var(--pm-lcd-dk);
+  --swarm-link: var(--swarm-orbit);
+  /* Stockage : complet en encre, partiel en douce, rien en ombre-pixel
+     (1,7 sur le verre, 2,9 contre la douce) ; le filet entre les secteurs
+     est le verre, comme entre les pixels de la mosaique (--tetris-border). */
+  --sunburst-done: var(--pm-ink);
+  --sunburst-partial: var(--pm-soft);
+  --sunburst-missing: var(--pm-ghost);
+  --sunburst-stroke: var(--pm-lcd);
+  /* Echeance (input datetime-local) : le calendrier natif de Chromium est
+     noir ou blanc selon color-scheme -- dessine a l'encre (un data-URI ne
+     suit pas var(), d'ou sa copie en lumiere dans [data-theme="dark"]). */
+  --date-glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12'%3E%3Cpath d='M0 1h12v11H0zM1 4v7h10V4zM3 6h2v2H3zM7 6h2v2H7z' fill-rule='evenodd' fill='%231C241A'/%3E%3C/svg%3E");
   /* Colonne Nom : interdit #10 « Emoji » -- punaise, cadenas a cle
      (archive) et cadenas (prive) dessines, peints en currentColor.
      Non epinglee = l'encre estompee a 70 % par le filtre, a peu pres
@@ -264,11 +316,18 @@
      jetons plutôt qu'un hex hors charte (1,4 / 1,5 de part et d'autre ;
      encre 9,0). */
   --risk-low-bg: color-mix(in srgb, var(--pm-lcd), var(--pm-ghost));
+  /* essaim : même mi-chemin pour les orbites et les liens (le creux de
+     nuit n'est qu'à 1,1 sur le verre éteint ; 1,4 ainsi). Mosaïque : rare
+     reste l'ombre-pixel (creux 2,3 ; douce 2,9) -- l'éteint de nuit
+     serrerait rare et aucun pair à 2,1. */
+  --swarm-orbit: color-mix(in srgb, var(--pm-lcd), var(--pm-ghost));
+  --piece-rare: var(--pm-ghost);
   /* punaise au repos : 55 % suffit sur le verre éteint (4,6) et garde
      l'écart avec la punaise épinglée (2,7) */
   --pin-idle-filter: opacity(.55);
   /* flèche du picker en lumière (l'encre #1C241A tombait à 1,1:1 sur le verre éteint) */
   --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='6'%3E%3Cpath d='M0 0h9L4.5 6z' fill='%23BFE3AE'/%3E%3C/svg%3E");
+  --date-glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12'%3E%3Cpath d='M0 1h12v11H0zM1 4v7h10V4zM3 6h2v2H3zM7 6h2v2H7z' fill-rule='evenodd' fill='%23BFE3AE'/%3E%3C/svg%3E");
   /* icônes surchargées pour le fond sombre (mêmes tracés, encre -> lumière) */
   --icon-folder: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M2.5 6h6.5l2 2.5h10.5v11h-19z' fill='%230B0F0A' stroke='%23BFE3AE' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M2.5 6h6.5l2 2.5h-9z' fill='%23BFE3AE' stroke='%23BFE3AE' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
   --icon-folder-open: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24'%3E%3Cpath d='M2.5 6h6.5l2 2.5h9.5v3h-18z' fill='%23BFE3AE' stroke='%23BFE3AE' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M4.8 11.5h16.7l-2.6 8H2.5z' fill='%230B0F0A' stroke='%23BFE3AE' stroke-width='1.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
@@ -307,6 +366,17 @@
      qui tombe reprend l'ancienne douce, que la charte donne à l'éteint HC
      (encre 2,1 ; creux 3,9). */
   --tetris-active: var(--pm-disabled);
+  /* Dialogues de donnees : le meme mi-ton que la piece qui tombe (encre
+     2,1 ; ombre-pixel HC 2,1 ; verre 4,8). Le debut de l'essaim suit.
+     Rare garde l'ombre-pixel HC (l'eteint HC EST aucun pair ; creux 1,9) ;
+     orbites et liens au mi-chemin verre/ombre-pixel HC (1,5 sur le verre,
+     le creux n'y donne que 1,2). */
+  --piece-rare: var(--pm-ghost);
+  --swarm-orbit: color-mix(in srgb, var(--pm-lcd), var(--pm-ghost));
+  --piece-none: var(--pm-disabled);
+  --speed-up: var(--pm-disabled);
+  --swarm-half: var(--pm-disabled);
+  --sunburst-partial: var(--pm-disabled);
   /* punaise au repos : 75 % d'encre (5,4 sur le verre, 4,7 en clair) */
   --pin-idle-filter: opacity(.75);
 }
@@ -430,7 +500,10 @@ button:disabled { border-color: var(--pm-disabled); color: var(--text-disabled);
 /* ---------- Champs : LIGNE DE POINTS sans boite (interdit #3) -- le focus
    epaissit le trait. Le SELECT fait exception (vrai picker Palm : plaque
    bordee a ombre d'un pixel, comme un bouton), fidele a components.html. ---------- */
-input[type="text"], input[type="number"], textarea, .search-input {
+/* password et datetime-local (proxy, echeance) retombaient sur le champ
+   natif de Chromium, blanc ou #3B3B3B borde de gris : interdit #8 « le verre
+   est #C5D1B8, jamais blanc » et #3 « les champs sont des LIGNES DE POINTS ». */
+input[type="text"], input[type="number"], input[type="password"], input[type="datetime-local"], textarea, .search-input {
   background: transparent;
   border: none;
   border-bottom: 1px dotted var(--pm-ink);
@@ -453,10 +526,28 @@ textarea {
   height: auto; min-height: 56px; padding: 4px; resize: vertical;
   background-image: repeating-linear-gradient(180deg, transparent 0 21px, var(--pm-ghost) 21px 22px);
 }
-input[type="text"]:not(:disabled):focus, textarea:not(:disabled):focus, .search-input:not(:disabled):focus {
+input[type="text"]:not(:disabled):focus, input[type="password"]:not(:disabled):focus, input[type="datetime-local"]:not(:disabled):focus-within,
+textarea:not(:disabled):focus, .search-input:not(:disabled):focus {
   outline: none; border-bottom-width: 2px;
 }
-input[type="text"]:not(:disabled), textarea:not(:disabled), .search-input:not(:disabled) { cursor: var(--cursor-text); }
+input[type="text"]:not(:disabled), input[type="password"]:not(:disabled), textarea:not(:disabled), .search-input:not(:disabled) { cursor: var(--cursor-text); }
+/* Echeance : le calendrier a l'encre (--date-glyph) ; la case de date
+   active s'inverse au lieu du surlignage systeme bleu (§7 « Selection
+   (liste) | inversion »). :focus-within et non :focus : Chromium ignore un
+   :focus d'auteur apres ces pseudo-elements. */
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  background: var(--date-glyph) center / 12px 12px no-repeat;
+  cursor: var(--cursor-interactive);
+}
+input[type="datetime-local"]::-webkit-datetime-edit-day-field:focus-within,
+input[type="datetime-local"]::-webkit-datetime-edit-month-field:focus-within,
+input[type="datetime-local"]::-webkit-datetime-edit-year-field:focus-within,
+input[type="datetime-local"]::-webkit-datetime-edit-hour-field:focus-within,
+input[type="datetime-local"]::-webkit-datetime-edit-minute-field:focus-within,
+input[type="datetime-local"]::-webkit-datetime-edit-ampm-field:focus-within {
+  background: var(--selection-bg);
+  color: var(--selection-text);
+}
 input:disabled, textarea:disabled { border-bottom-color: var(--pm-disabled); color: var(--text-disabled); }
 input::placeholder, textarea::placeholder { color: var(--pm-soft); }
 
@@ -510,10 +601,18 @@ input[type="checkbox"]:disabled { border-color: var(--pm-disabled); background: 
    et rouges -- le lissage LCD de Chromium colore leur fut d'un pixel pose
    entre deux pixels. Le filtre isole la cellule dans son propre calque,
    lisse en niveaux d'encre ; grayscale(0) et non (1) : l'encre du cristal
-   est teintee de vert, elle doit rester la sienne. */
+   est teintee de vert, elle doit rester la sienne. Meme lissage pour les
+   glyphes d'un pixel des boutons (⏸ ✕ ▶ ▲ ▼ sortaient bleus et ocre), du
+   ✕ des bandeaux et des etiquettes, des « ? » et des ▲/▼ de la note des
+   regles de classement. */
 .downloads-row > .row-rate,
 .share-row > .row-name + .row-rate,
-.downloads-row-header > [data-i18n-key$="_rate"] { filter: grayscale(0); }
+.downloads-row-header > [data-i18n-key$="_rate"],
+.row-actions button,
+.suggestion-banner-close,
+.listbox > .row > button,
+.info-hint,
+[data-i18n-key$="routing_rules_intro"] { filter: grayscale(0); }
 .downloads-row-header { border-bottom: 2px solid var(--pm-ink); }
 .scan-path, .scan-size { color: var(--text-primary); }
 
@@ -586,6 +685,27 @@ canvas.tetris {
 /* LCD sans couleur : la teinte de sante assombrit le verre et noie l'encre
    douce des colonnes chiffrees -- seul le lisere d'etat porte la sante. */
 #downloadsList .row[data-health]:not(.selected) { background: var(--surface-field); }
+/* Le lisere, lui, sortait jaune, rouge et vert : interdit #1 « Toute
+   couleur ... (le danger parle en graisse soulignee) » -- il est d'encre et
+   parle en graisse : critique 5 px, avertissement 2 px, sain sans lisere. */
+#downloadsList .row[data-health="critical"]:not(.selected) { box-shadow: inset 5px 0 0 var(--pm-ink); }
+#downloadsList .row[data-health="warning"]:not(.selected) { box-shadow: inset 2px 0 0 var(--pm-ink); }
+#downloadsList .row[data-health="healthy"]:not(.selected) { box-shadow: none; }
+
+/* Bandeau de suggestion et avis du filtre IP : style.css y mele 22 % de
+   jaune (--status-warning) -- ici le toast de la charte (components.html
+   §13 : verre, filet d'encre, coins de 3, ombre d'un pixel) ; la
+   suggestion, qui attend un geste, epaissit son cadre comme t-ok/t-err
+   (« les avis epaississent leur cadre »), sans changer de taille. */
+.suggestion-banner { background: var(--pm-lcd); box-shadow: var(--pixel-shadow); }
+#downloadsSuggestionBanner { border-width: 2px; padding: calc(var(--space-2) - 1px) calc(var(--space-3) - 1px); }
+
+/* Pastilles des legendes (mosaique, vitesse, essaim, stockage : des div a
+   style en ligne) : la case de la charte, bordee d'encre -- sans ce cadre
+   la piste creuse (1,2:1 sur le verre) disparait. */
+.modal-box :is([style*="var(--piece-"], [style*="var(--speed-"], [style*="var(--swarm-"], [style*="var(--sunburst-"]) {
+  outline: 1px solid var(--pm-ink);
+}
 
 /* ---------- Infobulle : INVERSEE (encre, texte LCD -- STYLE.md §9). style.css
    la pose en couleurs de fenetre ; ici le couple encre/verre se re-resout

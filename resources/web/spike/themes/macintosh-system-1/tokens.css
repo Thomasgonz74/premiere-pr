@@ -66,6 +66,10 @@
   /* Chevron des listes déroulantes : data-URI de couleur fixe, donc redéfini
      dans le bloc sombre (sinon noir sur champ noir, invisible). */
   --s1-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='%23000'/%3E%3C/svg%3E");
+  /* Calendrier natif du champ d'échéance : son contour est un gris uni
+     (#7F7F7F, interdit #1) -- ramené à l'encre, sa silhouette gardée ;
+     l'inversion vidéo le repasse en blanc (bloc sombre). */
+  --s1-calendar-filter: brightness(0);
   /* Jetons optionnels de style.css, tous en un bit : passés par --s1-* et
      les trames, le bloc sombre les inverse sans les répéter. */
   /* Mosaïque (tetris.js) : la jauge de la charte, piste blanche et
@@ -116,6 +120,55 @@
   /* Interdit #9 : pas de rouge d'erreur (lu par rss.css) -- l'encre reste
      pleine, l'échec se marque par la graisse et le soulignement. */
   --status-danger-text: var(--text-primary);
+  /* Les quatre dialogues de données (jetons optionnels de style.css) : un
+     canvas ne prend qu'une couleur pleine, donc #000000 ou #FFFFFF
+     (interdit #1 « deux valeurs existent ») -- ou transparent, qui laisse
+     voir la trame posée en fond du canvas (règle plus bas) : « les
+     demi-tons sont des TRAMES ». La rampe est celle de la jauge (§9
+     « remplissage noir ; indeterminee = trame 50 ») : noir = acquis,
+     trame 50 = en partie, blanc = rien.
+     Mosaïque et essaim ont plus de trois états : leurs gris --s1-ink*
+     ne s'affichent jamais, le filtre --s1-dither-filter (posé sur ces deux
+     canvas et leurs pastilles, plus bas) les rend en trames de 1 bit --
+     12,5 % d'encre (la trame 25 de la charte), 50 % (la trame 50), 87,5 %
+     (son négatif). Des couleurs pleines, donc : la mosaïque repeint ses
+     cases sans les effacer, une case transparente y garderait l'ancienne.
+     Le filtre seuille chaque pixel contre une matrice 4x4 (tout gris sous
+     60 % devient noir, dès 90 % blanc) ; l'inversion vidéo l'encadre de
+     deux invert() et renverse ses gris (bloc sombre). */
+  --s1-ink12: #D9D9D9;
+  --s1-ink50: #BFBFBF;
+  --s1-ink87: #A6A6A6;
+  --s1-dither-svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='t' x='0' y='0' width='1' height='1' color-interpolation-filters='sRGB'%3E%3CfeFlood flood-color='%23999' x='0' y='0' width='2' height='2' result='a'/%3E%3CfeFlood flood-color='%23CCC' x='0' y='0' width='1' height='1' result='b'/%3E%3CfeFlood flood-color='%23CCC' x='1' y='1' width='1' height='1' result='c'/%3E%3CfeMerge x='0' y='0' width='2' height='2' result='m'%3E%3CfeMergeNode in='a'/%3E%3CfeMergeNode in='b'/%3E%3CfeMergeNode in='c'/%3E%3C/feMerge%3E%3CfeTile in='m' x='0' y='0' width='4' height='4' result='m4'/%3E%3CfeFlood flood-color='%23FFF' x='0' y='0' width='1' height='1' result='s'/%3E%3CfeFlood flood-color='%23FFF' x='2' y='2' width='1' height='1' result='u'/%3E%3CfeFlood flood-color='%23666' x='1' y='0' width='1' height='1' result='v'/%3E%3CfeFlood flood-color='%23666' x='3' y='2' width='1' height='1' result='w'/%3E%3CfeMerge x='0' y='0' width='4' height='4' result='q'%3E%3CfeMergeNode in='m4'/%3E%3CfeMergeNode in='s'/%3E%3CfeMergeNode in='u'/%3E%3CfeMergeNode in='v'/%3E%3CfeMergeNode in='w'/%3E%3C/feMerge%3E%3CfeTile in='q' result='k'/%3E%3CfeComposite in='SourceGraphic' in2='k' operator='arithmetic' k2='5' k3='-2.5' k4='-1.5'/%3E%3CfeComponentTransfer%3E%3CfeFuncR type='discrete' tableValues='0 1'/%3E%3CfeFuncG type='discrete' tableValues='0 1'/%3E%3CfeFuncB type='discrete' tableValues='0 1'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3C/svg%3E#t");
+  --s1-dither-filter: var(--s1-dither-svg);
+  /* Mosaïque : téléchargé noir (comme la mosaïque des Téléchargements) ;
+     manquant blanc, trame 25 si rare, trame 50 si aucun pair ne l'a --
+     plus c'est dense, plus il manque. */
+  --piece-have:   var(--s1-black);
+  --piece-common: var(--s1-white);
+  --piece-rare:   var(--s1-ink12);
+  --piece-none:   var(--s1-ink50);
+  /* Vitesse, tracée sur la trame 50 : réception noire (--piece-have), envoi
+     blanc, graduations à l'encre. Pas de grille : un filet de 1 px y tombe
+     à cheval sur deux rangées et s'y lisse en gris. */
+  --speed-up:   var(--s1-white);
+  --speed-grid: transparent;
+  --speed-axis: var(--s1-black);
+  /* Essaim, sur blanc (sur la trame 50, un lien à 45° suivait la diagonale
+     noire du damier et disparaissait) : la progression se lit à l'encre --
+     source noire, plus de la moitié 87,5 %, début trame 50, rien trame 25 ;
+     le point local noir cerclé de trame 50 ; orbites et liens à l'encre. */
+  --swarm-half:    var(--s1-ink87);
+  --swarm-started: var(--s1-ink50);
+  --swarm-none:    var(--s1-ink12);
+  --swarm-ring:    var(--s1-ink50);
+  --swarm-orbit:   var(--s1-black);
+  --swarm-link:    var(--s1-black);
+  /* Stockage : complet noir, partiel = la trame 50 du fond, manquant blanc ;
+     un filet noir d'un pixel entre les arcs. */
+  --sunburst-partial: transparent;
+  --sunburst-missing: var(--s1-white);
+  --sunburst-stroke:  var(--s1-black);
 
   /* ========================================================
      3. LA TRAME — la signature du style (pas de "plastique").
@@ -259,6 +312,11 @@
   --tooltip-bg: #000000;
   --tooltip-fg: #FFFFFF;
   --s1-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='%23FFF'/%3E%3C/svg%3E");
+  --s1-calendar-filter: brightness(0) invert(1);
+  --s1-ink12: #262626;
+  --s1-ink50: #404040;
+  --s1-ink87: #595959;
+  --s1-dither-filter: invert(1) var(--s1-dither-svg) invert(1);
   --dither50: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='2' height='2'%3E%3Crect width='1' height='1' fill='%23FFF'/%3E%3Crect x='1' y='1' width='1' height='1' fill='%23FFF'/%3E%3C/svg%3E");
   --dither25: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Crect width='1' height='1' fill='%23FFF'/%3E%3Crect x='2' y='2' width='1' height='1' fill='%23FFF'/%3E%3C/svg%3E");
   /* icônes surchargées pour le fond sombre */
@@ -321,6 +379,16 @@ input[type=text], textarea { cursor: var(--cursor-text); }
    #9 pas de rouge : l'échec se hachure.
    ========================================================================== */
 
+/* Interdit #1 (« TOUTE couleur ») : le lissage LCD de Chromium frange de
+   bleu, d'orange ou de rouge chaque trait d'un pixel posé entre deux
+   pixels -- flèches ↓/↑, ⏸ ✕ ▶, titres, onglets, tout texte. Un filtre sur
+   la fenêtre entière fait lisser tout le texte en niveaux d'encre et ne
+   laisse passer aucune teinte, pas plus celle d'un contrôle natif
+   (surbrillance du segment d'échéance saisi) que celle d'une frange. Posé
+   sur body, qui couvre exactement la vue sans défiler (style.css) : les
+   éléments fixes (dialogues, menus, bulles) y gardent leur place. */
+body { filter: grayscale(1); }
+
 /* ---------- Window chrome : six filets, cartouche blanc qui les
    interrompt, UNE case de fermeture vide à gauche, rien à droite ---------- */
 .titlebar {
@@ -349,6 +417,7 @@ input[type=text], textarea { cursor: var(--cursor-text); }
   font-family: var(--font-title);
   font-weight: 700;
   font-size: var(--font-size-title);
+  line-height: 20px;   /* hauteur paire : centré par translate(-50%), le cartouche tombe sur un pixel entier (à 19,5 px, son bord haut lissait un filet en gris) */
   text-shadow: none;
   white-space: nowrap;
   overflow: hidden;
@@ -438,10 +507,13 @@ button:disabled {
   border-radius: var(--radius-control);
   color: var(--text-primary);
   font-weight: 700;
-  box-shadow: 0 0 0 2px var(--s1-white), 0 0 0 3.5px var(--s1-black);   /* bouton par DÉFAUT : le double cadre */
+  /* bouton par DÉFAUT : le double cadre, « le halo noir de 2 px a 2 px
+     d'ecart » (§7) -- en pixels entiers : à 3,5 px, le bord du halo tombait
+     entre deux pixels et s'y lissait en gris. */
+  box-shadow: 0 0 0 2px var(--s1-white), 0 0 0 4px var(--s1-black);
   margin: 4px;   /* le halo est une ombre : réserve sa place, sinon il souligne la ligne ou le champ voisin */
 }
-.start-btn:hover { box-shadow: 0 0 0 2px var(--s1-white), 0 0 0 3.5px var(--s1-black); }   /* le halo reste, aucun survol ne l'efface */
+.start-btn:not(:disabled):hover { box-shadow: 0 0 0 2px var(--s1-white), 0 0 0 4px var(--s1-black); }   /* le halo reste, aucun survol ni appui ne l'efface (bat « button:not(:disabled):hover ») */
 .start-btn:active { background: var(--s1-black); color: var(--s1-white); }
 
 .row-actions button {
@@ -467,7 +539,7 @@ button:disabled {
 
 /* ---------- Champs : PLATS et CARRÉS, même quand les boutons sont
    arrondis (authentique -- STYLE.md interdit #7) ---------- */
-input[type="text"], input[type="number"], select, textarea, .search-input {
+input[type="text"], input[type="number"], input[type="password"], input[type="datetime-local"], select, textarea, .search-input {
   background: var(--s1-white);
   border: 1px solid var(--s1-black);
   border-radius: var(--radius-field);
@@ -488,7 +560,7 @@ input[type="text"], input[type="number"], select, textarea, .search-input {
   padding: 0 8px;
 }
 textarea { height: auto; min-height: 60px; padding: 6px 8px; resize: vertical; }
-input[type="text"]:focus, input[type="number"]:focus, textarea:focus, select:focus, .search-input:focus {
+input[type="text"]:focus, input[type="number"]:focus, input[type="password"]:focus, input[type="datetime-local"]:focus, textarea:focus, select:focus, .search-input:focus {
   outline: var(--focus-ring);
   outline-offset: 2px;
 }
@@ -497,6 +569,32 @@ input:disabled, textarea:disabled {
   background-image: var(--dither25);   /* interdit #2 : se trame, ne grise pas */
   color: var(--text-primary);
   border-color: var(--s1-black);
+}
+/* Texte indicatif : style.css le mêle au fond (gris) -- interdit #2, et
+   tokens.css de la charte : « le doux est une taille, pas un gris ». Encre
+   pleine, corps réduit. */
+::placeholder { color: var(--text-soft); font-size: 11px; }
+input::-webkit-calendar-picker-indicator { filter: var(--s1-calendar-filter); }
+/* Échéance : le segment en cours de saisie s'INVERSE (§7 « Selection :
+   inversion ») au lieu du surlignage système, qu'un filtre gris laissait
+   en aplat gris (interdit #1). :focus-within et non :focus : Chromium
+   ignore un :focus d'auteur après ces pseudo-éléments. */
+input[type="datetime-local"]::-webkit-datetime-edit-day-field:focus-within,
+input[type="datetime-local"]::-webkit-datetime-edit-month-field:focus-within,
+input[type="datetime-local"]::-webkit-datetime-edit-year-field:focus-within,
+input[type="datetime-local"]::-webkit-datetime-edit-hour-field:focus-within,
+input[type="datetime-local"]::-webkit-datetime-edit-minute-field:focus-within,
+input[type="datetime-local"]::-webkit-datetime-edit-ampm-field:focus-within {
+  background: var(--selection-bg);
+  color: var(--selection-text);
+}
+/* Zone de dépôt survolée d'un fichier : style.css l'assombrit d'un filtre
+   (un gris uni, interdit #1) ; la cible s'INVERSE, comme l'icône du
+   Finder sous un glisser. */
+.drop-zone.dragover {
+  filter: none;
+  background: var(--s1-black);
+  color: var(--s1-white);
 }
 select {
   appearance: none;
@@ -543,13 +641,6 @@ input[type="checkbox"]:disabled { background: var(--s1-white); background-image:
 .row-name { font-weight: 700; }   /* en 1-bit, l'accent est la graisse -- pas une couleur */
 .row-state { font-weight: 400; }
 .row-rate, .row-eta, .row-category, .row-peers { font-variant-numeric: tabular-nums; }
-/* Interdit #1 : les flèches ↓/↑ des vitesses sortaient bleues, rouges ou
-   orange -- le lissage LCD de Chromium colore leur fût d'un pixel posé
-   entre deux pixels. Le filtre isole la cellule dans son propre calque,
-   lissé en niveaux d'encre, et n'y laisse aucune teinte. */
-.downloads-row > .row-rate,
-.share-row > .row-name + .row-rate,
-.downloads-row-header > [data-i18n-key$="_rate"] { filter: grayscale(1); }
 .downloads-row-header { border-bottom: 1px solid var(--s1-black); }
 
 /* ---------- Rangées supplémentaires listées à part par la grille (.scan-row
@@ -632,6 +723,35 @@ input[type="checkbox"]:disabled { background: var(--s1-white); background-image:
   font-weight: 700;
   font-size: var(--font-size-title);
 }
+
+/* ---------- Dialogues de données (vitesse, stockage) : ces canvas
+   s'effacent à chaque tracé, leur fond CSS paraît donc sous tout pixel
+   transparent -- la trame 50, le seul demi-ton que la charte connaisse.
+   La vitesse garde ses graduations sur blanc (les 40 px de marge du tracé,
+   SPEED_GRAPH_MARGIN_LEFT) ; le stockage son trou central (40 px de rayon,
+   SUNBURST_HOLE_RADIUS), sans quoi un anneau partiel s'y confond. Les
+   pastilles de légende (div en style inline, repérées par leur jeton)
+   prennent un filet noir, sans quoi les blanches disparaissent, et celle du
+   partiel sa trame. ---------- */
+.modal-box div:has([style*="var(--speed-"]) > canvas {
+  background: linear-gradient(var(--s1-white), var(--s1-white)) 0 0 / 40px 100% no-repeat, var(--dither50) var(--s1-white);
+}
+/* Mosaïque et essaim : leurs gris --s1-ink* passent en trames (§2), sur le
+   canvas comme sur les pastilles de leur légende. L'essaim sur un fond
+   blanc opaque : le filtre seuille aussi l'opacité, et le bord lissé d'un
+   trait posé sur du transparent s'y effacerait. */
+.modal-box canvas.tetris,
+.modal-box div:has([style*="var(--swarm-"]) > canvas,
+.modal-box [style*="background-color: var(--piece-"],
+.modal-box [style*="background-color: var(--swarm-"] { filter: var(--s1-dither-filter); }
+.modal-box div:has([style*="var(--swarm-"]) > canvas { background: var(--s1-white); }
+.modal-box div:has([style*="var(--sunburst-"]) > canvas {
+  background: radial-gradient(circle 40px, var(--s1-white) 100%, transparent 100%), var(--dither50) var(--s1-white);
+}
+.modal-box [style*="background-color: var(--"] { box-shadow: inset 0 0 0 1px var(--s1-black); }
+.modal-box [style*="background-color: var(--sunburst-partial"] { background-image: var(--dither50); }
+/* Pastille « Vous » : cerclée de trame 50 comme le point local. */
+.modal-box [style*="background-color: var(--swarm-local"] { box-shadow: inset 0 0 0 2px var(--s1-ink50); }
 
 /* ---------- Défilement : piste tramée 50%, pouce blanc bordé, SANS
    flèches (STYLE.md §7) -- entièrement absent avant (chrome natif) ---------- */
