@@ -114,19 +114,38 @@
   --speed-axis: var(--nx-ink);
   /* Essaim : des disques sans trait posés sur le plateau --nx-face, qui ne
      peuvent donc pas le reprendre -- rampe de progression, plus foncé =
-     plus complet. Le point local suit « reçu » ; son anneau reste le blanc
-     #FFFFFF par défaut, un ton de la charte. */
+     plus complet : noir, --nx-ink-soft #4A4A4A, --nx-dark, blanc. Le seul
+     ton hors des « quatre gris + noir » (§3) est #4A4A4A, primitive de la
+     charte (tokens.css « Les quatre gris NeXT (+ noir, + blanc) ») : avec
+     le bureau #565656, moitié et début n'auraient que 1,44:1 ; ici chaque
+     disque tient au moins 2,22:1 sur le plateau, le couple le plus proche
+     (moitié/début) 1,74:1. Le point local est le contrôle au repos
+     (§7 « plateau --nx-face, trait noir ») : plateau cerné d'un anneau
+     noir, un cercle creux que nul pair ne reproduit, sur le canevas comme
+     dans la légende. */
+  --swarm-local:   var(--nx-face);
+  --swarm-ring:    var(--nx-black);
   --swarm-seed:    var(--nx-black);
-  --swarm-half:    var(--nx-dark);
-  --swarm-started: var(--nx-light);
+  --swarm-half:    var(--nx-ink-soft);
+  --swarm-started: var(--nx-dark);
   --swarm-none:    var(--nx-white);
   --swarm-orbit:   var(--nx-dark);
   --swarm-link:    var(--nx-dark);
-  /* Stockage = une jauge : fait --nx-dark, partiel --nx-face (rare),
-     manquant = le puits blanc ; chaque arc cerné du trait noir de 1 px qui
-     borde tout contrôle NeXT. */
+  /* Stockage = la jauge (§9 « puits blanc, remplissage --nx-dark ») :
+     manquant = le puits blanc, partiel = le remplissage --nx-dark en
+     cours, fait = le noir, comme la copie complète de l'essaim. Pas
+     --nx-face pour partiel : c'est le plateau et le trou central (1:1),
+     l'arc s'y lisait vide. Noir/--nx-dark/blanc est le seul trio de la
+     charte à 2,2:1 au moins du plateau (9,1 ; 2,22 ; 2,30) et à 4:1 au
+     moins entre eux (4,12 ; 5,10 ; 21). Les arcs se séparent d'un filet
+     du plateau, comme les six secteurs sans trait du disque d'attente
+     (components.html « Six secteurs de gris ») : un trait noir fondrait
+     deux fichiers faits voisins en une seule masse noire ; le plateau
+     n'est aucun des trois tons, il sépare donc tout (9,1 ; 2,22 ; 2,30). */
+  --sunburst-done:    var(--nx-black);
+  --sunburst-partial: var(--nx-dark);
   --sunburst-missing: var(--nx-white);
-  --sunburst-stroke:  var(--nx-black);
+  --sunburst-stroke:  var(--nx-face);
   /* Glyphes de la colonne Nom : silhouettes monochromes peintes en
      currentColor au lieu des emoji (interdit #10). Épingle au repos à
      60 % (encre noire, rendu mesuré : #656565 sur blanc 5,83:1, #545454
@@ -319,14 +338,28 @@
   --tetris-active: var(--nx-ink-disabled);
   /* Dialogues de données sur le plateau blanc : --nx-dark devient noir,
      --nx-face et --nx-light blancs. Reçu reste la jauge (noir) ; ce qui
-     s'y confondrait prend #767676 (--nx-ink-disabled, 4,5:1 contre blanc
-     et noir) ou les gris des badges ci-dessus (#ABABAB, #565656, #D5D5D5). */
+     s'y confondrait prend d'abord les deux gris que garde le bloc HC de
+     la charte, #767676 (--nx-ink-disabled, 4,5:1 contre blanc et noir) et
+     #333333 (--nx-ink-soft, la moitié de l'essaim le reprend tel quel).
+     La vitesse n'a besoin de rien d'autre.
+     ÉCART ASSUMÉ à la doctrine HC (« les quatre gris se résorbent en blanc
+     pur », STYLE.md), comme les badges, pour quatre jetons où noir,
+     #333333, #767676 et blanc ne suffisent pas :
+     - carte des pièces, quatre états : #ABABAB/#565656 des badges (couple
+       le plus proche 2,30:1 ; les seuls gris HC y donneraient 1,66:1) ;
+     - essaim, quatre états + le point local creux (blanc) : « aucune
+       donnée » en #ABABAB (2,30:1 sur le blanc ; pire couple de la rampe
+       noir/#333333/#767676/#ABABAB : 1,66:1) ;
+     - stockage : « manquant » en #ABABAB, car le filet qui sépare les
+       arcs est le plateau, blanc ici, et effacerait un manquant blanc
+       (fait/partiel 4,62, partiel/manquant 1,98, manquant/filet 2,30:1). */
   --piece-rare:    #ABABAB;
   --piece-none:    #565656;
   --speed-up:      var(--nx-ink-disabled);
-  --swarm-half:    var(--nx-ink-disabled);
-  --swarm-started: #ABABAB;
-  --swarm-none:    #D5D5D5;
+  --sunburst-partial: var(--nx-ink-disabled);
+  --sunburst-missing: #ABABAB;
+  --swarm-started: var(--nx-ink-disabled);
+  --swarm-none:    #ABABAB;
   /* Épingle au repos : encre noire à 70 %, rendu mesuré #4B4B4B sur
      blanc, 8,72:1 (AAA, cible du bloc) ; blanche à 70 % sur la ligne
      sélectionnée noire, soit #B3B3B3, 10:1. */

@@ -74,11 +74,18 @@
      cernee ; remplissage BLEU ; indeterminee = hachures JAUNES obliques ;
      echec = ROUGE. La trinite rend compte. » (§9) -- plus de vert, d'orange
      ni de bleu-gris (« pas de vert, pas d'orange », §10.1). Acquis = BLEU
-     (la jauge remplie), manquant courant = la piste BLANCHE, rare ou en
-     cours = JAUNE (« Signal », §3), aucun pair = ROUGE (l'échec). */
+     (la jauge remplie), manquant courant = la piste BLANCHE, aucun pair =
+     ROUGE (l'échec). Rare = l'ENCRE, pas le jaune : la charte ne pose une
+     forme jaune que cernée d'encre (« <path d="M8 2.5L14.5 13.5H1.5Z"
+     fill="#F6C700" stroke="#1D1D1B" stroke-width="1.4"/> », le triangle de
+     components.html ; b-warn « border-color:var(--bh-ink) »), et le canvas
+     ne trace aucun cerne : le jaune seul tenait 1,6:1 sur la piste et
+     l'interstice blancs, l'encre 16,9:1 (craie 12,2:1 de nuit), 2,7:1 contre
+     le rouge (3,9:1 de nuit, 2,0:1 en HC). Même rôle que dans la
+     constellation (« début », le rare de la mosaïque) et le graphe (envoi). */
   --piece-have:   var(--bh-blue);
   --piece-common: var(--bh-white);
-  --piece-rare:   var(--bh-yellow);
+  --piece-rare:   var(--bh-ink);
   --piece-none:   var(--bh-red);
   /* Vitesse : réception = le BLEU de la jauge ; envoi = le trait d'encre
      (« le rouge ne navigue pas », §10.5 -- aucune troisième teinte).
@@ -91,12 +98,18 @@
   --speed-axis: var(--bh-soft);
   /* Constellation : « Le cercle est bleu » (§2) -- le torrent local est un
      disque BLEU à cerne d'encre de 2 px (« cernes d'encre (--cerne, 2 px) »,
-     §2, au lieu d'un anneau blanc) ; pairs complets BLEU, plus de la moitié
-     ENCRE, début JAUNE, aucune donnée ROUGE. Orbites et liens : gris éteint. */
+     §2, au lieu d'un anneau blanc) ; pairs complets BLEU, aucune donnée
+     ROUGE. Les points ne sont pas cernés (le canvas n'en trace pas) : un
+     point jaune ne tenait que 1,4:1 sur le papier du dialogue (1,6:1 en HC).
+     Début = l'ENCRE, comme le rare de la mosaïque qu'il suit ; plus de la
+     moitié = le DOUX (« doux #6E6A60 », §3), le « courant » de la mosaïque,
+     dont la piste blanche ne se verrait pas sur le papier. Sur le papier :
+     encre 15:1, doux 4,8:1 (craie 13,6 et 7,6:1 de nuit ; HC 16,9 et 7,2:1).
+     Orbites et liens : gris éteint. */
   --swarm-local:   var(--bh-blue);
   --swarm-seed:    var(--bh-blue);
-  --swarm-half:    var(--bh-ink);
-  --swarm-started: var(--bh-yellow);
+  --swarm-half:    var(--bh-soft);
+  --swarm-started: var(--bh-ink);
   --swarm-none:    var(--bh-red);
   --swarm-ring:    var(--bh-ink);
   --swarm-orbit:   var(--bh-disabled);
@@ -206,6 +219,10 @@
   --glyph-pin: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3 1.5h10v7H3z' fill='none' stroke='%23000' stroke-width='2'/%3E%3Cpath d='M7 9.5h2v6H7z'/%3E%3C/svg%3E");
   --glyph-locked: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4.5 7.5V5a3.5 3.5 0 0 1 7 0v2.5' fill='none' stroke='%23000' stroke-width='2'/%3E%3Cpath fill-rule='evenodd' d='M2.5 7h11v8.5h-11zM7 9.5V13h2V9.5z'/%3E%3C/svg%3E");
   --glyph-private: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4.5 7.5V5a3.5 3.5 0 0 1 7 0v2.5' fill='none' stroke='%23000' stroke-width='2'/%3E%3Cpath d='M3.5 8h9v6.5h-9z' fill='none' stroke='%23000' stroke-width='2'/%3E%3C/svg%3E");
+  /* Le triangle qui signale (témoin des bandeaux d'attente, plus bas) : le
+     tracé même du bouton « réduire » de components.html, jaune cerné
+     d'encre -- de nuit, cerne de craie (bloc sombre, comme les icônes). */
+  --bh-triangle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 2.5L14.5 13.5H1.5Z' fill='%23F6C700' stroke='%231D1D1B' stroke-width='1.4'/%3E%3C/svg%3E");
 
   /* ========================================================
      4. OMBRES — cet atelier n'en a AUCUNE (interdit §10.2 de STYLE.md) :
@@ -329,6 +346,11 @@
 
 /* DARK:BEGIN — l'atelier de nuit (phase 3) */
 [data-theme="dark"] {
+  /* Essaim de nuit : le jaune tient 10,2:1 sur le papier de nuit, et la
+     craie contre le doux n'y ferait que 1,8:1 -- début reprend donc le
+     JAUNE (le signal, §2) et plus de la moitié la CRAIE. */
+  --swarm-half:    var(--bh-ink);
+  --swarm-started: var(--bh-yellow);
   --bh-paper: #221F1B;             /* le fusain */
   --bh-white: #2C2823;             /* champs de nuit */
   --bh-ink: #EFEAD8;               /* la craie */
@@ -349,6 +371,7 @@
      #2C2823 ; l'erreur garde la craie (15:1), sa graisse et son carré
      témoin rouge (§7), qui porte seul la couleur. */
   --status-danger-text: var(--bh-ink);
+  --bh-triangle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 2.5L14.5 13.5H1.5Z' fill='%23F6C700' stroke='%23EFEAD8' stroke-width='1.4'/%3E%3C/svg%3E");
   /* Toutes les propriétés "extra" (--border-*, --plastic-*, --gradient-*,
      --frame-shadow, --title-text-shadow, --radius-*…) re-résolvent seules
      via var(--bh-*) -- rien à répéter ici. */
@@ -763,13 +786,23 @@ canvas.tetris {
    filtre IP » : style.css les teintait de jaune à 22 % (#FDF3C7, ocre
    #584B1B de nuit -- « pas de pastel », §10.1). Ici le toast de la charte,
    « .toast{border:2px solid var(--bh-ink);background:var(--bh-white)} »,
-   qui ne crie pas (« seule l'erreur crie ») ; l'attente est dite par le même
-   liseré JAUNE cerné d'encre que la ligne en attente. */
+   « padding:9px 12px », qui ne crie pas (« seule l'erreur crie »). Pas de
+   liseré : « la forme-couleur distribue les roles ↔ coins tailles, voyants,
+   liseres » (§1, les liserés sont aux autres affiches). L'attente est dite
+   par sa forme, là où le toast pose son icône .to-ic : le triangle, car
+   « Le triangle est jaune : il ... signale » (§2), en témoin devant le
+   libellé comme le « carre temoin » du destructif (§7). */
 .suggestion-banner {
   background: var(--bh-white);
   border: var(--cerne);
-  box-shadow: inset 5px 0 0 var(--bh-yellow), inset 6.5px 0 0 var(--bh-ink);
-  padding-left: var(--space-5);
+  padding-left: var(--space-4);
+}
+.suggestion-banner::before {
+  content: "";
+  flex: none;
+  width: 16px;
+  height: 16px;
+  background: var(--bh-triangle) center / contain no-repeat;
 }
 
 /* Glisser-déposer au-dessus de la zone : style.css l'assombrissait
@@ -849,6 +882,12 @@ input[type="range"]:focus-visible { outline: var(--focus-ring); outline-offset: 
   --glyph-pin: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M2 .5h12v9H9v6H7v-6H2z'/%3E%3C/svg%3E");
   color: var(--bh-red);
 }
+/* Survol de l'épingle au repos : la règle partagée (opacity 1, filter none)
+   n'y change plus rien depuis que le repos garde l'encre pleine. « Survole |
+   le cerne passe au BLEU — fond inchange » (§7) : la tête évidée est le
+   cerne du glyphe, elle passe au bleu (9,3:1 sur la plaque blanche ; de nuit
+   le bleu des traits #5B7FE0, 3,9:1 sur le champ). */
+.row-pin-btn:not(.active):hover { color: var(--bh-blue); }
 #downloadsList .row.selected .row-pin-btn { color: var(--selection-text); }
 
 /* Pastilles sans aplat propre : le cerne fin d'encre de .badge (étiquette,

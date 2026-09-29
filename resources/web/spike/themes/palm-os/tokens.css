@@ -70,6 +70,12 @@
      ======================================================== */
   --pixel-shadow: inset -1px -1px 0 var(--pm-ghost);   /* le faux relief LCD */
   --hatch-ink: repeating-linear-gradient(45deg, var(--pm-ink) 0 1px, transparent 1px 5px);
+  /* Le cristal monochrome TEINTE (§1) : chaque pixel ramene, a luminosite
+     egale (poids de grayscale()), sur le segment verre -> encre. Verre et
+     encre sont des points fixes ; lu par body (section STRUCTURAL). Un
+     data-URI ne suit pas var() : copie aux couleurs de nuit dans
+     [data-theme="dark"] ; le HC garde verre et encre, donc ce filtre. */
+  --pm-mono-filter: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='m' color-interpolation-filters='sRGB'%3E%3CfeColorMatrix values='0.21 0.7066 0.0713 0 -0.0203 0.215 0.7233 0.073 0 0.008 0.1964 0.6606 0.0667 0 -0.0197 0 0 0 1 0'/%3E%3C/filter%3E%3C/svg%3E#m");
 
   /* Le style interdit degrades/reliefs epais (STYLE.md interdit #4) : la
      "matiere plastique" du contrat generique devient un aplat fidele
@@ -311,6 +317,8 @@
   --pm-ghost: #3E5236;             /* l'ombre d'un pixel devient lueur */
   --pm-disabled: #54654C;
   --pm-case: #23271F;              /* le boîtier, de nuit */
+  /* le cristal teinté ramené sur le segment verre éteint -> encre-lumière */
+  --pm-mono-filter: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='m' color-interpolation-filters='sRGB'%3E%3CfeColorMatrix values='0.1908 0.6418 0.0648 0 -0.0095 0.223 0.7501 0.0757 0 0.0038 0.1742 0.5859 0.0591 0 -0.01 0 0 0 1 0'/%3E%3C/filter%3E%3C/svg%3E#m");
   /* risque faible : le creux de nuit (#0B0F0A) se confond avec le verre
      éteint (1,1:1) -> mi-chemin verre éteint / lueur, mêlé des deux
      jetons plutôt qu'un hex hors charte (1,4 / 1,5 de part et d'autre ;
@@ -410,6 +418,24 @@ input[type=text], textarea { cursor: var(--cursor-text); }
    which the charter explicitly carves out in §7 "Menu au pointeur |
    inversion") ; fields stay boxless dotted lines, never a bordered box ;
    the only relief is --pixel-shadow, never a drop shadow or thick bevel. */
+
+/* Interdit #1 « Toute couleur : le cristal ne connait que le vert-gris du
+   verre et l'encre » : le lissage LCD de Chromium frange d'ocre et de bleu
+   tout fut d'un pixel -- titre, onglets, bandeaux, plaques, fleches des
+   vitesses, glyphes ⏸ ✕ ▶ ▲ ▼ ? des boutons. System 1 et NeXTSTEP
+   l'effacent par grayscale(1) ; ici le meme geste, teinte : --pm-mono-filter
+   ramene chaque pixel sur le segment verre -> encre (§3 « Aucune couleur :
+   le cristal ne connait que son vert-gris et l'encre »). Verre et encre ne
+   bougent pas ; les nuances (creux, douce, ombre-pixel, eteint), a peine
+   plus vertes que ce segment, y tombent a luminosite egale (ecart <= 8/255,
+   contrastes a +-0,06). grayscale(0) ne suffisait pas : le calque propre
+   de body garde le lissage LCD partout ou le texte est sur un fond opaque.
+   body couvre exactement la fenetre (style.css : margin 0, height 100 %,
+   sans defilement), donc le bloc conteneur qu'il devient pour les
+   position:fixed (menus, bulles, dialogues, poignees) ne les deplace pas.
+   Pas sur html : le repere de test_theme_visual_regression, enfant direct
+   de html, doit garder sa couleur. */
+body { filter: var(--pm-mono-filter); }
 
 /* ---------- Window chrome : bandeau d'encre a coins arrondis, gadgets clairs
    qui s'inversent au tap (aucun survol) ---------- */
@@ -597,22 +623,6 @@ input[type="checkbox"]:disabled { border-color: var(--pm-disabled); background: 
   cursor: var(--cursor-interactive);
 }
 .row-rate, .row-eta, .row-category, .row-peers { color: var(--text-soft); }
-/* Interdit #1 (toute couleur) : les fleches des vitesses sortaient bleues
-   et rouges -- le lissage LCD de Chromium colore leur fut d'un pixel pose
-   entre deux pixels. Le filtre isole la cellule dans son propre calque,
-   lisse en niveaux d'encre ; grayscale(0) et non (1) : l'encre du cristal
-   est teintee de vert, elle doit rester la sienne. Meme lissage pour les
-   glyphes d'un pixel des boutons (⏸ ✕ ▶ ▲ ▼ sortaient bleus et ocre), du
-   ✕ des bandeaux et des etiquettes, des « ? » et des ▲/▼ de la note des
-   regles de classement. */
-.downloads-row > .row-rate,
-.share-row > .row-name + .row-rate,
-.downloads-row-header > [data-i18n-key$="_rate"],
-.row-actions button,
-.suggestion-banner-close,
-.listbox > .row > button,
-.info-hint,
-[data-i18n-key$="routing_rules_intro"] { filter: grayscale(0); }
 .downloads-row-header { border-bottom: 2px solid var(--pm-ink); }
 .scan-path, .scan-size { color: var(--text-primary); }
 
