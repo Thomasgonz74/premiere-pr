@@ -54,9 +54,14 @@ class WebhookNotificationService(QObject):
         super().__init__(parent)
         self._session_manager = session_manager
         self._settings = settings
+        # One POST per error episode, reset on removal -- same suppression as
+        # ui/notifications.py: libtorrent re-fires these on every retry.
+        self._notified_tracker_errors: set[str] = set()
+        self._notified_file_errors: set[str] = set()
         session_manager.torrent_finished.connect(self._on_torrent_finished)
         session_manager.tracker_error.connect(self._on_tracker_error)
         session_manager.file_error.connect(self._on_file_error)
+        session_manager.torrent_removed.connect(self._on_torrent_removed)
         share_limit_service.limit_reached.connect(self._on_limit_reached)
 
     def _send(self, message: str) -> None:
@@ -73,10 +78,20 @@ class WebhookNotificationService(QObject):
         self._send(f"Téléchargement terminé : {self._record_name(info_hash)}")
 
     def _on_tracker_error(self, info_hash: str, message: str) -> None:
+        if info_hash in self._notified_tracker_errors:
+            return
+        self._notified_tracker_errors.add(info_hash)
         self._send(f"Erreur de tracker ({self._record_name(info_hash)}) : {message}")
 
     def _on_file_error(self, info_hash: str, message: str) -> None:
+        if info_hash in self._notified_file_errors:
+            return
+        self._notified_file_errors.add(info_hash)
         self._send(f"Erreur disque/fichier ({self._record_name(info_hash)}) : {message}")
+
+    def _on_torrent_removed(self, info_hash: str) -> None:
+        self._notified_tracker_errors.discard(info_hash)
+        self._notified_file_errors.discard(info_hash)
 
     def _on_limit_reached(self, info_hash: str, reason: str) -> None:
         self._send(f"Partage en pause ({self._record_name(info_hash)}) : limite {reason} atteinte")

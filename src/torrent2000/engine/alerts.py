@@ -6,6 +6,7 @@ giant if/elif ladder.
 
 import logging
 from typing import Callable
+from urllib.parse import urlsplit
 
 import libtorrent as lt
 
@@ -86,7 +87,7 @@ class AlertDispatcher:
         elif isinstance(alert, lt.torrent_finished_alert):
             self._on_torrent_finished(_hash_of(alert.handle))
         elif isinstance(alert, lt.tracker_error_alert):
-            self._on_tracker_error(_hash_of(alert.handle), alert.error_message() or str(alert.message()))
+            self._on_tracker_error(_hash_of(alert.handle), alert.error_message() or _tracker_error_text(alert))
         elif isinstance(alert, lt.save_resume_data_alert):
             self._on_save_resume_data(_hash_of(alert.handle), alert.params)
         elif isinstance(alert, lt.torrent_removed_alert):
@@ -105,6 +106,19 @@ class AlertDispatcher:
             # device is not ready") -- more useful to the user than alert.error
             # alone, which is just the raw OS error text with no file context.
             self._on_file_error(_hash_of(alert.handle), str(alert.message()))
+
+
+def _tracker_error_text(alert) -> str:
+    # message() embeds the full announce URL, and private trackers carry the
+    # passkey in its path or query -- this text leaves the machine (webhook),
+    # so keep only scheme://host:port. (alert.error.message() would be the
+    # bare reason, but it raises UnicodeDecodeError on a French Windows.)
+    text = str(alert.message())
+    url = alert.tracker_url()
+    if url:
+        parts = urlsplit(url)
+        text = text.replace(url, f"{parts.scheme}://{parts.netloc.rpartition('@')[2]}")
+    return text
 
 
 def _hash_of(handle: "lt.torrent_handle") -> str:

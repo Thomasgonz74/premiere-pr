@@ -107,10 +107,26 @@ def test_tracker_error_alert_falls_back_to_message_when_error_message_empty(disp
     alert.handle = _handle_with_hash("hash0")
     alert.error_message.return_value = ""
     alert.message.return_value = "fallback message"
+    alert.tracker_url.return_value = "udp://tracker.example:6969/announce"
 
     dispatcher.dispatch(alert)
 
     callbacks["on_tracker_error"].assert_called_once_with("hash0", "fallback message")
+
+
+def test_tracker_error_fallback_drops_the_passkey_from_the_announce_url(dispatcher, callbacks):
+    url = "https://user:pw@tracker.example:8443/SECRETKEY/announce?passkey=SECRETKEY"
+    alert = MagicMock(spec=lt.tracker_error_alert)
+    alert.handle = _handle_with_hash("hash0")
+    alert.error_message.return_value = ""  # connection errors carry no tracker reason
+    alert.tracker_url.return_value = url
+    alert.message.return_value = f"f.bin ({url})[127.0.0.1:6881] v1 connection refused \"\" (1)"
+
+    dispatcher.dispatch(alert)
+
+    callbacks["on_tracker_error"].assert_called_once_with(
+        "hash0", 'f.bin (https://tracker.example:8443)[127.0.0.1:6881] v1 connection refused "" (1)'
+    )
 
 
 def test_save_resume_data_alert_forwards_hash_and_params(dispatcher, callbacks):

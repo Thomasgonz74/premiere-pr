@@ -29,6 +29,7 @@ class FakeSessionManager(QObject):
     torrent_finished = Signal(str)
     tracker_error = Signal(str, str)
     file_error = Signal(str, str)
+    torrent_removed = Signal(str)
 
     def __init__(self) -> None:
         super().__init__()
@@ -101,3 +102,14 @@ def test_limit_reached_schedules_a_webhook_post(wired):
 
     assert len(pool.started) == 1
     assert "ratio" in pool.started[0]._message
+
+
+def test_a_retrying_tracker_error_posts_once_per_episode(wired):
+    _service, session_manager, _sls, _settings, pool = wired
+
+    for _ in range(3):  # libtorrent re-fires it on every announce retry
+        session_manager.tracker_error.emit("abc123", "connection refused")
+    session_manager.torrent_removed.emit("abc123")
+    session_manager.tracker_error.emit("abc123", "connection refused")
+
+    assert len(pool.started) == 2
