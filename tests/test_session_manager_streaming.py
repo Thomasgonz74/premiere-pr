@@ -29,6 +29,7 @@ def _mock_torrent_info(file_sizes: list[int], piece_length: int, num_pieces: int
         offsets.append(running)
         running += size
     fs.file_offset.side_effect = lambda i: offsets[i]
+    fs.file_flags.return_value = 0
     ti = MagicMock()
     ti.files.return_value = fs
     ti.piece_length.return_value = piece_length
@@ -48,6 +49,7 @@ def test_enabling_sets_sequential_flag_and_applies_head_piece_deadlines():
     # piece_length=100 -- the largest file spans pieces 0..100, but the head
     # window (_STREAMING_HEAD_PIECE_COUNT=30) caps it at pieces 0..29.
     handle.torrent_file.return_value = _mock_torrent_info([50, 10000], piece_length=100, num_pieces=105)
+    handle.get_file_priorities.return_value = [4, 4]
     sm = _session_manager_with_handle("hash1", handle)
 
     sm.set_sequential_download("hash1", True)
@@ -65,6 +67,7 @@ def test_head_window_never_exceeds_the_largest_files_actual_piece_range():
     # Largest file only spans 5 pieces total -- must not request deadlines
     # for pieces beyond it even though the head window would allow more.
     handle.torrent_file.return_value = _mock_torrent_info([0, 500], piece_length=100, num_pieces=5)
+    handle.get_file_priorities.return_value = [4, 4]
     sm = _session_manager_with_handle("hash1", handle)
 
     sm.set_sequential_download("hash1", True)
@@ -76,6 +79,8 @@ def test_head_window_never_exceeds_the_largest_files_actual_piece_range():
 
 def test_disabling_clears_piece_deadlines_instead_of_setting_them():
     handle = MagicMock()
+    handle.torrent_file.return_value = _mock_torrent_info([500], piece_length=100, num_pieces=5)
+    handle.get_file_priorities.return_value = [4]
     sm = _session_manager_with_handle("hash1", handle)
 
     sm.set_sequential_download("hash1", False)
@@ -100,3 +105,38 @@ def test_unknown_info_hash_is_a_noop():
     sm = _session_manager_with_handle("hash1", MagicMock())
 
     sm.set_sequential_download("unknown", True)  # must not raise
+
+
+def test_streaming_spares_an_excluded_file_and_disabling_restores_file_priorities(tmp_path):
+    """Real libtorrent: set_piece_deadline() pulls a priority-0 piece in, and
+    clear_piece_deadlines() drops every deadline piece to priority 1."""
+    import time
+
+    import libtorrent as lt
+
+    piece = 16 * 1024
+    content = tmp_path / "pack"
+    content.mkdir()
+    (content / "a_small.txt").write_bytes(os.urandom(5 * piece))
+    (content / "b_big.mkv").write_bytes(os.urandom(64 * piece))
+    fs = lt.file_storage()
+    lt.add_files(fs, str(content))
+    ct = lt.create_torrent(fs, piece, flags=lt.create_torrent.v1_only)
+    lt.set_piece_hashes(ct, str(tmp_path))
+    params = lt.add_torrent_params()
+    params.ti = lt.torrent_info(lt.bdecode(lt.bencode(ct.generate())))
+    params.save_path = str(tmp_path / "dl")
+    params.file_priorities = [4, 0]  # the largest file is excluded
+    session = lt.session({"listen_interfaces": "127.0.0.1:0", "enable_dht": False, "enable_lsd": False,
+                          "enable_upnp": False, "enable_natpmp": False})
+    handle = session.add_torrent(params)
+    deadline = time.monotonic() + 10.0
+    while handle.status().state != lt.torrent_status.downloading and time.monotonic() < deadline:
+        time.sleep(0.05)
+    sm = _session_manager_with_handle("hash1", handle)
+
+    sm.set_sequential_download("hash1", True)
+    assert handle.get_piece_priorities()[5:] == [0] * 64  # excluded file untouched
+
+    sm.set_sequential_download("hash1", False)
+    assert handle.get_piece_priorities() == [4] * 5 + [0] * 64

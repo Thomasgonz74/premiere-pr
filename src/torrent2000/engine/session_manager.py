@@ -917,6 +917,30 @@ class SessionManager(QObject):
             self._apply_streaming_deadlines(handle)
         else:
             handle.clear_piece_deadlines()
+            self._restore_file_piece_priorities(handle)
+
+    def _restore_file_piece_priorities(self, handle) -> None:
+        """clear_piece_deadlines() leaves every deadline piece at priority 1
+        whatever its file's priority (an excluded file's head keeps
+        downloading, a wanted file's head is demoted), so re-derive each
+        piece's priority from its files the way libtorrent does: the highest
+        overlapping file wins, pad and empty files don't count."""
+        ti = handle.torrent_file()
+        if ti is None:
+            return
+        fs = ti.files()
+        piece_length = ti.piece_length()
+        if piece_length <= 0:
+            return
+        piece_priorities = [0] * ti.num_pieces()
+        for index, priority in enumerate(handle.get_file_priorities()):
+            size = fs.file_size(index)
+            if priority == 0 or size == 0 or fs.file_flags(index) & lt.file_storage.flag_pad_file:
+                continue
+            offset = fs.file_offset(index)
+            for piece in range(offset // piece_length, (offset + size - 1) // piece_length + 1):
+                piece_priorities[piece] = max(piece_priorities[piece], priority)
+        handle.prioritize_pieces(piece_priorities)
 
     def _apply_streaming_deadlines(self, handle) -> None:
         ti = handle.torrent_file()
@@ -928,7 +952,13 @@ class SessionManager(QObject):
         piece_length = ti.piece_length()
         if piece_length <= 0:
             return
-        largest_index = max(range(fs.num_files()), key=fs.file_size)
+        # set_piece_deadline() downloads a piece even at priority 0, so only a
+        # file the user actually wants can be the one streamed.
+        file_priorities = handle.get_file_priorities()
+        wanted = [index for index in range(fs.num_files()) if file_priorities[index] > 0]
+        if not wanted:
+            return
+        largest_index = max(wanted, key=fs.file_size)
         offset = fs.file_offset(largest_index)
         size = fs.file_size(largest_index)
         first_piece = offset // piece_length
