@@ -54,6 +54,14 @@ def test_reversed_range_is_skipped(tmp_path):
     assert ip_filter.access("10.0.0.5") == 0
 
 
+def test_bom_mixed_family_range_and_scoped_address_cost_only_their_own_line(tmp_path):
+    path = tmp_path / "blocklist.txt"
+    path.write_text("10.0.0.0/8\n1.2.3.4 - ::ffff\nfe80::1%eth0\n192.168.0.0/16\n", encoding="utf-8-sig")
+    ip_filter = parse_blocklist_file(str(path))
+    assert ip_filter.access("10.1.1.1") == 1
+    assert ip_filter.access("192.168.1.1") == 1
+
+
 def test_unparsable_lines_are_logged_individually_only_up_to_a_cap(tmp_path, caplog):
     """A file in another format makes every line unparsable -- one warning
     per line was ~30 s of logging for a big list."""

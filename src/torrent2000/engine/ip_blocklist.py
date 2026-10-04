@@ -52,21 +52,24 @@ def parse_blocklist_file(path: str) -> lt.ip_filter:
     Raises BlocklistLoadCancelled once cancel_blocklist_load() was called."""
     ip_filter = lt.ip_filter()
     bad_lines = 0
-    with open(path, encoding="utf-8", errors="replace") as f:
+    # utf-8-sig: a BOM would otherwise glue onto the first rule and reject it.
+    with open(path, encoding="utf-8-sig", errors="replace") as f:
         for line_number, raw_line in enumerate(f, start=1):
             if line_number % _CANCEL_CHECK_LINES == 0 and _cancel_event.is_set():
                 raise BlocklistLoadCancelled
             line = raw_line.strip()
             if not line or line.startswith("#"):
                 continue
+            # Any per-line failure skips just that line: a v4-v6 range
+            # (TypeError) or a scoped "fe80::1%eth0" that add_rule rejects
+            # used to escape and drop the whole list.
             try:
                 first, last = _parse_line(line)
-            except ValueError:
+                ip_filter.add_rule(str(first), str(last), _BLOCK_FLAG)
+            except Exception:
                 bad_lines += 1
                 if bad_lines <= _MAX_LOGGED_BAD_LINES:
                     logger.warning("ip_blocklist: skipping unparsable line %d: %r", line_number, line)
-                continue
-            ip_filter.add_rule(str(first), str(last), _BLOCK_FLAG)
     if bad_lines > _MAX_LOGGED_BAD_LINES:
         logger.warning("ip_blocklist: skipped %d unparsable lines in total in %r", bad_lines, path)
     return ip_filter
