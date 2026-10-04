@@ -258,6 +258,7 @@ class SessionManager(QObject):
     # torrents outright (see enforce_theme_download_policy).
     theme_downloads_paused = Signal(int)
     storage_moved = Signal(str, str)  # str info_hash, str new_path
+    move_storage_refused = Signal(str, str)  # str info_hash, str refused path
     # A disk/file I/O error (e.g. an external drive dropping out mid-write)
     # paused this torrent automatically. str info_hash, str error message.
     file_error = Signal(str, str)
@@ -1070,6 +1071,7 @@ class SessionManager(QObject):
     def move_storage(self, info_hash: str, new_path: str) -> None:
         if not is_safe_move_destination(new_path):
             logger.warning("Refusing to move torrent %s to disallowed destination: %r", info_hash, new_path)
+            self.move_storage_refused.emit(info_hash, new_path)  # callers are fire-and-forget
             return
         handle = self._handles.get(info_hash)
         if handle is not None:

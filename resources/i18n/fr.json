@@ -199,6 +199,8 @@
   "notifications.theme_downloads_paused_message": "{count} torrent(s) mis en pause par le thème actif (téléchargement désactivé).",
   "notifications.storage_moved_title": "Déplacement terminé",
   "notifications.storage_moved_message": "{name} -- nouveau chemin : {path}",
+  "notifications.move_storage_refused_title": "Déplacement refusé",
+  "notifications.move_storage_refused_message": "{name} -- {path} n'est pas autorisé (racine de lecteur, chemin réseau ou dossier système). Choisissez un sous-dossier.",
   "disk_space.low_space_warning": "Espace disque faible pour {path} : {free_mb} Mo restants (seuil configuré : {threshold} Mo).",
   "profile_tab.general_group": "Paramètres généraux",
   "profile_tab.default_download_dir": "Dossier de destination par défaut :",

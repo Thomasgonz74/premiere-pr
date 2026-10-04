@@ -10,7 +10,11 @@ import os
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
-from torrent2000.engine.session_manager import is_safe_move_destination
+from unittest.mock import MagicMock
+
+from PySide6.QtCore import QObject
+
+from torrent2000.engine.session_manager import SessionManager, is_safe_move_destination
 
 
 def test_rejects_windows_system_directory():
@@ -52,3 +56,19 @@ def test_rejects_unresolvable_path_instead_of_raising():
     # A path containing a null byte can't be resolved on Windows -- must
     # fail closed (reject), never raise past this function.
     assert is_safe_move_destination("C:\\Users\\bad\x00path") is False
+
+
+def test_a_refused_move_is_reported_not_just_logged():
+    # The bridge slots are fire-and-forget: without the signal a user who
+    # picks a drive root in the folder picker sees nothing happen at all.
+    sm = SessionManager.__new__(SessionManager)  # bypass __init__, no libtorrent session
+    QObject.__init__(sm)  # signals need the QObject side
+    handle = MagicMock()
+    sm._handles = {"hash1": handle}
+    refused = []
+    sm.move_storage_refused.connect(lambda info_hash, path: refused.append((info_hash, path)))
+
+    sm.move_storage("hash1", "C:" + "\\")
+
+    handle.move_storage.assert_not_called()
+    assert refused == [("hash1", "C:" + "\\")]

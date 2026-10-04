@@ -33,6 +33,7 @@ class FakeSessionManager(QObject):
     torrent_removed = Signal(str)
     theme_downloads_paused = Signal(int)
     storage_moved = Signal(str, str)
+    move_storage_refused = Signal(str, str)
 
     def __init__(self) -> None:
         super().__init__()

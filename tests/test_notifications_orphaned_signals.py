@@ -32,6 +32,7 @@ class FakeSessionManager(QObject):
     torrent_removed = Signal(str)
     theme_downloads_paused = Signal(int)
     storage_moved = Signal(str, str)
+    move_storage_refused = Signal(str, str)
 
     def __init__(self) -> None:
         super().__init__()
@@ -99,3 +100,14 @@ def test_storage_moved_unknown_info_hash_falls_back_to_truncated_hash(notificati
     mock_tray.showMessage.assert_called_once()
     _title, message = mock_tray.showMessage.call_args[0][:2]
     assert "unknownhash1" in message
+
+
+def test_refused_move_surfaces_a_toast_instead_of_doing_nothing(notification_service):
+    _service, session_manager, mock_tray = notification_service
+
+    session_manager.move_storage_refused.emit("abc123", "E:/")
+
+    mock_tray.showMessage.assert_called_once()
+    title, message = mock_tray.showMessage.call_args[0][:2]
+    assert title == "Déplacement refusé"
+    assert message.startswith("Example.Torrent -- E:/ n'est pas autorisé")
