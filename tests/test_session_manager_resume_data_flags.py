@@ -171,3 +171,26 @@ def test_shutdown_waits_for_each_torrents_own_final_save():
         sm.shutdown(timeout_ms=3000)
 
     assert [call.args[0] for call in mock_save.call_args_list] == ["hash0", "hash1", "hash0", "hash1", "hash2"]
+
+
+def test_shutdown_skips_the_in_flight_save_of_a_removed_torrent():
+    """A torrent removed just before Quit can still have its periodic save
+    in flight; its alert's handle is invalid, and raising on it lost the
+    final save of every other torrent."""
+    kept = MagicMock()
+    kept.is_valid.return_value = True
+    sm = _session_manager_with_mock_handles(kept)
+    removed = MagicMock()
+    removed.is_valid.return_value = False
+    gone_alert = _save_alert_for(removed, "gone")
+    kept_alert = _save_alert_for(kept, "hash0")
+    sm._session.pop_alerts.return_value = [gone_alert, kept_alert]
+
+    with (
+        patch("torrent2000.engine.session_manager.QCoreApplication"),
+        patch("torrent2000.engine.session_manager.persistence.save_resume_params") as mock_save,
+        patch("time.sleep"),
+    ):
+        sm.shutdown(timeout_ms=3000)
+
+    mock_save.assert_called_once_with("hash0", kept_alert.params)

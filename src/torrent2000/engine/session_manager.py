@@ -1180,7 +1180,14 @@ class SessionManager(QObject):
             alerts = self._session.pop_alerts()
             for alert in alerts:
                 if isinstance(alert, lt.save_resume_data_alert):
-                    info_hash = _hash_of(alert.handle)
+                    try:
+                        info_hash = _hash_of(alert.handle)
+                    except RuntimeError:
+                        # Torrent removed while its periodic save was in
+                        # flight: skip it like dispatch_all does, or the
+                        # raise loses every save still to come.
+                        pending.discard(alert.handle)
+                        continue
                     persistence.save_resume_params(info_hash, alert.params)
                     pending.discard(alert.handle)
                 elif isinstance(alert, (lt.save_resume_data_failed_alert,)):
