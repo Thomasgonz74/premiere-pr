@@ -26,6 +26,7 @@ def qapp():
 class _FakeSessionManager(QObject):
     torrent_added = Signal(str)
     torrent_removed = Signal(str)
+    torrent_restore_failed = Signal(str)
     torrent_status_batch_updated = Signal(list)
     ip_blocklist_wait_changed = Signal(bool)
 

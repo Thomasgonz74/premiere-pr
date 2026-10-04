@@ -48,6 +48,7 @@ class ShareBridge(QObject):
         self._live = True
         session_manager.torrent_status_batch_updated.connect(self._on_status_batch_updated)
         session_manager.torrent_removed.connect(self.recordRemoved.emit)
+        session_manager.torrent_restore_failed.connect(self.recordRemoved.emit)
         # Pushed even while hidden (not gated by _live): the downloads page's
         # suggestion banner must not miss a "limit reached" event.
         share_limit_service.limit_reached.connect(lambda ih, _reason: self._push(ih))

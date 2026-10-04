@@ -73,7 +73,6 @@ def _session_manager_loading_inline(monkeypatch, calls):
     sm = SessionManager.__new__(SessionManager)  # bypass __init__, no real libtorrent session needed
     QObject.__init__(sm)
     sm._session = MagicMock()
-    sm._session.is_paused.return_value = False
     sm._session.pause.side_effect = lambda: calls.append("pause")
     sm._session.set_ip_filter.side_effect = lambda f: calls.append(("filter", f.access("1.2.3.5")))
     sm._session.resume.side_effect = lambda: calls.append("resume")
@@ -119,14 +118,17 @@ def test_missing_file_is_logged_and_the_session_resumed_without_a_filter(tmp_pat
     assert not sm.is_waiting_for_ip_blocklist()  # the load ended: notice hidden
 
 
-def test_a_session_paused_by_someone_else_is_not_resumed(tmp_path, monkeypatch):
+def test_the_pause_never_waits_on_libtorrent_network_thread(tmp_path, monkeypatch):
+    """Called from SessionManager.__init__: is_paused() is a blocking round
+    trip to the network thread (pause() is queued), and a fresh session is
+    never paused anyway."""
     calls = []
     sm = _session_manager_loading_inline(monkeypatch, calls)
-    sm._session.is_paused.return_value = True
+    sm._session.is_paused.side_effect = AssertionError("blocking call")
 
     sm._load_ip_blocklist(_write(tmp_path, "1.2.3.0/24\n"))
 
-    assert calls == ["parse", ("filter", 1)]
+    assert calls == ["pause", "parse", ("filter", 1), "resume"]
 
 
 def test_quit_stops_the_parse_and_reports_nothing(tmp_path, monkeypatch):

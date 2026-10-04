@@ -80,6 +80,7 @@ class _FakeSessionManager(QObject):
     torrent_added = Signal(str)
     torrent_status_batch_updated = Signal(list)
     torrent_removed = Signal(str)
+    torrent_restore_failed = Signal(str)
     ip_blocklist_wait_changed = Signal(bool)
     waiting_for_ip_blocklist = False
 

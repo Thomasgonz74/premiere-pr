@@ -167,6 +167,8 @@ class DownloadsBridge(QObject):
             # out of the tag filter) -- re-added later, it starts untagged.
             session_manager.torrent_removed.connect(tag_service.clear)
         session_manager.torrent_removed.connect(self.recordRemoved.emit)
+        # Its row only: a failed restore keeps its tags for next launch.
+        session_manager.torrent_restore_failed.connect(self.recordRemoved.emit)
         session_manager.ip_blocklist_wait_changed.connect(self.ipBlocklistWaitChanged.emit)
 
     def _on_added_or_updated(self, info_hash: str) -> None:

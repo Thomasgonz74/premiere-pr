@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import libtorrent as lt
-from PySide6.QtCore import QCoreApplication, QObject, QThreadPool, Signal
+from PySide6.QtCore import QCoreApplication, QObject, QThreadPool, QTimer, Signal
 
 from torrent2000 import APP_VERSION
 from torrent2000.config.paths import get_default_download_dir
@@ -50,6 +50,10 @@ _STREAMING_DEADLINE_STEP_MS = 500
 # (handle.status() + atomic file write), so the whole batch is spread over
 # ticks instead of landing in a single pop_alerts() burst.
 _RESUME_SAVES_PER_TICK = 2
+
+# Session restore (see _bind_restored_handles): how often the alerts are
+# dispatched, between ticks, until every restored torrent has its handle.
+_RESTORE_BIND_POLL_MS = 20
 
 # post_torrent_updates() flags. Without an argument libtorrent uses
 # 0xFFFFFFFF, which also walks every piece to copy two bitfields and compute
@@ -235,6 +239,10 @@ def _is_confined(file_path: Path, resolved_root: Path) -> bool:
 class SessionManager(QObject):
     torrent_added = Signal(str)
     torrent_removed = Signal(str)
+    # libtorrent refused a torrent restored from the previous session: its
+    # row must go, but unlike torrent_removed nothing about it is forgotten
+    # -- its .fastresume, tags, category and share limit wait for next launch.
+    torrent_restore_failed = Signal(str)
     torrent_status_updated = Signal(str, object)  # str info_hash, TorrentRecord
     # Emitted once per status tick, after every torrent_status_updated of
     # that tick: list[TorrentRecord]. Lets the web bridges push one
@@ -330,6 +338,7 @@ class SessionManager(QObject):
         self._resume_save_timer = start_periodic_timer(self, 120_000, self._save_all_resume_data)
 
         self._restore_previous_session()
+        QTimer.singleShot(0, self, self._bind_restored_handles)
 
     def _load_ip_blocklist(self, path: str) -> None:
         """Parses the blocklist on a QThreadPool worker instead of blocking
@@ -337,12 +346,13 @@ class SessionManager(QObject):
         the filter is in place, so the whole session (every torrent, and
         incoming connections) stays paused until _on_ip_blocklist_loaded
         runs back on the GUI thread -- also when the file turns out to be
-        missing or unreadable, in which case it resumes without a filter."""
-        if not self._session.is_paused():
-            self._session.pause()
-            self._paused_for_ip_blocklist = True
-            logger.info("IP blocklist: session paused until %r is parsed", path)
-            self.ip_blocklist_wait_changed.emit(True)
+        missing or unreadable, in which case it resumes without a filter.
+        Only called from __init__, on a session that can't be paused yet:
+        no is_paused() check, a blocking round trip to the network thread."""
+        self._session.pause()
+        self._paused_for_ip_blocklist = True
+        logger.info("IP blocklist: session paused until %r is parsed", path)
+        self.ip_blocklist_wait_changed.emit(True)
         self._ip_blocklist_signals = BlocklistSignals()
         self._ip_blocklist_signals.loaded.connect(self._on_ip_blocklist_loaded)
         QThreadPool.globalInstance().start(BlocklistLoadRunnable(path, self._ip_blocklist_signals))
@@ -369,11 +379,27 @@ class SessionManager(QObject):
 
     def _on_tick(self) -> None:
         self._session.post_torrent_updates(_STATUS_UPDATE_FLAGS)
+        self._dispatch_alerts()
+        self._apply_deadline_priorities()
+        self._drain_resume_save_queue()
+
+    def _dispatch_alerts(self) -> None:
         alerts = self._session.pop_alerts()
         if alerts:
             self._dispatcher.dispatch_all(alerts)
-        self._apply_deadline_priorities()
-        self._drain_resume_save_queue()
+
+    def _bind_restored_handles(self) -> None:
+        """From the first pass of the event loop, not the first 300 ms tick:
+        dispatches libtorrent's alerts every _RESTORE_BIND_POLL_MS until each
+        restored torrent's add_torrent_alert has bound its handle, so an
+        action on it works as soon as libtorrent has added it. pop_alerts()
+        doesn't wait on the network thread: never blocks, even while it
+        stalls."""
+        if not self._pending_restore or not self._timer.isActive():
+            return  # all bound, or shutdown() has started
+        self._dispatch_alerts()
+        if self._pending_restore:
+            QTimer.singleShot(_RESTORE_BIND_POLL_MS, self, self._bind_restored_handles)
 
     def _apply_deadline_priorities(self) -> None:
         """Deadline queue priority: a torrent with record.deadline set gets
@@ -505,15 +531,17 @@ class SessionManager(QObject):
         if info_hash not in self._pending_restore:
             return
         self._pending_restore.discard(info_hash)
-        if error:
-            # Same outcome the synchronous restore had for a rejected entry:
-            # logged and skipped, its .fastresume left alone for next launch.
-            logger.error("Failed to restore torrent %s from saved resume data: %s", info_hash, error)
-            self._records.pop(info_hash, None)
-            self._pending_restore_confirmation.discard(info_hash)
-            self.torrent_removed.emit(info_hash)
+        if not error:
+            self._handles[info_hash] = handle
             return
-        self._handles[info_hash] = handle
+        logger.error("Failed to restore torrent %s from saved resume data: %s", info_hash, error)
+        self._pending_restore_confirmation.discard(info_hash)
+        if info_hash in self._handles:
+            return  # added again by hand meanwhile: that record is live, keep it
+        # Not torrent_removed: the user didn't remove it, so its .fastresume,
+        # tags and share limit stay for next launch -- only the row goes.
+        self._records.pop(info_hash, None)
+        self.torrent_restore_failed.emit(info_hash)
 
     def _on_storage_moved(self, info_hash: str, new_path: str) -> None:
         record = self._records.get(info_hash)
@@ -1053,11 +1081,22 @@ class SessionManager(QObject):
         # thread first runs its whole startup against the OS network stack --
         # unbounded when that stack stalls (see tests/conftest.py). Each handle
         # is bound, or the record dropped, when its add_torrent_alert reaches
-        # _on_torrent_added on a later tick.
-        for atp in persistence.load_all_resume_params():
+        # _on_torrent_added (see _bind_restored_handles).
+        atps = persistence.load_all_resume_params()
+        # Nothing pops the alert queue before the event loop runs, and past
+        # alert_queue_size libtorrent drops alerts: at the default 2000, the
+        # add_torrent_alerts of a restore beyond ~3,600 torrents, leaving
+        # those records without a handle for the whole session. Room for 4
+        # alerts per torrent keeps them all, each torrent_finished included
+        # (6,500 complete torrents: nothing dropped). apply_settings() is
+        # queued to the network thread ahead of the adds, so it covers them.
+        queue_size = max(lt.default_settings()["alert_queue_size"], 4 * len(atps))
+        self._session.apply_settings({"alert_queue_size": queue_size})
+        for atp in atps:
             # One corrupt/stale resume entry must not take down startup for
-            # every other torrent -- libtorrent rejects most bad data through
-            # the add_torrent_alert, but the binding can still raise here.
+            # every other torrent. Most bad data never gets here (refused by
+            # read_resume_data, see load_all_resume_params); some raises here
+            # (e.g. an empty save_path); the add_torrent_alert reports the rest.
             try:
                 info_hash = add_params.info_hash_hex(atp)
                 self._session.async_add_torrent(atp)
