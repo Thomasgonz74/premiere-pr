@@ -53,15 +53,18 @@ def test_load_all_resume_params_returns_empty_list_when_dir_has_no_files():
     assert load_all_resume_params() == []
 
 
-def test_load_all_resume_params_skips_a_corrupt_file_without_crashing():
+def test_load_all_resume_params_skips_a_corrupt_file_without_crashing(caplog):
     save_resume_params("good", _params("D:/downloads", "good-torrent"))
     corrupt_path = resume_file_path("bad")
     corrupt_path.write_bytes(b"not valid bencoded resume data")
 
-    loaded = load_all_resume_params()
+    with caplog.at_level("WARNING", logger="torrent2000.engine.persistence"):
+        loaded = load_all_resume_params()
 
     assert len(loaded) == 1
     assert loaded[0].name == "good-torrent"
+    # Skipped, but named: otherwise the torrent vanishes from the list unexplained.
+    assert any("bad.fastresume" in r.getMessage() for r in caplog.records)
 
 
 def test_delete_resume_file_removes_an_existing_file():

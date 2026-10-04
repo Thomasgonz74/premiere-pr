@@ -1,9 +1,12 @@
+import logging
 import os
 from pathlib import Path
 
 import libtorrent as lt
 
 from torrent2000.config.paths import get_resume_dir, retry_if_dir_vanished
+
+logger = logging.getLogger(__name__)
 
 
 def resume_file_path(info_hash: str) -> Path:
@@ -29,6 +32,10 @@ def load_all_resume_params() -> list["lt.add_torrent_params"]:
         try:
             params.append(lt.read_resume_data(f.read_bytes()))
         except Exception:
+            # A truncated write or broken bencode: the torrent is skipped, and
+            # the file kept for the user -- but say which one, or it vanishes
+            # from the list without a trace.
+            logger.warning("Skipping unreadable resume file %s", f.name, exc_info=True)
             continue
     return params
 

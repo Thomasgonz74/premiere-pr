@@ -268,7 +268,11 @@ class SessionManager(QObject):
     def __init__(self, settings: Settings, parent=None) -> None:
         super().__init__(parent)
         self._settings = settings
-        self._session = lt.session(_build_session_settings(settings))
+        session_settings = _build_session_settings(settings)
+        # Kept for _restore_previous_session: reading it back from the session
+        # (get_settings) would be a blocking round trip to the network thread.
+        self._alert_queue_floor = session_settings.get("alert_queue_size", lt.default_settings()["alert_queue_size"])
+        self._session = lt.session(session_settings)
         # See _load_ip_blocklist -- True only while the session is paused by
         # that code, so it never resumes a pause it didn't make.
         self._paused_for_ip_blocklist = False
@@ -1090,7 +1094,7 @@ class SessionManager(QObject):
         # alerts per torrent keeps them all, each torrent_finished included
         # (6,500 complete torrents: nothing dropped). apply_settings() is
         # queued to the network thread ahead of the adds, so it covers them.
-        queue_size = max(lt.default_settings()["alert_queue_size"], 4 * len(atps))
+        queue_size = max(self._alert_queue_floor, 4 * len(atps))
         self._session.apply_settings({"alert_queue_size": queue_size})
         for atp in atps:
             # One corrupt/stale resume entry must not take down startup for
