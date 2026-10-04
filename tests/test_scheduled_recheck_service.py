@@ -1,5 +1,5 @@
 """Coverage for ScheduledRecheckService: periodically force-rechecks
-finished torrents whose last verification is older than the configured
+complete torrents whose last verification is older than the configured
 interval (see engine/scheduled_recheck_service.py)."""
 
 import os
@@ -17,6 +17,11 @@ from torrent2000.engine.torrent_item import TorrentRecord, TorrentState
 @pytest.fixture(scope="module", autouse=True)
 def qapp():
     return QApplication.instance() or QApplication([])
+
+
+@pytest.fixture(autouse=True)
+def isolated_data_dir(tmp_path, monkeypatch):
+    monkeypatch.setenv("TORRENT2000_DATA_DIR", str(tmp_path))
 
 
 class FakeSessionManager:
@@ -44,16 +49,16 @@ def _service(monkeypatch, enabled=True, interval_days=30):
 def _fake_clock(monkeypatch, start=0.0):
     clock = {"now": start}
 
-    def fake_monotonic():
+    def fake_time():
         return clock["now"]
 
-    monkeypatch.setattr("torrent2000.engine.scheduled_recheck_service.time.monotonic", fake_monotonic)
+    monkeypatch.setattr("torrent2000.engine.scheduled_recheck_service.time.time", fake_time)
     return clock
 
 
 def test_disabled_by_default_does_nothing(monkeypatch):
     service, session_manager = _service(monkeypatch, enabled=False)
-    session_manager.records = [TorrentRecord(info_hash="hash1", state=TorrentState.FINISHED)]
+    session_manager.records = [TorrentRecord(info_hash="hash1", state=TorrentState.FINISHED, progress=1.0)]
 
     service.evaluate_now()
 
@@ -63,7 +68,7 @@ def test_disabled_by_default_does_nothing(monkeypatch):
 def test_first_time_seen_finished_starts_the_clock_without_rechecking(monkeypatch):
     clock = _fake_clock(monkeypatch)
     service, session_manager = _service(monkeypatch)
-    session_manager.records = [TorrentRecord(info_hash="hash1", state=TorrentState.FINISHED)]
+    session_manager.records = [TorrentRecord(info_hash="hash1", state=TorrentState.FINISHED, progress=1.0)]
 
     service.evaluate_now()
 
@@ -74,7 +79,7 @@ def test_first_time_seen_finished_starts_the_clock_without_rechecking(monkeypatc
 def test_rechecks_once_the_interval_has_elapsed(monkeypatch):
     clock = _fake_clock(monkeypatch)
     service, session_manager = _service(monkeypatch, interval_days=30)
-    session_manager.records = [TorrentRecord(info_hash="hash1", state=TorrentState.FINISHED)]
+    session_manager.records = [TorrentRecord(info_hash="hash1", state=TorrentState.FINISHED, progress=1.0)]
 
     service.evaluate_now()  # first sighting -- starts the clock
     assert session_manager.rechecked == []
@@ -88,7 +93,7 @@ def test_rechecks_once_the_interval_has_elapsed(monkeypatch):
 def test_does_not_recheck_before_the_interval_elapses(monkeypatch):
     clock = _fake_clock(monkeypatch)
     service, session_manager = _service(monkeypatch, interval_days=30)
-    session_manager.records = [TorrentRecord(info_hash="hash1", state=TorrentState.FINISHED)]
+    session_manager.records = [TorrentRecord(info_hash="hash1", state=TorrentState.FINISHED, progress=1.0)]
 
     service.evaluate_now()
     clock["now"] += 10 * 86400  # well short of 30 days
@@ -114,7 +119,7 @@ def test_non_finished_torrents_are_ignored():
 def test_removed_torrent_bookkeeping_is_cleaned_up(monkeypatch):
     clock = _fake_clock(monkeypatch)
     service, session_manager = _service(monkeypatch)
-    session_manager.records = [TorrentRecord(info_hash="hash1", state=TorrentState.FINISHED)]
+    session_manager.records = [TorrentRecord(info_hash="hash1", state=TorrentState.FINISHED, progress=1.0)]
     service.evaluate_now()
     assert "hash1" in service._last_checked
 
@@ -122,3 +127,33 @@ def test_removed_torrent_bookkeeping_is_cleaned_up(monkeypatch):
     service.evaluate_now()
 
     assert service._last_checked == {}
+
+
+def test_a_fully_downloaded_seeding_torrent_is_rechecked(monkeypatch):
+    # libtorrent reports a 100% torrent as seeding; "finished" only means a
+    # partial selection is done -- the main case was never rechecked.
+    clock = _fake_clock(monkeypatch)
+    service, session_manager = _service(monkeypatch, interval_days=30)
+    session_manager.records = [TorrentRecord(info_hash="hash1", state=TorrentState.SEEDING, progress=1.0)]
+
+    service.evaluate_now()
+    clock["now"] += 31 * 86400
+    service.evaluate_now()
+
+    assert session_manager.rechecked == ["hash1"]
+
+
+def test_a_restart_within_the_interval_keeps_the_clock(monkeypatch):
+    clock = _fake_clock(monkeypatch)
+    service, session_manager = _service(monkeypatch, interval_days=30)
+    session_manager.records = [TorrentRecord(info_hash="hash1", state=TorrentState.SEEDING, progress=1.0)]
+    service.evaluate_now()  # first sighting at day 0
+
+    clock["now"] += 29 * 86400  # app restarted on day 29
+    restarted, restarted_session_manager = _service(monkeypatch, interval_days=30)
+    restarted_session_manager.records = session_manager.records
+    restarted.evaluate_now()
+    clock["now"] += 2 * 86400
+    restarted.evaluate_now()
+
+    assert restarted_session_manager.rechecked == ["hash1"]

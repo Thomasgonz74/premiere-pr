@@ -1,5 +1,5 @@
 """Scheduled integrity recheck (catalogue idea "controle d'integrite
-planifie") -- periodically force-rechecks finished torrents so silent
+planifie") -- periodically force-rechecks complete torrents so silent
 corruption (a bad sector, a partially-overwritten file) is caught before
 it's discovered too late, e.g. right after the reconnection of a drive
 already flagged by engine/disk_reconnect_service.py.
@@ -9,22 +9,24 @@ every other opt-in automation in this project. Pure QTimer polling (like
 bandwidth_scheduler.py), not event-driven -- there's no "a month has passed"
 signal to react to.
 
-Per-torrent last-checked timestamps are session-only (not persisted): a
-restart simply resets the clock for every torrent rather than remembering
-exactly when each was last verified. That's an acceptable simplification for
-a background hygiene feature -- worst case a torrent gets rechecked a bit
-sooner than the configured interval after a restart, never later than
-CHECK_INTERVAL_MS off from what it would otherwise be.
+Per-torrent last-checked wall-clock timestamps are persisted (see
+get_scheduled_recheck_path): session-only clocks restarted on every launch,
+so anyone who rebooted within the interval never got a recheck at all.
 """
 
+import json
+import logging
+import os
 import time
 
 from PySide6.QtCore import QObject
 
+from torrent2000.config.paths import get_scheduled_recheck_path
 from torrent2000.config.settings import Settings
 from torrent2000.engine.session_manager import SessionManager
-from torrent2000.engine.torrent_item import TorrentState
 from torrent2000.utils.qt_timers import start_periodic_timer
+
+logger = logging.getLogger(__name__)
 
 CHECK_INTERVAL_MS = 60 * 60 * 1000  # hourly is plenty of granularity for a day-scale interval setting
 
@@ -36,9 +38,9 @@ class ScheduledRecheckService(QObject):
         super().__init__(parent)
         self._session_manager = session_manager
         self._settings = settings
-        # info_hash -> monotonic time this torrent was last force-rechecked
-        # (or first noticed finished, for a torrent never rechecked yet).
-        self._last_checked: dict[str, float] = {}
+        # info_hash -> time.time() this torrent was last force-rechecked
+        # (or first noticed complete, for a torrent never rechecked yet).
+        self._last_checked: dict[str, float] = self._load()
 
         self._timer = start_periodic_timer(self, CHECK_INTERVAL_MS, self.evaluate_now)
 
@@ -46,13 +48,17 @@ class ScheduledRecheckService(QObject):
         if not self._settings.scheduled_recheck_enabled:
             return
         interval_seconds = max(1, self._settings.scheduled_recheck_interval_days) * _SECONDS_PER_DAY
-        now = time.monotonic()
+        now = time.time()
+        before = dict(self._last_checked)
+        # progress, not state: a fully downloaded torrent is SEEDING (or
+        # PAUSED); FINISHED only means the wanted part of a partial
+        # selection is done.
         finished_hashes = {
-            record.info_hash for record in self._session_manager.all_records() if record.state == TorrentState.FINISHED
+            record.info_hash for record in self._session_manager.all_records() if record.progress >= 1.0
         }
-        # Drop bookkeeping for torrents no longer finished/present (removed,
+        # Drop bookkeeping for torrents no longer complete/present (removed,
         # or resumed back to downloading after a manual recheck failure) so
-        # this dict doesn't grow unbounded over a long-running session.
+        # this dict doesn't grow unbounded.
         for stale_hash in list(self._last_checked):
             if stale_hash not in finished_hashes:
                 del self._last_checked[stale_hash]
@@ -69,3 +75,25 @@ class ScheduledRecheckService(QObject):
             if now - last_checked >= interval_seconds:
                 self._session_manager.recheck_torrent(info_hash)
                 self._last_checked[info_hash] = now
+
+        if self._last_checked != before:
+            self._save()
+
+    def _save(self) -> None:
+        path = get_scheduled_recheck_path()
+        tmp_path = path.with_suffix(path.suffix + ".tmp")
+        try:
+            tmp_path.write_text(json.dumps(self._last_checked), encoding="utf-8")
+            os.replace(tmp_path, path)
+        except OSError:
+            logger.exception("Failed to save scheduled recheck timestamps")
+
+    @staticmethod
+    def _load() -> dict[str, float]:
+        try:
+            data = json.loads(get_scheduled_recheck_path().read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return {}
+        if not isinstance(data, dict):
+            return {}
+        return {k: float(v) for k, v in data.items() if isinstance(k, str) and isinstance(v, (int, float))}
