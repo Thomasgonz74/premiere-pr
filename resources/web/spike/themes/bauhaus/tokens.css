@@ -74,18 +74,11 @@
      cernee ; remplissage BLEU ; indeterminee = hachures JAUNES obliques ;
      echec = ROUGE. La trinite rend compte. » (§9) -- plus de vert, d'orange
      ni de bleu-gris (« pas de vert, pas d'orange », §10.1). Acquis = BLEU
-     (la jauge remplie), manquant courant = la piste BLANCHE, aucun pair =
-     ROUGE (l'échec). Rare = l'ENCRE, pas le jaune : la charte ne pose une
-     forme jaune que cernée d'encre (« <path d="M8 2.5L14.5 13.5H1.5Z"
-     fill="#F6C700" stroke="#1D1D1B" stroke-width="1.4"/> », le triangle de
-     components.html ; b-warn « border-color:var(--bh-ink) »), et le canvas
-     ne trace aucun cerne : le jaune seul tenait 1,6:1 sur la piste et
-     l'interstice blancs, l'encre 16,9:1 (craie 12,2:1 de nuit), 2,7:1 contre
-     le rouge (3,9:1 de nuit, 2,0:1 en HC). Même rôle que dans la
-     constellation (« début », le rare de la mosaïque) et le graphe (envoi). */
+     (la jauge remplie), manquant courant = la piste BLANCHE, rare ou en
+     cours = JAUNE (« Signal », §3), aucun pair = ROUGE (l'échec). */
   --piece-have:   var(--bh-blue);
   --piece-common: var(--bh-white);
-  --piece-rare:   var(--bh-ink);
+  --piece-rare:   var(--bh-yellow);
   --piece-none:   var(--bh-red);
   /* Vitesse : réception = le BLEU de la jauge ; envoi = le trait d'encre
      (« le rouge ne navigue pas », §10.5 -- aucune troisième teinte).
@@ -98,18 +91,12 @@
   --speed-axis: var(--bh-soft);
   /* Constellation : « Le cercle est bleu » (§2) -- le torrent local est un
      disque BLEU à cerne d'encre de 2 px (« cernes d'encre (--cerne, 2 px) »,
-     §2, au lieu d'un anneau blanc) ; pairs complets BLEU, aucune donnée
-     ROUGE. Les points ne sont pas cernés (le canvas n'en trace pas) : un
-     point jaune ne tenait que 1,4:1 sur le papier du dialogue (1,6:1 en HC).
-     Début = l'ENCRE, comme le rare de la mosaïque qu'il suit ; plus de la
-     moitié = le DOUX (« doux #6E6A60 », §3), le « courant » de la mosaïque,
-     dont la piste blanche ne se verrait pas sur le papier. Sur le papier :
-     encre 15:1, doux 4,8:1 (craie 13,6 et 7,6:1 de nuit ; HC 16,9 et 7,2:1).
-     Orbites et liens : gris éteint. */
+     §2, au lieu d'un anneau blanc) ; pairs complets BLEU, plus de la moitié
+     ENCRE, début JAUNE, aucune donnée ROUGE. Orbites et liens : gris éteint. */
   --swarm-local:   var(--bh-blue);
   --swarm-seed:    var(--bh-blue);
-  --swarm-half:    var(--bh-soft);
-  --swarm-started: var(--bh-ink);
+  --swarm-half:    var(--bh-ink);
+  --swarm-started: var(--bh-yellow);
   --swarm-none:    var(--bh-red);
   --swarm-ring:    var(--bh-ink);
   --swarm-orbit:   var(--bh-disabled);
@@ -346,11 +333,6 @@
 
 /* DARK:BEGIN — l'atelier de nuit (phase 3) */
 [data-theme="dark"] {
-  /* Essaim de nuit : le jaune tient 10,2:1 sur le papier de nuit, et la
-     craie contre le doux n'y ferait que 1,8:1 -- début reprend donc le
-     JAUNE (le signal, §2) et plus de la moitié la CRAIE. */
-  --swarm-half:    var(--bh-ink);
-  --swarm-started: var(--bh-yellow);
   --bh-paper: #221F1B;             /* le fusain */
   --bh-white: #2C2823;             /* champs de nuit */
   --bh-ink: #EFEAD8;               /* la craie */
