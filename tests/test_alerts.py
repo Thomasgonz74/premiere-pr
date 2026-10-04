@@ -163,24 +163,32 @@ def test_torrent_removed_alert_falls_back_to_v2_hash(dispatcher, callbacks):
     callbacks["on_torrent_removed"].assert_called_once_with("v2-hash")
 
 
-def test_add_torrent_alert_without_error_fires_callback(dispatcher, callbacks):
+def _add_torrent_alert(error_value: int) -> MagicMock:
     alert = MagicMock(spec=lt.add_torrent_alert)
-    alert.error = None
+    # A real error_code is truthy even when it holds no error -- only its
+    # value() says whether the add failed.
+    alert.error.value.return_value = error_value
+    alert.params.ti = None
+    alert.params.info_hashes = _handle_with_hash("hash3").info_hashes.return_value
     alert.handle = MagicMock()
+    alert.message.return_value = "invalid resume data"
+    return alert
+
+
+def test_add_torrent_alert_without_error_forwards_hash_and_handle(dispatcher, callbacks):
+    alert = _add_torrent_alert(error_value=0)
 
     dispatcher.dispatch(alert)
 
-    callbacks["on_torrent_added"].assert_called_once_with(alert.handle)
+    callbacks["on_torrent_added"].assert_called_once_with("hash3", alert.handle, "")
 
 
-def test_add_torrent_alert_with_error_does_not_fire_callback(dispatcher, callbacks):
-    alert = MagicMock(spec=lt.add_torrent_alert)
-    alert.error = MagicMock()  # truthy libtorrent error_code
-    alert.handle = MagicMock()
+def test_add_torrent_alert_with_error_forwards_the_error_message(dispatcher, callbacks):
+    alert = _add_torrent_alert(error_value=5)
 
     dispatcher.dispatch(alert)
 
-    callbacks["on_torrent_added"].assert_not_called()
+    callbacks["on_torrent_added"].assert_called_once_with("hash3", alert.handle, "invalid resume data")
 
 
 def test_storage_moved_alert_forwards_hash_and_path(dispatcher, callbacks):

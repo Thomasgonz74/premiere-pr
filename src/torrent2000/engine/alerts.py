@@ -9,6 +9,7 @@ from typing import Callable
 
 import libtorrent as lt
 
+from torrent2000.engine import add_params
 from torrent2000.engine.torrent_item import TorrentRecord, TorrentState
 
 logger = logging.getLogger(__name__)
@@ -50,7 +51,7 @@ class AlertDispatcher:
         on_tracker_error: Callable[[str, str], None],
         on_save_resume_data: Callable[[str, "lt.add_torrent_params"], None],
         on_torrent_removed: Callable[[str], None],
-        on_torrent_added: Callable[["lt.torrent_handle"], None],
+        on_torrent_added: Callable[[str, "lt.torrent_handle", str], None],
         on_storage_moved: Callable[[str, str], None],
         on_file_error: Callable[[str, str], None],
     ) -> None:
@@ -91,8 +92,10 @@ class AlertDispatcher:
         elif isinstance(alert, lt.torrent_removed_alert):
             self._on_torrent_removed(_info_hash_hex(alert.info_hashes))
         elif isinstance(alert, lt.add_torrent_alert):
-            if not alert.error:
-                self._on_torrent_added(alert.handle)
+            # alert.error is truthy even when it holds no error in this
+            # binding -- only its value() says whether the add failed.
+            error = str(alert.message()) if alert.error.value() else ""
+            self._on_torrent_added(add_params.info_hash_hex(alert.params), alert.handle, error)
         elif isinstance(alert, lt.storage_moved_alert):
             self._on_storage_moved(_hash_of(alert.handle), alert.storage_path)
         elif isinstance(alert, lt.file_error_alert):

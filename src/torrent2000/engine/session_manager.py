@@ -275,6 +275,9 @@ class SessionManager(QObject):
         # for these while verifying their fast-resume data on every restart,
         # even though nothing was actually (re)downloaded this session.
         self._pending_restore_confirmation: set[str] = set()
+        # info_hashes queued by _restore_previous_session's async_add_torrent
+        # whose add_torrent_alert hasn't arrived yet -- see _on_torrent_added.
+        self._pending_restore: set[str] = set()
         self._categories = TorrentCategoryService()
         # In-memory only (not persisted): ~60s of (download_rate, upload_rate)
         # samples per torrent at this timer's 300ms tick, for the speed-over-
@@ -496,8 +499,21 @@ class SessionManager(QObject):
         persistence.delete_resume_file(info_hash)
         self.torrent_removed.emit(info_hash)
 
-    def _on_torrent_added(self, handle) -> None:
-        pass  # bookkeeping already done synchronously in add_torrent_from_*
+    def _on_torrent_added(self, info_hash: str, handle, error: str) -> None:
+        # add_torrent_from_* already did their bookkeeping synchronously; only
+        # the async adds queued by _restore_previous_session land here.
+        if info_hash not in self._pending_restore:
+            return
+        self._pending_restore.discard(info_hash)
+        if error:
+            # Same outcome the synchronous restore had for a rejected entry:
+            # logged and skipped, its .fastresume left alone for next launch.
+            logger.error("Failed to restore torrent %s from saved resume data: %s", info_hash, error)
+            self._records.pop(info_hash, None)
+            self._pending_restore_confirmation.discard(info_hash)
+            self.torrent_removed.emit(info_hash)
+            return
+        self._handles[info_hash] = handle
 
     def _on_storage_moved(self, info_hash: str, new_path: str) -> None:
         record = self._records.get(info_hash)
@@ -1032,18 +1048,23 @@ class SessionManager(QObject):
     # -------------------------------------------------------------- lifecycle
 
     def _restore_previous_session(self) -> None:
+        # async_add_torrent, not add_torrent: the synchronous call blocks this
+        # (GUI) thread until libtorrent's network thread services it, and that
+        # thread first runs its whole startup against the OS network stack --
+        # unbounded when that stack stalls (see tests/conftest.py). Each handle
+        # is bound, or the record dropped, when its add_torrent_alert reaches
+        # _on_torrent_added on a later tick.
         for atp in persistence.load_all_resume_params():
-            # One corrupt/stale resume entry (e.g. its save_path no longer
-            # exists) must not take down startup for every other torrent --
-            # add_torrent(atp) itself needs covering here too, not just
-            # info_hash_hex, since it's the call that can actually raise on
-            # bad data.
+            # One corrupt/stale resume entry must not take down startup for
+            # every other torrent -- libtorrent rejects most bad data through
+            # the add_torrent_alert, but the binding can still raise here.
             try:
                 info_hash = add_params.info_hash_hex(atp)
-                handle = self._session.add_torrent(atp)
+                self._session.async_add_torrent(atp)
             except Exception:
                 logger.exception("Failed to restore a torrent from saved resume data")
                 continue
+            self._pending_restore.add(info_hash)
             record = TorrentRecord(
                 info_hash=info_hash,
                 name=atp.name or "",
@@ -1053,7 +1074,6 @@ class SessionManager(QObject):
                 category=self._categories.get(info_hash),
             )
             self._records[info_hash] = record
-            self._handles[info_hash] = handle
             if add_params.resume_data_is_complete(atp):
                 self._pending_restore_confirmation.add(info_hash)
             self.torrent_added.emit(info_hash)
