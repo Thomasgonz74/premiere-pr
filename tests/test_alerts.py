@@ -194,7 +194,7 @@ def test_add_torrent_alert_with_error_forwards_the_error_message(dispatcher, cal
 def test_storage_moved_alert_forwards_hash_and_path(dispatcher, callbacks):
     alert = MagicMock(spec=lt.storage_moved_alert)
     alert.handle = _handle_with_hash("hash2")
-    alert.storage_path = "D:/new/location"
+    alert.storage_path.return_value = "D:/new/location"  # a method in 2.0.13, not a property
 
     dispatcher.dispatch(alert)
 

@@ -97,7 +97,8 @@ class AlertDispatcher:
             error = str(alert.message()) if alert.error.value() else ""
             self._on_torrent_added(add_params.info_hash_hex(alert.params), alert.handle, error)
         elif isinstance(alert, lt.storage_moved_alert):
-            self._on_storage_moved(_hash_of(alert.handle), alert.storage_path)
+            # storage_path is a method in the 2.0 bindings, not a property like .path
+            self._on_storage_moved(_hash_of(alert.handle), alert.storage_path())
         elif isinstance(alert, lt.file_error_alert):
             # alert.message() is libtorrent's own composed description
             # (torrent name + which file + the underlying OS error, e.g. "the
