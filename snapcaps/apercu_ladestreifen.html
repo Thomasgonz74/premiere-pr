@@ -1,0 +1,451 @@
+<title>Ladestreifen C96 10 coups</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap">
+<style>
+/* Layout : poste de controle - bandeau de commandes, grande scene 3D, releve d'ajustement, puis fiches de cotes. */
+:root {
+  --bg: #eceff2; --surface: #f8f9fb; --stage: #dde2e7; --bed: #c6cdd5; --ink: #18222d; --muted: #566270;
+  --line: #c9d0d8; --accent: #1d4ea6; --accent-ink: #ffffff;
+  --ok: #1f7a4d; --crit: #b3261e; --crit-bg: #fbe4e2; --warn-bg: #fff3d6; --warn-ink: #5c4300;
+  --f-display: "IBM Plex Sans Condensed", "Arial Narrow", sans-serif;
+  --f-body: "IBM Plex Sans", system-ui, sans-serif;
+  --f-data: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #11151a; --surface: #192027; --stage: #0b0e12; --bed: #1c242d; --ink: #e5e9ee; --muted: #96a2ae;
+  --line: #2b343e; --accent: #86adff; --accent-ink: #0b1524;
+  --ok: #5fd39a; --crit: #ff8a80; --crit-bg: #3d1a18; --warn-bg: #3a2f10; --warn-ink: #f3dc9a; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #11151a; --surface: #192027; --stage: #0b0e12; --bed: #1c242d; --ink: #e5e9ee; --muted: #96a2ae;
+  --line: #2b343e; --accent: #86adff; --accent-ink: #0b1524;
+  --ok: #5fd39a; --crit: #ff8a80; --crit-bg: #3d1a18; --warn-bg: #3a2f10; --warn-ink: #f3dc9a; color-scheme: dark }
+
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-block: 20px 40px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; gap: 16px; }
+h1 { font-family: var(--f-display); font-weight: 600; font-size: 1.7rem; line-height: 1.15; margin: 0; text-wrap: balance; }
+.sub { color: var(--muted); margin: 2px 0 0; max-width: 65ch; }
+.bar { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: end; }
+.group { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.group > span { font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--surface); }
+.seg button { font: 500 .9rem var(--f-body); color: var(--ink); background: transparent; border: 0; padding: 8px 14px; cursor: pointer; border-right: 1px solid var(--line); }
+.seg button:last-child { border-right: 0; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+.stage { position: relative; height: clamp(360px, 60vh, 640px); background: var(--stage); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; touch-action: none; }
+.stage canvas { display: block; width: 100%; height: 100%; cursor: grab; }
+.stage canvas:active { cursor: grabbing; }
+.hint { position: absolute; left: 12px; bottom: 10px; right: 12px; font-size: .78rem; color: var(--muted); pointer-events: none; }
+.legend { position: absolute; top: 10px; left: 12px; display: flex; flex-direction: column; gap: 4px; font-size: .8rem; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; pointer-events: none; }
+.legend div { display: flex; align-items: center; gap: 8px; }
+.sw { width: 14px; height: 14px; border-radius: 3px; flex: none; }
+.fail { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; text-align: center; color: var(--muted); }
+
+.fit { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 0; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); overflow: hidden; margin: 0; }
+.fit div { padding: 10px 14px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); margin: 0 -1px -1px 0; min-width: 0; }
+.fit dt { font-size: .78rem; color: var(--muted); }
+.fit dd { margin: 2px 0 0; font: 500 1.05rem var(--f-data); font-variant-numeric: tabular-nums; }
+.fit .bad { background: var(--crit-bg); }
+.fit .bad dd { color: var(--crit); }
+.fit .good dd { color: var(--ok); }
+.fit small { font: 400 .78rem var(--f-body); color: var(--muted); margin-left: 6px; }
+
+.sheets { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 16px; align-items: start; }
+.sheet { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px; min-width: 0; }
+.sheet h2 { font-family: var(--f-display); font-weight: 600; font-size: 1.2rem; margin: 0 0 2px; }
+.sheet .std { color: var(--muted); font-size: .85rem; margin: 0 0 4px; }
+table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+th { text-align: left; font: 500 .7rem var(--f-body); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding: 12px 0 4px; }
+td { padding: 4px 0; border-top: 1px solid var(--line); vertical-align: top; }
+td:last-child { text-align: right; font-family: var(--f-data); font-variant-numeric: tabular-nums; white-space: nowrap; padding-left: 12px; }
+.calc { color: var(--accent); font-size: .72rem; margin-left: 6px; white-space: nowrap; }
+.nom { color: var(--muted); }
+.note { background: var(--warn-bg); color: var(--warn-ink); border-radius: 6px; padding: 12px 14px; font-size: .88rem; }
+.note h2 { font: 600 .95rem var(--f-body); margin: 0 0 6px; }
+.note ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; max-width: 90ch; }
+</style>
+
+<div id="root"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+<script id="geo">
+/* Geometrie pure : portage de ladestreifen_c96.py (sections YZ, stations en X, jeux) et profil de la cartouche 9x19 temoin. */
+var Lame = (function () {
+  var K = {
+    tol: -0.08, dos: 1.20, L: 101.50, capacite: 10,
+    largeurDos: 13.40, largeurFlancs: 11.80, hAiles: 3.40, ecartBourrelet: 10.15, hBourrelet: 1.40,
+    ecartLevres: 8.65, anglePente: 45, conge: 0.40, portee: 0.40, angleDegagement: 45,
+    ecartBout: 8.10, angleRampe: 30, lRetention: 1.20, chanfrein: 0.50
+  };
+  /* Cartouche temoin : snap cap 9x19 (memes cotes que snap_caps.py). */
+  var T = { dCulot: 9.96, epBourrelet: 1.27, chanfreinCulot: 0.30, dGorge: 8.40, largeurGorge: 1.45, angleGorge: 35, dCorps: 9.93,
+    lDouille: 19.15, dLevres: 9.65, dOgive: 9.02, oal: 29.30, rPointe: 1.8,
+    dPuits: 4.45, profPuits: 3.30, chanfreinPuits: 0.30, zAncrage: 2.00, surRayon: 0.35, hAncrage: 0.80 };
+  var rad = function (d) { return d * Math.PI / 180; };
+  var sub = function (a, b) { return [a[0] - b[0], a[1] - b[1]]; };
+  var add = function (a, b) { return [a[0] + b[0], a[1] + b[1]]; };
+  var mul = function (a, k) { return [a[0] * k, a[1] * k]; };
+  var unit = function (a) { var n = Math.hypot(a[0], a[1]); return [a[0] / n, a[1] / n]; };
+
+  function cotes() {
+    var demiLevres = K.ecartLevres / 2, demiBout = K.ecartBout / 2;
+    var rampe = (demiLevres - demiBout) / Math.tan(rad(K.angleRampe));
+    return { demiDos: (K.largeurDos + K.tol) / 2, demiFlancs: (K.largeurFlancs + K.tol) / 2, demiBourrelet: K.ecartBourrelet / 2,
+      demiLevres: demiLevres, demiBout: demiBout, hauteur: K.dos + K.hAiles, zLevres: K.dos + K.hBourrelet,
+      rampe: rampe, palier: K.lRetention - K.chanfrein - rampe };
+  }
+
+  /* Face interne d'une levre d'ecartement 2w, du bas vers le haut. degage = false : verticale jusqu'en haut. */
+  function profilLevre(w, degage) {
+    var c = cotes(), zPente = c.zLevres + (c.demiBourrelet - w) * Math.tan(rad(K.anglePente));
+    var pts = [[c.demiBourrelet, c.zLevres], [w, zPente]];
+    if (!degage) pts.push([w, c.hauteur]);
+    else { var zDeg = zPente + K.portee; pts.push([w, zDeg], [w + (c.hauteur - zDeg) * Math.tan(rad(K.angleDegagement)), c.hauteur]); }
+    return pts;
+  }
+
+  /* Section complete (polygone ferme, sens anti-horaire), conge echantillonne. */
+  function section(w, degage) {
+    var c = cotes(), d = [[c.demiDos, 0], [c.demiDos, K.dos], [c.demiFlancs, K.dos], [c.demiFlancs, c.hauteur]];
+    profilLevre(w, degage).slice().reverse().forEach(function (p) { d.push(p); });
+    var cx = c.demiBourrelet - K.conge, cz = K.dos + K.conge, n = 8;
+    for (var i = 0; i <= n; i++) { var a = -Math.PI / 2 * i / n; d.push([cx + K.conge * Math.cos(a), cz + K.conge * Math.sin(a)]); }
+    return d.concat(d.slice().reverse().map(function (p) { return [-p[0], p[1]]; }));
+  }
+
+  /* (x, demi-ecartement) : chanfrein d'entree, palier resserre, rampe a 30 deg, partie courante, extremite symetrique. */
+  function stations() {
+    var c = cotes(), s = [[0, c.demiBout + K.chanfrein], [K.chanfrein, c.demiBout], [K.chanfrein + c.palier, c.demiBout], [K.lRetention, c.demiLevres]];
+    return s.concat(s.slice().reverse().map(function (p) { return [K.L - p[0], p[1]]; }));
+  }
+
+  function rayonTemoin(z) {
+    var rg = T.dGorge / 2, zg = T.epBourrelet + T.largeurGorge;
+    if (z <= T.epBourrelet) return T.dCulot / 2;
+    if (z <= zg) return rg;
+    return Math.min(T.dCorps / 2, rg + (z - zg) * Math.tan(rad(T.angleGorge)));
+  }
+  function demiEcart(z, profil) {
+    for (var i = 0; i < profil.length - 1; i++) {
+      var p = profil[i], q = profil[i + 1];
+      if (p[1] <= z && z <= q[1]) return q[1] === p[1] ? p[0] : p[0] + (q[0] - p[0]) * (z - p[1]) / (q[1] - p[1]);
+    }
+    return profil[profil.length - 1][0];
+  }
+  /* Jeux par cote entre la lame et la cartouche temoin posee sur le dos ; negatif = interference. */
+  function ajustement(degage) {
+    var c = cotes(), profil = profilLevre(c.demiLevres, degage), rc = T.dCulot / 2, rg = T.dGorge / 2, mini = Infinity, zMini = 0;
+    for (var z = c.zLevres; z <= c.hauteur + 1e-9; z += 0.001) {
+      if (z - K.dos <= T.epBourrelet + 1e-9) continue;
+      var j = demiEcart(z, profil) - rayonTemoin(z - K.dos);
+      if (j < mini - 1e-9) { mini = j; zMini = z; }
+    }
+    var zContact = c.zLevres + (c.demiBourrelet - rc) * Math.tan(rad(K.anglePente));
+    var xButee = K.chanfrein + c.palier + Math.sqrt(Math.max(0, rg * rg - c.demiBout * c.demiBout));
+    return { engagement: rc - c.demiLevres, jeuLateral: c.demiBourrelet - rc, jeuAxial: zContact - (K.dos + T.epBourrelet),
+      jeuGorge: c.demiLevres - rg, jeuMini: mini, zMini: zMini, paroi: c.demiFlancs - c.demiBourrelet,
+      serrage: rg - c.demiBout, depassement: rc - xButee, jeuX: (K.L - 2 * xButee) - (K.capacite - 1) * T.dCulot };
+  }
+
+  /* Demi-profil (r, z) de la cartouche temoin, du fond du puits a la pointe. */
+  function temoin() {
+    var pts = [], rp = T.dPuits / 2, ra = rp + T.surRayon, rr = T.dCulot / 2, rg = T.dGorge / 2, rb = T.dCorps / 2, ro = T.dOgive / 2;
+    var zg = T.epBourrelet + T.largeurGorge, zb = zg + (rb - rg) / Math.tan(rad(T.angleGorge));
+    var len = T.oal - T.lDouille, rn = T.rPointe, rho = (ro * ro + (len - rn) * (len - rn) - rn * rn) / (2 * (ro - rn));
+    var oc = [ro - rho, T.lDouille], nc = [0, T.oal - rn], tg = add(oc, mul(unit(sub(nc, oc)), rho));
+    var L = function (r, z) { pts.push([r, z]); };
+    var A = function (from, to, ctr, radius) {
+      var a0 = Math.atan2(from[1] - ctr[1], from[0] - ctr[0]), da = Math.atan2(to[1] - ctr[1], to[0] - ctr[0]) - a0;
+      while (da > Math.PI) da -= 2 * Math.PI; while (da <= -Math.PI) da += 2 * Math.PI;
+      var n = Math.max(8, Math.ceil(Math.abs(da) / rad(2)));
+      for (var k = 1; k < n; k++) L(ctr[0] + radius * Math.cos(a0 + da * k / n), ctr[1] + radius * Math.sin(a0 + da * k / n));
+      L(to[0], to[1]);
+    };
+    L(0, T.profPuits); L(rp, T.profPuits); L(rp, T.zAncrage + T.hAncrage); L(ra, T.zAncrage + T.hAncrage); L(ra, T.zAncrage); L(rp, T.zAncrage);
+    L(rp, T.chanfreinPuits); L(rp + T.chanfreinPuits, 0); L(rr - T.chanfreinCulot, 0); L(rr, T.chanfreinCulot); L(rr, T.epBourrelet);
+    L(rg, T.epBourrelet); L(rg, zg); L(rb, zb); L(T.dLevres / 2, T.lDouille); L(ro, T.lDouille);
+    A([ro, T.lDouille], tg, oc, rho); A(tg, [0, T.oal], nc, rn);
+    return pts;
+  }
+  function vifs(pts) {
+    var out = [pts[0]];
+    for (var i = 1; i < pts.length - 1; i++) {
+      var u = unit(sub(pts[i], pts[i - 1])), v = unit(sub(pts[i + 1], pts[i]));
+      out.push(pts[i]);
+      if (u[0] * v[0] + u[1] * v[1] < Math.cos(rad(10))) out.push(pts[i]);
+    }
+    out.push(pts[pts.length - 1]);
+    return out;
+  }
+
+  /* Sutherland-Hodgman : sujet quelconque, fenetre convexe. */
+  function clipPoly(subject, clip) {
+    var area = 0, n = clip.length, i;
+    for (i = 0; i < n; i++) { var q = clip[(i + 1) % n]; area += clip[i][0] * q[1] - q[0] * clip[i][1]; }
+    var sign = area >= 0 ? 1 : -1, out = subject;
+    for (i = 0; i < n && out.length; i++) {
+      var a = clip[i], b = clip[(i + 1) % n], input = out; out = [];
+      var side = function (pt) { return sign * ((b[0] - a[0]) * (pt[1] - a[1]) - (b[1] - a[1]) * (pt[0] - a[0])); };
+      for (var j = 0; j < input.length; j++) {
+        var cur = input[j], prev = input[(j + input.length - 1) % input.length], sc = side(cur), sp = side(prev);
+        if (sc >= 0) { if (sp < 0) out.push(add(prev, mul(sub(cur, prev), sp / (sp - sc)))); out.push(cur); }
+        else if (sp >= 0) out.push(add(prev, mul(sub(cur, prev), sp / (sp - sc))));
+      }
+    }
+    return out;
+  }
+  /* Zone commune a la levre (+Y, partie courante) et a la cartouche temoin dans le plan de coupe ; vide s'il n'y a pas d'interference. */
+  function interference(degage) {
+    var c = cotes(), levre = [[c.demiFlancs, c.zLevres], [c.demiFlancs, c.hauteur]].concat(profilLevre(c.demiLevres, degage).slice().reverse());
+    var cart = temoin().map(function (p) { return [p[0], p[1] + K.dos]; });
+    var poly = clipPoly(cart, levre), out = [], aire = 0;
+    poly.forEach(function (p) { var q = out[out.length - 1]; if (!q || Math.hypot(p[0] - q[0], p[1] - q[1]) > 1e-7) out.push(p); });
+    for (var k = 0; k < out.length && out.length > 2;) {   // retire les sommets alignes laisses par le decoupage
+      var a = out[(k + out.length - 1) % out.length], b = out[k], d = out[(k + 1) % out.length];
+      if (Math.abs((b[0] - a[0]) * (d[1] - b[1]) - (b[1] - a[1]) * (d[0] - b[0])) < 1e-9) out.splice(k, 1); else k++;
+    }
+    for (var i = 0; i < out.length; i++) { var n = out[(i + 1) % out.length]; aire += out[i][0] * n[1] - n[0] * out[i][1]; }
+    return Math.abs(aire) / 2 > 1e-4 ? out : [];
+  }
+
+  var x1 = (K.L - K.capacite * T.dCulot) / 2 + T.dCulot / 2;   // centre de la 1re cartouche, rangee centree
+  return { K: K, T: T, cotes: cotes, profilLevre: profilLevre, section: section, stations: stations, ajustement: ajustement,
+    temoin: temoin, vifs: vifs, interference: interference, x1: x1 };
+})();
+</script>
+
+<script>
+(function () {
+  var h = React.createElement, G = Lame, K = G.K, T = G.T;
+  var POLY = 0x52667a, BRASS = 0xc9a450;
+  var HATCH = { lame: ['#b9c6d3', '#3d5166'], cart: ['#ecd48f', '#7b5c17'] };
+
+  function cssVar(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+  function hatchTexture(bg, line, flip) {
+    var cv = document.createElement('canvas'); cv.width = cv.height = 64;
+    var g = cv.getContext('2d');
+    g.fillStyle = bg; g.fillRect(0, 0, 64, 64); g.strokeStyle = line; g.lineWidth = 3;
+    for (var k = -64; k <= 64; k += 32) { g.beginPath(); if (flip) { g.moveTo(k, 0); g.lineTo(k + 64, 64); } else { g.moveTo(k, 64); g.lineTo(k + 64, 0); } g.stroke(); }
+    var t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    return t;
+  }
+
+  /* Lame : sections reliees par des faces reglees entre stations, plus les deux faces d'extremite. Coordonnees CAO (x, y, z). */
+  function lameGeometry(degage) {
+    var st = G.stations(), secs = st.map(function (s) { return G.section(s[1], degage); }), n = secs[0].length, pos = [];
+    var v = function (x, p) { pos.push(x, p[0], p[1]); };
+    for (var k = 0; k < st.length - 1; k++) for (var i = 0; i < n; i++) {
+      var j = (i + 1) % n, x0 = st[k][0], x1 = st[k + 1][0];
+      v(x0, secs[k][i]); v(x0, secs[k][j]); v(x1, secs[k + 1][j]);
+      v(x0, secs[k][i]); v(x1, secs[k + 1][j]); v(x1, secs[k + 1][i]);
+    }
+    [0, st.length - 1].forEach(function (k) {
+      var contour = secs[k].map(function (p) { return new THREE.Vector2(p[0], p[1]); });
+      THREE.ShapeUtils.triangulateShape(contour, []).forEach(function (t) { t.forEach(function (i) { v(st[k][0], secs[k][i]); }); });
+    });
+    var geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.computeVertexNormals();
+    return geo;
+  }
+  /* Face plane dans le plan YZ a l'abscisse x, avec coordonnees de texture en mm. */
+  function capGeometry(poly, x) {
+    var contour = poly.map(function (p) { return new THREE.Vector2(p[0], p[1]); }), pos = [], uv = [];
+    THREE.ShapeUtils.triangulateShape(contour, []).forEach(function (t) { t.forEach(function (i) { pos.push(x, poly[i][0], poly[i][1]); uv.push(poly[i][0] * 1.1, poly[i][1] * 1.1); }); });
+    var geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+    return geo;
+  }
+  function loopGeometry(poly, x) { return new THREE.BufferGeometry().setFromPoints(poly.map(function (p) { return new THREE.Vector3(x, p[0], p[1]); })); }
+
+  function createStage(host) {
+    var renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.localClippingEnabled = true;
+    host.insertBefore(renderer.domElement, host.firstChild);
+    var scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(18, 1, 5, 4000);
+    scene.add(camera);
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x8a8f99, 0.8));
+    var key = new THREE.DirectionalLight(0xffffff, 0.7); key.position.set(-0.6, 0.8, 1); camera.add(key);
+    var rim = new THREE.DirectionalLight(0xffffff, 0.3); rim.position.set(60, 40, -80); scene.add(rim);
+
+    // Repere CAO (X longueur, Y largeur, Z hauteur) pose dans le repere Three (Y vers le haut), lame centree.
+    var root = new THREE.Group(); root.rotation.x = -Math.PI / 2; root.position.x = -K.L / 2; scene.add(root);
+    var xCoupe = G.x1, cutPlane = new THREE.Plane(new THREE.Vector3(1, 0, 0), -(xCoupe - K.L / 2));
+    var mats = {
+      lame: new THREE.MeshStandardMaterial({ color: POLY, roughness: 0.8, metalness: 0, side: THREE.DoubleSide, flatShading: true }),
+      cart: new THREE.MeshStandardMaterial({ color: BRASS, metalness: 0.3, roughness: 0.45, transparent: true, opacity: 0.5, depthWrite: false, side: THREE.DoubleSide }),
+      capLame: new THREE.MeshBasicMaterial({ map: hatchTexture(HATCH.lame[0], HATCH.lame[1], false), side: THREE.DoubleSide }),
+      capCart: new THREE.MeshBasicMaterial({ map: hatchTexture(HATCH.cart[0], HATCH.cart[1], true), side: THREE.DoubleSide, transparent: true, opacity: 0.85 }),
+      bad: new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }),
+      edgeLame: new THREE.LineBasicMaterial({ color: 0x18232e }), edgeCart: new THREE.LineBasicMaterial({ color: 0x3c2c08 }),
+      bed: new THREE.MeshBasicMaterial({ side: THREE.DoubleSide })
+    };
+    function applyTheme() {
+      renderer.setClearColor(new THREE.Color(cssVar('--stage')), 1);
+      mats.bed.color.set(cssVar('--bed')); mats.bad.color.set(cssVar('--crit'));
+    }
+    applyTheme();
+    var mq = window.matchMedia('(prefers-color-scheme: dark)');
+    mq.addEventListener && mq.addEventListener('change', applyTheme);
+    var mo = new MutationObserver(applyTheme); mo.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+    // Plateau d'impression
+    var bed = new THREE.Mesh(new THREE.PlaneGeometry(K.L + 24, 40), mats.bed); bed.position.set(K.L / 2, 0, -0.04); root.add(bed);
+
+    // Cartouches temoins : revolution du profil 9x19, culot pose sur le dessus du dos.
+    var profil = G.temoin(), lathe = new THREE.LatheGeometry(G.vifs(profil).map(function (q) { return new THREE.Vector2(q[0], q[1]); }), 72), carts = [];
+    for (var i = 0; i < K.capacite; i++) {
+      var m = new THREE.Mesh(lathe, mats.cart); m.rotation.x = Math.PI / 2; m.position.set(G.x1 + i * T.dCulot, 0, K.dos); m.renderOrder = 2;
+      root.add(m); carts.push(m);
+    }
+    // Coupe de la cartouche temoin (plan YZ par son axe)
+    var ring = profil.concat(profil.slice(1, -1).reverse().map(function (q) { return [-q[0], q[1]]; })).map(function (q) { return [q[0], q[1] + K.dos]; });
+    var capCart = new THREE.Mesh(capGeometry(ring, xCoupe - 0.02), mats.capCart), edgeCart = new THREE.LineLoop(loopGeometry(ring, xCoupe - 0.03), mats.edgeCart);
+    capCart.renderOrder = 3; root.add(capCart, edgeCart);
+
+    // Lame et sa coupe : reconstruites quand le profil des levres change.
+    var lame = new THREE.Mesh(new THREE.BufferGeometry(), mats.lame), capLame = new THREE.Mesh(new THREE.BufferGeometry(), mats.capLame);
+    var edgeLame = new THREE.LineLoop(new THREE.BufferGeometry(), mats.edgeLame), bad = new THREE.Group();
+    root.add(lame, capLame, edgeLame, bad);
+
+    var controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true; controls.dampingFactor = 0.08; controls.screenSpacePanning = true;
+    controls.minDistance = 15; controls.maxDistance = 1500; controls.zoomSpeed = 0.9;
+
+    var state = { cut: false, degage: null, n: 1 }, raf = 0;
+    function frame(preset) {
+      var bout = preset === 'bout', w = bout ? 17 : K.L + 12, hh = bout ? 9.5 : 40;
+      var vf = camera.fov * Math.PI / 360, hf = Math.atan(Math.tan(vf) * camera.aspect);
+      var dist = Math.max(hh / 2 / Math.tan(vf), w / 2 / Math.tan(hf)) * 1.12;
+      controls.target.set(bout ? xCoupe - K.L / 2 : 0, bout ? 3.3 : 7, 0);
+      var dir = (bout ? new THREE.Vector3(-1, 0, 0) : new THREE.Vector3(-0.62, 0.5, 0.75)).normalize();
+      camera.position.copy(controls.target).addScaledVector(dir, dist);
+      controls.update();
+    }
+    function apply(next) {
+      if (next.degage !== state.degage) {
+        lame.geometry.dispose(); lame.geometry = lameGeometry(next.degage);
+        var sec = G.section(G.cotes().demiLevres, next.degage);
+        capLame.geometry.dispose(); capLame.geometry = capGeometry(sec, xCoupe - 0.01);
+        edgeLame.geometry.dispose(); edgeLame.geometry = loopGeometry(sec, xCoupe - 0.03);
+        while (bad.children.length) { bad.children[0].geometry.dispose(); bad.remove(bad.children[0]); }
+        var zone = G.interference(next.degage);
+        if (zone.length > 2) [1, -1].forEach(function (s) { var mesh = new THREE.Mesh(capGeometry(zone.map(function (p) { return [s * p[0], p[1]]; }), xCoupe - 0.05), mats.bad); mesh.renderOrder = 4; bad.add(mesh); });
+      }
+      state = { cut: next.cut, degage: next.degage, n: next.n };
+      var planes = state.cut ? [cutPlane] : [];
+      mats.lame.clippingPlanes = planes; mats.cart.clippingPlanes = planes; mats.lame.needsUpdate = mats.cart.needsUpdate = true;
+      capLame.visible = edgeLame.visible = capCart.visible = edgeCart.visible = bad.visible = state.cut;
+      carts.forEach(function (m, i) { m.visible = i < state.n; });
+    }
+    function resize() {
+      var w = host.clientWidth, hh = host.clientHeight; if (!w || !hh) return;
+      renderer.setSize(w, hh, false); camera.aspect = w / hh; camera.updateProjectionMatrix();
+    }
+    var ro = new ResizeObserver(resize); ro.observe(host);
+    function loop() { raf = requestAnimationFrame(loop); controls.update(); renderer.render(scene, camera); }
+    resize(); apply({ cut: false, degage: true, n: 1 }); frame('iso'); loop();
+    return {
+      set: apply, frame: frame,
+      dispose: function () { cancelAnimationFrame(raf); ro.disconnect(); mo.disconnect(); controls.dispose(); renderer.dispose(); }
+    };
+  }
+
+  function Seg(props) {
+    return h('div', { className: 'group' }, h('span', { id: props.id + '-l' }, props.label),
+      h('div', { className: 'seg', role: 'group', 'aria-labelledby': props.id + '-l' }, props.options.map(function (o) {
+        return h('button', { key: o[0], id: props.id + '-' + o[0], type: 'button', 'aria-pressed': props.value == null ? undefined : props.value === o[0], onClick: function () { props.onChange(o[0]); } }, o[1]);
+      })));
+  }
+
+  function Viewer(props) {
+    var host = React.useRef(null), api = React.useRef(null), failed = React.useState(false);
+    React.useEffect(function () {
+      try { api.current = createStage(host.current); props.apiRef.current = api.current; }
+      catch (e) { failed[1](true); }
+      return function () { api.current && api.current.dispose(); };
+    }, []);
+    React.useEffect(function () { api.current && api.current.set({ cut: props.cut, degage: props.degage, n: props.n }); }, [props.cut, props.degage, props.n]);
+    var sw = function (c) { return 'repeating-linear-gradient(135deg,' + c[0] + ' 0 3px,' + c[1] + ' 3px 4.5px)'; };
+    var legend = props.cut ? [[sw(HATCH.lame), 'Lame en coupe (plan YZ, axe de la 1re cartouche)'], [sw(HATCH.cart), 'Cartouche 9×19 témoin en coupe']] : null;
+    if (legend && props.interfere) legend.push(['var(--crit)', 'Interférence lèvre / étui']);
+    return h('div', { className: 'stage', ref: host },
+      failed[0] && h('div', { className: 'fail' }, 'WebGL n’est pas disponible dans ce navigateur : l’aperçu 3D ne peut pas s’afficher. Les cotes ci-dessous restent valables.'),
+      legend && h('div', { className: 'legend' }, legend.map(function (l) { return h('div', { key: l[1] }, h('span', { className: 'sw', style: { background: l[0] } }), l[1]); })),
+      h('div', { className: 'hint' }, 'Glisser : orbite · molette ou pincement : zoom · clic droit ou deux doigts : déplacement'));
+  }
+
+  var f = function (x, n) { return x.toFixed(n == null ? 2 : n).replace('.', ','); };
+  function Table(props) {
+    return h('table', null, h('tbody', null, props.rows.map(function (r, i) {
+      return r.length === 1 ? h('tr', { key: i }, h('th', { colSpan: 2, scope: 'colgroup' }, r[0])) : h('tr', { key: i }, h('td', null, r[0]), h('td', null, r[1]));
+    })));
+  }
+
+  function App() {
+    var cut = React.useState(false), degage = React.useState(true), n = React.useState(1), apiRef = React.useRef(null);
+    var c = G.cotes(), a = G.ajustement(degage[0]), strict = G.ajustement(false), profil = G.profilLevre(c.demiLevres, degage[0]);
+    var calc = h('span', { className: 'calc' }, 'calculé');
+    var ext = function (nom) { return [h('span', { className: 'nom', key: 'n' }, f(nom) + ' → '), f(nom + K.tol)]; };
+    var setCut = function (v) { var on = v === 'coupe'; cut[1](on); if (apiRef.current) apiRef.current.frame(on ? 'bout' : 'iso'); };
+    var mauvais = a.jeuMini < 0;
+    var section = [
+      ['Extérieur'],
+      ['Longueur (X)', f(K.L)], ['Largeur du dos, Z 0 → ' + f(K.dos), ext(K.largeurDos)],
+      ['Largeur des flancs, Z ' + f(K.dos) + ' → ' + f(c.hauteur), ext(K.largeurFlancs)], ['Hauteur totale (Z)', f(c.hauteur)],
+      ['Canal du culot'],
+      ['Écartement, Z ' + f(K.dos) + ' → ' + f(c.zLevres), f(K.ecartBourrelet)], ['Congés dos / ailes', 'R ' + f(K.conge)],
+      [['Paroi des ailes au niveau du culot', calc], f(a.paroi, 3)],
+      ['Lèvres de rétention'],
+      ['Pente auto-portante', K.anglePente + '°, Z ' + f(c.zLevres) + ' → ' + f(profil[1][1])], ['Écartement libre', f(K.ecartLevres)]
+    ];
+    if (degage[0]) section.push(['Portée verticale', 'Z ' + f(profil[1][1]) + ' → ' + f(profil[2][1])], [['Dégagement à ' + K.angleDegagement + '°, écartement en haut', calc], f(2 * profil[3][0])]);
+    else section.push(['Portée verticale', 'Z ' + f(profil[1][1]) + ' → ' + f(c.hauteur)]);
+    var bouts = [
+      ['Rétention d’extrémité (X = 0 et X = ' + f(K.L) + ')'],
+      ['Écartement resserré', f(K.ecartBout)], ['Chanfrein d’entrée', f(K.chanfrein) + ' × 45°'],
+      [['Palier à ' + f(K.ecartBout), calc], f(c.palier, 3)], [['Rampe à ' + K.angleRampe + '°', calc], f(c.rampe, 3)], ['Longueur totale', f(K.lRetention)],
+      [['Serrage au passage de la gorge, par côté', calc], f(a.serrage)],
+      [['Dépassement possible d’une cartouche d’extrémité', calc], f(a.depassement)], [['Jeu cumulé de la rangée en X', calc], f(a.jeuX)],
+      ['Cartouche témoin 9×19'],
+      ['Ø culot × épaisseur', f(T.dCulot) + ' × ' + f(T.epBourrelet)], ['Ø fond de gorge × largeur', f(T.dGorge) + ' × ' + f(T.largeurGorge)],
+      ['Export'],
+      ['Jeu sur les largeurs extérieures', f(K.tol)], ['Maillage STL', '0,005 mm · 2°']
+    ];
+    return h('div', { className: 'wrap' },
+      h('header', null, h('h1', null, 'Ladestreifen Mauser C96, 10 coups, impression à plat'),
+        h('p', { className: 'sub' }, 'Contrôle visuel avant tranchage. La lame est posée sur le plateau comme à l’impression ; les sections sont celles de ladestreifen_c96.py, cotes en millimètres.')),
+      h('div', { className: 'bar' },
+        h(Seg, { id: 'vue', label: 'Affichage', value: cut[0] ? 'coupe' : 'entier', onChange: setCut, options: [['entier', 'Pièce entière'], ['coupe', 'Coupe YZ']] }),
+        h(Seg, { id: 'cadre', label: 'Cadrage', onChange: function (p) { apiRef.current && apiRef.current.frame(p); }, options: [['iso', 'Isométrique'], ['bout', 'Vue de bout']] }),
+        h(Seg, { id: 'levres', label: 'Haut des lèvres', value: degage[0] ? 'degage' : 'vertical', onChange: function (v) { degage[1](v === 'degage'); }, options: [['degage', 'Dégagé (exporté)'], ['vertical', 'Vertical (cahier des charges)']] }),
+        h(Seg, { id: 'cart', label: 'Cartouches', value: String(n[0]), onChange: function (v) { n[1](Number(v)); }, options: [['1', '1 témoin'], ['10', '10']] })),
+      h(Viewer, { cut: cut[0], degage: degage[0], n: n[0], interfere: mauvais, apiRef: apiRef }),
+      h('dl', { className: 'fit', 'aria-label': 'Ajustement lame / cartouche, par côté' },
+        h('div', { className: 'good' }, h('dt', null, 'Lèvre engagée sous le culot'), h('dd', null, f(a.engagement, 3), h('small', null, 'par côté'))),
+        h('div', null, h('dt', null, 'Jeu lèvre / fond de gorge'), h('dd', null, f(a.jeuGorge, 3), h('small', null, 'par côté'))),
+        h('div', null, h('dt', null, 'Course du culot avant contact avec la pente'), h('dd', null, f(a.jeuAxial, 3), h('small', null, 'en Z'))),
+        h('div', { className: mauvais ? 'bad' : 'good' }, h('dt', null, mauvais ? 'Interférence lèvre / étui' : 'Jeu minimal lèvre / étui'),
+          h('dd', null, f(Math.abs(a.jeuMini), 3), h('small', null, 'par côté, à Z ' + f(a.zMini))))),
+      h('section', { className: 'note' }, h('h2', null, 'Cinq points à connaître avant d’imprimer'),
+        h('ul', null,
+          h('li', null, 'Haut des lèvres : verticales jusqu’à Z ' + f(c.hauteur) + ', elles entrent de ' + f(-strict.jeuMini) + ' mm par côté dans le chanfrein de gorge de la cartouche témoin. Le modèle exporté garde une portée verticale de ' + f(K.portee) + ' mm puis s’ouvre à 45° vers le haut. Le sélecteur « Haut des lèvres » montre les deux profils.'),
+          h('li', null, 'Rampe d’extrémité : passer de ' + f(K.ecartLevres) + ' à ' + f(K.ecartBout) + ' à ' + K.angleRampe + '° prend ' + f(c.rampe) + ' mm, pas ' + f(K.lRetention) + '. Les ' + f(K.lRetention) + ' mm sont la longueur totale : chanfrein ' + f(K.chanfrein) + ', palier ' + f(c.palier) + ', rampe ' + f(c.rampe) + '.'),
+          h('li', null, 'Rétention : la gorge étant ronde, le palier ne l’arrête que près de son diamètre. Une cartouche d’extrémité peut dépasser de ' + f(a.depassement, 1) + ' mm et la rangée garde ' + f(a.jeuX, 1) + ' mm de jeu cumulé en X.'),
+          h('li', null, 'Ailes : la paroi fait ' + f(a.paroi, 3) + ' mm au niveau du culot, soit un peu moins de deux cordons de 0,4 mm.'),
+          h('li', null, 'Gorge : l’ajustement est calculé pour une gorge de Ø ' + f(T.dGorge) + '. Mesurez vos étuis 9×19 réels, dont la gorge est souvent plus large que celle du 7,63 Mauser.'))),
+      h('div', { className: 'sheets' },
+        h('section', { className: 'sheet' }, h('h2', null, 'Section transversale'), h('p', { className: 'std' }, 'Largeurs extérieures : cote nominale → cote modélisée'), h(Table, { rows: section })),
+        h('section', { className: 'sheet' }, h('h2', null, 'Extrémités et cartouche témoin'), h('p', { className: 'std' }, 'ladestreifen_mauser_c96_10coups_plat.step / .stl'), h(Table, { rows: bouts }))));
+  }
+
+  ReactDOM.createRoot(document.getElementById('root')).render(h(App));
+})();
+</script>
