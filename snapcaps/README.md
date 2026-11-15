@@ -10,6 +10,7 @@ python snap_caps.py --help     # tolerances STL, dossier de sortie, profil JSON
 python snap_cap_gp90.py        # 5,6 mm GP90 (Fass 90) : STEP + STL dans ./output
 python ladestreifen_c96.py     # lame-chargeur Mauser C96 : STEP + STL dans ./output
 python ladestreifen_c96_antiwarping.py   # meme lame, version anti-warping
+python ladestreifen_c96_heavy_duty.py    # lame haute resistance a section etagee
 ```
 
 - `snap_caps.py` : profil parametrique (droites + arcs exacts), revolution, percage de l'event, export.
@@ -24,4 +25,8 @@ python ladestreifen_c96_antiwarping.py   # meme lame, version anti-warping
   relaxation sous la semelle et oreilles d'ancrage cassables (`activer_mouse_ears`,
   `activer_rainures_retrait`).
 - `apercu_ladestreifen_antiwarping.html` : apercu de cette version, vue de dessous comprise.
+- `ladestreifen_c96_heavy_duty.py` : version haute resistance a section etagee (pied a l'encombrement
+  du C96, rampe de butee, corps renforce) ; `longueur_pied_c96`, `largeur_ext_corps_renforce` et
+  `epaisseur_dos` en tete de fichier.
+- `apercu_ladestreifen_heavy_duty.html` : apercu de cette version, coupes du pied et du corps.
 - `output/` : exports generes avec les tolerances par defaut de chaque script.
