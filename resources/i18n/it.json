@@ -622,6 +622,7 @@
   "web.downloads.tags_dialog_title": "Etichette — {name}",
   "web.downloads.ip_blocklist_waiting": "In attesa del filtro IP… I trasferimenti riprenderanno non appena l'elenco di blocco sarà caricato.",
   "web.downloads.low_space_suggestion_suffix": "Valuta di spostare o eliminare un torrent completato.",
+  "web.downloads.magnet_start_after_analysis": "Questo magnet partirà quando i suoi file saranno stati analizzati (appena arrivano i metadati).",
   "web.downloads.share_limit_reached_singular": "1 torrent ha raggiunto il suo limite di condivisione — valuta di fermarlo o di modificarlo nella scheda Condivisione.",
   "web.downloads.share_limit_reached_plural": "{count} torrent hanno raggiunto il loro limite di condivisione — valuta di fermarli o di modificarli nella scheda Condivisione.",
   "web.downloads.slowness_analyzing": "Analisi in corso…",

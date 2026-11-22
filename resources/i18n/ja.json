@@ -622,6 +622,7 @@
   "web.downloads.tags_dialog_title": "タグ — {name}",
   "web.downloads.ip_blocklist_waiting": "IP フィルターを待機中… ブロックリストが読み込まれ次第、転送を再開します。",
   "web.downloads.low_space_suggestion_suffix": "完了したトレントの移動または削除を検討してください。",
+  "web.downloads.magnet_start_after_analysis": "このマグネットは、ファイルの分析が終わり次第（メタデータを受信し次第）開始されます。",
   "web.downloads.share_limit_reached_singular": "1 件のトレントが共有の制限に達しました — 共有タブで停止するか、制限を調整してください。",
   "web.downloads.share_limit_reached_plural": "{count} 件のトレントが共有の制限に達しました — 共有タブで停止するか、制限を調整してください。",
   "web.downloads.slowness_analyzing": "分析中…",

@@ -622,6 +622,7 @@
   "web.downloads.tags_dialog_title": "Tags — {name}",
   "web.downloads.ip_blocklist_waiting": "Warten auf den IP-Filter… Die Übertragungen werden fortgesetzt, sobald die Sperrliste geladen ist.",
   "web.downloads.low_space_suggestion_suffix": "Erwägen Sie, einen abgeschlossenen Torrent zu verschieben oder zu löschen.",
+  "web.downloads.magnet_start_after_analysis": "Dieser Magnet startet, sobald seine Dateien geprüft wurden (sobald seine Metadaten eintreffen).",
   "web.downloads.share_limit_reached_singular": "1 Torrent hat sein Freigabelimit erreicht — erwägen Sie, ihn im Tab Freigabe zu stoppen oder anzupassen.",
   "web.downloads.share_limit_reached_plural": "{count} Torrents haben ihr Freigabelimit erreicht — erwägen Sie, sie im Tab Freigabe zu stoppen oder anzupassen.",
   "web.downloads.slowness_analyzing": "Analyse läuft…",

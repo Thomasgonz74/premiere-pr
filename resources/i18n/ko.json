@@ -622,6 +622,7 @@
   "web.downloads.tags_dialog_title": "태그 — {name}",
   "web.downloads.ip_blocklist_waiting": "IP 필터를 기다리는 중… 차단 목록이 로드되면 전송이 재개됩니다.",
   "web.downloads.low_space_suggestion_suffix": "완료된 토렌트를 이동하거나 삭제하는 것을 고려하세요.",
+  "web.downloads.magnet_start_after_analysis": "이 마그넷은 파일 분석이 끝나면(메타데이터를 받는 즉시) 시작됩니다.",
   "web.downloads.share_limit_reached_singular": "토렌트 1개가 공유 제한에 도달했습니다 — 공유 탭에서 중지하거나 조정하세요.",
   "web.downloads.share_limit_reached_plural": "토렌트 {count}개가 공유 제한에 도달했습니다 — 공유 탭에서 중지하거나 조정하세요.",
   "web.downloads.slowness_analyzing": "분석 중…",

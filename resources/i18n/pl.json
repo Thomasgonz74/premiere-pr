@@ -622,6 +622,7 @@
   "web.downloads.tags_dialog_title": "Etykiety — {name}",
   "web.downloads.ip_blocklist_waiting": "Oczekiwanie na filtr IP… Transfery zostaną wznowione, gdy tylko lista blokowanych adresów zostanie wczytana.",
   "web.downloads.low_space_suggestion_suffix": "Rozważ przeniesienie lub usunięcie ukończonego torrenta.",
+  "web.downloads.magnet_start_after_analysis": "Ten magnet uruchomi się po przeanalizowaniu jego plików (gdy tylko dotrą metadane).",
   "web.downloads.share_limit_reached_singular": "1 torrent osiągnął limit udostępniania — rozważ jego zatrzymanie lub zmianę limitu na karcie Udostępnianie.",
   "web.downloads.share_limit_reached_plural": "Torrenty, które osiągnęły limit udostępniania: {count} — rozważ ich zatrzymanie lub zmianę limitu na karcie Udostępnianie.",
   "web.downloads.slowness_analyzing": "Analizowanie…",

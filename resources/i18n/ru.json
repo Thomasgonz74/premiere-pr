@@ -622,6 +622,7 @@
   "web.downloads.tags_dialog_title": "Метки — {name}",
   "web.downloads.ip_blocklist_waiting": "Ожидание IP-фильтра… Передача данных возобновится, как только будет загружен список блокировки.",
   "web.downloads.low_space_suggestion_suffix": "Попробуйте переместить или удалить завершённый торрент.",
+  "web.downloads.magnet_start_after_analysis": "Этот magnet запустится после проверки его файлов (как только поступят метаданные).",
   "web.downloads.share_limit_reached_singular": "1 торрент достиг лимита раздачи — остановите его или измените лимит на вкладке «Раздача».",
   "web.downloads.share_limit_reached_plural": "Торрентов, достигших лимита раздачи: {count} — остановите их или измените лимиты на вкладке «Раздача».",
   "web.downloads.slowness_analyzing": "Идёт анализ…",

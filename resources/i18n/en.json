@@ -623,6 +623,7 @@
   "web.downloads.tags_dialog_title": "Tags — {name}",
   "web.downloads.ip_blocklist_waiting": "Waiting for the IP filter… Transfers will resume as soon as the blocklist is loaded.",
   "web.downloads.low_space_suggestion_suffix": "Consider moving or deleting a finished torrent.",
+  "web.downloads.magnet_start_after_analysis": "This magnet will start once its files have been scanned (as soon as its metadata arrives).",
   "web.downloads.share_limit_reached_singular": "1 torrent has reached its share limit — consider stopping or adjusting it in the Share tab.",
   "web.downloads.share_limit_reached_plural": "{count} torrents have reached their share limit — consider stopping or adjusting them in the Share tab.",
   "web.downloads.slowness_analyzing": "Analyzing…",

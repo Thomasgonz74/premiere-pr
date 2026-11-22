@@ -610,6 +610,7 @@
   "web.downloads.tags_dialog_title": "标签——{name}",
   "web.downloads.ip_blocklist_waiting": "正在等待 IP 过滤器……黑名单加载完成后，传输将立即恢复。",
   "web.downloads.low_space_suggestion_suffix": "建议移动或删除一个已完成的种子。",
+  "web.downloads.magnet_start_after_analysis": "此磁力链接将在文件分析完成后（收到元数据后）开始。",
   "web.downloads.share_limit_reached_singular": "1 个种子已达到分享限制——请考虑在“分享”标签页中停止它或调整限制。",
   "web.downloads.share_limit_reached_plural": "{count} 个种子已达到分享限制——请考虑在“分享”标签页中停止它们或调整限制。",
   "web.downloads.slowness_analyzing": "正在分析…",
