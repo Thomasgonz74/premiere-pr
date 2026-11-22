@@ -31,7 +31,7 @@ from torrent2000.config.settings import Settings
 from torrent2000.danger_scanner import FileRisk, ScanResult, scan_files
 from torrent2000.engine.disk_space_monitor import free_space_mb
 from torrent2000.engine.routing_rules import RoutingRuleStore, resolve_destination
-from torrent2000.engine.session_manager import SessionManager
+from torrent2000.engine.session_manager import SessionManager, TorrentAlreadyPresentError
 from torrent2000.engine.torrent_files import files_from_torrent_path
 from torrent2000.ui.web.dropped_file import save_dropped_bytes_to_temp_file
 
@@ -177,10 +177,19 @@ class AddBridge(QObject):
         self._torrent_path = None
         try:
             info_hash = self._session_manager.add_torrent_from_magnet(uri, self._settings.default_download_dir)
+        except TorrentAlreadyPresentError as exc:
+            record = self._session_manager.get_record(exc.info_hash)
+            if record is None or not record.awaiting_analysis:
+                self.statusChanged.emit(f"Erreur : {exc}")
+                return
+            info_hash = exc.info_hash  # still awaiting its analysis (e.g. added before a restart): resume it
         except Exception as exc:
             self.statusChanged.emit(f"Erreur : {exc}")
             return
         self._pending_magnet_hash = info_hash
+        if self._session_manager.get_torrent_files(info_hash):
+            self._on_metadata_received(info_hash)  # picked back up with its metadata already in
+            return
         self.statusChanged.emit("En attente des métadonnées…")
 
     def _on_metadata_received(self, info_hash: str) -> None:

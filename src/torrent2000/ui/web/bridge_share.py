@@ -142,7 +142,10 @@ class ShareBridge(QObject):
             magnet_uri = (magnet_uri or "").strip()
             if not magnet_uri:
                 return {"ok": False, "error": "Sélectionnez un fichier .torrent ou saisissez un lien magnet."}
-            info_hash = self._session_manager.add_torrent_from_magnet(magnet_uri, data_dir)
+            try:
+                info_hash = self._session_manager.add_torrent_from_magnet(magnet_uri, data_dir)
+            except Exception as exc:
+                return {"ok": False, "error": str(exc)}
             self._session_manager.start_after_analysis(info_hash)
 
         self._share_limit_service.track(info_hash, time_limit, data_limit, ratio_limit=ratio)

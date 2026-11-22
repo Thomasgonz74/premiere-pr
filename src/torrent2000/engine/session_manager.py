@@ -20,6 +20,7 @@ from torrent2000.engine.ip_blocklist import BlocklistLoadRunnable, BlocklistSign
 from torrent2000.engine.peer_reputation import PeerReputationStore, PeerReputationTracker, ip_from_display, score_label
 from torrent2000.engine.torrent_categories import TorrentCategoryService
 from torrent2000.engine.torrent_item import ACTIVE_DOWNLOAD_STATES, PeerInfo, TorrentRecord, TorrentState, TrackerInfo
+from torrent2000.i18n.translator import tr
 from torrent2000.theme_ids import CCCP_THEME_ID
 from torrent2000.utils.qt_timers import start_periodic_timer
 
@@ -234,6 +235,12 @@ def _is_confined(file_path: Path, resolved_root: Path) -> bool:
     except (OSError, ValueError):
         return False
     return resolved == resolved_root or resolved_root in resolved.parents
+
+
+class TorrentAlreadyPresentError(ValueError):
+    def __init__(self, info_hash: str) -> None:
+        super().__init__(tr("add_tab.duplicate_message"))
+        self.info_hash = info_hash
 
 
 class SessionManager(QObject):
@@ -616,15 +623,19 @@ class SessionManager(QObject):
 
     def _add(self, atp: "lt.add_torrent_params", awaiting_analysis: bool) -> str:
         info_hash = add_params.info_hash_hex(atp)
-        record = TorrentRecord(
+        if info_hash in self._records:
+            # libtorrent hands a magnet the live handle back (and refuses a
+            # file): a new record must not replace the live one's category,
+            # pin, rule and state.
+            raise TorrentAlreadyPresentError(info_hash)
+        handle = self._session.add_torrent(atp)
+        self._records[info_hash] = TorrentRecord(
             info_hash=info_hash,
             name=atp.name or "",
             save_path=atp.save_path,
             awaiting_analysis=awaiting_analysis,
             is_magnet_awaiting_metadata=atp.ti is None,
         )
-        self._records[info_hash] = record
-        handle = self._session.add_torrent(atp)
         self._handles[info_hash] = handle
         if self._settings.lan_peer_cache_enabled:
             # If this exact torrent was already seen on this LAN before,
