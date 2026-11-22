@@ -13,6 +13,7 @@ EXECUTABLE_EXTENSIONS = {
 MEDIA_EXTENSIONS = {
     "mp4", "mkv", "avi", "mov", "wmv", "flv", "webm", "mp3", "flac", "wav",
     "aac", "ogg", "m4a", "srt", "sub", "idx", "nfo",
+    "ts", "m2ts", "vob", "ifo", "bup", "m4v", "mpg", "mpeg", "ass", "ssa", "vtt",
 }
 
 # Mounting one of these sidesteps Windows SmartScreen's "mark of the web"
@@ -33,7 +34,7 @@ KNOWN_BENIGN_EXTENSIONS = {
     "jpg", "jpeg", "png", "gif", "bmp", "webp", "svg", "tiff", "ico",
     "zip", "rar", "7z", "tar", "gz", "bz2", "xz",
     "doc", "docx", "xls", "xlsx", "ppt", "pptx", "odt", "ods", "odp", "rtf",
-    "csv", "json", "xml", "md", "log",
+    "csv", "json", "xml", "md", "log", "sfv", "md5", "cue",
 }
 
 SUSPICIOUS_NAME_PATTERNS = [
@@ -58,9 +59,12 @@ TINY_EXECUTABLE_SIZE_BYTES = 20 * 1024  # under this, a dropper-stub-sized exe i
 
 @lru_cache(maxsize=4096)
 def _extension(path: str) -> str:
-    if "." not in path:
+    # The file name only: torrent paths carry the root folder, and release
+    # folders are dotted ("Ubuntu.22.04.Server\README" has no extension).
+    name = path.replace("\\", "/").rsplit("/", 1)[-1]
+    if "." not in name:
         return ""
-    return path.rsplit(".", 1)[-1].lower()
+    return name.rsplit(".", 1)[-1].lower()
 
 
 @dataclass
