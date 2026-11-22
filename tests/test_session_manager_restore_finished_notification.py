@@ -211,6 +211,66 @@ def test_a_recheck_once_its_drive_is_back_reports_no_new_finish(qapp, tmp_path):
     assert finished_events == []
 
 
+def test_a_paused_torrent_is_rechecked_at_once_and_left_paused(qapp, tmp_path):
+    """libtorrent left a paused torrent's check at 0 % until a resume, which
+    CCCP refuses at 0 %; after a restart, that resume fired the whole
+    "download finished" chain (toast, webhook, post-complete move...)."""
+    from torrent2000.theme_ids import CCCP_THEME_ID
+
+    save_path = tmp_path / "downloads"
+    save_path.mkdir()
+    torrent_path = _make_already_complete_torrent(save_path)
+    settings = Settings()
+    sm1 = SessionManager(settings)
+    info_hash = sm1.add_torrent_from_file(torrent_path, save_path=str(save_path))
+    assert _run_ticks(qapp, sm1, lambda: sm1.get_record(info_hash).progress >= 1.0)
+    settings.theme = CCCP_THEME_ID
+    handle = sm1._handles[info_hash]
+
+    sm1.pause_torrent(info_hash)
+    sm1.recheck_torrent(info_hash)
+
+    checked = _run_ticks(
+        qapp, sm1, lambda: handle.status().progress >= 1.0 and sm1.get_record(info_hash).progress >= 1.0
+    )
+    status = handle.status()
+    sm1.shutdown()
+    assert checked and status.paused and not status.flags & lt.torrent_flags.auto_managed
+    sm2 = SessionManager(settings)
+    finished_events, blocked = [], []
+    sm2.torrent_finished.connect(finished_events.append)
+    sm2.download_blocked_by_theme.connect(blocked.append)
+    try:
+        assert _run_ticks(qapp, sm2, lambda: info_hash in sm2._handles and sm2.get_record(info_hash).progress >= 1.0)
+        sm2.resume_torrent(info_hash)
+        _run_ticks(qapp, sm2, lambda: False, timeout=1.5)
+    finally:
+        sm2.shutdown()
+
+    assert finished_events == [] and blocked == []
+
+
+def test_a_paused_torrent_resumed_during_its_recheck_is_not_paused_again(qapp, tmp_path):
+    save_path = tmp_path / "downloads"
+    save_path.mkdir()
+    torrent_path = _make_already_complete_torrent(save_path)
+    sm = SessionManager(Settings())
+    try:
+        info_hash = sm.add_torrent_from_file(torrent_path, save_path=str(save_path))
+        assert _run_ticks(qapp, sm, lambda: sm.get_record(info_hash).progress >= 1.0)
+        handle = sm._handles[info_hash]
+
+        sm.pause_torrent(info_hash)
+        sm.recheck_torrent(info_hash)
+        sm.resume_torrent(info_hash)
+
+        assert _run_ticks(qapp, sm, lambda: handle.status().progress >= 1.0)
+        _run_ticks(qapp, sm, lambda: False, timeout=1.0)
+        assert not handle.status().paused
+    finally:
+        sm.shutdown()
+
+
 def test_a_torrent_file_is_named_at_the_add_not_at_its_first_status(qapp, tmp_path):
     """atp.name only holds a magnet's dn=: a .torrent finishing before its
     first status tick had an empty name in the "download finished" toast and

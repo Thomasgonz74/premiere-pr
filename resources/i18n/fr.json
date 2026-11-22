@@ -641,6 +641,8 @@
   "web.add.torrent_added": "Torrent ajouté.",
   "web.add.magnet_error": "Lien magnet refusé : {error}",
   "web.add.destination_unusable": "Dossier de destination inutilisable : {error}",
+  "web.add.share_policy_note": "Politique de partage par défaut active ({limits}) — appliquée automatiquement une fois le partage commencé.",
+  "web.add.share_policy_hours": "{hours} h",
   "web.rss.subscriptions_label": "Abonnements",
   "web.rss.feed_url_label": "URL du flux",
   "web.rss.url_placeholder": "https://exemple.com/rss",

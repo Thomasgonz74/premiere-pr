@@ -653,6 +653,8 @@
   "web.add.torrent_added": "Torrent hinzugefügt.",
   "web.add.magnet_error": "Magnet-Link abgelehnt: {error}",
   "web.add.destination_unusable": "Zielordner nicht verwendbar: {error}",
+  "web.add.share_policy_note": "Standard-Freigaberichtlinie aktiv ({limits}) — wird automatisch angewendet, sobald das Teilen beginnt.",
+  "web.add.share_policy_hours": "{hours} Std.",
   "web.rss.subscriptions_label": "Abonnements",
   "web.rss.feed_url_label": "Feed-URL",
   "web.rss.url_placeholder": "https://example.com/rss",

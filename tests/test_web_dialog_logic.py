@@ -548,3 +548,94 @@ def test_german_and_russian_labels_fit_their_columns(view):
       return JSON.stringify(overflow);
     })(""" + json.dumps(catalogs) + ")")
     assert result == "[]"
+
+
+def test_a_magnet_or_torrent_opened_from_windows_replaces_the_torrent_shown(view):
+    """A browser magnet link (or a second launch) went to the bridge directly:
+    the previous .torrent stayed on the Add page, and Analyser picked it again."""
+    import json
+    from types import SimpleNamespace
+
+    from torrent2000.ui.web.spike_window import SpikeWindow
+
+    scripts = []
+    window = SimpleNamespace(_view=SimpleNamespace(page=lambda: SimpleNamespace(runJavaScript=scripts.append)))
+    SpikeWindow._run_open_source(window, "magnet:?xt=urn:btih:cdcd")
+    SpikeWindow._run_open_source(window, r"C:\Users\me\Downloads\new.torrent")
+    result = run_js(view, """(function (scripts) {
+      const active = document.querySelector('.tab-btn.active').dataset.tab;
+      const calls = [];
+      window.bridge = { add: { analyzeMagnet(uri) { calls.push(['magnet', uri]); },
+                               selectTorrentFile(path) { calls.push(['file', path]); } } };
+      const shown = () => [addSelectedPath, document.getElementById('addSelectedFile').textContent,
+                           document.querySelectorAll('#addScanList .scan-row').length];
+      addSelectedPath = 'C:/Temp/old.torrent';
+      document.getElementById('addSelectedFile').textContent = 'old.torrent';
+      addRenderScan({ fileRisks: [{ index: 0, path: 'old/x.iso', size: 1, score: 0, level: 'SAFE', reasons: [] }],
+                      threshold: 60, suggestedDestination: '' });
+      (0, eval)(scripts[0]);
+      const afterMagnet = shown();
+      (0, eval)(scripts[1]);
+      const afterFile = shown();
+      addSelectedPath = null;
+      document.getElementById('addSelectedFile').textContent = '';
+      document.getElementById('addMagnetInput').value = '';
+      addClearScanList();
+      switchToTab(active);
+      return JSON.stringify([afterMagnet, afterFile, calls]);
+    })(""" + json.dumps(scripts) + ")")
+    assert json.loads(result) == [
+        [None, "", 0],
+        [r"C:\Users\me\Downloads\new.torrent", "new.torrent", 0],
+        [["magnet", "magnet:?xt=urn:btih:cdcd"], ["file", r"C:\Users\me\Downloads\new.torrent"]],
+    ]
+
+
+def test_a_magnet_from_elsewhere_drops_the_previous_torrents_routed_folder_and_magnet(view):
+    """Start before its metadata came in placed the magnet in the folder the
+    previous .torrent's routing rule picked; Analyser re-ran a magnet pasted
+    earlier."""
+    result = run_js(view, """(function () {
+      const saved = [addDefaultDestination, document.getElementById('addDestInput').value];
+      window.bridge = { add: { analyzeMagnet() {} } };
+      const dest = document.getElementById('addDestInput');
+      const magnet = document.getElementById('addMagnetInput');
+      addDefaultDestination = 'C:/Downloads';
+      dest.value = 'C:/Downloads';
+      magnet.value = 'magnet:?xt=urn:btih:aaaa';
+      addRenderScan({ fileRisks: [], threshold: 60, suggestedDestination: 'D:/Routed' });
+      const routed = dest.value;
+      addAnalyzeMagnet('magnet:?xt=urn:btih:bbbb');
+      const seen = [routed, dest.value, magnet.value];
+      dest.value = 'E:/Mine';  // typed by the user: kept
+      addAnalyzeMagnet('magnet:?xt=urn:btih:cccc');
+      seen.push(dest.value);
+      [addDefaultDestination, dest.value] = saved;
+      magnet.value = '';
+      addClearScanList();
+      return JSON.stringify(seen);
+    })()""")
+    assert result == '["D:/Routed","C:/Downloads","magnet:?xt=urn:btih:bbbb","E:/Mine"]'
+
+
+def test_a_language_switch_hides_a_slowness_result_in_the_previous_language(view):
+    result = run_js(view, """(function () {
+      window.bridge = {
+        downloads: { listAllTags(cb) { cb([]); }, getAllocatedSize(h, cb) { cb(10); } },
+        trackerEditor: { getTrackers(h, cb) { cb([]); } },
+      };
+      downloadsRenderRecord({ infoHash: 'slow', name: 'slow', progress: 0, state: 'DOWNLOADING', downloadRate: 0,
+        uploadRate: 0, numPeers: 0, numSeeds: 0, totalSize: 10, category: '', pinned: false });
+      downloadsRows.get('slow').el.classList.add('selected');
+      downloadsUpdateDetailsPanel();
+      downloadsRenderSlownessResult({ applicable: true, causes: [{ text: 'Aucun seed' }], note: '' });  // its button
+      const box = document.getElementById('downloadsDetailsSlowness');
+      const shown = box.style.display + ' ' + box.textContent;
+      setCatalog({ 'downloads_tab.state_downloading': 'Downloading' });
+      const afterSwitch = box.style.display + ' ' + box.textContent;
+      downloadsRemoveRecord('slow');
+      setCatalog({});
+      downloadsUpdateDetailsPanel();
+      return JSON.stringify([shown, afterSwitch]);
+    })()""")
+    assert result == '["block Aucun seed","none "]'

@@ -76,6 +76,19 @@ def test_recheck_torrent_calls_force_recheck_on_the_handle():
     handle.force_recheck.assert_called_once()
 
 
+def test_a_recheck_leaves_a_paused_magnet_awaiting_analysis_unmanaged():
+    """Auto-managed, libtorrent would end its upload mode by itself."""
+    import libtorrent as lt
+
+    handle = MagicMock()
+    handle.flags.return_value = lt.torrent_flags.paused | lt.torrent_flags.upload_mode
+    sm = _session_manager_with_mock_handles(hash0=handle)
+
+    sm.recheck_torrent("hash0")
+
+    handle.set_flags.assert_not_called()
+
+
 def test_recheck_torrent_missing_handle_is_a_no_op():
     sm = _session_manager_with_mock_handles()
 

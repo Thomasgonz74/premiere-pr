@@ -159,10 +159,10 @@ def test_a_restart_within_the_interval_keeps_the_clock(monkeypatch):
     assert restarted_session_manager.rechecked == ["hash1"]
 
 
-def test_a_paused_complete_torrent_is_rechecked_once_resumed_not_before(monkeypatch):
-    """libtorrent leaves a paused torrent's recheck at 0 % until it is resumed
-    (never, under CCCP), and that resume after a restart re-fired the whole
-    "download finished" chain. Its clock is kept meanwhile."""
+def test_a_paused_complete_torrent_is_rechecked_too(monkeypatch):
+    """Skipped while PAUSED, which is also every seed libtorrent's queue holds
+    back: past active_limit complete torrents, some were never rechecked.
+    recheck_torrent itself checks a paused torrent and leaves it paused."""
     clock = _fake_clock(monkeypatch)
     service, session_manager = _service(monkeypatch, interval_days=30)
     session_manager.records = [TorrentRecord(info_hash="hash1", state=TorrentState.PAUSED, progress=1.0)]
@@ -170,10 +170,7 @@ def test_a_paused_complete_torrent_is_rechecked_once_resumed_not_before(monkeypa
 
     clock["now"] += 31 * 86400
     service.evaluate_now()
-    assert session_manager.rechecked == []
 
-    session_manager.records[0].state = TorrentState.SEEDING  # resumed (e.g. its share limit raised)
-    service.evaluate_now()
     assert session_manager.rechecked == ["hash1"]
 
 

@@ -129,17 +129,14 @@ class AddBridge(QObject):
             return ""
         parts = []
         if self._settings.default_share_time_limit_hours:
-            parts.append(f"{self._settings.default_share_time_limit_hours} h")
+            parts.append(tr("web.add.share_policy_hours", hours=self._settings.default_share_time_limit_hours))
         if self._settings.default_share_data_limit_mb:
-            parts.append(f"{self._settings.default_share_data_limit_mb} Mo")
+            parts.append(f"{self._settings.default_share_data_limit_mb} {tr('web.units.megabyte')}")
         if self._settings.default_share_ratio_limit:
-            parts.append(f"ratio {self._settings.default_share_ratio_limit:g}")
+            parts.append(f"{tr('web.share_page.ratio_limit_label')} {self._settings.default_share_ratio_limit:g}")
         if not parts:
             return ""
-        return (
-            "Politique de partage par défaut active (" + " / ".join(parts) + ") — "
-            "appliquée automatiquement une fois le partage commencé."
-        )
+        return tr("web.add.share_policy_note", limits=" / ".join(parts))
 
     @Slot(str)
     def selectTorrentFile(self, path: str) -> None:
@@ -251,8 +248,9 @@ class AddBridge(QObject):
                 # and a refused or failed one (a drive root, a drive not
                 # plugged in) would leave it downloading in the default folder.
                 if not is_safe_move_destination(dest_path):
+                    name = record.name or self._pending_magnet_hash[:12]  # no dn=, no metadata yet
                     return {"ok": False, "error": tr(
-                        "notifications.move_storage_refused_message", name=record.name, path=dest_path
+                        "notifications.move_storage_refused_message", name=name, path=dest_path
                     )}
                 try:
                     Path(dest_path).mkdir(parents=True, exist_ok=True)

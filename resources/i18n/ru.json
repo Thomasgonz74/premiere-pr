@@ -653,6 +653,8 @@
   "web.add.torrent_added": "Торрент добавлен.",
   "web.add.magnet_error": "Magnet-ссылка отклонена: {error}",
   "web.add.destination_unusable": "Папка назначения недоступна: {error}",
+  "web.add.share_policy_note": "Действует политика раздачи по умолчанию ({limits}) — применяется автоматически после начала раздачи.",
+  "web.add.share_policy_hours": "{hours} ч",
   "web.rss.subscriptions_label": "Подписки",
   "web.rss.feed_url_label": "URL ленты",
   "web.rss.url_placeholder": "https://example.com/rss",

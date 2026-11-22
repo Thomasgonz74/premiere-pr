@@ -653,6 +653,8 @@
   "web.add.torrent_added": "토렌트가 추가되었습니다.",
   "web.add.magnet_error": "마그넷 링크가 거부되었습니다: {error}",
   "web.add.destination_unusable": "대상 폴더를 사용할 수 없습니다: {error}",
+  "web.add.share_policy_note": "기본 공유 정책 사용 중({limits}) — 공유가 시작되면 자동으로 적용됩니다.",
+  "web.add.share_policy_hours": "{hours}시간",
   "web.rss.subscriptions_label": "구독",
   "web.rss.feed_url_label": "피드 URL",
   "web.rss.url_placeholder": "https://example.com/rss",

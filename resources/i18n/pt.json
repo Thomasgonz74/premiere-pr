@@ -653,6 +653,8 @@
   "web.add.torrent_added": "Torrent adicionado.",
   "web.add.magnet_error": "Ligação magnet recusada: {error}",
   "web.add.destination_unusable": "Pasta de destino inutilizável: {error}",
+  "web.add.share_policy_note": "Política de partilha predefinida ativa ({limits}) — aplicada automaticamente quando a partilha começar.",
+  "web.add.share_policy_hours": "{hours} h",
   "web.rss.subscriptions_label": "Subscrições",
   "web.rss.feed_url_label": "URL do feed",
   "web.rss.url_placeholder": "https://exemplo.com/rss",

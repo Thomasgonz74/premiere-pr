@@ -641,6 +641,8 @@
   "web.add.torrent_added": "种子已添加。",
   "web.add.magnet_error": "磁力链接被拒绝：{error}",
   "web.add.destination_unusable": "目标文件夹无法使用：{error}",
+  "web.add.share_policy_note": "默认分享策略已启用（{limits}）——开始分享后自动应用。",
+  "web.add.share_policy_hours": "{hours} 小时",
   "web.rss.subscriptions_label": "订阅",
   "web.rss.feed_url_label": "订阅源地址",
   "web.rss.url_placeholder": "https://example.com/rss",

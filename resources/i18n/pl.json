@@ -653,6 +653,8 @@
   "web.add.torrent_added": "Dodano torrent.",
   "web.add.magnet_error": "Link magnet odrzucony: {error}",
   "web.add.destination_unusable": "Nie można użyć folderu docelowego: {error}",
+  "web.add.share_policy_note": "Domyślna zasada udostępniania jest aktywna ({limits}) — stosowana automatycznie po rozpoczęciu udostępniania.",
+  "web.add.share_policy_hours": "{hours} godz.",
   "web.rss.subscriptions_label": "Subskrypcje",
   "web.rss.feed_url_label": "Adres URL kanału",
   "web.rss.url_placeholder": "https://example.com/rss",

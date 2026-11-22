@@ -1026,6 +1026,8 @@ class SessionManager(QObject):
         if record is not None and _is_download_start_blocked(self._settings.theme, record.progress):
             self.download_blocked_by_theme.emit(info_hash)
             return
+        # Resumed by hand while recheck_torrent checks it: no pause once checked.
+        handle.unset_flags(lt.torrent_flags.stop_when_ready)
         # A magnet awaiting analysis only goes back to fetching its metadata,
         # in upload mode: auto-management would end that mode by itself.
         if record is None or not record.awaiting_analysis:
@@ -1219,7 +1221,19 @@ class SessionManager(QObject):
             # is no download. Pieces it finds missing drop the mark
             # (_on_torrent_checked), so the finish once they're downloaded is.
             self.expect_existing_data(info_hash)
+            flags = handle.flags()
             handle.force_recheck()
+            if flags & lt.torrent_flags.paused and not flags & (
+                lt.torrent_flags.auto_managed | lt.torrent_flags.upload_mode
+            ):
+                # Paused by the user: libtorrent leaves its check at 0 % until
+                # a resume, which CCCP refuses at 0 % and which, after a
+                # restart, reported a new finish. Checked now, in the checking
+                # queue, then paused again by libtorrent before any peer or
+                # tracker is contacted (set after force_recheck: set on a
+                # seed, stop_when_ready fires at once). Not a magnet held for
+                # its analysis: auto-managed, it would leave upload mode.
+                handle.set_flags(lt.torrent_flags.auto_managed | lt.torrent_flags.stop_when_ready)
 
     def expect_existing_data(self, info_hash: str) -> None:
         """The torrent's data should already be complete on disk (a recheck,

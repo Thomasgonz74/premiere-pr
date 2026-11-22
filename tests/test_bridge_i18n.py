@@ -74,6 +74,27 @@ def test_bridge_messages_follow_the_language(tmp_path, monkeypatch):
     ]
 
 
+def test_the_default_share_policy_note_follows_the_language(tmp_path, monkeypatch):
+    """The last bridge text left in French whatever the language."""
+    from unittest.mock import MagicMock
+
+    from torrent2000.config.settings import Settings
+    from torrent2000.engine.routing_rules import RoutingRuleStore
+    from torrent2000.ui.web.bridge_add import AddBridge
+
+    monkeypatch.setenv("TORRENT2000_DATA_DIR", str(tmp_path))
+    settings = Settings(default_share_policy_enabled=True, default_share_time_limit_hours=24,
+                        default_share_data_limit_mb=500, default_share_ratio_limit=2.0)
+    translator.set_language("en")
+    try:
+        note = AddBridge(MagicMock(), settings, RoutingRuleStore()).defaultSharePolicyNote()
+    finally:
+        translator.set_language(translator.DEFAULT_LANGUAGE)
+
+    english = _catalog("en")
+    assert note == english["web.add.share_policy_note"].format(limits="24 h / 500 MB / Ratio 2")
+
+
 def test_every_static_help_bubble_is_translated():
     """Four '?' bubbles of index.html were French in every language."""
     import re

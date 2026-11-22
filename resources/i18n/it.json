@@ -653,6 +653,8 @@
   "web.add.torrent_added": "Torrent aggiunto.",
   "web.add.magnet_error": "Link magnet rifiutato: {error}",
   "web.add.destination_unusable": "Cartella di destinazione non utilizzabile: {error}",
+  "web.add.share_policy_note": "Criterio di condivisione predefinito attivo ({limits}) — applicato automaticamente una volta avviata la condivisione.",
+  "web.add.share_policy_hours": "{hours} h",
   "web.rss.subscriptions_label": "Iscrizioni",
   "web.rss.feed_url_label": "URL del feed",
   "web.rss.url_placeholder": "https://example.com/rss",

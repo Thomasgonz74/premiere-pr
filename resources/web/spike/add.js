@@ -170,6 +170,14 @@ function addResetForm() {
 function addAnalyzeMagnet(uri) {
   addSelectedPath = null;
   document.getElementById("addSelectedFile").textContent = "";
+  document.getElementById("addMagnetInput").value = uri;
+  // Nor its routing rule's folder: the magnet's own name picks one once its
+  // metadata is in (addRenderScan).
+  const destInput = document.getElementById("addDestInput");
+  if (addSuggestedDestination && destInput.value === addSuggestedDestination) {
+    destInput.value = addDefaultDestination;
+  }
+  addSuggestedDestination = "";
   addClearScanList();
   addLastScan = null;
   window.bridge.add.analyzeMagnet(uri);

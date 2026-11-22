@@ -654,6 +654,8 @@
   "web.add.torrent_added": "Torrent added.",
   "web.add.magnet_error": "Magnet link refused: {error}",
   "web.add.destination_unusable": "Destination folder unusable: {error}",
+  "web.add.share_policy_note": "Default share policy active ({limits}) — applied automatically once sharing starts.",
+  "web.add.share_policy_hours": "{hours} h",
   "web.rss.subscriptions_label": "Subscriptions",
   "web.rss.feed_url_label": "Feed URL",
   "web.rss.url_placeholder": "https://example.com/rss",

@@ -317,8 +317,10 @@ function downloadsRenderRecord(record) {
 
 // A language switch: a row and the details panel hold text built from the
 // catalog (state, pin title, rates, tracker line...) that no status tick
-// rebuilds for an idle torrent. Its disk usage and trackers are re-read.
+// rebuilds for an idle torrent. Its disk usage and trackers are re-read, and
+// a "why is it slow" result, in the previous language, hidden.
 document.addEventListener("catalogchange", () => {
+  downloadsDetailsSlownessFor = null;
   downloadsDetailsAllocatedFor = null;
   downloadsDetailsTrackerEditorFor = null;
   downloadsRows.forEach((entry) => downloadsRenderRecord(entry.record));

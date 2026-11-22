@@ -200,6 +200,18 @@ def test_a_magnet_is_not_started_toward_a_folder_that_cannot_be_used(tmp_path):
     assert started == [] and bridge._pending_magnet_hash == "hash1"  # still waiting for a usable folder
 
 
+def test_a_refused_folder_names_a_magnet_that_has_no_name_yet():
+    """No dn= and no metadata yet: the message read " -- D:/ n'est pas autorisé"."""
+    bridge, session_manager, _routing_rule_store = _make_bridge()
+    info_hash = "0bd2ba93160c" + "0" * 28
+    session_manager.records[info_hash] = FakeMagnetRecord("", bridge._settings.default_download_dir)
+    bridge._pending_magnet_hash = info_hash
+
+    refused = bridge.startTorrent("D:/", "", "", [])
+
+    assert refused["error"] == tr("notifications.move_storage_refused_message", name="0bd2ba93160c", path="D:/")
+
+
 def test_a_magnet_start_shows_why_it_could_not_be_analysed():
     """The "already present" (or libtorrent's) error flashed by, replaced by
     "Analyse en cours — cliquez de nouveau sur Démarrer": each click the same."""

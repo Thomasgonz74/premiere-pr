@@ -347,10 +347,12 @@ class SpikeWindow(QMainWindow):
 
     def _run_open_source(self, source: str) -> None:
         escaped = json.dumps(source)
+        # The page's helpers, as Search and the clipboard use: the .torrent
+        # shown before must not stay, nor be what Analyser picks again.
         if source.lower().startswith("magnet:"):
-            js = f"switchToTab('add'); window.bridge.add.analyzeMagnet({escaped});"
+            js = f"switchToTab('add'); addAnalyzeMagnet({escaped});"
         else:
-            js = f"switchToTab('add'); window.bridge.add.selectTorrentFile({escaped});"
+            js = f"switchToTab('add'); addLoadTorrentFile({escaped}, {json.dumps(os.path.basename(source))});"
         self._view.page().runJavaScript(js)
 
     def _on_shutdown_countdown_started(self, delay_seconds: int) -> None:

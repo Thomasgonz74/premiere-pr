@@ -653,6 +653,8 @@
   "web.add.torrent_added": "トレントを追加しました。",
   "web.add.magnet_error": "マグネットリンクを受け付けられません: {error}",
   "web.add.destination_unusable": "保存先フォルダーを使用できません: {error}",
+  "web.add.share_policy_note": "既定の共有ポリシーが有効です（{limits}）— 共有が始まると自動的に適用されます。",
+  "web.add.share_policy_hours": "{hours} 時間",
   "web.rss.subscriptions_label": "購読",
   "web.rss.feed_url_label": "フィードのURL",
   "web.rss.url_placeholder": "https://example.com/rss",
