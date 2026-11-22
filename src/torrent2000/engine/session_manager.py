@@ -616,7 +616,7 @@ class SessionManager(QObject):
         info_hash = add_params.info_hash_hex(atp)
         if atp.flags & lt.torrent_flags.duplicate_is_error and info_hash in self._handles:
             # Before the record below replaces the live torrent's own.
-            raise DuplicateTorrentError(info_hash)
+            raise DuplicateTorrentError(f"torrent already in session: {info_hash}")  # the remote API's error text
         record = TorrentRecord(
             info_hash=info_hash,
             name=atp.name or "",
