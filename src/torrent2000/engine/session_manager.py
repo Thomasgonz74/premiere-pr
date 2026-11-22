@@ -266,6 +266,7 @@ class SessionManager(QObject):
     theme_downloads_paused = Signal(int)
     storage_moved = Signal(str, str)  # str info_hash, str new_path
     move_storage_refused = Signal(str, str)  # str info_hash, str refused path
+    storage_move_failed = Signal(str, str)  # str info_hash, str error message
     # A disk/file I/O error (e.g. an external drive dropping out mid-write)
     # paused this torrent automatically. str info_hash, str error message.
     file_error = Signal(str, str)
@@ -348,6 +349,7 @@ class SessionManager(QObject):
             on_torrent_removed=self._on_torrent_removed,
             on_torrent_added=self._on_torrent_added,
             on_storage_moved=self._on_storage_moved,
+            on_storage_move_failed=self._on_storage_move_failed,
             on_file_error=self._on_file_error,
         )
 
@@ -586,6 +588,10 @@ class SessionManager(QObject):
         if record is not None:
             record.save_path = new_path
         self.storage_moved.emit(info_hash, new_path)
+
+    def _on_storage_move_failed(self, info_hash: str, message: str) -> None:
+        logger.warning("Moving torrent %s failed: %s", info_hash, message)
+        self.storage_move_failed.emit(info_hash, message)
 
     def _on_file_error(self, info_hash: str, message: str) -> None:
         # self.pause_torrent, not a raw handle.pause() -- it also clears

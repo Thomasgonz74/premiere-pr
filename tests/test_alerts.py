@@ -21,6 +21,7 @@ def callbacks():
         "on_torrent_removed": MagicMock(),
         "on_torrent_added": MagicMock(),
         "on_storage_moved": MagicMock(),
+        "on_storage_move_failed": MagicMock(),
         "on_file_error": MagicMock(),
     }
 
@@ -36,6 +37,7 @@ def dispatcher(callbacks):
         on_torrent_removed=callbacks["on_torrent_removed"],
         on_torrent_added=callbacks["on_torrent_added"],
         on_storage_moved=callbacks["on_storage_moved"],
+        on_storage_move_failed=callbacks["on_storage_move_failed"],
         on_file_error=callbacks["on_file_error"],
     )
 
@@ -127,6 +129,16 @@ def test_tracker_error_fallback_drops_the_passkey_from_the_announce_url(dispatch
     callbacks["on_tracker_error"].assert_called_once_with(
         "hash0", 'f.bin (https://tracker.example:8443)[127.0.0.1:6881] v1 connection refused "" (1)'
     )
+
+
+def test_storage_moved_failed_alert_forwards_hash_and_message(dispatcher, callbacks):
+    alert = MagicMock(spec=lt.storage_moved_failed_alert)
+    alert.handle = _handle_with_hash("hash3")
+    alert.message.return_value = "disk full"
+
+    dispatcher.dispatch(alert)
+
+    callbacks["on_storage_move_failed"].assert_called_once_with("hash3", "disk full")
 
 
 def test_save_resume_data_alert_forwards_hash_and_params(dispatcher, callbacks):

@@ -56,6 +56,7 @@ class AlertDispatcher:
         on_torrent_removed: Callable[[str], None],
         on_torrent_added: Callable[[str, "lt.torrent_handle", str], None],
         on_storage_moved: Callable[[str, str], None],
+        on_storage_move_failed: Callable[[str, str], None],
         on_file_error: Callable[[str, str], None],
     ) -> None:
         self._on_state_update = on_state_update
@@ -66,6 +67,7 @@ class AlertDispatcher:
         self._on_torrent_removed = on_torrent_removed
         self._on_torrent_added = on_torrent_added
         self._on_storage_moved = on_storage_moved
+        self._on_storage_move_failed = on_storage_move_failed
         self._on_file_error = on_file_error
 
     def dispatch_all(self, alerts: list) -> None:
@@ -105,6 +107,8 @@ class AlertDispatcher:
         elif isinstance(alert, lt.storage_moved_alert):
             # storage_path is a method in the 2.0 bindings, not a property like .path
             self._on_storage_moved(_hash_of(alert.handle), alert.storage_path())
+        elif isinstance(alert, lt.storage_moved_failed_alert):
+            self._on_storage_move_failed(_hash_of(alert.handle), str(alert.message()))
         elif isinstance(alert, lt.file_error_alert):
             # alert.message() is libtorrent's own composed description
             # (torrent name + which file + the underlying OS error, e.g. "the

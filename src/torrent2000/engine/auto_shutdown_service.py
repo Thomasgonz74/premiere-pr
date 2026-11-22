@@ -54,6 +54,8 @@ class AutoShutdownService(QObject):
             # A rule's "unzip" runs in the background, and shutting down
             # mid-extraction would leave half-written files.
             self.add_busy_source(post_complete_actions.has_pending_extractions, post_complete_actions.extractions_idle)
+            # Its "move" too: cut short, the files end up split between both folders.
+            self.add_busy_source(post_complete_actions.has_pending_moves, post_complete_actions.moves_idle)
 
     def add_busy_source(self, is_busy: Callable[[], bool], idle_signal) -> None:
         """Holds off the countdown while is_busy() is True; idle_signal is
