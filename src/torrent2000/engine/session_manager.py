@@ -11,7 +11,12 @@ import libtorrent as lt
 from PySide6.QtCore import QCoreApplication, QObject, QThreadPool, QTimer, Signal
 
 from torrent2000 import APP_VERSION
-from torrent2000.config.paths import get_awaiting_analysis_path, get_default_download_dir, get_matched_rules_path
+from torrent2000.config.paths import (
+    get_awaiting_analysis_path,
+    get_default_download_dir,
+    get_magnets_to_start_path,
+    get_matched_rules_path,
+)
 from torrent2000.config.settings import Settings
 from torrent2000.engine import add_params, persistence, proxy, trackers as tracker_ops
 from torrent2000.engine.alerts import AlertDispatcher, _hash_of, status_to_record
@@ -306,6 +311,12 @@ class SessionManager(QObject):
         self._awaiting_analysis: set[str] = {
             h for h in persistence.load_json(get_awaiting_analysis_path(), []) if isinstance(h, str)
         }
+        # Those of them the user started from the Downloads page before their
+        # metadata was in -- see start_awaiting_magnet.
+        self._start_once_analysed: set[str] = {
+            h for h in persistence.load_json(get_magnets_to_start_path(), [])
+            if isinstance(h, str) and h in self._awaiting_analysis
+        }
         # info_hash -> TorrentRecord.matched_rule_name, saved so a download
         # that spans a restart still gets its rule's post-complete action.
         self._matched_rules: dict[str, str] = {
@@ -520,6 +531,11 @@ class SessionManager(QObject):
         if record is not None:
             record.is_magnet_awaiting_metadata = False
         self.metadata_received.emit(info_hash)
+        if info_hash in self._start_once_analysed:
+            self._start_once_analysed.discard(info_hash)
+            self._save_start_once_analysed()
+            if record is not None and record.awaiting_analysis:  # not started meanwhile (RSS, Add page...)
+                self._scan_and_start(info_hash)
 
     def _on_torrent_finished(self, info_hash: str) -> None:
         if info_hash in self._pending_restore_confirmation:
@@ -561,6 +577,9 @@ class SessionManager(QObject):
         if info_hash in self._awaiting_analysis:
             self._awaiting_analysis.discard(info_hash)
             self._save_awaiting_analysis()
+        if info_hash in self._start_once_analysed:
+            self._start_once_analysed.discard(info_hash)
+            self._save_start_once_analysed()
         if self._matched_rules.pop(info_hash, None) is not None:
             persistence.save_json(get_matched_rules_path(), self._matched_rules)
         persistence.delete_resume_file(info_hash)
@@ -648,6 +667,34 @@ class SessionManager(QObject):
 
     def _save_awaiting_analysis(self) -> None:
         persistence.save_json(get_awaiting_analysis_path(), sorted(self._awaiting_analysis))
+
+    def _save_start_once_analysed(self) -> None:
+        persistence.save_json(get_magnets_to_start_path(), sorted(self._start_once_analysed))
+
+    def start_awaiting_magnet(self, info_hash: str) -> None:
+        """The user starts, from the Downloads page, a magnet nobody will
+        analyse any more (left awaiting by a restart, or by another magnet
+        analysed on the Add page): what RSS and remote add do -- danger scan
+        with the auto-exclude threshold, then start_after_analysis -- now if
+        its metadata is in, else as soon as it arrives (saved for a restart)."""
+        if self.get_torrent_files(info_hash):
+            self._scan_and_start(info_hash)
+            return
+        self._start_once_analysed.add(info_hash)
+        self._save_start_once_analysed()
+        self.resume_torrent(info_hash)  # a paused magnet would never fetch its metadata
+
+    def _scan_and_start(self, info_hash: str) -> None:
+        from torrent2000.danger_scanner.scanner import auto_exclude_indices, scan_files
+
+        try:
+            files = self.get_torrent_files(info_hash)
+            excluded = auto_exclude_indices(scan_files(files), self._settings.danger_auto_exclude_threshold)
+            if excluded:
+                self.exclude_files(info_hash, excluded)
+        except Exception:
+            logger.exception("Failed to scan magnet torrent %s for dangerous files", info_hash)
+        self.start_after_analysis(info_hash)
 
     def _add(self, atp: "lt.add_torrent_params", awaiting_analysis: bool) -> str:
         info_hash = add_params.info_hash_hex(atp)

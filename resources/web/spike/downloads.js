@@ -900,6 +900,7 @@ function wireDownloadsPage() {
   bridge.recordUpdated.connect(downloadsRenderRecord);
   bridge.recordsUpdated.connect((rows) => rows.forEach(downloadsRenderRecord));
   bridge.recordRemoved.connect(downloadsRemoveRecord);
+  bridge.awaitingMagnetStarted.connect(() => showSuggestionBanner(t("web.downloads.magnet_start_after_analysis")));
   bridge.listTorrents((initial) => initial.forEach(downloadsRenderRecord));
 
   document.getElementById("downloadsSearchInput").addEventListener("input", downloadsApplyFilter);

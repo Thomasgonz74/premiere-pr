@@ -115,3 +115,17 @@ def test_removing_a_torrent_clears_its_tags(tmp_path, monkeypatch):
 
     assert bridge.listAllTags() == ["iso"]
     assert TagService().get("h1") == []  # persisted, not just in memory
+
+
+def test_resuming_a_magnet_awaiting_analysis_starts_it_after_its_scan_and_says_so():
+    session_manager = MagicMock()
+    session_manager.get_record.return_value = TorrentRecord(info_hash="h1", awaiting_analysis=True)
+    bridge = DownloadsBridge(session_manager, MagicMock())
+    announced = []
+    bridge.awaitingMagnetStarted.connect(lambda: announced.append(True))
+
+    bridge.resumeTorrent("h1")
+
+    session_manager.start_awaiting_magnet.assert_called_once_with("h1")
+    session_manager.resume_torrent.assert_not_called()
+    assert announced == [True]
