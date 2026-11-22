@@ -201,3 +201,18 @@ def test_a_restore_larger_than_the_alert_queue_still_binds_every_handle(qapp, tm
         assert session_manager._pending_restore == set()
     finally:
         session_manager.shutdown(timeout_ms=0)
+
+
+def test_a_restored_torrent_keeps_the_routing_rule_it_was_added_by(qapp, tmp_path):
+    """Its post-complete move/unzip looks the rule up by this name once it
+    finishes: lost at a restart, a long download silently skipped it."""
+    first = SessionManager(_restore_settings())
+    info_hash = first.add_torrent_from_magnet(f"magnet:?xt=urn:btih:{_INFO_HASH}&dn=test", str(tmp_path))
+    first.set_matched_rule_name(info_hash, "series")
+    first.shutdown()
+
+    restarted = SessionManager(_restore_settings())
+    try:
+        assert restarted.get_record(info_hash).matched_rule_name == "series"
+    finally:
+        restarted.shutdown(timeout_ms=0)

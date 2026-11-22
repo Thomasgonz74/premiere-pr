@@ -11,7 +11,7 @@ import libtorrent as lt
 from PySide6.QtCore import QCoreApplication, QObject, QThreadPool, QTimer, Signal
 
 from torrent2000 import APP_VERSION
-from torrent2000.config.paths import get_awaiting_analysis_path, get_default_download_dir
+from torrent2000.config.paths import get_awaiting_analysis_path, get_default_download_dir, get_matched_rules_path
 from torrent2000.config.settings import Settings
 from torrent2000.engine import add_params, persistence, proxy, trackers as tracker_ops
 from torrent2000.engine.alerts import AlertDispatcher, _hash_of, status_to_record
@@ -305,6 +305,11 @@ class SessionManager(QObject):
         self._awaiting_analysis: set[str] = {
             h for h in persistence.load_json(get_awaiting_analysis_path(), []) if isinstance(h, str)
         }
+        # info_hash -> TorrentRecord.matched_rule_name, saved so a download
+        # that spans a restart still gets its rule's post-complete action.
+        self._matched_rules: dict[str, str] = {
+            h: name for h, name in persistence.load_json(get_matched_rules_path(), {}).items() if isinstance(name, str)
+        }
         self._categories = TorrentCategoryService()
         # In-memory only (not persisted): ~60s of (download_rate, upload_rate)
         # samples per torrent at this timer's 300ms tick, for the speed-over-
@@ -548,6 +553,8 @@ class SessionManager(QObject):
         if info_hash in self._awaiting_analysis:
             self._awaiting_analysis.discard(info_hash)
             self._save_awaiting_analysis()
+        if self._matched_rules.pop(info_hash, None) is not None:
+            persistence.save_json(get_matched_rules_path(), self._matched_rules)
         persistence.delete_resume_file(info_hash)
         self.torrent_removed.emit(info_hash)
 
@@ -799,6 +806,11 @@ class SessionManager(QObject):
         record = self._records.get(info_hash)
         if record is not None:
             record.matched_rule_name = rule_name
+            if rule_name:
+                self._matched_rules[info_hash] = rule_name
+            else:
+                self._matched_rules.pop(info_hash, None)
+            persistence.save_json(get_matched_rules_path(), self._matched_rules)
 
     def pin_torrent(self, info_hash: str) -> None:
         """Pin panel: no disk/engine effect, just an in-memory flag the UI
@@ -1204,6 +1216,7 @@ class SessionManager(QObject):
                 category=self._categories.get(info_hash),
                 awaiting_analysis=info_hash in self._awaiting_analysis,
                 is_magnet_awaiting_metadata=atp.ti is None,
+                matched_rule_name=self._matched_rules.get(info_hash),
             )
             self._records[info_hash] = record
             if add_params.resume_data_is_complete(atp):

@@ -109,7 +109,6 @@ class TorrentRecord:
     # destination at add time (see engine.routing_rules.find_matching_rule),
     # if any -- lets a post-completion action look up which rule (and
     # therefore which post_complete_action) applies once the torrent
-    # finishes. Plain in-memory field like the others above -- not
-    # re-derived on restart (a rule change after restart simply doesn't
-    # retroactively apply to already-restored torrents).
+    # finishes. Saved by SessionManager (a long download often spans a
+    # restart); the rule itself is looked up by name only at finish time.
     matched_rule_name: str | None = None
