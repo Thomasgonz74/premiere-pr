@@ -316,3 +316,58 @@ def test_countdown_starts_when_the_last_two_downloads_finish_in_the_same_alert_p
     fake_sm.torrent_status_batch_updated.emit(fake_sm.records)  # "a" downloads again, e.g. after a recheck
     fake_sm.torrent_finished.emit("b")
     assert started == [42]
+
+
+# ------------------------------------------------- never a real OS shutdown
+
+
+def test_the_service_does_not_outlive_its_owner():
+    """A leaked service keeps its countdown armed: on 2026-11-22 one fired
+    30 s into a later test and ran `shutdown /s /t 0` for real."""
+    import gc
+    import weakref
+
+    fake_sm = FakeSessionManager()
+    fake_sm.records = [FakeRecord(state=TorrentState.FINISHED)]
+    service = AutoShutdownService(fake_sm, _make_settings(auto_shutdown_delay_seconds=60))
+    fake_sm.torrent_finished.emit("abc")
+    assert service._countdown_timer is not None
+    ref = weakref.ref(service)
+
+    del service
+    gc.collect()
+
+    assert ref() is None
+
+
+@pytest.mark.parametrize(
+    ("allowed", "env", "expected"),
+    [(False, None, []), (True, "1", []), (True, None, ["shutdown /s /t 0"])],
+    ids=["built-by-a-test-or-script", "real-app-with-the-kill-switch", "real-app"],
+)
+def test_only_the_real_app_reaches_the_os_command(monkeypatch, allowed, env, expected):
+    commands = []
+    monkeypatch.setattr("torrent2000.engine.auto_shutdown_service.os.system", commands.append)
+    if env is None:
+        monkeypatch.delenv("TORRENT2000_NO_OS_SHUTDOWN", raising=False)
+    else:
+        monkeypatch.setenv("TORRENT2000_NO_OS_SHUTDOWN", env)
+    service = AutoShutdownService(FakeSessionManager(), _make_settings(), allow_os_shutdown=allowed)
+
+    service._execute("shutdown")
+
+    assert commands == expected
+
+
+def test_the_real_entry_point_is_the_only_one_that_allows_it():
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[1]
+    allowing = [
+        path.relative_to(root).as_posix()
+        for path in root.rglob("*.py")
+        if "allow_os_shutdown=True" in path.read_text(encoding="utf-8", errors="replace")
+        and not {"tests", "build", "dist", ".claude"} & set(path.relative_to(root).parts)
+    ]
+    assert allowing == ["run_web_spike.py"]
+

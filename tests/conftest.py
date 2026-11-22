@@ -38,3 +38,5 @@ def _os_system_without_shutdown(command):
 
 
 os.system = _os_system_without_shutdown
+# And for anything the suite launches (AutoShutdownService._execute reads it).
+os.environ["TORRENT2000_NO_OS_SHUTDOWN"] = "1"

@@ -128,7 +128,9 @@ def main() -> int:
     clipboard_watcher_service = ClipboardWatcherService(settings)
     torrent_search_source_store = TorrentSearchSourceStore()
     settings_profile_store = SettingsProfileStore()
-    auto_shutdown_service = AutoShutdownService(session_manager, settings, post_complete_action_service)
+    auto_shutdown_service = AutoShutdownService(
+        session_manager, settings, post_complete_action_service, allow_os_shutdown=True
+    )
     anthem_player = AnthemPlayer(settings.audio_volume)
     known_disk_store = KnownDiskStore()
     known_disk_service = KnownDiskService(known_disk_store, settings)

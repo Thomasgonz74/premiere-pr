@@ -34,9 +34,18 @@ class AutoShutdownService(QObject):
     shutdown_countdown_started = Signal(int)  # delay in seconds
 
     def __init__(
-        self, session_manager: SessionManager, settings: Settings, post_complete_actions=None, parent=None
+        self,
+        session_manager: SessionManager,
+        settings: Settings,
+        post_complete_actions=None,
+        parent=None,
+        allow_os_shutdown: bool = False,
     ) -> None:
         super().__init__(parent)
+        # Only the real app (run_web_spike.py) passes True: a test or a
+        # script that builds this service must never be able to power the PC
+        # off -- on 2026-11-22 a test run did, three times.
+        self._allow_os_shutdown = allow_os_shutdown
         self._session_manager = session_manager
         self._settings = settings
         # Background work that shutting down would cut short (see
@@ -54,7 +63,9 @@ class AutoShutdownService(QObject):
         self._finished_since_update: set[str] = set()
 
         session_manager.torrent_finished.connect(self._on_torrent_finished)
-        session_manager.torrent_status_batch_updated.connect(lambda _records: self._finished_since_update.clear())
+        # A bound method, never a lambda capturing self: the connection would
+        # keep this service, and a countdown it armed, alive with the manager.
+        session_manager.torrent_status_batch_updated.connect(self._on_status_batch_updated)
         if post_complete_actions is not None:
             # A rule's "unzip" runs in the background, and shutting down
             # mid-extraction would leave half-written files.
@@ -76,6 +87,9 @@ class AutoShutdownService(QObject):
         quit's event pumping) must never shut the PC down."""
         self._stopped = True
         self.cancel_shutdown()
+
+    def _on_status_batch_updated(self, _records) -> None:
+        self._finished_since_update.clear()
 
     def _on_torrent_finished(self, info_hash: str) -> None:
         self._finished_since_update.add(info_hash)
@@ -136,6 +150,11 @@ class AutoShutdownService(QObject):
         """The single line that actually talks to the OS -- kept as its own
         method so tests can monkeypatch/mock it out and never trigger a real
         shutdown/hibernate."""
+        if not self._allow_os_shutdown or os.environ.get("TORRENT2000_NO_OS_SHUTDOWN"):
+            # TORRENT2000_NO_OS_SHUTDOWN: set by anything that runs the real
+            # app for a test, so that a countdown left to elapse does nothing.
+            logger.warning("Auto-shutdown: %s NOT executed (not the real app, or TORRENT2000_NO_OS_SHUTDOWN set)", action)
+            return
         logger.warning("Auto-shutdown: executing %s now", action)
         # os.system is safe here: both commands are fixed string literals with
         # no interpolated/user-controlled input (action is constrained to the
