@@ -293,7 +293,9 @@ class SessionManager(QObject):
         # complete (all wanted pieces present) before this process started --
         # see _on_torrent_finished. libtorrent re-fires torrent_finished_alert
         # for these while verifying their fast-resume data on every restart,
-        # even though nothing was actually (re)downloaded this session.
+        # even though nothing was actually (re)downloaded this session. Same
+        # for a recheck of a complete torrent, or a share of data already on
+        # disk (see expect_existing_data).
         self._pending_restore_confirmation: set[str] = set()
         # info_hashes queued by _restore_previous_session's async_add_torrent
         # whose add_torrent_alert hasn't arrived yet -- see _on_torrent_added.
@@ -479,6 +481,10 @@ class SessionManager(QObject):
                 record = self._records.get(info_hash)
                 if record is None:
                     continue
+                if status.state == lt.torrent_status.downloading:
+                    # The check found pieces missing after all: the finish
+                    # once they're downloaded again is a real one.
+                    self._pending_restore_confirmation.discard(info_hash)
                 status_to_record(status, record)
                 history = self._speed_history.get(info_hash)
                 if history is None:
@@ -1105,7 +1111,17 @@ class SessionManager(QObject):
     def recheck_torrent(self, info_hash: str) -> None:
         handle = self._handles.get(info_hash)
         if handle is not None:
+            record = self._records.get(info_hash)
+            if record is not None and record.progress >= 1.0:
+                self.expect_existing_data(info_hash)
             handle.force_recheck()
+
+    def expect_existing_data(self, info_hash: str) -> None:
+        """The torrent's data should already be complete on disk (a recheck,
+        a share): libtorrent fires torrent_finished_alert once its check
+        confirms it, and that is no download to report -- no toast, webhook,
+        post-complete action or shutdown countdown."""
+        self._pending_restore_confirmation.add(info_hash)
 
     def move_storage(self, info_hash: str, new_path: str) -> None:
         if not is_safe_move_destination(new_path):

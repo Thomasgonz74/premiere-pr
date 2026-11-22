@@ -148,6 +148,7 @@ class ShareBridge(QObject):
                 return {"ok": False, "error": str(exc)}
             self._session_manager.start_after_analysis(info_hash)
 
+        self._session_manager.expect_existing_data(info_hash)
         self._share_limit_service.track(info_hash, time_limit, data_limit, ratio_limit=ratio)
         self._torrent_path = None
         self.started.emit()
