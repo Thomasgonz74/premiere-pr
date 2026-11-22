@@ -107,6 +107,22 @@ def test_feed_redaction_drops_userinfo_and_base64_path_keys():
     ]
 
 
+def test_feed_redaction_blanks_a_uuid_key_and_keeps_a_title_slug():
+    data = redact_settings_dict(
+        {
+            "rss_feeds": [
+                {"url": "https://t.invalid/rss/550e8400-e29b-41d4-a716-446655440000"},
+                {"url": "https://t.invalid/feeds/The-Mandalorian-Season2-1080p.xml"},
+            ]
+        }
+    )
+
+    assert [feed["url"] for feed in data["rss_feeds"]] == [
+        "https://t.invalid/rss/",
+        "https://t.invalid/feeds/The-Mandalorian-Season2-1080p.xml",
+    ]
+
+
 def test_only_the_five_most_recent_backups_are_kept(tmp_path, monkeypatch):
     monkeypatch.setenv("TORRENT2000_DATA_DIR", str(tmp_path))
     get_config_path().write_text("{}", encoding="utf-8")

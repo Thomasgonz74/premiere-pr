@@ -20,6 +20,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 from urllib.parse import urlsplit
 
+from torrent2000.config.redaction import redact_url_for_log
+
 # urllib.request/urllib.error are imported inside the functions below, not
 # here: they pull in http.client, ssl and email.* (~25 modules), none of
 # which is needed before the first network fetch -- and this module is
@@ -262,7 +264,7 @@ def _build_proxy_opener(proxy: "ProxySettings | None", url: str) -> urllib.reque
         logger.warning(
             "SOCKS5 proxy configured but unsupported for this background fetch without an optional "
             "dependency; force_proxy is disabled, so proceeding unproxied for %s",
-            url,
+            redact_url_for_log(url),  # may carry an RSS passkey
         )
         return None
 

@@ -51,6 +51,11 @@ def test_redact_url_strips_query_string_and_fragment():
     assert _redact_url("https://me:pw@[::1]:8080/rss") == "https://[::1]:8080/rss"
 
 
+def test_redact_url_drops_a_passkey_in_the_path_too():
+    """Also what the decision journal shows on Profile > Automatisation."""
+    assert _redact_url("https://t.example/rss/0123456789abcdef0123456789abcdef") == "https://t.example/rss/"
+
+
 def test_feed_fetch_failure_never_logs_passkey(tmp_path, caplog):
     service = _rss_service(tmp_path)
 
