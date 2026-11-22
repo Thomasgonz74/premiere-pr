@@ -11,6 +11,7 @@ import os
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 from torrent2000.config.paths import get_config_backups_dir, get_config_path
+from torrent2000.config.redaction import redact_settings_dict
 from torrent2000.config.settings import RssFeedSubscription, Settings
 from torrent2000.config.settings_history import read_settings_history
 from torrent2000.ui.web.bridge_profile_security import ProfileSecurityBridge, _backup_current_config
@@ -62,8 +63,28 @@ def test_backup_redacts_webhook_url_and_rss_passkeys_and_history_skips_webhook(t
 
     data = json.loads(next(get_config_backups_dir().glob("config-*.json")).read_text(encoding="utf-8"))
     assert data["webhook_url"] == ""
-    assert data["rss_feeds"][0]["url"] == "https://t.invalid/rss"
+    assert data["rss_feeds"][0]["url"] == "https://t.invalid/rss?passkey="
     assert "webhook_url" not in read_settings_history()[0]["changes"]
+
+
+def test_feed_redaction_blanks_only_the_passkey():
+    """A public feed's own query (search, category) must survive an export,
+    or two feeds of the same site collapse into one unusable URL."""
+    data = redact_settings_dict(
+        {
+            "rss_feeds": [
+                {"url": "https://nyaa.si/?page=rss&q=ubuntu&c=0_0&f=0"},
+                {"url": "https://t.invalid/rss?u=1&passkey=SECRET&cat=5"},
+                {"url": "https://www.torrentleech.org/rss/0123456789abcdef0123456789abcdef"},
+            ]
+        }
+    )
+
+    assert [feed["url"] for feed in data["rss_feeds"]] == [
+        "https://nyaa.si/?page=rss&q=ubuntu&c=0_0&f=0",
+        "https://t.invalid/rss?u=1&passkey=&cat=5",
+        "https://www.torrentleech.org/rss/",
+    ]
 
 
 def test_only_the_five_most_recent_backups_are_kept(tmp_path, monkeypatch):

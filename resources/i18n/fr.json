@@ -542,7 +542,7 @@
   "web.profile_security.import_button": "Importer…",
   "web.profile_security.import_confirm": "Remplacer la configuration actuelle par le fichier importé ? Un redémarrage sera nécessaire.",
   "web.profile_security.import_failed": "Échec de l'import.",
-  "web.profile_security.export_password_note": "Le mot de passe du proxy n'est jamais inclus dans l'export.",
+  "web.profile_security.export_password_note": "L'export et les sauvegardes ne contiennent jamais le mot de passe du proxy, le jeton d'accès distant ni l'URL du webhook. Dans les adresses des flux RSS, la valeur des paramètres qui ressemblent à une clé (passkey, apikey, token, auth…) et les longs identifiants lettres et chiffres du chemin sont vidés : ressaisissez-les après une réimportation.",
   "web.profile_stats.history_event_removed": "Retiré",
   "web.profile_stats.totals_label": "Téléchargé : {downloaded}  —  Envoyé : {uploaded}",
   "web.profile_stats.empty_history": "Aucun historique pour l'instant.",
