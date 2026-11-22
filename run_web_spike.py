@@ -201,8 +201,9 @@ def main() -> int:
         # 300 s) and the installer download. Queued tasks are dropped --
         # including a webhook queued just before Quit, accepted -- running
         # fetches return at once (their socket is left to a daemon thread,
-        # see url_fetch._cancellable), a scan within a second. The pool only queues once every thread is busy, so nothing
-        # active means nothing dropped.
+        # see url_fetch._cancellable), a scan within a second. The pool only
+        # queues once every thread is busy, so nothing active means nothing
+        # dropped.
         pool = QThreadPool.globalInstance()
         if pool.activeThreadCount():
             logging.getLogger(__name__).info(
