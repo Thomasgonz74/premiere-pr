@@ -306,3 +306,19 @@ def test_network_help_hints_survive_a_language_switch(view):
       return JSON.stringify(seen);
     })()""")
     assert result == '[3,"Protocol encryption help"]'
+
+
+def test_propaganda_messages_are_translated_once_the_catalog_arrives(view):
+    result = run_js(view, """(function () {
+      startPropagandaPanel();  // app.js can start it before getCatalog answers
+      const catalog = {};
+      for (let i = 1; i <= 18; i++) catalog['web.propaganda_panel.message_' + String(i).padStart(2, '0')] = 'Camarade ' + i;
+      setCatalog(catalog);
+      const first = document.getElementById('propagandaMessage').textContent;
+      _showNextPropagandaMessage();
+      const next = document.getElementById('propagandaMessage').textContent;
+      stopPropagandaPanel();
+      setCatalog({});
+      return JSON.stringify([first.startsWith('Camarade '), next.startsWith('Camarade ')]);
+    })()""")
+    assert result == "[true,true]"
