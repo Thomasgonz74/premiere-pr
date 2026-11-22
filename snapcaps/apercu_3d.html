@@ -1,0 +1,414 @@
+<title>Snap caps 9×19 et 8×22 Nambu</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap">
+<style>
+/* Layout : poste de controle - bandeau de commandes, grande scene 3D, puis fiches de cotes facon cartouche de plan. */
+:root {
+  --bg: #eceff2; --surface: #f8f9fb; --stage: #dde2e7; --ink: #18222d; --muted: #566270;
+  --line: #c9d0d8; --accent: #1d4ea6; --accent-ink: #ffffff; --silicone: #c8401f; --vent: #1d4ea6;
+  --warn-bg: #fff3d6; --warn-ink: #5c4300;
+  --f-display: "IBM Plex Sans Condensed", "Arial Narrow", sans-serif;
+  --f-body: "IBM Plex Sans", system-ui, sans-serif;
+  --f-data: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #11151a; --surface: #192027; --stage: #0b0e12; --ink: #e5e9ee; --muted: #96a2ae;
+  --line: #2b343e; --accent: #86adff; --accent-ink: #0b1524; --silicone: #ff7b5c; --vent: #86adff;
+  --warn-bg: #3a2f10; --warn-ink: #f3dc9a; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #11151a; --surface: #192027; --stage: #0b0e12; --ink: #e5e9ee; --muted: #96a2ae;
+  --line: #2b343e; --accent: #86adff; --accent-ink: #0b1524; --silicone: #ff7b5c; --vent: #86adff;
+  --warn-bg: #3a2f10; --warn-ink: #f3dc9a; color-scheme: dark }
+
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-block: 20px 40px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; gap: 16px; }
+h1 { font-family: var(--f-display); font-weight: 600; font-size: 1.7rem; line-height: 1.15; margin: 0; text-wrap: balance; }
+.sub { color: var(--muted); margin: 2px 0 0; max-width: 65ch; }
+.bar { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: end; }
+.group { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.group > span { font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--surface); }
+.seg button { font: 500 .9rem var(--f-body); color: var(--ink); background: transparent; border: 0; padding: 8px 14px; cursor: pointer; border-right: 1px solid var(--line); }
+.seg button:last-child { border-right: 0; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.seg button:focus-visible, .ghost:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ghost { font: 500 .9rem var(--f-body); color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 8px 14px; cursor: pointer; }
+
+.stage { position: relative; height: clamp(380px, 66vh, 740px); background: var(--stage); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; touch-action: none; }
+.stage canvas { display: block; width: 100%; height: 100%; cursor: grab; }
+.stage canvas:active { cursor: grabbing; }
+.tag { position: absolute; left: 0; top: 0; transform: translate(-50%, 0); font: 500 .78rem var(--f-data); color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 2px 8px; white-space: nowrap; pointer-events: none; }
+.hint { position: absolute; left: 12px; bottom: 10px; right: 12px; font-size: .78rem; color: var(--muted); pointer-events: none; }
+.legend { position: absolute; top: 10px; left: 12px; display: flex; flex-direction: column; gap: 4px; font-size: .8rem; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; pointer-events: none; }
+.legend div { display: flex; align-items: center; gap: 8px; }
+.sw { width: 14px; height: 14px; border-radius: 3px; flex: none; }
+.fail { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; text-align: center; color: var(--muted); }
+
+.sheets { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 16px; }
+.sheet { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px; min-width: 0; }
+.sheet h2 { font-family: var(--f-display); font-weight: 600; font-size: 1.2rem; margin: 0 0 2px; }
+.sheet .std { color: var(--muted); font-size: .85rem; margin: 0 0 10px; }
+table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+th { text-align: left; font: 500 .7rem var(--f-body); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding: 12px 0 4px; }
+td { padding: 4px 0; border-top: 1px solid var(--line); vertical-align: top; }
+td:last-child { text-align: right; font-family: var(--f-data); font-variant-numeric: tabular-nums; white-space: nowrap; padding-left: 12px; }
+.calc { color: var(--accent); font-size: .72rem; margin-left: 6px; white-space: nowrap; }
+.note { background: var(--warn-bg); color: var(--warn-ink); border-radius: 6px; padding: 10px 12px; font-size: .88rem; max-width: 80ch; }
+.note b { font-weight: 600; }
+</style>
+
+<div id="root"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+<script id="geo">
+/* Geometrie pure : portage ligne a ligne de profile()/derived() de snap_caps.py (mm, demi-plan r/z). */
+var SnapGeo = (function () {
+  var POCKET = { d: 4.45, depth: 3.30, chamfer: 0.30, undercutZ: 2.00, undercutDr: 0.35, undercutH: 0.80, ventD: 1.00 };
+  var CALS = {
+    c9: { key: 'c9', name: '9×19 mm Parabellum', std: 'Norme CIP · douille conique sans bourrelet', file: 'snapcap_9x19',
+      rimD: 9.96, rimT: 1.27, grooveD: 8.40, grooveW: 1.45, bodyD: 9.93, caseLen: 19.15, mouthD: 9.65,
+      bulletD: 9.02, oal: 29.30, noseR: 1.8, stations: [], filletR: 0, rimChamfer: 0.30, grooveAngle: 35, bulletCyl: 0, specLip: 0.15 },
+    c8: { key: 'c8', name: '8×22 mm Nambu', std: 'Norme historique · douille bouteille à semi-bourrelet', file: 'snapcap_8x22_nambu',
+      rimD: 10.50, rimT: 1.15, grooveD: 8.90, grooveW: 1.40, bodyD: 10.30, caseLen: 22.00, mouthD: 8.80,
+      bulletD: 8.18, oal: 31.60, noseR: 1.6, stations: [[16.00, 9.95], [17.80, 8.85]], filletR: 0.4, rimChamfer: 0.30, grooveAngle: 35, bulletCyl: 0, specLip: 0.15 }
+  };
+  var sub = function (a, b) { return [a[0] - b[0], a[1] - b[1]]; };
+  var add = function (a, b) { return [a[0] + b[0], a[1] + b[1]]; };
+  var mul = function (a, k) { return [a[0] * k, a[1] * k]; };
+  var unit = function (a) { var n = Math.hypot(a[0], a[1]); return [a[0] / n, a[1] / n]; };
+
+  function fillet(prev, corner, next, radius) {
+    var v1 = unit(sub(prev, corner)), v2 = unit(sub(next, corner));
+    var half = Math.acos(Math.max(-1, Math.min(1, v1[0] * v2[0] + v1[1] * v2[1]))) / 2;
+    var setback = radius / Math.tan(half), bis = unit(add(v1, v2));
+    return [add(corner, mul(v1, setback)), add(corner, mul(v2, setback)), add(corner, mul(bis, radius / Math.sin(half)))];
+  }
+
+  function derived(c) {
+    var p = POCKET, rg = c.grooveD / 2, rb = c.bodyD / 2, rbul = c.bulletD / 2;
+    var zGrooveTop = c.rimT + c.grooveW;
+    var zBody = zGrooveTop + (rb - rg) / Math.tan(c.grooveAngle * Math.PI / 180);
+    var z0 = c.caseLen + c.bulletCyl, len = c.oal - z0, rn = c.noseR;
+    var rho = (rbul * rbul + (len - rn) * (len - rn) - rn * rn) / (2 * (rbul - rn));
+    var oc = [rbul - rho, z0], nc = [0, c.oal - rn];
+    var tangent = add(oc, mul(unit(sub(nc, oc)), rho));
+    var a = [p.d / 2 - p.ventD / 2, p.depth], b = [rg, c.rimT + c.grooveW / 2];
+    var tilt = Math.atan2(a[1] - b[1], b[0] - a[0]);
+    return { zGrooveTop: zGrooveTop, zBody: zBody, lipStep: c.mouthD / 2 - rbul, ogiveR: rho, ogiveC: oc, noseC: nc,
+      tangent: tangent, z0: z0, ventA: a, ventB: b, ventTilt: tilt * 180 / Math.PI,
+      zu0: p.undercutZ, zu1: p.undercutZ + p.undercutH, undercutD: p.d + 2 * p.undercutDr };
+  }
+
+  /* Polyligne du fond du logement (sur l'axe) jusqu'a la pointe (sur l'axe). Arcs echantillonnes tous les 2 deg. */
+  function polyline(c) {
+    var p = POCKET, d = derived(c), pts = [];
+    var rp = p.d / 2, ru = rp + p.undercutDr, rr = c.rimD / 2, rg = c.grooveD / 2, rbul = c.bulletD / 2;
+    var L = function (r, z) { pts.push([r, z]); };
+    var A = function (from, to, ctr, rad) {
+      var a0 = Math.atan2(from[1] - ctr[1], from[0] - ctr[0]), da = Math.atan2(to[1] - ctr[1], to[0] - ctr[0]) - a0;
+      while (da > Math.PI) da -= 2 * Math.PI; while (da <= -Math.PI) da += 2 * Math.PI;
+      var n = Math.max(6, Math.ceil(Math.abs(da) / (2 * Math.PI / 180)));
+      for (var k = 1; k < n; k++) L(ctr[0] + rad * Math.cos(a0 + da * k / n), ctr[1] + rad * Math.sin(a0 + da * k / n));
+      L(to[0], to[1]);
+    };
+    L(0, p.depth); L(rp, p.depth); L(rp, d.zu1); L(ru, d.zu1); L(ru, d.zu0); L(rp, d.zu0); L(rp, p.chamfer); L(rp + p.chamfer, 0);
+    L(rr - c.rimChamfer, 0); L(rr, c.rimChamfer); L(rr, c.rimT); L(rg, c.rimT); L(rg, d.zGrooveTop);
+    var body = [[c.bodyD / 2, d.zBody]];
+    c.stations.forEach(function (s) { body.push([s[1] / 2, s[0]]); });
+    body.push([c.mouthD / 2, c.caseLen]);
+    L(body[0][0], body[0][1]);
+    for (var i = 1; i < body.length - 1; i++) {
+      if (c.filletR > 0) { var f = fillet(body[i - 1], body[i], body[i + 1], c.filletR); L(f[0][0], f[0][1]); A(f[0], f[1], f[2], c.filletR); }
+      else L(body[i][0], body[i][1]);
+    }
+    L(body[body.length - 1][0], body[body.length - 1][1]);
+    L(rbul, c.caseLen);
+    if (c.bulletCyl > 0) L(rbul, d.z0);
+    A([rbul, d.z0], d.tangent, d.ogiveC, d.ogiveR);
+    A(d.tangent, [0, c.oal], d.noseC, c.noseR);
+    return pts;
+  }
+
+  /* Double les sommets vifs (> 10 deg) pour que la revolution garde des aretes nettes. */
+  function withSharpEdges(pts) {
+    var out = [pts[0]];
+    for (var i = 1; i < pts.length - 1; i++) {
+      var u = unit(sub(pts[i], pts[i - 1])), v = unit(sub(pts[i + 1], pts[i]));
+      out.push(pts[i]);
+      if (u[0] * v[0] + u[1] * v[1] < Math.cos(10 * Math.PI / 180)) out.push(pts[i]);
+    }
+    out.push(pts[pts.length - 1]);
+    return out;
+  }
+
+  /* Sutherland-Hodgman : sujet quelconque, fenetre convexe. */
+  function clipPoly(subject, clip) {
+    var area = 0, n = clip.length, i;
+    for (i = 0; i < n; i++) { var q = clip[(i + 1) % n]; area += clip[i][0] * q[1] - q[0] * clip[i][1]; }
+    var sign = area >= 0 ? 1 : -1, out = subject;
+    for (i = 0; i < n && out.length; i++) {
+      var a = clip[i], b = clip[(i + 1) % n], input = out; out = [];
+      var side = function (pt) { return sign * ((b[0] - a[0]) * (pt[1] - a[1]) - (b[1] - a[1]) * (pt[0] - a[0])); };
+      for (var j = 0; j < input.length; j++) {
+        var cur = input[j], prev = input[(j + input.length - 1) % input.length], sc = side(cur), sp = side(prev);
+        if (sc >= 0) { if (sp < 0) out.push(add(prev, mul(sub(cur, prev), sp / (sp - sc)))); out.push(cur); }
+        else if (sp >= 0) out.push(add(prev, mul(sub(cur, prev), sp / (sp - sc))));
+      }
+    }
+    return out;
+  }
+
+  /* Trace de l'event dans le plan de coupe : bande de 1 mm bornee par le fond du logement et le fond de gorge, limitee a la matiere. */
+  function ventSection(c) {
+    var p = POCKET, d = derived(c), u = unit(sub(d.ventB, d.ventA)), nrm = [-u[1], u[0]], h = p.ventD / 2;
+    var s0 = sub(d.ventA, mul(u, 3)), s1 = add(d.ventB, mul(u, 2));
+    var rect = [add(s0, mul(nrm, h)), add(s1, mul(nrm, h)), sub(s1, mul(nrm, h)), sub(s0, mul(nrm, h))];
+    var tool = clipPoly(rect, [[p.d / 2, -1], [c.grooveD / 2, -1], [c.grooveD / 2, p.depth], [p.d / 2, p.depth]]);
+    return clipPoly(polyline(c), tool);
+  }
+
+  return { POCKET: POCKET, CALS: CALS, derived: derived, polyline: polyline, withSharpEdges: withSharpEdges, ventSection: ventSection, unit: unit, sub: sub };
+})();
+</script>
+
+<script>
+(function () {
+  var h = React.createElement, G = SnapGeo, P = G.POCKET;
+  var BRASS = 0xc9a450, CUT_BG = '#ecd48f', CUT_LINE = '#7b5c17', HOLE = 0x241c10;
+
+  function cssVar(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+
+  function hatchTexture() {
+    var cv = document.createElement('canvas'); cv.width = cv.height = 64;
+    var g = cv.getContext('2d');
+    g.fillStyle = CUT_BG; g.fillRect(0, 0, 64, 64);
+    g.strokeStyle = CUT_LINE; g.lineWidth = 3;
+    for (var k = -64; k <= 64; k += 32) { g.beginPath(); g.moveTo(k, 64); g.lineTo(k + 64, 0); g.stroke(); }
+    var t = new THREE.CanvasTexture(cv);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(1.1, 1.1);
+    return t;
+  }
+
+  /* Paroi de l'event (tube incline) ajustee entre la paroi du logement et le fond de gorge. */
+  function ventTube(c, rIn, rOut, withCap) {
+    var d = G.derived(c), u = G.unit(G.sub(d.ventB, d.ventA)), nx = -u[1], nz = u[0], rv = P.ventD / 2, N = 40;
+    var pos = [], idx = [];
+    var at = function (t, rad) {
+      var cx = rv * Math.cos(t), y = rv * Math.sin(t);
+      var s = (Math.sqrt(rad * rad - y * y) - d.ventA[0] - cx * nx) / u[0];
+      return [d.ventA[0] + s * u[0] + cx * nx, d.ventA[1] + s * u[1] + cx * nz, y];
+    };
+    for (var i = 0; i <= N; i++) {
+      var t = i / N * 2 * Math.PI, a = at(t, rIn), b = at(t, rOut);
+      pos.push(a[0], a[1], a[2], b[0], b[1], b[2]);
+      if (i < N) { var k = i * 2; idx.push(k, k + 1, k + 2, k + 1, k + 3, k + 2); }
+    }
+    if (withCap) {           // pastille : seule l'embouchure sur le fond de gorge
+      pos = []; idx = [];
+      pos.push(d.ventB[0] + 0.02, d.ventB[1], 0);
+      for (i = 0; i <= N; i++) { b = at(i / N * 2 * Math.PI, rOut + 0.02); pos.push(b[0], b[1], b[2]); if (i < N) idx.push(0, i + 1, i + 2); }
+    }
+    var geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    geo.setIndex(idx); geo.computeVertexNormals();
+    return geo;
+  }
+
+  function buildModel(c, mats) {
+    var poly = G.polyline(c), d = G.derived(c), grp = new THREE.Group();
+    var lathePts = G.withSharpEdges(poly).map(function (q) { return new THREE.Vector2(q[0], q[1]); });
+    var full = new THREE.LatheGeometry(lathePts, 120);
+    var half = new THREE.LatheGeometry(lathePts, 60, Math.PI / 2, Math.PI);
+
+    // Face de coupe : le meme profil, a droite puis en miroir a gauche.
+    var ring = poly.concat(poly.slice(1, -1).reverse().map(function (q) { return [-q[0], q[1]]; }));
+    var shape = new THREE.Shape(ring.map(function (q) { return new THREE.Vector2(q[0], q[1]); }));
+    var face = new THREE.Mesh(new THREE.ShapeGeometry(shape), mats.cut);
+    var edge = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(ring.map(function (q) { return new THREE.Vector3(q[0], q[1], 0.012); })), mats.edge);
+    var vs = G.ventSection(c);
+    var ventFace = new THREE.Mesh(new THREE.ShapeGeometry(new THREE.Shape(vs.map(function (q) { return new THREE.Vector2(q[0], q[1]); }))), mats.vent);
+    ventFace.position.z = 0.02;
+
+    // Volume du logement (ce que remplit le silicone), legerement retreint pour ne pas coller a la paroi.
+    var rp = P.d / 2 * 0.985, ru = (P.d / 2 + P.undercutDr) * 0.985;
+    var pocketPts = [[0, 0.01], [rp + P.chamfer, 0.01], [rp, P.chamfer], [rp, d.zu0], [rp, d.zu0], [ru, d.zu0], [ru, d.zu0], [ru, d.zu1], [ru, d.zu1], [rp, d.zu1], [rp, d.zu1], [rp, P.depth - 0.01], [rp, P.depth - 0.01], [0, P.depth - 0.01]]
+      .map(function (q) { return new THREE.Vector2(q[0], q[1]); });
+
+    var parts = {
+      solid: new THREE.Mesh(full, mats.brass),
+      half: new THREE.Mesh(half, mats.brass),
+      face: face, edge: edge, ventFace: ventFace,
+      shell: new THREE.Mesh(full, mats.glass),
+      pocket: new THREE.Mesh(new THREE.LatheGeometry(pocketPts, 64), mats.silicone),
+      tube: new THREE.Mesh(ventTube(c, P.d / 2 * 0.98, c.grooveD / 2), mats.ventTube),
+      hole: new THREE.Mesh(ventTube(c, 0, c.grooveD / 2, true), mats.hole)
+    };
+    parts.shell.renderOrder = 2;
+    Object.keys(parts).forEach(function (k) { grp.add(parts[k]); });
+    grp.userData = { parts: parts, c: c };
+    return grp;
+  }
+
+  function createStage(host, tags) {
+    var renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.localClippingEnabled = true;
+    host.insertBefore(renderer.domElement, host.firstChild);
+    var scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(30, 1, 1, 600);
+    scene.add(camera);
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x8a8f99, 0.75));
+    var key = new THREE.DirectionalLight(0xffffff, 0.75); key.position.set(-0.6, 0.8, 1); camera.add(key);
+    var rim = new THREE.DirectionalLight(0xffffff, 0.35); rim.position.set(40, 20, -60); scene.add(rim);
+
+    var floorClip = new THREE.Plane(new THREE.Vector3(0, -1, 0), P.depth); // l'event ne monte pas au-dessus du fond du logement
+    var mats = {
+      brass: new THREE.MeshStandardMaterial({ color: BRASS, metalness: 0.35, roughness: 0.42, side: THREE.DoubleSide }),
+      glass: new THREE.MeshStandardMaterial({ color: BRASS, metalness: 0.2, roughness: 0.5, transparent: true, opacity: 0.2, depthWrite: false, side: THREE.DoubleSide }),
+      cut: new THREE.MeshBasicMaterial({ map: hatchTexture(), side: THREE.DoubleSide }),
+      edge: new THREE.LineBasicMaterial({ color: 0x3c2c08 }),
+      vent: new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }),
+      ventTube: new THREE.MeshStandardMaterial({ roughness: 0.6, side: THREE.DoubleSide, clippingPlanes: [floorClip] }),
+      silicone: new THREE.MeshStandardMaterial({ roughness: 0.55, side: THREE.DoubleSide }),
+      hole: new THREE.MeshBasicMaterial({ color: HOLE, side: THREE.DoubleSide })
+    };
+    function applyTheme() {
+      renderer.setClearColor(new THREE.Color(cssVar('--stage')), 1);
+      mats.vent.color.set(cssVar('--vent')); mats.ventTube.color.set(cssVar('--vent')); mats.silicone.color.set(cssVar('--silicone'));
+    }
+    applyTheme();
+    var mq = window.matchMedia('(prefers-color-scheme: dark)');
+    mq.addEventListener && mq.addEventListener('change', applyTheme);
+    var mo = new MutationObserver(applyTheme); mo.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+    var models = { c9: buildModel(G.CALS.c9, mats), c8: buildModel(G.CALS.c8, mats) };
+    scene.add(models.c9, models.c8);
+
+    var controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true; controls.dampingFactor = 0.08; controls.screenSpacePanning = true;
+    controls.minDistance = 12; controls.maxDistance = 260; controls.zoomSpeed = 0.9;
+
+    var state = { cal: 'both', mode: 'solid' }, raf = 0;
+    function visible() { return state.cal === 'both' ? ['c9', 'c8'] : [state.cal]; }
+    function frame() {
+      var keys = visible(), width = keys.length === 2 ? 26 : 12, height = 34;
+      var vf = camera.fov * Math.PI / 360, hf = Math.atan(Math.tan(vf) * camera.aspect);
+      var dist = Math.max(height / 2 / Math.tan(vf), width / 2 / Math.tan(hf)) * 1.32;
+      controls.target.set(0, 14.5, 0);
+      var dir = new THREE.Vector3(0.38, 0.22, 1).normalize();
+      camera.position.copy(controls.target).addScaledVector(dir, dist);
+      controls.update();
+    }
+    function apply() {
+      var keys = visible();
+      ['c9', 'c8'].forEach(function (k) {
+        var m = models[k], on = keys.indexOf(k) >= 0, p = m.userData.parts, md = state.mode;
+        m.visible = on;
+        m.position.x = keys.length === 2 ? (k === 'c9' ? -7 : 7) : 0;
+        p.solid.visible = md === 'solid'; p.hole.visible = md === 'solid';
+        p.half.visible = p.face.visible = p.ventFace.visible = md === 'cut';
+        p.edge.visible = md !== 'solid';
+        p.shell.visible = p.pocket.visible = p.tube.visible = md === 'xray';
+        tags[k].hidden = !on;
+      });
+    }
+    function resize() {
+      var w = host.clientWidth, hh = host.clientHeight; if (!w || !hh) return;
+      renderer.setSize(w, hh, false); camera.aspect = w / hh; camera.updateProjectionMatrix();
+    }
+    var ro = new ResizeObserver(function () { resize(); }); ro.observe(host);
+    var v = new THREE.Vector3();
+    function loop() {
+      raf = requestAnimationFrame(loop);
+      controls.update(); renderer.render(scene, camera);
+      visible().forEach(function (k) {
+        v.set(models[k].position.x, -1.2, 0).project(camera);
+        tags[k].style.transform = 'translate(-50%,0) translate(' + ((v.x + 1) / 2 * host.clientWidth).toFixed(1) + 'px,' + ((1 - v.y) / 2 * host.clientHeight).toFixed(1) + 'px)';
+      });
+    }
+    resize(); apply(); frame(); loop();
+    return {
+      set: function (cal, mode) { var reframe = cal !== state.cal; state.cal = cal; state.mode = mode; apply(); if (reframe) frame(); },
+      reset: frame,
+      dispose: function () { cancelAnimationFrame(raf); ro.disconnect(); mo.disconnect(); controls.dispose(); renderer.dispose(); }
+    };
+  }
+
+  function Seg(props) {
+    return h('div', { className: 'group' }, h('span', { id: props.id + '-l' }, props.label),
+      h('div', { className: 'seg', role: 'group', 'aria-labelledby': props.id + '-l' }, props.options.map(function (o) {
+        return h('button', { key: o[0], id: props.id + '-' + o[0], type: 'button', 'aria-pressed': props.value === o[0], onClick: function () { props.onChange(o[0]); } }, o[1]);
+      })));
+  }
+
+  function Viewer(props) {
+    var host = React.useRef(null), t9 = React.useRef(null), t8 = React.useRef(null), api = React.useRef(null);
+    var failed = React.useState(false);
+    React.useEffect(function () {
+      try { api.current = createStage(host.current, { c9: t9.current, c8: t8.current }); props.apiRef.current = api.current; }
+      catch (e) { failed[1](true); }
+      return function () { api.current && api.current.dispose(); };
+    }, []);
+    React.useEffect(function () { api.current && api.current.set(props.cal, props.mode); }, [props.cal, props.mode]);
+    var legend = props.mode === 'cut'
+      ? [['hatch', 'Matière en coupe (plan de l’évent)'], ['var(--vent)', 'Évent Ø 1,0 mm']]
+      : props.mode === 'xray' ? [['var(--silicone)', 'Logement d’amorce et gorge d’ancrage'], ['var(--vent)', 'Évent Ø 1,0 mm']] : null;
+    return h('div', { className: 'stage', ref: host },
+      failed[0] && h('div', { className: 'fail' }, 'WebGL n’est pas disponible dans ce navigateur : l’aperçu 3D ne peut pas s’afficher. Les cotes ci-dessous restent valables.'),
+      h('div', { className: 'tag', ref: t9 }, '9×19'), h('div', { className: 'tag', ref: t8 }, '8×22 Nambu'),
+      legend && h('div', { className: 'legend' }, legend.map(function (l) {
+        var bg = l[0] === 'hatch' ? 'repeating-linear-gradient(135deg,' + CUT_BG + ' 0 3px,' + CUT_LINE + ' 3px 4.5px)' : l[0];
+        return h('div', { key: l[1] }, h('span', { className: 'sw', style: { background: bg } }), l[1]);
+      })),
+      h('div', { className: 'hint' }, 'Glisser : orbite · molette ou pincement : zoom · clic droit ou deux doigts : déplacement'));
+  }
+
+  var f = function (x, n) { return x.toFixed(n == null ? 2 : n).replace('.', ','); };
+  function Sheet(props) {
+    var c = props.c, d = G.derived(c), calc = h('span', { className: 'calc' }, 'calculé');
+    var rows = [
+      ['Culot'],
+      ['Ø culot', f(c.rimD)], ['Épaisseur du bourrelet', f(c.rimT)], ['Chanfrein inférieur', '0,30 × 45°'],
+      ['Gorge d’extraction'],
+      ['Ø fond de gorge', f(c.grooveD)], ['Largeur du fond', f(c.grooveW)], ['Chanfrein supérieur (depuis l’axe)', c.grooveAngle + '°'],
+      [['Fin du chanfrein, Z', calc], f(d.zBody, 3)],
+      ['Douille'],
+      ['Ø base du corps', f(c.bodyD)]
+    ];
+    c.stations.forEach(function (s, i) { rows.push([(i === 0 ? 'Ø début d’épaulement' : 'Ø base du collet') + ' à Z ' + f(s[0]), f(s[1])]); });
+    if (c.filletR) rows.push(['Congés de raccordement', 'R ' + f(c.filletR)]);
+    rows.push(['Ø aux lèvres à Z ' + f(c.caseLen), f(c.mouthD)], [['Feuillure aux lèvres (rayon)', calc], f(d.lipStep, 3)],
+      ['Ogive'], ['Ø base', f(c.bulletD)], ['Longueur totale', f(c.oal)], ['Rayon de pointe', 'R ' + f(c.noseR)], [['Rayon d’ogive tangente', calc], 'R ' + f(d.ogiveR, 3)],
+      ['Logement d’amorce'], ['Ø × profondeur', f(P.d) + ' × ' + f(P.depth)], ['Gorge d’ancrage Ø ' + f(d.undercutD), 'Z ' + f(d.zu0) + ' → ' + f(d.zu1)],
+      [['Évent Ø ' + f(P.ventD) + ', inclinaison', calc], f(d.ventTilt, 1) + '°']);
+    return h('section', { className: 'sheet' }, h('h2', null, c.name), h('p', { className: 'std' }, c.std + ' · ' + c.file + '.step / .stl'),
+      h('table', null, h('tbody', null, rows.map(function (r, i) {
+        return r.length === 1 ? h('tr', { key: i }, h('th', { colSpan: 2, scope: 'colgroup' }, r[0])) : h('tr', { key: i }, h('td', null, r[0]), h('td', null, r[1]));
+      }))));
+  }
+
+  function App() {
+    var cal = React.useState('both'), mode = React.useState('cut'), apiRef = React.useRef(null);
+    var shown = cal[0] === 'both' ? ['c9', 'c8'] : [cal[0]];
+    return h('div', { className: 'wrap' },
+      h('header', null, h('h1', null, 'Snap caps monolithiques 9×19 et 8×22 Nambu'),
+        h('p', { className: 'sub' }, 'Contrôle visuel avant tranchage. Le modèle affiché est la révolution du profil utilisé par snap_caps.py, cotes en millimètres.')),
+      h('div', { className: 'bar' },
+        h(Seg, { id: 'cal', label: 'Calibre', value: cal[0], onChange: cal[1], options: [['c9', '9×19 mm'], ['c8', '8×22 mm Nambu'], ['both', 'Les deux']] }),
+        h(Seg, { id: 'mode', label: 'Vue en coupe / Rayon X', value: mode[0], onChange: mode[1], options: [['solid', 'Pleine'], ['cut', 'En coupe'], ['xray', 'Rayon X']] }),
+        h('button', { className: 'ghost', id: 'recentrer', type: 'button', onClick: function () { apiRef.current && apiRef.current.reset(); } }, 'Recentrer')),
+      h(Viewer, { cal: cal[0], mode: mode[0], apiRef: apiRef }),
+      h('p', { className: 'note' }, h('b', null, 'Deux écarts au cahier des charges. '),
+        'La feuillure vaut 0,315 mm (9×19) et 0,310 mm (Nambu) au rayon : un décrochement de 0,15 mm est incompatible avec les diamètres de lèvres et d’ogive demandés, qui ont été conservés. ',
+        'L’évent recoupe le haut de la gorge d’ancrage : il ne reste que 0,5 mm entre cette gorge et le fond du logement, moins que le diamètre du canal.'),
+      h('div', { className: 'sheets' }, shown.map(function (k) { return h(Sheet, { key: k, c: G.CALS[k] }); })));
+  }
+
+  ReactDOM.createRoot(document.getElementById('root')).render(h(App));
+})();
+</script>
