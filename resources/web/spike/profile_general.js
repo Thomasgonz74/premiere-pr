@@ -230,6 +230,11 @@ function wireProfileGeneral() {
     appearance.mode = mode;
     refreshAppearanceSelect();
   });
+  // These labels come translated from Python, out of applyStaticTranslations' reach.
+  bridge.languageChanged.connect(() => bridge.getAppearanceModeOptions((options) => {
+    appearance.options = options;
+    refreshAppearanceSelect();
+  }));
   languageSelect.addEventListener("change", () => bridge.setLanguage(languageSelect.value));
 
   // --value (0%-100%) is how CSS sees the position: themes whose charter

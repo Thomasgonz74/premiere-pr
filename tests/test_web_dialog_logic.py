@@ -215,6 +215,7 @@ def test_appearance_selector_offers_dark_only_where_it_exists(view):
       const saved = [];
       const profileGeneral = {
         themeChanged: sig(),
+        languageChanged: sig(),
         getSettings(cb) { cb({ theme: 'synthwave', appearanceMode: 'dark', audioVolume: 50 }); },
         getThemeOptions(cb) { cb([]); },
         getAppearanceModeOptions(cb) { cb([{ id: 'light', label: 'Clair' }, { id: 'dark', label: 'Sombre' }, { id: 'dark_hc', label: 'Contraste' }]); },
@@ -264,3 +265,26 @@ def test_general_and_network_forms_reload_when_a_settings_profile_is_applied(vie
     })()""")
     # Stale 1111 / unticked would be saved back by the next Save, undoing the profile.
     assert result == '["1234",true]'
+
+
+def test_appearance_labels_follow_a_language_change(view):
+    result = run_js(view, """(function () {
+      const sig = () => { const cbs = []; return { connect: (f) => cbs.push(f), emit: (...a) => cbs.forEach((f) => f(...a)) }; };
+      let lang = 'en';
+      const labels = { en: ['Light', 'Dark'], de: ['Hell', 'Dunkel'] };
+      const profileGeneral = {
+        themeChanged: sig(), languageChanged: sig(),
+        getSettings(cb) { cb({ theme: 'luna_xp', appearanceMode: 'light', audioVolume: 50 }); },
+        getThemeOptions(cb) { cb([]); },
+        getAppearanceModeOptions(cb) { cb([{ id: 'light', label: labels[lang][0] }, { id: 'dark', label: labels[lang][1] }]); },
+        getLanguageOptions(cb) { cb([]); },
+        getLaunchAtStartupActual(cb) { cb(false); },
+      };
+      window.bridge = { profileGeneral, dialogs: {}, profileAdvanced: { settingsApplied: sig() } };
+      document.getElementById('profileGeneralContainer').replaceChildren();
+      wireProfileGeneral();
+      lang = 'de';
+      profileGeneral.languageChanged.emit('de');
+      return Array.from(document.getElementById('pgAppearanceSelect').options, (o) => o.textContent).join();
+    })()""")
+    assert result == "Hell,Dunkel"
