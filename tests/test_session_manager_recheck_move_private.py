@@ -21,6 +21,7 @@ def _session_manager_with_mock_handles(**handles):
     sm._records = {}
     sm._private_flag_checked = set()
     sm._speed_history = {}
+    sm._quiet_moves = set()
     sm.torrent_status_updated = MagicMock()
     sm.torrent_status_batch_updated = MagicMock()
     sm.storage_moved = MagicMock()
