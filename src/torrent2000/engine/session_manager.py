@@ -11,7 +11,7 @@ import libtorrent as lt
 from PySide6.QtCore import QCoreApplication, QObject, QThreadPool, QTimer, Signal
 
 from torrent2000 import APP_VERSION
-from torrent2000.config.paths import get_default_download_dir
+from torrent2000.config.paths import get_awaiting_analysis_path, get_default_download_dir
 from torrent2000.config.settings import Settings
 from torrent2000.engine import add_params, persistence, proxy, trackers as tracker_ops
 from torrent2000.engine.alerts import AlertDispatcher, _hash_of, status_to_record
@@ -291,6 +291,11 @@ class SessionManager(QObject):
         # info_hashes queued by _restore_previous_session's async_add_torrent
         # whose add_torrent_alert hasn't arrived yet -- see _on_torrent_added.
         self._pending_restore: set[str] = set()
+        # Magnets still waiting for start_after_analysis, saved so a restart
+        # brings them back awaiting it (their upload mode is in the resume data).
+        self._awaiting_analysis: set[str] = {
+            h for h in persistence.load_json(get_awaiting_analysis_path(), []) if isinstance(h, str)
+        }
         self._categories = TorrentCategoryService()
         # In-memory only (not persisted): ~60s of (download_rate, upload_rate)
         # samples per torrent at this timer's 300ms tick, for the speed-over-
@@ -527,6 +532,9 @@ class SessionManager(QObject):
         getattr(self, "_file_entries_cache", {}).pop(info_hash, None)
         self._pending_restore_confirmation.discard(info_hash)
         self._categories.remove(info_hash)
+        if info_hash in self._awaiting_analysis:
+            self._awaiting_analysis.discard(info_hash)
+            self._save_awaiting_analysis()
         persistence.delete_resume_file(info_hash)
         self.torrent_removed.emit(info_hash)
 
@@ -538,6 +546,11 @@ class SessionManager(QObject):
         self._pending_restore.discard(info_hash)
         if not error:
             self._handles[info_hash] = handle
+            record = self._records.get(info_hash)
+            if record is not None and record.awaiting_analysis and not record.is_magnet_awaiting_metadata:
+                # Its metadata came in at the quit, too late for whoever
+                # analyses it (e.g. RSS), and libtorrent won't announce it again.
+                self._on_metadata_received(info_hash)
             return
         logger.error("Failed to restore torrent %s from saved resume data: %s", info_hash, error)
         self._pending_restore_confirmation.discard(info_hash)
@@ -572,7 +585,7 @@ class SessionManager(QObject):
         )
         blocked = _is_download_start_blocked(self._settings.theme, progress=0.0)
         if blocked:
-            # Unlike a magnet (always added paused pending analysis), a
+            # Unlike a magnet (held in upload mode pending analysis), a
             # .torrent file normally starts downloading immediately -- hold
             # it paused instead so "no downloading under CCCP" is actually
             # enforced here too, not just at start_after_analysis/resume.
@@ -586,12 +599,20 @@ class SessionManager(QObject):
     def add_torrent_from_magnet(self, uri: str, save_path: str | None = None) -> str:
         save_path = save_path or str(get_default_download_dir())
         atp = add_params.from_magnet_uri(uri, save_path, restrict_discovery=self._settings.restrict_discovery)
-        # Hold the torrent paused (and outside auto-management) until the
-        # user has had a chance to analyze the file list once metadata
-        # arrives -- see AddTorrentTab / metadata_received signal.
-        atp.flags &= ~lt.torrent_flags.auto_managed
-        atp.flags |= lt.torrent_flags.paused
-        return self._add(atp, awaiting_analysis=True)
+        # Running, or it would contact no peer and its metadata would never
+        # arrive, but in upload mode: no piece is downloaded until
+        # start_after_analysis, once the file list has been analysed (see
+        # metadata_received). Not auto-managed, or libtorrent would leave upload
+        # mode by itself after optimistic_disk_retry.
+        atp.flags &= ~(lt.torrent_flags.auto_managed | lt.torrent_flags.paused)
+        atp.flags |= lt.torrent_flags.upload_mode
+        info_hash = self._add(atp, awaiting_analysis=True)
+        self._awaiting_analysis.add(info_hash)
+        self._save_awaiting_analysis()
+        return info_hash
+
+    def _save_awaiting_analysis(self) -> None:
+        persistence.save_json(get_awaiting_analysis_path(), sorted(self._awaiting_analysis))
 
     def _add(self, atp: "lt.add_torrent_params", awaiting_analysis: bool) -> str:
         info_hash = add_params.info_hash_hex(atp)
@@ -852,6 +873,10 @@ class SessionManager(QObject):
             self.download_blocked_by_theme.emit(info_hash)
             return
         record.awaiting_analysis = False
+        if info_hash in self._awaiting_analysis:
+            self._awaiting_analysis.discard(info_hash)
+            self._save_awaiting_analysis()
+        handle.unset_flags(lt.torrent_flags.upload_mode)
         handle.set_flags(lt.torrent_flags.auto_managed)
         handle.resume()
 
@@ -881,7 +906,10 @@ class SessionManager(QObject):
         if record is not None and _is_download_start_blocked(self._settings.theme, record.progress):
             self.download_blocked_by_theme.emit(info_hash)
             return
-        handle.set_flags(lt.torrent_flags.auto_managed)
+        # A magnet awaiting analysis only goes back to fetching its metadata,
+        # in upload mode: auto-management would end that mode by itself.
+        if record is None or not record.awaiting_analysis:
+            handle.set_flags(lt.torrent_flags.auto_managed)
         handle.resume()
 
     def enforce_theme_download_policy(self) -> None:
@@ -1147,6 +1175,8 @@ class SessionManager(QObject):
                 all_time_downloaded=getattr(atp, "total_downloaded", 0),
                 all_time_uploaded=getattr(atp, "total_uploaded", 0),
                 category=self._categories.get(info_hash),
+                awaiting_analysis=info_hash in self._awaiting_analysis,
+                is_magnet_awaiting_metadata=atp.ti is None,
             )
             self._records[info_hash] = record
             if add_params.resume_data_is_complete(atp):

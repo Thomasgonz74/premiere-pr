@@ -93,6 +93,20 @@ def _restore_settings() -> Settings:
     return settings
 
 
+def test_a_restored_magnet_awaiting_analysis_whose_metadata_is_in_announces_it():
+    """Metadata that came in at the quit is in the resume data, so libtorrent
+    never announces it again -- and whoever analyses the magnet (RSS) would
+    wait for it forever."""
+    sm = _restoring("ih")
+    sm._records["ih"].awaiting_analysis = True  # is_magnet_awaiting_metadata False: restored with its info dict
+    received = []
+    sm.metadata_received.connect(received.append)
+
+    sm._on_torrent_added("ih", MagicMock(), "")
+
+    assert received == ["ih"]
+
+
 def test_rejected_restore_drops_its_record_but_other_add_errors_do_not():
     sm = _restoring("restored")
     sm._records["manual"] = TorrentRecord(info_hash="manual")

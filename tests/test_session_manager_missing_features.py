@@ -56,6 +56,7 @@ def _session_manager_with_mock_handles(**handles):
     sm._categories = TorrentCategoryService()
     sm._speed_history = {}
     sm._pending_restore_confirmation = set()
+    sm._awaiting_analysis = set()
     sm._peer_reputation_store = PeerReputationStore()
     sm._peer_reputation_tracker = PeerReputationTracker(sm._peer_reputation_store)
     sm.torrent_status_updated = MagicMock()
