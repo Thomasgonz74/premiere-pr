@@ -147,19 +147,20 @@ def test_disabled_feed_is_ignored_entirely(tmp_path):
     assert seen_store.is_seen("guid-1") is False
 
 
-def test_http_torrent_link_is_marked_seen_immediately_but_added_only_after_download_completes(tmp_path, monkeypatch):
-    # _on_feed_fetched's http(s) branch marks the item seen *and* schedules a
-    # real QThreadPool worker that would perform a real network download --
-    # replace the pool's start() with a no-op so this test exercises the real
-    # production slot (mark-seen-before-scheduling) without ever touching the
-    # network or leaving a background worker running past the test's return.
-    class _NoOpThreadPool:
+def test_http_torrent_link_is_marked_seen_only_once_added_and_queued_once_meanwhile(tmp_path, monkeypatch):
+    # _on_feed_fetched's http(s) branch schedules a real QThreadPool worker
+    # that would perform a real network download -- replace the pool with
+    # one that only records it, so this test exercises the real production
+    # slots without touching the network or leaving a worker running.
+    started = []
+
+    class _RecordingThreadPool:
         def start(self, runnable, priority=0):
-            pass
+            started.append(runnable)
 
     monkeypatch.setattr(
         "torrent2000.engine.rss_feed_service.QThreadPool.globalInstance",
-        staticmethod(lambda: _NoOpThreadPool()),
+        staticmethod(lambda: _RecordingThreadPool()),
     )
 
     feed = RssFeedSubscription(url="https://example.com/feed.xml", filter_keyword="", enabled=True)
@@ -167,18 +168,25 @@ def test_http_torrent_link_is_marked_seen_immediately_but_added_only_after_downl
 
     item = {"title": "Something", "link": "https://example.com/x.torrent", "guid": "guid-2"}
     service._signals.feed_fetched.emit(feed.url, [item])
-
-    # Marked seen up-front so a second check tick before the download
-    # finishes can't queue a duplicate download for the same item.
+    # A second check tick before the download finishes queues no duplicate.
+    service._signals.feed_fetched.emit(feed.url, [item])
+    assert len(started) == 1
     assert session_manager.file_calls == []
-    assert seen_store.is_seen("guid-2") is True
+    assert seen_store.is_seen("guid-2") is False
+
+    # A failed download is not marked seen: the next check tries again.
+    service._signals.torrent_download_failed.emit(feed.url, item, "connection reset")
+    assert seen_store.is_seen("guid-2") is False
+    service._signals.feed_fetched.emit(feed.url, [item])
+    assert len(started) == 2
 
     # Simulates the download completing -- emitted directly rather than
-    # letting a real worker run, per the no-op pool above.
+    # letting a real worker run, per the recording pool above.
     downloaded_path = str(tmp_path / "x.torrent")
     service._signals.torrent_downloaded.emit(feed.url, item, downloaded_path, settings.default_download_dir)
 
     assert session_manager.file_calls == [(downloaded_path, settings.default_download_dir)]
+    assert seen_store.is_seen("guid-2") is True
 
 
 def test_downloaded_torrent_temp_file_is_deleted_once_added(tmp_path):
