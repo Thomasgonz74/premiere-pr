@@ -1,6 +1,6 @@
 """Behaviour of a few web-UI scripts that run without any bridge round trip
 (modal.js, profile_stats.js, piece_map_dialog.js, downloads.js,
-theme_switcher.js, profile_general.js, add.js), exercised in
+theme_switcher.js, profile_general.js, add.js, file_priority.js), exercised in
 the real resources/web/spike/index.html loaded in an offscreen QWebEngineView
 with hand-made bridge stubs (same page-loading convention as
 test_theme_readability.py)."""
@@ -261,3 +261,19 @@ def test_add_page_routing_destination_never_carries_over_to_the_next_torrent(vie
       return JSON.stringify(seen);
     })()""")
     assert result == '["C:/films","C:/dl","C:/dl","D:/mine"]'
+
+
+def test_file_editor_starts_an_excluded_file_unchecked_and_saving_keeps_it_out(view):
+    result = run_js(view, """(function () {
+      const saved = [];
+      window.bridge = { filePriority: { saveFilePriorities(ih, excluded) { saved.push(ih, excluded); } } };
+      const container = document.createElement('div');
+      fpRenderContent(container, 'h1', [
+        { index: 0, path: 'film.mkv', size: 1, priority: 4 },
+        { index: 2, path: 'film.mkv.exe', size: 1, priority: 0 },  // excluded by the danger scan
+      ]);
+      const checks = Array.from(container.querySelectorAll('.fp-check'), (c) => c.checked);
+      container.querySelector('.modal-close-row button').click();  // Enregistrer, nothing changed
+      return JSON.stringify([checks, saved]);
+    })()""")
+    assert result == '[[true,false],["h1",[2]]]'

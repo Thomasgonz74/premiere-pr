@@ -836,6 +836,14 @@ class SessionManager(QObject):
                 priorities[idx] = FILE_PRIORITY_EXCLUDED
         handle.prioritize_files(priorities)
 
+    def get_file_priorities(self, info_hash: str) -> list[int]:
+        """libtorrent's per-file priorities, indexed like get_torrent_files'
+        entries; [] if there's no handle."""
+        handle = self._handles.get(info_hash)
+        if handle is None:
+            return []
+        return list(handle.get_file_priorities())
+
     def set_file_priorities(self, info_hash: str, excluded_indices: set[int]) -> None:
         """Full replacement, unlike exclude_files: every file's priority is
         set explicitly (excluded or default), so a file previously excluded

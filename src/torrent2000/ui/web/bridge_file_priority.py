@@ -1,13 +1,12 @@
 """QWebChannel bridge for the post-start file inclusion/exclusion editor --
-mirrors ui/dialogs/file_priority_dialog.py. Every file starts checked in the
-UI (SessionManager doesn't expose per-file priorities for reading, only
-get_torrent_files(), which has no priority field); saveFilePriorities()
+mirrors ui/dialogs/file_priority_dialog.py. Each file comes with its current
+priority so the UI starts with excluded files unchecked; saveFilePriorities()
 writes whatever the user leaves unchecked as the new full exclusion set via
 set_file_priorities(), which also re-includes anything re-checked."""
 
 from PySide6.QtCore import QObject, Slot
 
-from torrent2000.engine.session_manager import SessionManager
+from torrent2000.engine.session_manager import FILE_PRIORITY_DEFAULT, SessionManager
 
 
 class FilePriorityBridge(QObject):
@@ -19,7 +18,16 @@ class FilePriorityBridge(QObject):
     def getFiles(self, info_hash: str) -> list:
         # [] if no handle, or metadata not received yet (magnet still resolving).
         files = self._session_manager.get_torrent_files(info_hash)
-        return [{"index": e.index, "path": e.path, "size": e.size} for e in files]
+        priorities = self._session_manager.get_file_priorities(info_hash)
+        return [
+            {
+                "index": e.index,
+                "path": e.path,
+                "size": e.size,
+                "priority": priorities[e.index] if e.index < len(priorities) else FILE_PRIORITY_DEFAULT,
+            }
+            for e in files
+        ]
 
     @Slot(str, "QVariantList")
     def saveFilePriorities(self, info_hash: str, excluded_indices) -> None:

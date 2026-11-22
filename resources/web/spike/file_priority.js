@@ -1,8 +1,8 @@
 // Post-start file inclusion/exclusion editor -- mirrors native
-// FilePriorityDialog. Every file starts checked (no way to read back
-// current per-file priority from a running torrent); Enregistrer sends the
-// full set of now-unchecked indices, which set_file_priorities() applies as
-// a full replacement (re-checked files are correctly restored too).
+// FilePriorityDialog. Each file starts as it is now (an excluded one, e.g. by
+// the danger scan at add time, unchecked); Enregistrer sends the full set of
+// now-unchecked indices, which set_file_priorities() applies as a full
+// replacement (re-checked files are correctly restored too).
 
 function fpBuildRow(file) {
   const row = document.createElement("div");
@@ -11,7 +11,7 @@ function fpBuildRow(file) {
 
   const check = document.createElement("input");
   check.type = "checkbox";
-  check.checked = true;
+  check.checked = file.priority !== 0;
   check.className = "fp-check";
   row.appendChild(check);
 
