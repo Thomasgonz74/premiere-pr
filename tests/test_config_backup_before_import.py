@@ -11,7 +11,7 @@ import os
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 from torrent2000.config.paths import get_config_backups_dir, get_config_path
-from torrent2000.config.settings import Settings
+from torrent2000.config.settings import RssFeedSubscription, Settings
 from torrent2000.config.settings_history import read_settings_history
 from torrent2000.ui.web.bridge_profile_security import ProfileSecurityBridge, _backup_current_config
 
@@ -49,6 +49,21 @@ def test_backup_redacts_proxy_password_and_remote_access_token(tmp_path, monkeyp
     data = json.loads(backups[0].read_text(encoding="utf-8"))
     assert data["proxy"]["password"] == ""
     assert data["remote_access_token"] == ""
+
+
+def test_backup_redacts_webhook_url_and_rss_passkeys_and_history_skips_webhook(tmp_path, monkeypatch):
+    monkeypatch.setenv("TORRENT2000_DATA_DIR", str(tmp_path))
+    settings = Settings.load()
+    settings.webhook_url = "https://discord.com/api/webhooks/123/SECRET-TOKEN"
+    settings.rss_feeds = [RssFeedSubscription(url="https://t.invalid/rss?passkey=SECRET")]
+    settings.save()
+
+    _backup_current_config()
+
+    data = json.loads(next(get_config_backups_dir().glob("config-*.json")).read_text(encoding="utf-8"))
+    assert data["webhook_url"] == ""
+    assert data["rss_feeds"][0]["url"] == "https://t.invalid/rss"
+    assert "webhook_url" not in read_settings_history()[0]["changes"]
 
 
 def test_only_the_five_most_recent_backups_are_kept(tmp_path, monkeypatch):

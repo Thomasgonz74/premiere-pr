@@ -7,7 +7,7 @@ best-effort, silently skipped when there's nothing to compare against yet),
 just applied as a running diff log instead of full-file snapshots.
 
 Sensitive fields (the whole `proxy` sub-object -- host/username/password --
-and the remote-access API token) are never written to this file.
+the remote-access API token and the webhook URL) are never written to this file.
 """
 
 import json
@@ -30,9 +30,10 @@ _MAX_HISTORY_ENTRIES = 200  # ponytail: flat line cap, revisit if that's ever to
 _TRIM_THRESHOLD_BYTES = 64 * 1024
 
 # `proxy` carries host/username/password; `remote_access_token` is a bearer
-# secret for the local remote-access HTTP server. Neither is ever diffed or
-# persisted here, whole field excluded rather than trying to redact within it.
-_EXCLUDED_FIELDS = {"proxy", "remote_access_token"}
+# secret for the local remote-access HTTP server; `webhook_url` is one for
+# whatever it posts to. None is ever diffed or persisted here, whole field
+# excluded rather than trying to redact within it.
+_EXCLUDED_FIELDS = {"proxy", "remote_access_token", "webhook_url"}
 
 
 def _history_path() -> Path:

@@ -127,8 +127,8 @@ class ProfileSecurityBridge(QObject):
     def exportConfig(self, path: str) -> dict:
         if not path:
             return {"ok": False}
-        # The proxy password and remote-access token must never leave the
-        # machine in a plain-text export -- redact both before serializing.
+        # Secrets (proxy password, remote-access token, webhook URL, RSS
+        # passkeys) must never leave the machine in a plain-text export.
         data = redact_settings_dict(asdict(self._settings))
         try:
             Path(path).write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
