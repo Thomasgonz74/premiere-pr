@@ -8,7 +8,7 @@ same as RssTab never did).
 from PySide6.QtCore import QObject, Signal, Slot
 
 from torrent2000.config.settings import RssFeedSubscription, Settings
-from torrent2000.engine.rss_feed_service import RssFeedService
+from torrent2000.engine.rss_feed_service import RssFeedService, filter_regex_error
 from torrent2000.engine.session_manager import SessionManager
 
 
@@ -75,20 +75,26 @@ class RssBridge(QObject):
     def checkNow(self) -> None:
         self._rss_feed_service.check_now()
 
-    @Slot(str, "QVariantMap")
-    def updateFeedFilters(self, url: str, values: dict) -> None:
+    @Slot(str, "QVariantMap", result="QVariantMap")
+    def updateFeedFilters(self, url: str, values: dict) -> dict:
         """Advanced filters (catalogue idea "filtres RSS avances") -- a
         separate call from addFeed so the simple add form's signature never
         had to change; the RSS page's filter editor calls this after
         addFeed for a new subscription, or on its own to edit an existing
-        one."""
+        one. A pattern that does not compile is refused, nothing saved."""
+        regex_include = str(values.get("regexInclude", "")).strip()
+        regex_exclude = str(values.get("regexExclude", "")).strip()
+        error = filter_regex_error(regex_include, regex_exclude)
+        if error:
+            return {"ok": False, "error": error}
         for feed in self._settings.rss_feeds:
             if feed.url != url:
                 continue
-            feed.regex_include = str(values.get("regexInclude", "")).strip()
-            feed.regex_exclude = str(values.get("regexExclude", "")).strip()
+            feed.regex_include = regex_include
+            feed.regex_exclude = regex_exclude
             feed.resolution_min = max(0, int(values.get("resolutionMin", 0) or 0))
             feed.resolution_max = max(0, int(values.get("resolutionMax", 0) or 0))
             feed.latest_episode_only = bool(values.get("latestEpisodeOnly", False))
             self._settings.save()
             break
+        return {"ok": True}
