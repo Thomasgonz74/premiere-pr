@@ -99,9 +99,10 @@ def _child_text(item_el, tag: str) -> str:
 def _redact_url(url: str) -> str:
     """Strip the query string (and any fragment) from a URL before it is
     ever written to a log line -- private-tracker RSS feed and item URLs
-    routinely carry the user's passkey as a query parameter."""
+    routinely carry the user's passkey as a query parameter -- and any
+    "user:password@" in front of the host."""
     parts = urlsplit(url)
-    return urlunsplit((parts.scheme, parts.netloc, parts.path, "", ""))
+    return urlunsplit((parts.scheme, parts.netloc.rpartition("@")[2], parts.path, "", ""))
 
 
 def matches_keyword(title: str, filter_keyword: str) -> bool:

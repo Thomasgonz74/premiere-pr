@@ -17,17 +17,22 @@ _QUERY_PARAM = re.compile(r"([^&;=]+)=([^&;]*)")
 # A long run of mixed letters and digits in the path: a passkey put there
 # (TorrentLeech /rss/<passkey>, UNIT3D /rss/<id>.<rsskey>, AnimeBytes...).
 _SECRET_PATH_RUN = re.compile(r"(?=[A-Za-z0-9]*\d)(?=[A-Za-z0-9]*[A-Za-z])[A-Za-z0-9]{20,}")
+# A base64url token ("aB3_x-9..."), whose "-"/"_" would cut it into runs too
+# short for the pattern above. Mixed case sets it apart from a lowercase slug.
+_SECRET_PATH_B64 = re.compile(r"(?=[\w-]*\d)(?=[\w-]*[a-z])(?=[\w-]*[A-Z])[A-Za-z0-9_-]{20,}", re.ASCII)
 
 
 def _redact_feed_url(url: str) -> str:
     """Blanks only what looks like a passkey, so a public feed's own query
     (search, category...) survives the round trip and two feeds stay two."""
     parts = urlsplit(url)
-    path = _SECRET_PATH_RUN.sub("", parts.path)
+    path = _SECRET_PATH_RUN.sub("", _SECRET_PATH_B64.sub("", parts.path))
     query = _QUERY_PARAM.sub(
         lambda m: f"{m.group(1)}=" if _SECRET_PARAM.search(m.group(1)) else m.group(0), parts.query
     )
-    return urlunsplit((parts.scheme, parts.netloc, path, query, parts.fragment))
+    # Drop any "user:password@" -- keeps host, port and IPv6 brackets as typed.
+    host = parts.netloc.rpartition("@")[2]
+    return urlunsplit((parts.scheme, host, path, query, parts.fragment))
 
 
 def redact_settings_dict(data: dict) -> dict:
