@@ -719,12 +719,12 @@ function downloadsRefreshTagFilterOptions() {
       select.appendChild(opt);
     });
     select.value = tags.includes(previous) ? previous : "";
-    if (select.value !== downloadsTagFilterValue) {
-      // The filtered-on tag no longer exists (e.g. its last torrent was
-      // removed): drop the filter instead of hiding every row behind it.
-      downloadsTagFilterValue = select.value;
-      downloadsApplyFilter();
-    }
+    // The filtered-on tag may no longer exist (e.g. its last torrent was
+    // removed): drop the filter instead of hiding every row behind it. Or a
+    // torrent just gained/lost it, with no status tick to come if it's
+    // paused: re-filter either way.
+    downloadsTagFilterValue = select.value;
+    downloadsApplyFilter();
   });
 }
 

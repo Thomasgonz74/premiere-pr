@@ -240,6 +240,36 @@ def test_appearance_selector_offers_dark_only_where_it_exists(view):
     assert result == '[["light,dark_hc light","light,dark,dark_hc dark","light,dark_hc light"],["dark_hc"]]'
 
 
+def test_removing_the_filtered_tag_hides_the_row_at_once(view):
+    result = run_js(view, """(function () {
+      window.bridge = { downloads: {
+        getTags(ih, cb) { cb(['x']); },
+        removeTag() {},
+        listAllTags(cb) { cb(['x']); },  // another torrent still carries it
+      } };
+      const el = document.createElement('div');
+      downloadsRows.set('alpha', { el, record: { infoHash: 'alpha', name: 'alpha' } });
+      downloadsTagsCache.set('alpha', ['x']);
+      downloadsRefreshTagFilterOptions();
+      const select = document.getElementById('downloadsTagFilterSelect');
+      select.value = 'x';
+      downloadsTagFilterValue = 'x';
+      downloadsApplyFilter();
+      const seen = [el.style.display];
+      // A paused torrent gets no status tick to re-filter its row later.
+      downloadsOpenTagsDialog('alpha', 'alpha');
+      document.querySelector('#modalBox .listbox .row button').click();
+      seen.push(el.style.display);
+      closeModal();
+      downloadsRows.delete('alpha');
+      downloadsTagsCache.delete('alpha');
+      select.value = '';
+      downloadsTagFilterValue = '';
+      return JSON.stringify(seen);
+    })()""")
+    assert result == '["","none"]'
+
+
 def test_add_page_routing_destination_never_carries_over_to_the_next_torrent(view):
     result = run_js(view, """(function () {
       const dest = document.getElementById('addDestInput');
