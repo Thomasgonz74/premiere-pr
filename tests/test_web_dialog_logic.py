@@ -222,7 +222,7 @@ def test_appearance_selector_offers_dark_only_where_it_exists(view):
         getLaunchAtStartupActual(cb) { cb(false); },
         setAppearanceMode(mode) { saved.push(mode); },
       };
-      window.bridge = { profileGeneral, dialogs: {} };
+      window.bridge = { profileGeneral, dialogs: {}, profileAdvanced: { settingsApplied: sig() } };
       wireProfileGeneral();
       const select = document.getElementById('pgAppearanceSelect');
       const seen = [];
@@ -238,3 +238,29 @@ def test_appearance_selector_offers_dark_only_where_it_exists(view):
     })()""")
     # Showing "light" for a saved dark saves nothing; only the user's change does.
     assert result == '[["light,dark_hc light","light,dark,dark_hc dark","light,dark_hc light"],["dark_hc"]]'
+
+
+def test_general_and_network_forms_reload_when_a_settings_profile_is_applied(view):
+    result = run_js(view, """(function () {
+      const sig = () => { const cbs = []; return { connect: (f) => cbs.push(f), emit: (...a) => cbs.forEach((f) => f(...a)) }; };
+      const saved = { downloadRateLimitKbps: 1111, proxyEnabled: false, theme: 'luna_xp', appearanceMode: 'light', audioVolume: 50 };
+      const noop = (cb) => cb([]);
+      window.bridge = {
+        dialogs: {},
+        profileAdvanced: { settingsApplied: sig() },
+        profileGeneral: { themeChanged: sig(), languageChanged: sig(), getSettings: (cb) => cb({ ...saved }),
+                          getThemeOptions: noop, getAppearanceModeOptions: noop, getLanguageOptions: noop,
+                          getLaunchAtStartupActual: (cb) => cb(false) },
+        profileNetwork: { getSettings: (cb) => cb({ ...saved }), getSecuritySnapshot() {}, getRemoteAccessSettings() {} },
+      };
+      document.getElementById('profileGeneralContainer').replaceChildren();
+      document.getElementById('profileNetworkContainer').replaceChildren();
+      wireProfileGeneral();
+      buildNetworkPrivacySection(document.getElementById('profileNetworkContainer'), window.bridge.profileNetwork);
+      Object.assign(saved, { downloadRateLimitKbps: 1234, proxyEnabled: true });  // applyProfile
+      window.bridge.profileAdvanced.settingsApplied.emit();
+      return JSON.stringify([document.getElementById('pgDownloadLimit').value,
+                             document.getElementById('pnProxyEnabled').checked]);
+    })()""")
+    # Stale 1111 / unticked would be saved back by the next Save, undoing the profile.
+    assert result == '["1234",true]'

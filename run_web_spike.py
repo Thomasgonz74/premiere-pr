@@ -167,6 +167,7 @@ def main() -> int:
         tag_service=tag_service,
         clipboard_watcher_service=clipboard_watcher_service,
         torrent_search_source_store=torrent_search_source_store,
+        network_profile_switcher_service=network_profile_switcher_service,
     )
     # Second-launch arguments arriving later, forwarded by SingleInstanceGuard
     # (empty when a later launch had none, e.g. the exe was just reopened).

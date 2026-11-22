@@ -162,6 +162,8 @@ class _SsidRunnable(QRunnable):
 
 
 class NetworkProfileSwitcherService(QObject):
+    profile_applied = Signal()
+
     def __init__(
         self,
         session_manager: SessionManager,
@@ -230,4 +232,5 @@ class NetworkProfileSwitcherService(QObject):
         self._session_manager.set_restrict_discovery(self._settings.restrict_discovery)
         self._session_manager.set_proxy(self._settings)
         self._session_manager.set_encryption_mode(self._settings.encryption_mode)
+        self.profile_applied.emit()
         logger.info("Network profile auto-switch: applied profile %r for SSID %r", profile.name, self._last_ssid)

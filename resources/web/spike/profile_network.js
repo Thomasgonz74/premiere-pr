@@ -200,6 +200,8 @@ function buildNetworkPrivacySection(container, bridge) {
   }
 
   bridge.getSettings(populate);
+  // Same as Profile > General: a settings profile applied since rewrote the proxy etc.
+  window.bridge.profileAdvanced.settingsApplied.connect(() => bridge.getSettings(populate));
 
   saveBtn.addEventListener("click", () => {
     const values = {

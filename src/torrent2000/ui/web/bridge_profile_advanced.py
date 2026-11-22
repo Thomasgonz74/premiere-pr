@@ -15,7 +15,7 @@ association list, same "store CRUD, no batched save" convention as this
 file's other two sections.
 """
 
-from PySide6.QtCore import QObject, Slot
+from PySide6.QtCore import QObject, Signal, Slot
 
 from torrent2000.config.settings import Settings
 from torrent2000.engine.network_profile_switcher import NetworkProfileAssociation, NetworkProfileStore
@@ -53,6 +53,10 @@ def _network_profile_to_dict(association: NetworkProfileAssociation) -> dict:
 
 
 class ProfileAdvancedBridge(QObject):
+    # A settings profile was applied (here, or by the Wi-Fi auto-switch):
+    # the General and Network forms reload, or their next Save undoes it.
+    settingsApplied = Signal()
+
     def __init__(
         self,
         session_manager: SessionManager,
@@ -131,6 +135,7 @@ class ProfileAdvancedBridge(QObject):
         self._session_manager.set_restrict_discovery(self._settings.restrict_discovery)
         self._session_manager.set_proxy(self._settings)
         self._session_manager.set_encryption_mode(self._settings.encryption_mode)
+        self.settingsApplied.emit()
         return {"ok": True}
 
     @Slot(str)

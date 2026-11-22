@@ -210,9 +210,12 @@ def test_matched_ssid_replays_the_full_live_apply_chain_not_just_apply_to_settin
 
     fake_sm = FakeSessionManager()
     service = NetworkProfileSwitcherService(fake_sm, settings, store, profile_store)
+    applied = []
+    service.profile_applied.connect(lambda: applied.append(True))  # reloads the Profile forms
 
     service.check_now()
 
+    assert applied == [True]
     # Settings itself was mutated (apply_to_settings ran)...
     assert settings.download_rate_limit_kbps == 100
     assert settings.restrict_discovery is True
