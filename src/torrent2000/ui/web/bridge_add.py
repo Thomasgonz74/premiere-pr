@@ -31,8 +31,9 @@ from torrent2000.config.settings import Settings
 from torrent2000.danger_scanner import FileRisk, ScanResult, scan_files
 from torrent2000.engine.disk_space_monitor import free_space_mb
 from torrent2000.engine.routing_rules import RoutingRuleStore, resolve_destination
-from torrent2000.engine.session_manager import SessionManager
+from torrent2000.engine.session_manager import DuplicateTorrentError, SessionManager
 from torrent2000.engine.torrent_files import files_from_torrent_path
+from torrent2000.i18n.translator import tr
 from torrent2000.ui.web.dropped_file import save_dropped_bytes_to_temp_file
 
 
@@ -77,6 +78,9 @@ class AddBridge(QObject):
         self._torrent_path: str | None = None
         self._torrent_files: list | None = None
         self._pending_magnet_hash: str | None = None
+        # temp path -> name the user dropped, so routing rules match that
+        # name and not "dropped_xxxx" (see saveDroppedTorrent).
+        self._dropped_names: dict[str, str] = {}
         self._threshold = settings.danger_auto_exclude_threshold
         session_manager.metadata_received.connect(self._on_metadata_received)
         session_manager.download_blocked_by_theme.connect(lambda _ih: self.blockedByTheme.emit())
@@ -154,7 +158,9 @@ class AddBridge(QObject):
         result = scan_files(files)
         payload = _scan_result_to_dict(result, self._threshold)
         payload["suggestedDestination"] = resolve_destination(
-            self._routing_rule_store.list_rules(), self._settings.default_download_dir, name=Path(path).stem
+            self._routing_rule_store.list_rules(),
+            self._settings.default_download_dir,
+            name=self._dropped_names.get(path) or Path(path).stem,
         )
         self.scanReady.emit(payload)
         self.statusChanged.emit(f"{len(files)} fichier(s) analysé(s).")
@@ -167,7 +173,10 @@ class AddBridge(QObject):
         here as base64, written to a temp file, and fed into
         selectTorrentFile() unchanged so drop and browse share one code
         path, same as the native DropZoneWidget/browse_button convergence."""
-        return save_dropped_bytes_to_temp_file(filename, base64_data)
+        path = save_dropped_bytes_to_temp_file(filename, base64_data)
+        if path:
+            self._dropped_names[path] = Path(filename).stem
+        return path
 
     @Slot(str)
     def analyzeMagnet(self, uri: str) -> None:
@@ -205,6 +214,11 @@ class AddBridge(QObject):
         category = (category or "").strip()
 
         if self._pending_magnet_hash and not self._torrent_path:
+            # analyzeMagnet added it under the default folder, before any
+            # destination (typed, or a routing rule's) could be known.
+            record = self._session_manager.get_record(self._pending_magnet_hash)
+            if record is not None and Path(dest_path) != Path(record.save_path):
+                self._session_manager.move_storage(self._pending_magnet_hash, dest_path)
             if excluded:
                 self._session_manager.exclude_files(self._pending_magnet_hash, excluded)
             if category:
@@ -228,11 +242,13 @@ class AddBridge(QObject):
                 return {"ok": False, "error": "Espace disque insuffisant sur le volume de destination."}
             try:
                 info_hash = self._session_manager.add_torrent_from_file(self._torrent_path, dest_path, excluded)
+            except DuplicateTorrentError:
+                return {"ok": False, "error": tr("add_tab.duplicate_message")}
             except Exception as exc:
                 # Surfaces the real cause (e.g. a corrupted/malformed .torrent)
                 # instead of always claiming "already present", which used to
                 # mask genuine failures behind a misleading fixed message.
-                return {"ok": False, "error": str(exc) or "Ce torrent est déjà présent."}
+                return {"ok": False, "error": str(exc)}
             if category:
                 self._session_manager.set_torrent_category(info_hash, category)
             self._reset()

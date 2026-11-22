@@ -1,6 +1,6 @@
 """Behaviour of a few web-UI scripts that run without any bridge round trip
 (modal.js, profile_stats.js, piece_map_dialog.js, downloads.js,
-theme_switcher.js, profile_general.js), exercised in
+theme_switcher.js, profile_general.js, add.js), exercised in
 the real resources/web/spike/index.html loaded in an offscreen QWebEngineView
 with hand-made bridge stubs (same page-loading convention as
 test_theme_readability.py)."""
@@ -238,3 +238,26 @@ def test_appearance_selector_offers_dark_only_where_it_exists(view):
     })()""")
     # Showing "light" for a saved dark saves nothing; only the user's change does.
     assert result == '[["light,dark_hc light","light,dark,dark_hc dark","light,dark_hc light"],["dark_hc"]]'
+
+
+def test_add_page_routing_destination_never_carries_over_to_the_next_torrent(view):
+    result = run_js(view, """(function () {
+      const dest = document.getElementById('addDestInput');
+      const scan = (suggested) => addRenderScan({ fileRisks: [], threshold: 60, suggestedDestination: suggested });
+      addDefaultDestination = 'C:/dl';
+      dest.value = 'C:/dl';
+      const seen = [];
+      scan('C:/films');  // a routing rule matched
+      seen.push(dest.value);
+      scan('C:/dl');  // another file picked, no rule matches it
+      seen.push(dest.value);
+      scan('C:/films');
+      addResetForm();  // started
+      seen.push(dest.value);
+      dest.value = 'D:/mine';
+      scan('C:/films');  // typed by the user: kept
+      seen.push(dest.value);
+      addResetForm();
+      return JSON.stringify(seen);
+    })()""")
+    assert result == '["C:/films","C:/dl","C:/dl","D:/mine"]'

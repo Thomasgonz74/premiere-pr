@@ -19,6 +19,7 @@ function addLevelLabel(level) {
 let addSelectedPath = null;
 let addLastScan = null; // { fileRisks, threshold }
 let addDefaultDestination = ""; // captured once from the bridge, used to tell "a routing rule matched" from "no match, same default"
+let addSuggestedDestination = ""; // last routing-rule prefill: the next scan may replace it, unlike a destination the user chose
 
 // Intent-guided preset: purely a prefill convenience over existing mechanics
 // (torrent_categories.py's free-text category, routing_rules.py's
@@ -61,17 +62,17 @@ function addApplyIntentPreset(intent) {
 function addRenderScan(scan) {
   addLastScan = scan;
   // Prefills the destination the same way a matching RSS auto-download
-  // already does (rss_feed_service.py) -- but only when a real routing rule
-  // matched (suggested !== default) AND the field is still at its untouched
-  // default, so this never overwrites something the user already typed or
-  // picked via the intent preset below.
+  // already does (rss_feed_service.py) -- but only while the field still
+  // holds the default or the previous torrent's suggestion (so a torrent no
+  // rule matches goes back to the default), never over something the user
+  // typed or picked via the intent preset below.
   const destInput = document.getElementById("addDestInput");
   if (
     scan.suggestedDestination &&
-    scan.suggestedDestination !== addDefaultDestination &&
-    destInput.value === addDefaultDestination
+    (destInput.value === addDefaultDestination || destInput.value === addSuggestedDestination)
   ) {
     destInput.value = scan.suggestedDestination;
+    addSuggestedDestination = scan.suggestedDestination;
   }
   const list = document.getElementById("addScanList");
   list.replaceChildren();
@@ -141,6 +142,8 @@ function addResetForm() {
   addSelectedPath = null;
   document.getElementById("addSelectedFile").textContent = "";
   document.getElementById("addMagnetInput").value = "";
+  document.getElementById("addDestInput").value = addDefaultDestination;
+  addSuggestedDestination = "";
   document.getElementById("addIntentSelect").value = "";
   document.getElementById("addCategoryInput").value = "";
   document.getElementById("addSharePolicyNote").textContent = "";

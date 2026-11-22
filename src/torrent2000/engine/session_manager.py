@@ -236,6 +236,10 @@ def _is_confined(file_path: Path, resolved_root: Path) -> bool:
     return resolved == resolved_root or resolved_root in resolved.parents
 
 
+class DuplicateTorrentError(RuntimeError):
+    """add_torrent_from_file() of a torrent already in the session."""
+
+
 class SessionManager(QObject):
     torrent_added = Signal(str)
     torrent_removed = Signal(str)
@@ -595,6 +599,9 @@ class SessionManager(QObject):
 
     def _add(self, atp: "lt.add_torrent_params", awaiting_analysis: bool) -> str:
         info_hash = add_params.info_hash_hex(atp)
+        if atp.flags & lt.torrent_flags.duplicate_is_error and info_hash in self._handles:
+            # Before the record below replaces the live torrent's own.
+            raise DuplicateTorrentError(info_hash)
         record = TorrentRecord(
             info_hash=info_hash,
             name=atp.name or "",
