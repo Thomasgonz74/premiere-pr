@@ -16,12 +16,14 @@ class TorrentState(Enum):
 
     @staticmethod
     def from_libtorrent_state(lt_state, paused: bool, has_metadata: bool, awaiting_analysis: bool) -> "TorrentState":
+        # Paused first: a paused magnet fetches no metadata, and the row's
+        # button only offers to resume a PAUSED torrent.
+        if paused:
+            return TorrentState.PAUSED
         if awaiting_analysis:
             return TorrentState.AWAITING_ANALYSIS
         if not has_metadata:
             return TorrentState.CHECKING_METADATA
-        if paused:
-            return TorrentState.PAUSED
         name = str(lt_state)
         if "seeding" in name:
             return TorrentState.SEEDING

@@ -360,6 +360,27 @@ def test_status_to_record_sets_awaiting_metadata_when_no_metadata_yet():
     assert record.state == TorrentState.CHECKING_METADATA
 
 
+def test_a_paused_magnet_without_metadata_shows_paused():
+    """Shown as fetching metadata, its row offered only a no-op pause."""
+    status = _status_stub(has_metadata=False, paused=True)
+    record = TorrentRecord(info_hash="hash0")
+
+    status_to_record(status, record)
+
+    assert record.state == TorrentState.PAUSED
+
+
+def test_a_paused_torrent_reports_no_rate():
+    """libtorrent's averages decay for ~30 s after a pause, which showed a
+    rate and an ETA on a paused row."""
+    status = _status_stub(paused=True, download_rate=6949, upload_rate=290)
+    record = TorrentRecord(info_hash="hash0")
+
+    status_to_record(status, record)
+
+    assert (record.download_rate, record.upload_rate) == (0, 0)
+
+
 def test_status_to_record_queue_position_is_coerced_to_int():
     status = _status_stub(queue_position=7.0)
     record = TorrentRecord(info_hash="hash0")
