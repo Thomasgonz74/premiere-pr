@@ -202,7 +202,8 @@ function wireSharePage() {
     const dataLimit = parseInt(document.getElementById("shareDataLimitInput").value, 10) || 0;
     const ratioLimit = parseFloat(document.getElementById("shareRatioLimitInput").value) || 0;
     shareBridge.startShare(dataDir, magnet, timeLimit, dataLimit, ratioLimit, (result) => {
-      document.getElementById("shareStatus").textContent = result.error || "";
+      // A success was said by "started", delivered before this answer.
+      if (!result.ok) document.getElementById("shareStatus").textContent = result.error || "";
     });
   });
 

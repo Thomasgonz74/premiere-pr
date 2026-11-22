@@ -193,3 +193,19 @@ def test_a_session_shorter_than_an_hour_still_gets_its_overdue_rechecks(monkeypa
     QTest.qWait(300)
 
     assert session_manager.rechecked == ["hash1"]
+
+
+def test_a_magnet_still_awaiting_its_analysis_is_not_rechecked(monkeypatch):
+    """Its data found on disk, it was never started: checked in upload mode,
+    it stayed at 0 %, which CCCP then refused to start."""
+    clock = _fake_clock(monkeypatch)
+    service, session_manager = _service(monkeypatch, interval_days=1)
+    session_manager.records = [
+        TorrentRecord(info_hash="hash1", state=TorrentState.PAUSED, progress=1.0, awaiting_analysis=True)
+    ]
+
+    service.evaluate_now()
+    clock["now"] += 2 * 86400
+    service.evaluate_now()
+
+    assert session_manager.rechecked == []

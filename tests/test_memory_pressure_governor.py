@@ -147,3 +147,17 @@ def test_disabling_mid_throttle_restores_everything(monkeypatch):
     assert session_manager.max_active_calls == [4, 8]
     assert rss.paused_calls == [True, False]
     assert history.paused_calls == [True, False]
+
+
+def test_a_maximum_saved_while_throttled_is_halved_again(monkeypatch):
+    """Profile > Général applies the new maximum in full at once."""
+    monkeypatch.setattr(mpg_module.psutil, "virtual_memory", lambda: FakeVirtualMemory(percent=95))
+    settings = _settings(enabled=True, threshold=90, max_active=8)
+    governor, session_manager, rss, history = _make(settings)
+
+    governor.check_now()
+    settings.max_active_downloads = 6
+    governor.check_now()
+    governor.check_now()
+
+    assert session_manager.max_active_calls == [4, 3]

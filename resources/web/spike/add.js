@@ -41,6 +41,20 @@ function addGuessCategory(intent, existingCategories) {
   return existing || t(spec.fallbackKey);
 }
 
+// A language switch: the share-policy note shown comes from the bridge, in
+// the previous language.
+document.addEventListener("catalogchange", () => {
+  const note = document.getElementById("addSharePolicyNote");
+  if (note.textContent) window.bridge.add.defaultSharePolicyNote((text) => (note.textContent = text));
+});
+
+// The active theme (CCCP) refused a start or resume, from any page or
+// automation: said in a dialog, as the native app did, not in the Add page's
+// status line -- hidden, or replaced at once by "Torrent ajouté.".
+function addShowBlockedByTheme() {
+  alertModal(t("cccp.nyet_title"), t("cccp.download_blocked_message"));
+}
+
 function addApplyIntentPreset(intent) {
   const addBridge = window.bridge.add;
   addBridge.defaultSharePolicyNote((note) => {
@@ -273,9 +287,7 @@ function wireAddPage() {
   addBridge.statusChanged.connect((msg) => {
     document.getElementById("addStatus").textContent = msg;
   });
-  addBridge.blockedByTheme.connect(() => {
-    document.getElementById("addStatus").textContent = t("web.add.blocked_by_theme");
-  });
+  addBridge.blockedByTheme.connect(addShowBlockedByTheme);
   addBridge.started.connect(() => {
     document.getElementById("addStatus").textContent = t("web.add.torrent_added");
     addResetForm();

@@ -39,8 +39,15 @@ def status_to_record(status: "lt.torrent_status", record: TorrentRecord) -> None
     record.queue_position = int(status.queue_position)
     has_metadata = status.has_metadata
     record.is_magnet_awaiting_metadata = not has_metadata
+    # Checked while paused by the user (recheck_torrent): auto-managed for its
+    # check only, still paused for battery, CCCP, auto-shutdown... (status.flags
+    # is a plain int in these bindings.)
+    held_for_check = bool(status.flags & lt.torrent_flags.stop_when_ready)
+    # pause_torrent clears auto_managed: paused and auto-managed is
+    # libtorrent's queue waiting for a slot, no pause of the user's.
+    queued = status.paused and bool(status.flags & lt.torrent_flags.auto_managed) and not held_for_check
     record.state = TorrentState.from_libtorrent_state(
-        status.state, status.paused, has_metadata, record.awaiting_analysis
+        status.state, status.paused or held_for_check, has_metadata, record.awaiting_analysis, queued
     )
 
 

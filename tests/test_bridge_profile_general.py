@@ -3,6 +3,7 @@ the real HKCU Run key, so Save must compare against that, not against the
 saved setting (registry functions stubbed, the real Run key is never touched)."""
 
 import os
+from unittest.mock import MagicMock
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
@@ -23,7 +24,7 @@ def test_toggling_the_checkbox_rewrites_a_run_key_out_of_step_with_the_setting(t
     )
     settings = Settings()
     settings.launch_at_startup = saved
-    bridge = ProfileGeneralBridge(session_manager=None, settings=settings)
+    bridge = ProfileGeneralBridge(session_manager=MagicMock(), settings=settings)
 
     shown = bridge.getLaunchAtStartupActual()
     bridge.saveSettings({"launchAtStartup": not shown})
@@ -51,3 +52,33 @@ def test_theme_names_follow_the_language():
     assert labels["cccp_soviet"] == english["web.profile_general.theme_cccp_soviet"]
     assert labels["luna_xp"] == "Windows XP (Luna)"  # a proper name, as is
     assert not [label for label in labels.values() if label.startswith("web.")]
+
+
+def test_save_applies_the_rate_limits_and_the_maximum_to_the_running_session(tmp_path, monkeypatch):
+    """Only read when the session is built: "Paramètres enregistrés." and no
+    effect until the next launch."""
+    from PySide6.QtWidgets import QApplication
+
+    from torrent2000.engine.bandwidth_scheduler import BandwidthScheduler
+    from torrent2000.engine.session_manager import SessionManager
+
+    QApplication.instance() or QApplication([])
+    monkeypatch.setenv("TORRENT2000_DATA_DIR", str(tmp_path))
+    monkeypatch.setattr(bridge_profile_general.startup_registration, "is_launch_at_startup_enabled", lambda: False)
+    settings = Settings()
+    settings.network_interface = "127.0.0.1"
+    session_manager = SessionManager(settings)
+    try:
+        bridge = ProfileGeneralBridge(
+            session_manager, settings, bandwidth_scheduler=BandwidthScheduler(session_manager, settings)
+        )
+
+        bridge.saveSettings({"downloadRateLimitKbps": 50, "uploadRateLimitKbps": 20, "maxActiveDownloads": 2})
+
+        live = session_manager._session.get_settings()
+    finally:
+        session_manager.shutdown(timeout_ms=0)
+
+    assert (live["download_rate_limit"], live["upload_rate_limit"]) == (50 * 1024, 20 * 1024)
+    assert (live["active_downloads"], live["active_seeds"]) == (2, 2)
+

@@ -68,10 +68,13 @@ class ProfileGeneralBridge(QObject):
     languageChanged = Signal(str)  # language code
     volumeChanged = Signal(int)  # 0-100, drives AnthemPlayer.set_volume
 
-    def __init__(self, session_manager: SessionManager, settings: Settings, parent=None) -> None:
+    def __init__(
+        self, session_manager: SessionManager, settings: Settings, parent=None, bandwidth_scheduler=None
+    ) -> None:
         super().__init__(parent)
         self._session_manager = session_manager
         self._settings = settings
+        self._bandwidth_scheduler = bandwidth_scheduler
 
     @Slot(result="QVariantMap")
     def getSettings(self) -> dict:
@@ -127,6 +130,11 @@ class ProfileGeneralBridge(QObject):
         # theme/appearance_mode/language/audio_volume are intentionally NOT
         # written here -- they live-apply and persist immediately on change
         # via their own dedicated slots below.
+        # The session reads these only when built: applied now, not at the
+        # next launch. The scheduler applies the base limits or its window's.
+        self._session_manager.set_max_active_downloads(s.max_active_downloads)
+        if self._bandwidth_scheduler is not None:
+            self._bandwidth_scheduler.settings_changed()
         if not s.save():
             return {"ok": False, "error": tr("web.profile_security.save_held_after_import")}
         return {"ok": True}

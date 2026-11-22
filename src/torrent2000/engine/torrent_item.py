@@ -15,7 +15,18 @@ class TorrentState(Enum):
     ERROR = auto()
 
     @staticmethod
-    def from_libtorrent_state(lt_state, paused: bool, has_metadata: bool, awaiting_analysis: bool) -> "TorrentState":
+    def from_libtorrent_state(
+        lt_state, paused: bool, has_metadata: bool, awaiting_analysis: bool, queued: bool = False
+    ) -> "TorrentState":
+        name = str(lt_state)
+        if queued:
+            # Held by libtorrent's queue for a free slot, not paused by the
+            # user: a seed waits there as a seed, a download as queued.
+            if "seeding" in name:
+                return TorrentState.SEEDING
+            if "finished" in name:
+                return TorrentState.FINISHED
+            return TorrentState.QUEUED
         # Paused first: a paused magnet fetches no metadata, so its
         # row must say so, not just that it awaits analysis.
         if paused:
@@ -24,7 +35,6 @@ class TorrentState(Enum):
             return TorrentState.AWAITING_ANALYSIS
         if not has_metadata:
             return TorrentState.CHECKING_METADATA
-        name = str(lt_state)
         if "seeding" in name:
             return TorrentState.SEEDING
         if "finished" in name:

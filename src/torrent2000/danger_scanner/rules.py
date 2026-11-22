@@ -4,6 +4,7 @@ from functools import lru_cache
 from typing import Protocol
 
 from torrent2000.danger_scanner.models import FileEntry
+from torrent2000.i18n.translator import tr
 
 EXECUTABLE_EXTENSIONS = {
     "exe", "bat", "cmd", "com", "js", "jse", "vbs", "vbe", "wsf", "wsh",
@@ -70,7 +71,7 @@ def _extension(path: str) -> str:
 @dataclass
 class RuleHit:
     score_delta: int
-    reason: str
+    reason: str  # in the active language: the Add page shows it as is
 
 
 @dataclass
@@ -87,7 +88,7 @@ class Rule(Protocol):
 class DoubleExtensionRule:
     def evaluate(self, file: FileEntry, context: ScanContext) -> RuleHit | None:
         if DOUBLE_EXTENSION_RE.search(file.path):
-            return RuleHit(60, "Double extension masque un exécutable (ex: .pdf.exe)")
+            return RuleHit(60, tr("file_tree_risk.reason_double_extension"))
         return None
 
 
@@ -99,7 +100,7 @@ class ExecutableExtensionRule:
             # plainly-named executable with no other red flag -- at 25 it sat
             # structurally below the MEDIUM threshold (30), so a real
             # executable with an ordinary name/size was never flagged at all.
-            return RuleHit(35, f"Extension exécutable ({ext})")
+            return RuleHit(35, tr("file_tree_risk.reason_executable_extension", ext=ext))
         return None
 
 
@@ -107,10 +108,7 @@ class DiskImageExtensionRule:
     def evaluate(self, file: FileEntry, context: ScanContext) -> RuleHit | None:
         ext = _extension(file.path)
         if ext in DISK_IMAGE_EXTENSIONS:
-            return RuleHit(
-                25,
-                f"Image disque montable ({ext}) : contourne l'avertissement SmartScreen du téléchargement direct",
-            )
+            return RuleHit(25, tr("file_tree_risk.reason_disk_image", ext=ext))
         return None
 
 
@@ -118,7 +116,7 @@ class MacroDocumentExtensionRule:
     def evaluate(self, file: FileEntry, context: ScanContext) -> RuleHit | None:
         ext = _extension(file.path)
         if ext in MACRO_DOCUMENT_EXTENSIONS:
-            return RuleHit(20, f"Document bureautique avec macros ({ext})")
+            return RuleHit(20, tr("file_tree_risk.reason_macro_document", ext=ext))
         return None
 
 
@@ -126,10 +124,7 @@ class ExecutableFlagRule:
     def evaluate(self, file: FileEntry, context: ScanContext) -> RuleHit | None:
         ext = _extension(file.path)
         if file.executable_flag and ext not in EXECUTABLE_EXTENSIONS:
-            return RuleHit(
-                30,
-                "Marqué exécutable au niveau du fichier/torrent (bit exécutable), sans extension exécutable reconnaissable",
-            )
+            return RuleHit(30, tr("file_tree_risk.reason_executable_flag"))
         return None
 
 
@@ -137,17 +132,17 @@ class MediaTorrentExecutableMismatchRule:
     def evaluate(self, file: FileEntry, context: ScanContext) -> RuleHit | None:
         ext = _extension(file.path)
         if ext in EXECUTABLE_EXTENSIONS and context.media_ratio >= 0.5:
-            return RuleHit(20, "Exécutable inattendu dans un torrent principalement média")
+            return RuleHit(20, tr("file_tree_risk.reason_media_executable"))
         return None
 
 
 class SuspiciousNameRule:
     def evaluate(self, file: FileEntry, context: ScanContext) -> RuleHit | None:
         if RTL_OVERRIDE in file.path:
-            return RuleHit(70, "Caractère RTL-override détecté (extension probablement falsifiée)")
+            return RuleHit(70, tr("file_tree_risk.reason_rtl_override"))
         for pattern in SUSPICIOUS_NAME_PATTERNS:
             if pattern.search(file.path):
-                return RuleHit(30, "Nom de fichier évoquant un crack/keygen/activator")
+                return RuleHit(30, tr("file_tree_risk.reason_crack_name"))
         return None
 
 
@@ -155,14 +150,14 @@ class SizeAnomalyRule:
     def evaluate(self, file: FileEntry, context: ScanContext) -> RuleHit | None:
         ext = _extension(file.path)
         if ext in EXECUTABLE_EXTENSIONS and 0 < file.size < TINY_EXECUTABLE_SIZE_BYTES:
-            return RuleHit(15, "Exécutable anormalement petit pour son type (possible dropper)")
+            return RuleHit(15, tr("file_tree_risk.reason_tiny_executable"))
         return None
 
 
 class HiddenOrSuspiciousPathRule:
     def evaluate(self, file: FileEntry, context: ScanContext) -> RuleHit | None:
         if file.hidden:
-            return RuleHit(20, "Fichier marqué caché dans le torrent")
+            return RuleHit(20, tr("file_tree_risk.reason_hidden_file"))
         return None
 
 
@@ -187,7 +182,7 @@ class UnknownExtensionRule:
     def evaluate(self, file: FileEntry, context: ScanContext) -> RuleHit | None:
         ext = _extension(file.path)
         if ext and ext not in _KNOWN_EXTENSIONS:
-            return RuleHit(15, f"Extension inconnue ({ext}) : contenu non vérifiable avant téléchargement")
+            return RuleHit(15, tr("file_tree_risk.reason_unknown_extension", ext=ext))
         return None
 
 

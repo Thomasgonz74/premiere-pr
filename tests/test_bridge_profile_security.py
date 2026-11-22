@@ -2,6 +2,7 @@
 Python-side instead of shipping it through QWebChannel to the page."""
 
 import os
+from unittest.mock import MagicMock
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
@@ -77,6 +78,6 @@ def test_after_an_import_saving_a_page_says_nothing_was_saved(tmp_path, monkeypa
     assert security.exportConfig(str(exported)) == {"ok": True}
     assert security.importConfig(str(exported)) == {"ok": True}
 
-    result = ProfileGeneralBridge(session_manager=None, settings=settings).saveSettings({"downloadRateLimitKbps": 4321})
+    result = ProfileGeneralBridge(session_manager=MagicMock(), settings=settings).saveSettings({"downloadRateLimitKbps": 4321})
 
     assert result == {"ok": False, "error": tr("web.profile_security.save_held_after_import")}

@@ -169,3 +169,17 @@ def test_extensionless_file_in_dotted_release_folder_scores_zero():
     ]
     result = scan_files(files, torrent_name="Ubuntu.22.04.Server")
     assert [result.risk_for_index(i).score for i in range(4)] == [0, 0, 0, 0]
+
+
+def test_the_reasons_are_in_the_interface_language():
+    from torrent2000.i18n import translator
+
+    translator.set_language("en")
+    try:
+        result = scan_files([FileEntry(index=0, path="film.mkv.exe", size=5_000)])
+    finally:
+        translator.set_language(translator.DEFAULT_LANGUAGE)
+
+    reasons = result.risk_for_index(0).reasons
+    assert "Executable extension (exe)" in reasons
+    assert not [r for r in reasons if "é" in r or r.startswith("file_tree_risk.")]

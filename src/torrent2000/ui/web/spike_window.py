@@ -193,7 +193,9 @@ class SpikeWindow(QMainWindow):
         self._search_bridge = SearchBridge(
             torrent_search_source_store or TorrentSearchSourceStore(), settings, self
         )
-        self._profile_general_bridge = ProfileGeneralBridge(session_manager, settings, self)
+        self._profile_general_bridge = ProfileGeneralBridge(
+            session_manager, settings, self, bandwidth_scheduler=bandwidth_scheduler
+        )
         self._profile_general_bridge.volumeChanged.connect(anthem_player.set_volume)
         self._profile_network_bridge = ProfileNetworkBridge(session_manager, settings, remote_access_server, self)
         self._profile_automation_bridge = ProfileAutomationBridge(

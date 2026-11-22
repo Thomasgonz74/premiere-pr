@@ -74,3 +74,31 @@ def test_the_duplicate_error_says_what_happened(tmp_path):
             sm.add_torrent_from_file(str(torrent_path), str(tmp_path))
     finally:
         sm.shutdown(timeout_ms=0)
+
+
+@pytest.mark.parametrize("second", ["magnet:?xt=urn:btih:not-a-hash", "already-present"])
+def test_a_magnet_that_fails_to_add_does_not_leave_the_previous_one_to_start(tmp_path, second):
+    """Opened from Windows over a magnet awaiting its scan, a duplicate or
+    malformed magnet left that one pending: Démarrer started it, with the
+    files its danger scan had excluded."""
+    torrent_path = _make_torrent(tmp_path)
+    settings = Settings()
+    settings.network_interface = "127.0.0.1"
+    settings.default_download_dir = str(tmp_path / "dl")
+    sm = SessionManager(settings)
+    try:
+        if second == "already-present":
+            second = lt.make_magnet_uri(lt.torrent_info(str(torrent_path)))
+            sm.add_torrent_from_file(str(torrent_path), str(tmp_path))
+        bridge = AddBridge(sm, settings, RoutingRuleStore())
+        pending = "aa" * 20
+        bridge.analyzeMagnet(f"magnet:?xt=urn:btih:{pending}")
+        bridge.analyzeMagnet(second)
+
+        result = bridge.startTorrent(str(tmp_path / "dl"), second, "", [])
+
+        held = sm.get_record(pending).awaiting_analysis
+    finally:
+        sm.shutdown(timeout_ms=0)
+
+    assert result["ok"] is False and held

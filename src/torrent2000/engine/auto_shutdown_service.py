@@ -42,8 +42,8 @@ class AutoShutdownService(QObject):
         # Background work that shutting down would cut short (see
         # add_busy_source) -- the countdown only starts once none is busy.
         self._busy_sources: list[Callable[[], bool]] = []
-        # True while a countdown a finished torrent asked for waits on one.
-        self._deferred_by_busy_source = False
+        # The finished torrent whose countdown waits on one, while it does.
+        self._deferred_finish: str | None = None
         self._countdown_timer: QTimer | None = None
         self._pending_action: str | None = None
         # Set by stop() at quit: never start or fire a countdown after that.
@@ -73,25 +73,27 @@ class AutoShutdownService(QObject):
         self.cancel_shutdown()
 
     def _on_torrent_finished(self, info_hash: str) -> None:
-        self._maybe_start_countdown()
+        self._maybe_start_countdown(info_hash)
 
     def _on_busy_source_idle(self) -> None:
-        if self._deferred_by_busy_source:
-            self._deferred_by_busy_source = False
+        if self._deferred_finish is not None:
+            finished, self._deferred_finish = self._deferred_finish, None
             # Next event-loop turn: the idle signal (e.g. CreateTorrentBridge's
             # finished) must reach the page before the countdown dialog
             # replaces the one waiting for it.
-            QTimer.singleShot(0, self._maybe_start_countdown)
+            QTimer.singleShot(0, self, lambda: self._maybe_start_countdown(finished))
 
-    def _maybe_start_countdown(self) -> None:
+    def _maybe_start_countdown(self, finished: str) -> None:
+        """finished: the torrent whose finish asks for it -- its record still
+        says DOWNLOADING until libtorrent's next status update."""
         if self._stopped or not self._settings.auto_shutdown_enabled:
             return
         if self._pending_action is not None:
             return  # a countdown is already running
-        if not all_torrents_idle(self._session_manager.all_records()):
+        if not all_torrents_idle([r for r in self._session_manager.all_records() if r.info_hash != finished]):
             return
         if any(is_busy() for is_busy in self._busy_sources):
-            self._deferred_by_busy_source = True  # tried again on that source's idle signal
+            self._deferred_finish = finished  # tried again on that source's idle signal
             return
 
         self._pending_action = self._settings.auto_shutdown_action

@@ -16,6 +16,7 @@ def _session_manager_with_mock_handles(**handles):
     sm = SessionManager.__new__(SessionManager)  # bypass __init__, no real libtorrent session needed
     sm._handles = dict(handles)
     sm._records = {}
+    sm._resume_after_check = set()
     sm.file_error = MagicMock()
     return sm
 

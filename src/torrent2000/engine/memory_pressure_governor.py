@@ -43,6 +43,9 @@ class MemoryPressureGovernor(QObject):
         self._rss_feed_service = rss_feed_service
         self._history_service = history_service
         self._throttling = False
+        # The maximum halved by _apply_pressure: Profile > Général applies a
+        # new one in full at once (ProfileGeneralBridge.saveSettings).
+        self._halved_max: int | None = None
 
         self._timer = start_periodic_timer(self, CHECK_INTERVAL_MS, self.check_now)
 
@@ -53,13 +56,14 @@ class MemoryPressureGovernor(QObject):
             return
 
         if psutil.virtual_memory().percent >= self._settings.memory_governor_threshold_percent:
-            if not self._throttling:
+            if not self._throttling or self._halved_max != self._settings.max_active_downloads:
                 self._apply_pressure()
         elif self._throttling:
             self._restore()
 
     def _apply_pressure(self) -> None:
-        reduced = max(1, self._settings.max_active_downloads // 2)
+        self._halved_max = self._settings.max_active_downloads
+        reduced = max(1, self._halved_max // 2)
         self._session_manager.set_max_active_downloads(reduced)
         self._rss_feed_service.set_paused(True)
         self._history_service.set_paused(True)

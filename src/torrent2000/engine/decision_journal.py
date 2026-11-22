@@ -45,6 +45,7 @@ from datetime import datetime
 from PySide6.QtCore import QObject
 
 from torrent2000.config.paths import get_decision_journal_path
+from torrent2000.i18n.translator import tr
 
 logger = logging.getLogger(__name__)
 
@@ -57,8 +58,10 @@ _MAX_ENTRIES = 200  # ponytail: flat line cap like settings_history.py, revisit 
 _TRIM_THRESHOLD_BYTES = 64 * 1024
 
 
-def _append(text: str) -> None:
-    entry = {"timestamp": datetime.now().isoformat(timespec="seconds"), "text": text}
+def _append(key: str, **params) -> None:
+    # A catalog key and its values, not the text: shown in the language of
+    # whoever reads it (read_recent_entries).
+    entry = {"timestamp": datetime.now().isoformat(timespec="seconds"), "key": key, "params": params}
     path = get_decision_journal_path()
     try:
         with path.open("a", encoding="utf-8") as f:
@@ -107,16 +110,19 @@ def read_recent_entries(limit: int = 100) -> list[dict]:
         if not line:
             continue
         try:
-            entries.append(json.loads(line))
+            entry = json.loads(line)
         except json.JSONDecodeError:
             continue
+        if isinstance(entry, dict) and "key" in entry:  # older lines hold their French "text"
+            entry["text"] = tr(entry["key"], **entry.get("params", {}))
+        entries.append(entry)
     entries.reverse()
     return entries[:limit]
 
 
 class DecisionJournalService(QObject):
-    """Wires up to the three signals documented above and journals one French
-    line per event. No state of its own beyond the Qt connections -- the
+    """Wires up to the three signals documented above and journals one line
+    per event. No state of its own beyond the Qt connections -- the
     JSONL file is the only state."""
 
     def __init__(
@@ -165,7 +171,7 @@ class DecisionJournalService(QObject):
         # ui/notifications.py's own _on_file_error.
         record = self._session_manager.get_record(info_hash)
         name = record.name if record is not None else info_hash[:12]
-        _append(f"Téléchargement « {name} » mis en pause automatiquement (erreur disque/fichier : {message}).")
+        _append("decision_journal.file_error", name=name, message=message)
 
     def _on_torrent_removed(self, info_hash: str) -> None:
         self._journaled_file_errors.discard(info_hash)
@@ -176,18 +182,18 @@ class DecisionJournalService(QObject):
         except json.JSONDecodeError:
             info = {}
         label = info.get("label", "?")
-        _append(f"Disque connu « {label} » détecté -- action proposée (confirmation requise) : {action}.")
+        _append("decision_journal.known_disk_detected", label=label, action=action)
 
     def _on_low_space_warning(self, save_path: str, message: str) -> None:
-        _append(f"Espace disque faible détecté pour « {save_path} ».")
+        _append("decision_journal.low_space", path=save_path)
 
     def _on_limit_reached(self, info_hash: str, reason: str) -> None:
         record = self._session_manager.get_record(info_hash)
         name = record.name if record is not None else info_hash[:12]
-        _append(f"Partage « {name} » mis en pause automatiquement (limite atteinte : {reason}).")
+        _append("decision_journal.share_limit_reached", name=name, reason=reason)
 
     def _on_shutdown_countdown_started(self, delay_seconds: int) -> None:
-        _append(f"Compte à rebours d'extinction automatique démarré ({delay_seconds} s).")
+        _append("decision_journal.shutdown_countdown", delay=delay_seconds)
 
     def _on_rss_items_found(self, feed_url: str, items: list) -> None:
         # Strips the query string and any path passkey (see
@@ -196,7 +202,4 @@ class DecisionJournalService(QObject):
         from torrent2000.config.redaction import redact_url_for_log
 
         titles = ", ".join(item.get("title", "?") for item in items) if items else "?"
-        _append(
-            f"{len(items)} torrent(s) ajouté(s) automatiquement depuis le flux RSS "
-            f"({redact_url_for_log(feed_url)}) : {titles}."
-        )
+        _append("decision_journal.rss_added", count=len(items), url=redact_url_for_log(feed_url), titles=titles)

@@ -1,8 +1,8 @@
 """Minimal coverage for the decision journal: DecisionJournalService wires up
 to the three signals that actually exist today (SessionManager.file_error,
 KnownDiskService.diskConfirmationRequested, DiskSpaceMonitor.low_space_warning),
-appends a French, human-readable JSONL line per event, and read_recent_entries
-returns them most-recent-first. Mirrors test_settings_history.py's
+appends a JSONL line per event (a catalog key and its values), and
+read_recent_entries returns them most-recent-first, in the active language. Mirrors test_settings_history.py's
 isolated_data_dir + JSONL-roundtrip structure and
 test_notifications_file_error.py's FakeSessionManager/FakeRecord pattern for
 faking cross-object Qt signals."""
@@ -240,3 +240,22 @@ def test_append_does_not_reread_the_journal_below_the_threshold_and_trims_to_200
     assert len(lines) == 200
     assert "entry 250" in lines[-1] and "entry 51" in lines[0]
     assert list(get_decision_journal_path().parent.glob("*.tmp")) == []  # replaced atomically
+
+
+def test_entries_are_shown_in_the_language_of_whoever_reads_them():
+    """Written in French whatever the interface language, they were shown in
+    French in every language. A line from before keeps its French text."""
+    from torrent2000.i18n import translator
+
+    get_decision_journal_path().parent.mkdir(parents=True, exist_ok=True)
+    get_decision_journal_path().write_text('{"timestamp": "t0", "text": "Ancienne ligne."}\n', encoding="utf-8")
+    _service, _sm, _kds, disk_space_monitor = _wired_service()
+    disk_space_monitor.low_space_warning.emit("C:/downloads", "low")
+
+    translator.set_language("en")
+    try:
+        texts = [entry["text"] for entry in read_recent_entries()]
+    finally:
+        translator.set_language(translator.DEFAULT_LANGUAGE)
+
+    assert texts == ['Low disk space detected for "C:/downloads".', "Ancienne ligne."]

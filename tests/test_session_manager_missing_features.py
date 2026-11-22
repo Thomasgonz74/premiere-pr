@@ -56,6 +56,7 @@ def _session_manager_with_mock_handles(**handles):
     sm._categories = TorrentCategoryService()
     sm._speed_history = {}
     sm._pending_restore_confirmation = set()
+    sm._resume_after_check = set()
     sm._awaiting_analysis = set()
     sm._start_once_analysed = set()
     sm._matched_rules = {}

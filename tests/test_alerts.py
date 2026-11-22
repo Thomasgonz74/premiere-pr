@@ -324,6 +324,7 @@ def _status_stub(**overrides) -> MagicMock:
     status.queue_position = 4
     status.has_metadata = True
     status.paused = False
+    status.flags = 0
     status.state = "downloading"
     status.info_hashes = hashes
     for key, value in overrides.items():
@@ -415,6 +416,31 @@ def test_a_magnet_held_for_its_analysis_reports_no_download_rate():
     status_to_record(status, record)
 
     assert record.download_rate == 0
+
+
+def test_a_paused_torrent_rechecked_stays_paused_during_its_check():
+    """Auto-managed for its check only: shown as downloading, the battery
+    pause paused it then started it on AC power, against the user's pause."""
+    status = _status_stub(
+        state="checking_files", flags=lt.torrent_flags.auto_managed | lt.torrent_flags.stop_when_ready
+    )
+    record = TorrentRecord(info_hash="hash0")
+
+    status_to_record(status, record)
+
+    assert record.state == TorrentState.PAUSED
+
+
+@pytest.mark.parametrize("lt_state, expected", [("downloading", TorrentState.QUEUED), ("seeding", TorrentState.SEEDING)])
+def test_a_torrent_held_by_the_queue_is_not_shown_paused_by_the_user(lt_state, expected):
+    """More complete torrents than "max active": the rest showed "En pause"
+    with a resume button, paused by nobody."""
+    status = _status_stub(state=lt_state, paused=True, flags=lt.torrent_flags.auto_managed)
+    record = TorrentRecord(info_hash="hash0")
+
+    status_to_record(status, record)
+
+    assert record.state == expected
 
 
 def test_status_to_record_queue_position_is_coerced_to_int():

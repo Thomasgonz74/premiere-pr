@@ -58,8 +58,14 @@ class ScheduledRecheckService(QObject):
         before = dict(self._last_checked)
         # progress, not state: a fully downloaded torrent is SEEDING (or
         # PAUSED); FINISHED only means the wanted part of a partial
-        # selection is done.
-        finished_hashes = {r.info_hash for r in self._session_manager.all_records() if r.progress >= 1.0}
+        # selection is done. Not a magnet still awaiting its analysis, its
+        # data found on disk: not started, no download to watch (and a check
+        # in upload mode would leave it at 0 %, which CCCP won't start).
+        finished_hashes = {
+            r.info_hash
+            for r in self._session_manager.all_records()
+            if r.progress >= 1.0 and not r.awaiting_analysis
+        }
         # Drop bookkeeping for torrents no longer complete/present (removed,
         # or resumed back to downloading after a manual recheck failure) so
         # this dict doesn't grow unbounded.

@@ -23,6 +23,7 @@ def _session_manager_with_mock_handles(**handles):
     sm._speed_history = {}
     sm._quiet_moves = set()
     sm._pending_restore_confirmation = set()
+    sm._resume_after_check = set()
     sm.torrent_status_updated = MagicMock()
     sm.torrent_status_batch_updated = MagicMock()
     sm.storage_moved = MagicMock()

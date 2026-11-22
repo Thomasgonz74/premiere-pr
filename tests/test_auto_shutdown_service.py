@@ -280,3 +280,19 @@ def test_countdown_waits_for_a_torrent_being_created(qapp, monkeypatch):
     assert QThreadPool.globalInstance().waitForDone(10000)
     QTest.qWait(20)  # finished is queued back to this thread, the countdown one turn later
     assert started == [30]
+
+
+def test_countdown_starts_when_the_last_download_finishes():
+    """At torrent_finished its record still says DOWNLOADING (libtorrent's
+    next status update changes it): the countdown never started."""
+    settings = _make_settings(auto_shutdown_delay_seconds=42)
+    fake_sm = FakeSessionManager()
+    fake_sm.records = [FakeRecord(info_hash="last", state=TorrentState.DOWNLOADING),
+                       FakeRecord(info_hash="seed", state=TorrentState.SEEDING)]
+    service = AutoShutdownService(fake_sm, settings)
+
+    started = []
+    service.shutdown_countdown_started.connect(started.append)
+    fake_sm.torrent_finished.emit("last")
+
+    assert started == [42]

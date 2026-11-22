@@ -305,6 +305,8 @@ function wireProfileAutomation() {
   }
 
   bridge.getDecisionJournal(renderDecisionJournal);
+  // Its lines are translated when read: in the new language.
+  document.addEventListener("catalogchange", () => bridge.getDecisionJournal(renderDecisionJournal));
 
   const status = document.createElement("p");
   status.className = "status-line";

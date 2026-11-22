@@ -3,8 +3,7 @@ complete before this process started must not re-fire torrent_finished on
 every relaunch. libtorrent re-emits torrent_finished_alert while verifying a
 restored torrent's fast-resume data is still fully present on disk, even
 though nothing was (re)downloaded this session -- see
-SessionManager._pending_restore_confirmation / _on_torrent_finished and
-add_params.resume_data_is_complete.
+SessionManager._pending_restore_confirmation / _on_torrent_finished.
 """
 
 import os
@@ -17,7 +16,6 @@ import pytest
 from PySide6.QtWidgets import QApplication
 
 from torrent2000.config.settings import Settings
-from torrent2000.engine import add_params
 from torrent2000.engine.session_manager import SessionManager
 
 
@@ -271,6 +269,68 @@ def test_a_paused_torrent_resumed_during_its_recheck_is_not_paused_again(qapp, t
         sm.shutdown()
 
 
+def test_a_recheck_cut_short_by_the_quit_before_it_began_reports_no_finish_on_relaunch(qapp, tmp_path):
+    """Quit while a paused recheck still waited in the checking queue: saved
+    with no piece at all, the torrent fired "download finished" (toast,
+    webhook, post-complete move...) once its check found the data on relaunch."""
+    from torrent2000.engine.persistence import save_resume_params
+
+    save_path = tmp_path / "downloads"
+    save_path.mkdir()
+    torrent_path = _make_already_complete_torrent(save_path)
+    atp = lt.add_torrent_params()
+    atp.ti = lt.torrent_info(torrent_path)
+    atp.save_path = str(save_path)
+    atp.flags = lt.torrent_flags.paused | lt.torrent_flags.auto_managed | lt.torrent_flags.stop_when_ready
+    info_hash = str(atp.ti.info_hashes().v1)
+    save_resume_params(info_hash, atp)
+
+    sm = SessionManager(Settings())
+    finished_events = []
+    sm.torrent_finished.connect(finished_events.append)
+    try:
+        assert _run_ticks(
+            qapp, sm, lambda: info_hash in sm._handles and sm._handles[info_hash].status().progress >= 1.0
+        )
+        _run_ticks(qapp, sm, lambda: False, timeout=1.0)
+    finally:
+        sm.shutdown()
+
+    assert finished_events == []
+
+
+def test_under_cccp_a_resume_during_a_check_waits_for_it_then_seeds(qapp, tmp_path):
+    """Its progress is the check's, not missing data: CCCP refused the resume
+    of a complete seed, left paused at the check's percentage."""
+    from torrent2000.theme_ids import CCCP_THEME_ID
+
+    save_path = tmp_path / "downloads"
+    save_path.mkdir()
+    torrent_path = _make_already_complete_torrent(save_path)
+    settings = Settings()
+    sm = SessionManager(settings)
+    finished_events, blocked = [], []
+    sm.torrent_finished.connect(finished_events.append)
+    sm.download_blocked_by_theme.connect(blocked.append)
+    try:
+        info_hash = sm.add_torrent_from_file(torrent_path, save_path=str(save_path))
+        assert _run_ticks(qapp, sm, lambda: finished_events and sm.get_record(info_hash).progress >= 1.0)
+        settings.theme = CCCP_THEME_ID
+        handle = sm._handles[info_hash]
+        sm.pause_torrent(info_hash)
+        sm.recheck_torrent(info_hash)
+        sm.pause_torrent(info_hash)  # paused by the user mid-check: the check stops at 0 %
+        assert _run_ticks(qapp, sm, lambda: sm.get_record(info_hash).progress < 1.0)
+
+        sm.resume_torrent(info_hash)
+
+        assert _run_ticks(qapp, sm, lambda: handle.status().is_seeding and not handle.status().paused)
+    finally:
+        sm.shutdown()
+
+    assert blocked == [] and finished_events == [info_hash]
+
+
 def test_a_torrent_file_is_named_at_the_add_not_at_its_first_status(qapp, tmp_path):
     """atp.name only holds a magnet's dn=: a .torrent finishing before its
     first status tick had an empty name in the "download finished" toast and
@@ -285,31 +345,3 @@ def test_a_torrent_file_is_named_at_the_add_not_at_its_first_status(qapp, tmp_pa
         assert sm.get_record(info_hash).name == "already_complete.bin"
     finally:
         sm.shutdown()
-
-
-# ------------------------------------------------------- resume_data_is_complete
-
-
-class _FakeAtp:
-    def __init__(self, have_pieces, piece_priorities=()):
-        self.have_pieces = have_pieces
-        self.piece_priorities = list(piece_priorities)
-
-
-def test_resume_data_is_complete_true_when_all_pieces_present():
-    assert add_params.resume_data_is_complete(_FakeAtp([True, True, True])) is True
-
-
-def test_resume_data_is_complete_false_when_a_wanted_piece_is_missing():
-    assert add_params.resume_data_is_complete(_FakeAtp([True, False, True])) is False
-
-
-def test_resume_data_is_complete_true_when_missing_piece_belongs_to_excluded_file():
-    # Priority 0 == excluded file -- never going to be downloaded, so it
-    # doesn't count against completeness.
-    assert add_params.resume_data_is_complete(_FakeAtp([True, False, True], piece_priorities=[4, 0, 4])) is True
-
-
-def test_resume_data_is_complete_false_for_empty_have_pieces():
-    # No resume data / metadata not yet known -- can't claim completeness.
-    assert add_params.resume_data_is_complete(_FakeAtp([])) is False

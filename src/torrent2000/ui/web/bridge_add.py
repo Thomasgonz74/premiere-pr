@@ -194,6 +194,9 @@ class AddBridge(QObject):
         if not uri:
             return ""
         self._torrent_path = None
+        # Replaced even if this one fails (already in the list, malformed):
+        # Démarrer must never start the previous magnet without its scan.
+        self._pending_magnet_hash = None
         try:
             info_hash = self._session_manager.add_torrent_from_magnet(uri, self._settings.default_download_dir)
         except TorrentAlreadyPresentError as exc:

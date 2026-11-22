@@ -70,6 +70,8 @@ _RESTORE_BIND_POLL_MS = 20
 # and without query_save_path status.save_path comes back empty.
 _STATUS_UPDATE_FLAGS = int(lt.torrent_handle.query_accurate_download_counters) | 64 | 128
 
+_CHECKING_STATES = (lt.torrent_status.checking_files, lt.torrent_status.checking_resume_data)
+
 ALERT_MASK = (
     lt.alert_category.error
     | lt.alert_category.status
@@ -295,14 +297,17 @@ class SessionManager(QObject):
         self._records: dict[str, TorrentRecord] = {}
         self._handles: dict[str, "lt.torrent_handle"] = {}
         self._private_flag_checked: set[str] = set()
-        # info_hashes restored from resume data that were *already* 100%
-        # complete (all wanted pieces present) before this process started --
-        # see _on_torrent_finished. libtorrent re-fires torrent_finished_alert
-        # for these while verifying their fast-resume data on every restart,
-        # even though nothing was actually (re)downloaded this session. Same
-        # for a recheck of a complete torrent, or a share of data already on
-        # disk (see expect_existing_data).
+        # info_hashes restored from resume data whose check hasn't ended yet
+        # -- see _on_torrent_finished. libtorrent re-fires
+        # torrent_finished_alert for a complete one while verifying its
+        # fast-resume data on every restart, even though nothing was actually
+        # (re)downloaded this session. Same for a recheck of a complete
+        # torrent, or a share of data already on disk (see expect_existing_data).
         self._pending_restore_confirmation: set[str] = set()
+        # Resumed (or left running) under CCCP while being checked: resumed
+        # once checked if the check found the data complete -- see
+        # _resume_once_checked.
+        self._resume_after_check: set[str] = set()
         # info_hashes queued by _restore_previous_session's async_add_torrent
         # whose add_torrent_alert hasn't arrived yet -- see _on_torrent_added.
         self._pending_restore: set[str] = set()
@@ -563,6 +568,9 @@ class SessionManager(QObject):
         # it found pieces missing: the finish once they are downloaded again
         # is a real one (toast, webhook, Defender scan...).
         self._pending_restore_confirmation.discard(info_hash)
+        if info_hash in self._resume_after_check:
+            self._resume_after_check.discard(info_hash)
+            self.resume_torrent(info_hash)  # still refused under CCCP if data is missing
 
     def _on_tracker_error(self, info_hash: str, message: str) -> None:
         self.tracker_error.emit(info_hash, message)
@@ -576,6 +584,7 @@ class SessionManager(QObject):
         self._speed_history.pop(info_hash, None)
         getattr(self, "_file_entries_cache", {}).pop(info_hash, None)
         self._pending_restore_confirmation.discard(info_hash)
+        self._resume_after_check.discard(info_hash)
         self._categories.remove(info_hash)
         if info_hash in self._awaiting_analysis:
             self._awaiting_analysis.discard(info_hash)
@@ -1010,6 +1019,7 @@ class SessionManager(QObject):
         # remote API, theme enforcement) is covered by one guard.
         if handle is None or not handle.is_valid():
             return
+        self._resume_after_check.discard(info_hash)  # paused again: no resume once checked
         # A torrent left auto-managed gets silently un-paused again by
         # libtorrent's own queue manager within a couple of ticks (it decides
         # pause/resume for auto-managed torrents itself based on the active
@@ -1024,8 +1034,14 @@ class SessionManager(QObject):
         if handle is None or not handle.is_valid():
             return
         if record is not None and _is_download_start_blocked(self._settings.theme, record.progress):
-            self.download_blocked_by_theme.emit(info_hash)
-            return
+            status = handle.status()  # during or just after a check, the record lags behind
+            # Not a magnet held for its analysis: auto-managed, it would leave upload mode.
+            if status.state in _CHECKING_STATES and not record.awaiting_analysis:
+                self._resume_once_checked(handle, info_hash)
+                return
+            if _is_download_start_blocked(self._settings.theme, status.progress):
+                self.download_blocked_by_theme.emit(info_hash)
+                return
         # Resumed by hand while recheck_torrent checks it: no pause once checked.
         handle.unset_flags(lt.torrent_flags.stop_when_ready)
         # A magnet awaiting analysis only goes back to fetching its metadata,
@@ -1046,10 +1062,23 @@ class SessionManager(QObject):
         for info_hash, record in list(self._records.items()):
             if record.awaiting_analysis or record.progress >= 1.0 or record.state == TorrentState.PAUSED:
                 continue
+            handle = self._handles.get(info_hash)
+            if handle is not None and handle.is_valid() and handle.status().state in _CHECKING_STATES:
+                self._resume_once_checked(handle, info_hash)  # its progress is the check's, not missing data
+                continue
             self.pause_torrent(info_hash)
             paused_count += 1
         if paused_count:
             self.theme_downloads_paused.emit(paused_count)
+
+    def _resume_once_checked(self, handle, info_hash: str) -> None:
+        """CCCP refuses a download, but a torrent being checked may well be a
+        complete seed: only its check can tell. Checked now, paused again once
+        checked (stop_when_ready, as in recheck_torrent) before any piece is
+        requested, then resumed by _on_torrent_checked if nothing is missing."""
+        handle.set_flags(lt.torrent_flags.auto_managed | lt.torrent_flags.stop_when_ready)
+        handle.resume()
+        self._resume_after_check.add(info_hash)
 
     def set_sequential_download(self, info_hash: str, enabled: bool) -> None:
         """Catalogue idea "telechargement sequentiel -> vrai mode streaming":
@@ -1348,8 +1377,11 @@ class SessionManager(QObject):
                 matched_rule_name=self._matched_rules.get(info_hash),
             )
             self._records[info_hash] = record
-            if add_params.resume_data_is_complete(atp):
-                self._pending_restore_confirmation.add(info_hash)
+            # Every one, not just those saved complete: a finish before its
+            # check ends (_on_torrent_checked drops the mark) is data already
+            # on disk -- e.g. a recheck interrupted by the quit before it began,
+            # saved with no piece at all.
+            self._pending_restore_confirmation.add(info_hash)
             self.torrent_added.emit(info_hash)
 
     def shutdown(self, timeout_ms: int = 3000) -> None:

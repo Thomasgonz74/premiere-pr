@@ -639,3 +639,63 @@ def test_a_language_switch_hides_a_slowness_result_in_the_previous_language(view
       return JSON.stringify([shown, afterSwitch]);
     })()""")
     assert result == '["block Aucun seed","none "]'
+
+
+def test_the_add_pages_share_policy_note_follows_a_language_switch(view):
+    result = run_js(view, """(function () {
+      const note = document.getElementById('addSharePolicyNote');
+      let lang = 'fr';
+      const asked = [];
+      window.bridge = { add: { defaultSharePolicyNote(cb) {
+        asked.push(lang);
+        cb(lang === 'en' ? 'Default share policy active' : 'Politique de partage par défaut active');
+      } } };
+      note.textContent = 'Politique de partage par défaut active';  // an intent was picked
+      lang = 'en';
+      setCatalog({});
+      const seen = [note.textContent];
+      note.textContent = '';  // none shown: nothing to ask for
+      setCatalog({});
+      return JSON.stringify([seen, asked]);
+    })()""")
+    assert result == '[["Default share policy active"],["en"]]'
+
+
+def test_a_start_the_theme_refuses_is_said_in_a_dialog(view):
+    """Only the hidden Add page's status line said it, and "Torrent ajouté."
+    replaced it at once."""
+    result = run_js(view, """(function () {
+      setCatalog({ 'cccp.nyet_title': 'Nyet.', 'cccp.download_blocked_message': 'Stays paused.' });
+      addShowBlockedByTheme();
+      switchToTab('downloads');  // the Add page's "started" handler
+      const overlay = document.getElementById('modalOverlay');
+      const seen = [overlay.classList.contains('active'), document.querySelector('#modalBox h3').textContent,
+                    document.querySelector('#modalBox p').textContent];
+      closeModal();
+      setCatalog({});
+      return JSON.stringify(seen);
+    })()""")
+    assert result == '[true,"Nyet.","Stays paused."]'
+
+
+def test_the_share_pages_confirmation_stays_once_a_share_started(view):
+    """"started" comes before startShare's answer, which wrote "" over it."""
+    result = run_js(view, """(function () {
+      const sig = () => { const cbs = []; return { connect: (f) => cbs.push(f), emit: (...a) => cbs.forEach((f) => f(...a)) }; };
+      const share = { started: sig(), recordUpdated: sig(), recordsUpdated: sig(), recordRemoved: sig(),
+                      defaultDataDir(cb) { cb('C:/data'); }, listTorrents(cb) { cb([]); }, selectTorrentFile() {},
+                      startShare(dir, magnet, hours, mb, ratio, cb) { share.started.emit(); cb({ ok: true }); } };
+      window.bridge = { share, dialogs: {} };
+      setCatalog({ 'web.share.share_started_status': 'Share started.' });
+      wireSharePage();
+      const status = document.getElementById('shareStatus');
+      document.getElementById('shareStartBtn').click();
+      const seen = [status.textContent];
+      share.startShare = (dir, magnet, hours, mb, ratio, cb) => cb({ ok: false, error: 'Refused.' });
+      document.getElementById('shareStartBtn').click();
+      seen.push(status.textContent);
+      status.textContent = '';
+      setCatalog({});
+      return JSON.stringify(seen);
+    })()""")
+    assert result == '["Share started.","Refused."]'
