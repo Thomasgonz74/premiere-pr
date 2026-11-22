@@ -48,6 +48,7 @@ from torrent2000.engine.torrent_files import files_from_torrent_path
 from torrent2000.engine.rss_seen_store import RssSeenStore
 from torrent2000.engine.session_manager import SessionManager
 from torrent2000.engine.url_fetch import FetchError, fetch_url
+from torrent2000.i18n.translator import tr
 from torrent2000.utils.qt_timers import start_periodic_timer
 
 logger = logging.getLogger(__name__)
@@ -109,7 +110,12 @@ def matches_keyword(title: str, filter_keyword: str) -> bool:
 
 
 _RESOLUTION_RE = re.compile(r"(\d{3,4})p\b", re.IGNORECASE)
-_LAST_NUMBER_RE = re.compile(r"(\d+)(?!.*\d)")  # the last run of digits in the string
+# "S01E05"/"s01.e05"/"1x05" -- the number that actually identifies an
+# episode, unlike the resolution/codec/audio tags ("720p", "x264", "H.265",
+# "AAC2.0") release names usually end with.
+_SEASON_EPISODE_RE = re.compile(r"(?<![a-z0-9])(?:s(\d{1,3})[ ._-]?e(\d{1,4})|(\d{1,2})x(\d{2,3}))(?!\d)", re.IGNORECASE)
+# No season: "Episode.42", "Ep 7", "E05", or the anime-style "Show - 05".
+_EPISODE_RE = re.compile(r"(?:(?<![a-z0-9])(?:ep?|episode)[ ._-]?|\s-\s)(\d{1,4})(?![\dp])", re.IGNORECASE)
 
 
 def _title_resolution(title: str) -> int | None:
@@ -120,14 +126,31 @@ def _title_resolution(title: str) -> int | None:
     return int(match.group(1)) if match else None
 
 
-def _title_sequence_number(title: str) -> int:
-    """Heuristic 'how recent is this episode' proxy for latest_episode_only:
-    the last run of digits in the title (season/episode markers and
-    plain-numbered episodes both end with a number that increases release
-    over release -- e.g. "S02E15" -> 15, "Episode.42" -> 42). Titles with no
-    digit at all sort as 0, i.e. never picked over one that has a number."""
-    match = _LAST_NUMBER_RE.search(title)
-    return int(match.group(1)) if match else 0
+def _title_episode(title: str) -> tuple[int, int] | None:
+    """(season, episode) for latest_episode_only -- "S02E15" -> (2, 15),
+    "Episode.42" -> (0, 42) -- or None when the title carries no episode
+    marker, so such an item is never ranked against (and silently dropped
+    in favour of) a numbered one."""
+    match = _SEASON_EPISODE_RE.search(title)
+    if match:
+        season, episode = (match.group(1), match.group(2)) if match.group(1) else (match.group(3), match.group(4))
+        return int(season), int(episode)
+    match = _EPISODE_RE.search(title)
+    return (0, int(match.group(1))) if match else None
+
+
+def filter_regex_error(*patterns: str) -> str | None:
+    """User-facing message for the first advanced-filter pattern that does
+    not compile, or None -- checked before saving (bridge_rss) and again
+    before each feed check, for a config.json edited by hand."""
+    for pattern in patterns:
+        if not pattern:
+            continue
+        try:
+            re.compile(pattern)
+        except re.error as exc:
+            return tr("web.rss.filter_invalid_regex", pattern=pattern, message=str(exc))
+    return None
 
 
 def matches_advanced_filters(title: str, feed: "RssFeedSubscription") -> bool:
@@ -267,6 +290,13 @@ class RssFeedService(QObject):
         feed_config = self._find_feed_config(feed_url)
         if feed_config is None or not feed_config.enabled:
             return  # subscription removed/disabled while the fetch was in flight
+        regex_error = filter_regex_error(feed_config.regex_include, feed_config.regex_exclude)
+        if regex_error:
+            # Nothing is added or marked seen: the items still download once
+            # the pattern is fixed.
+            logger.warning("Skipping RSS feed %s: %s", _redact_url(feed_url), regex_error)
+            self.feed_check_failed.emit(feed_url, regex_error)
+            return
 
         candidates = []
         for item in items:
@@ -280,15 +310,18 @@ class RssFeedService(QObject):
                 continue
             candidates.append(item)
 
-        if feed_config.latest_episode_only and len(candidates) > 1:
-            best = max(candidates, key=lambda it: _title_sequence_number(it.get("title", "")))
-            for item in candidates:
-                if item is not best:
-                    # Marked seen (never retried) but never downloaded --
-                    # avoids flooding on the first check of a feed with a
-                    # long backlog of matching items.
-                    self._seen_store.mark_seen(item.get("guid", ""), feed_url, item.get("title", ""), commit=False)
-            candidates = [best]
+        if feed_config.latest_episode_only:
+            episodes = {id(it): _title_episode(it.get("title", "")) for it in candidates}
+            numbered = [it for it in candidates if episodes[id(it)] is not None]
+            if len(numbered) > 1:
+                best = max(numbered, key=lambda it: episodes[id(it)])
+                for item in numbered:
+                    if item is not best:
+                        # Marked seen (never retried) but never downloaded --
+                        # avoids flooding on the first check of a feed with a
+                        # long backlog of matching items.
+                        self._seen_store.mark_seen(item.get("guid", ""), feed_url, item.get("title", ""), commit=False)
+                candidates = [it for it in candidates if it is best or episodes[id(it)] is None]
 
         newly_added = []
         for item in candidates:

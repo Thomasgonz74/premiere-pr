@@ -645,6 +645,7 @@
   "web.rss.filter_latest_only_label": "Ne télécharger que le dernier épisode d'un lot",
   "web.rss.filters_dialog_title": "Filtres avancés — {url}",
   "web.rss.filters_save_button": "Enregistrer",
+  "web.rss.filter_invalid_regex": "Regex invalide « {pattern} » : {message}",
   "web.rss.log_entry": "{title} — {url}",
   "web.rss.log_feed_check_failed": "{url} — {message}",
   "web.profile_automation.schedule_enabled_checkbox": "Activer la plage horaire limitée",

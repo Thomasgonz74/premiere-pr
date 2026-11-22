@@ -211,6 +211,11 @@ function rssOpenFiltersDialog(feed) {
   latestRow.appendChild(latestLabel);
   content.appendChild(latestRow);
 
+  const status = document.createElement("p");
+  status.className = "status-line";
+  status.id = "rssFilterStatus";
+  content.appendChild(status);
+
   const buttonRow = document.createElement("div");
   buttonRow.className = "modal-close-row";
   const saveBtn = document.createElement("button");
@@ -222,9 +227,13 @@ function rssOpenFiltersDialog(feed) {
       resolutionMin: parseInt(minInput.value, 10) || 0,
       resolutionMax: parseInt(maxInput.value, 10) || 0,
       latestEpisodeOnly: latestCheck.checked,
+    }, (result) => {
+      // A pattern that does not compile is refused: keep the dialog open.
+      status.textContent = result.error || "";
+      if (!result.ok) return;
+      closeModal();
+      rssReloadFeeds();
     });
-    closeModal();
-    rssReloadFeeds();
   });
   buttonRow.appendChild(saveBtn);
   const cancelBtn = document.createElement("button");

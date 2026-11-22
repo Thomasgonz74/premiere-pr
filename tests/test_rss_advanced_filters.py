@@ -14,7 +14,6 @@ from torrent2000.config.settings import RssFeedSubscription, Settings
 from torrent2000.engine.rss_feed_service import (
     RssFeedService,
     _title_resolution,
-    _title_sequence_number,
     matches_advanced_filters,
 )
 from torrent2000.engine.rss_seen_store import RssSeenStore
@@ -37,12 +36,6 @@ def test_title_resolution_extracts_p_suffixed_marker():
     assert _title_resolution("Show.S01E02.1080p.WEB") == 1080
     assert _title_resolution("Show.S01E02.720p") == 720
     assert _title_resolution("Show with no resolution marker") is None
-
-
-def test_title_sequence_number_uses_the_last_digit_run():
-    assert _title_sequence_number("Show.S02E15.1080p") == 1080  # last number wins, even if it's the resolution
-    assert _title_sequence_number("Show.Episode.42") == 42
-    assert _title_sequence_number("No digits here") == 0
 
 
 def test_matches_advanced_filters_regex_include():
@@ -161,3 +154,49 @@ def test_bridge_update_feed_filters_persists_the_new_fields(tmp_path):
     assert updated.resolution_min == 720
     assert updated.resolution_max == 2160
     assert updated.latest_episode_only is True
+
+
+def test_latest_episode_only_ranks_by_season_episode_not_codec_tags(tmp_path):
+    feed = RssFeedSubscription(url="https://example.com/feed.xml", filter_keyword="", enabled=True, latest_episode_only=True)
+    service, seen_store = _make_service(tmp_path, feed)
+
+    found = []
+    service.items_found.connect(lambda url, items: found.extend(items))
+
+    items = [
+        {"title": "Show.S01E05.720p.WEB.x264-GRP", "link": "magnet:?xt=urn:btih:e05", "guid": "g5"},
+        {"title": "Show.S01E07.1080p.WEB.H.265-GRP", "link": "magnet:?xt=urn:btih:e07", "guid": "g7"},
+        {"title": "Show.S01E08.720p.HDTV.AAC2.0", "link": "magnet:?xt=urn:btih:e08", "guid": "g8"},
+        {"title": "Show.Special.720p", "link": "magnet:?xt=urn:btih:sp", "guid": "gs"},
+    ]
+    service._signals.feed_fetched.emit(feed.url, items)
+
+    # The newest episode wins, not the one with the biggest codec number;
+    # an item with no episode marker is not ranked, so not dropped either.
+    assert [item["guid"] for item in found] == ["g8", "gs"]
+    assert seen_store.is_seen("g5") is True
+    assert seen_store.is_seen("g7") is True
+
+
+def test_invalid_filter_regex_is_refused_on_save_and_skipped_by_the_check(tmp_path):
+    from torrent2000.ui.web.bridge_rss import RssBridge
+
+    feed = RssFeedSubscription(url="https://example.com/feed.xml", filter_keyword="", enabled=True)
+    service, seen_store = _make_service(tmp_path, feed)
+    bridge = RssBridge(service._session_manager, service, service._settings)
+
+    result = bridge.updateFeedFilters(feed.url, {"regexInclude": "*1080p*"})
+    assert result["ok"] is False and "*1080p*" in result["error"]
+    assert feed.regex_include == ""
+
+    # A bad pattern already in config.json (edited by hand, or saved before
+    # the check above existed): the check reports it instead of raising.
+    feed.regex_include = "(1080p"
+    failed, found = [], []
+    service.feed_check_failed.connect(lambda url, message: failed.append(message))
+    service.items_found.connect(lambda url, items: found.extend(items))
+    service._signals.feed_fetched.emit(feed.url, [{"title": "Show.1080p", "link": "magnet:?xt=urn:btih:a", "guid": "g1"}])
+
+    assert len(failed) == 1 and "(1080p" in failed[0]
+    assert found == []
+    assert seen_store.is_seen("g1") is False  # downloads once the pattern is fixed
