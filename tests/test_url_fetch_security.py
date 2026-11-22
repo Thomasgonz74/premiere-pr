@@ -227,3 +227,65 @@ def test_cancel_all_fetches_stops_a_fetch_in_flight_and_any_later_one(monkeypatc
         with pytest.raises(FetchCancelled):
             fetch_url("https://example.com", "UA/1.0", timeout_seconds=5)
         mock_urlopen.assert_called_once()
+
+
+def test_installer_download_on_a_slow_but_steady_link_is_not_cut_off(tmp_path, monkeypatch):
+    """fetch_url_to_file's timeout is an idle timeout, not a deadline for the
+    whole transfer: every chunk here arrives "1 s" after the last one, so the
+    5 s budget is long gone by the end, yet the download must complete."""
+    import hashlib
+
+    import torrent2000.engine.url_fetch as url_fetch_module
+    from torrent2000.engine.url_fetch import fetch_url_to_file
+
+    fake_now = [0.0]
+
+    def fake_monotonic():
+        fake_now[0] += 1.0
+        return fake_now[0]
+
+    monkeypatch.setattr(url_fetch_module.time, "monotonic", fake_monotonic)
+    monkeypatch.setattr(url_fetch_module, "_READ_CHUNK_BYTES", 4)
+    body = b"installer" * 10
+    dest = tmp_path / "Setup.exe"
+
+    with patch("urllib.request.urlopen", return_value=_fake_response(body)):
+        fetch_url_to_file("https://github.com/x", "UA/1.0", 5, dest, hashlib.sha256(body).hexdigest())
+
+    assert dest.read_bytes() == body
+
+
+def test_cancel_all_fetches_returns_a_fetch_waiting_on_a_silent_server(monkeypatch):
+    """A webhook POST to an endpoint that accepts the connection but never
+    answers sits in urlopen waiting for the status line, not between chunks:
+    quitting must not wait for its 10 s socket timeout."""
+    import socket
+    import threading
+    import time
+
+    import torrent2000.engine.url_fetch as url_fetch_module
+    from torrent2000.engine.url_fetch import FetchCancelled
+
+    monkeypatch.setattr(url_fetch_module, "_cancel_event", threading.Event())
+    server = socket.create_server(("127.0.0.1", 0))
+    accepted = []
+    threading.Thread(target=lambda: accepted.append(server.accept()), daemon=True).start()
+    outcome = []
+
+    def post():
+        try:
+            fetch_url(f"http://127.0.0.1:{server.getsockname()[1]}/hook", "UA/1.0", 10, data=b"done")
+        except FetchError as exc:
+            outcome.append(exc)
+
+    fetching = threading.Thread(target=post)
+    fetching.start()
+    time.sleep(0.5)  # connected and waiting for the reply
+    started = time.monotonic()
+    url_fetch_module.cancel_all_fetches()
+    fetching.join(5)
+    elapsed = time.monotonic() - started
+    server.close()
+
+    assert not fetching.is_alive() and elapsed < 2
+    assert isinstance(outcome[0], FetchCancelled)

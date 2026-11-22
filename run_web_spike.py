@@ -198,10 +198,10 @@ def main() -> int:
         auto_shutdown_service.stop()
         # Quit stops everything: Qt waits for every QThreadPool task before
         # the process can exit, and those include a Defender scan (up to
-        # 300 s) and the installer download (up to 600 s). Queued tasks are
-        # dropped -- including a webhook queued just before Quit, accepted --
-        # and running fetches stop at their next chunk, a scan within a
-        # second. The pool only queues once every thread is busy, so nothing
+        # 300 s) and the installer download. Queued tasks are dropped --
+        # including a webhook queued just before Quit, accepted -- running
+        # fetches return at once (their socket is left to a daemon thread,
+        # see url_fetch._cancellable), a scan within a second. The pool only queues once every thread is busy, so nothing
         # active means nothing dropped.
         pool = QThreadPool.globalInstance()
         if pool.activeThreadCount():

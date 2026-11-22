@@ -10,8 +10,10 @@ off the GUI thread too, right where the bytes already are.
 
 from __future__ import annotations
 
+import functools
 import hashlib
 import logging
+import math
 import threading
 import time
 from pathlib import Path
@@ -38,15 +40,11 @@ _MAX_RESPONSE_BYTES = 50 * 1024 * 1024
 # fetch_url_to_file's own cap: it streams to disk, so this bounds disk use,
 # not memory -- well above the ~130 MB installer (it bundles QtWebEngine).
 _MAX_DOWNLOAD_BYTES = 1024 * 1024 * 1024
-# fetch_url_to_file's per-socket-operation timeout (connect, each read): its
-# overall deadline is long (600 s for the installer), and a read stalled on
-# a dead connection is the one wait cancel_all_fetches() can't cut short.
-_DOWNLOAD_SOCKET_TIMEOUT_SECONDS = 30
 _READ_CHUNK_BYTES = 65536
 
-# Set once at quit (cancel_all_fetches) so a running download/fetch stops at
-# its next chunk instead of keeping the process alive -- Qt waits for every
-# running QThreadPool task before the process can exit. Never cleared.
+# Set once at quit (cancel_all_fetches) so a running download/fetch stops
+# instead of keeping the process alive -- Qt waits for every running
+# QThreadPool task before the process can exit. Never cleared.
 _cancel_event = threading.Event()
 
 
@@ -62,9 +60,41 @@ class FetchCancelled(FetchError):
 
 
 def cancel_all_fetches() -> None:
-    """Called once at quit: every fetch in flight stops at its next chunk
-    (raising FetchCancelled) and any later fetch fails before connecting."""
+    """Called once at quit: every fetch in flight returns at once (raising
+    FetchCancelled) and any later fetch fails before connecting."""
     _cancel_event.set()
+
+
+def _cancellable(fetch):
+    """Runs the fetch on a daemon thread and waits for it, but raises
+    FetchCancelled as soon as cancel_all_fetches() is called. A socket
+    blocked on a silent server (waiting for its reply, or for the next chunk)
+    can't be woken from another thread, and the pool task waiting on it
+    would hold the quitting process until its socket timeout; Python doesn't
+    wait for a daemon thread, which just ends with the process."""
+
+    @functools.wraps(fetch)
+    def wrapper(*args, **kwargs):
+        outcome = {}
+        done = threading.Event()
+
+        def run() -> None:
+            try:
+                outcome["result"] = fetch(*args, **kwargs)
+            except BaseException as exc:
+                outcome["error"] = exc
+            finally:
+                done.set()
+
+        threading.Thread(target=run, name="url_fetch", daemon=True).start()
+        while not done.wait(0.1):
+            if _cancel_event.is_set():
+                raise FetchCancelled("Fetch cancelled: the application is quitting")
+        if "error" in outcome:
+            raise outcome["error"]
+        return outcome["result"]
+
+    return wrapper
 
 
 def _iter_response_chunks(response, deadline: float, max_bytes: int):
@@ -132,6 +162,7 @@ def _open(
     return urllib.request.urlopen(request, timeout=timeout_seconds)
 
 
+@_cancellable
 def fetch_url(
     url: str,
     user_agent: str,
@@ -140,6 +171,7 @@ def fetch_url(
     proxy: "ProxySettings | None" = None,
     data: bytes | None = None,
 ) -> bytes:
+    import http.client  # already loaded by urllib.request; for BadStatusLine/IncompleteRead
     import urllib.error  # before the try: the except clause below needs it
 
     # timeout_seconds bounds the WHOLE operation (connect + full read) from
@@ -149,10 +181,11 @@ def fetch_url(
     try:
         with _open(url, user_agent, timeout_seconds, extra_headers, proxy, data) as response:
             return _read_response_body(response, deadline)
-    except (urllib.error.URLError, OSError, ValueError) as exc:
+    except (urllib.error.URLError, OSError, ValueError, http.client.HTTPException) as exc:
         raise FetchError(str(exc)) from exc
 
 
+@_cancellable
 def fetch_url_to_file(
     url: str,
     user_agent: str,
@@ -164,8 +197,11 @@ def fetch_url_to_file(
     """Streaming sibling of fetch_url for large downloads (the ~130 MB
     update installer): each chunk goes straight to dest and into an
     incremental SHA-256, so memory holds one chunk instead of the whole body
-    (twice, with the join). Same scheme guard, proxy routing and overall
-    deadline as fetch_url, with its own size cap (_MAX_DOWNLOAD_BYTES).
+    (twice, with the join). Same scheme guard and proxy routing as
+    fetch_url, with its own size cap (_MAX_DOWNLOAD_BYTES). Unlike fetch_url,
+    timeout_seconds is an idle timeout (each socket operation), not a
+    deadline for the whole transfer: a slow but steady link must still get
+    the installer, only a stalled one fails.
 
     dest only survives a download that completed AND matched
     expected_sha256 -- on a mismatch or any error it is removed before
@@ -173,13 +209,14 @@ def fetch_url_to_file(
     import http.client  # already loaded by urllib.request; for IncompleteRead
     import urllib.error  # before the try: the except clause below needs it
 
-    deadline = time.monotonic() + timeout_seconds
     digest = hashlib.sha256()
     verified = False
     try:
-        socket_timeout = min(timeout_seconds, _DOWNLOAD_SOCKET_TIMEOUT_SECONDS)
-        with _open(url, user_agent, socket_timeout, proxy=proxy) as response, open(dest, "wb") as out:
-            for chunk in _iter_response_chunks(response, deadline, _MAX_DOWNLOAD_BYTES):
+        # ponytail: no minimum-throughput check -- a server dripping a byte
+        # per timeout_seconds is bounded only by _MAX_DOWNLOAD_BYTES and the
+        # SHA-256; the one caller downloads from GitHub over https.
+        with _open(url, user_agent, timeout_seconds, proxy=proxy) as response, open(dest, "wb") as out:
+            for chunk in _iter_response_chunks(response, math.inf, _MAX_DOWNLOAD_BYTES):
                 digest.update(chunk)
                 out.write(chunk)
         if digest.hexdigest() != expected_sha256.lower():
