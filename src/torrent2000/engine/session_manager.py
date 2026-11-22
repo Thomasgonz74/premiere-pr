@@ -1279,6 +1279,19 @@ class SessionManager(QObject):
             # (e.g. an empty save_path); the add_torrent_alert reports the rest.
             try:
                 info_hash = add_params.info_hash_hex(atp)
+                # awaiting_analysis.json is written at once, the .fastresume
+                # only every so often: after an abnormal exit they can
+                # disagree, and the awaiting set wins (see
+                # add_torrent_from_magnet and start_after_analysis).
+                if info_hash in self._awaiting_analysis:
+                    if not atp.flags & lt.torrent_flags.upload_mode:
+                        atp.flags &= ~lt.torrent_flags.paused  # saved started: no pause of the user's
+                    atp.flags |= lt.torrent_flags.upload_mode
+                    atp.flags &= ~lt.torrent_flags.auto_managed
+                elif atp.flags & lt.torrent_flags.upload_mode:
+                    atp.flags &= ~lt.torrent_flags.upload_mode
+                    if not atp.flags & lt.torrent_flags.paused:
+                        atp.flags |= lt.torrent_flags.auto_managed
                 self._session.async_add_torrent(atp)
             except Exception:
                 logger.exception("Failed to restore a torrent from saved resume data")

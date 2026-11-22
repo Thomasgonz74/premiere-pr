@@ -13,7 +13,7 @@ import libtorrent as lt
 import pytest
 from PySide6.QtWidgets import QApplication
 
-from torrent2000.config.paths import get_magnets_to_start_path
+from torrent2000.config.paths import get_awaiting_analysis_path, get_magnets_to_start_path
 from torrent2000.config.settings import Settings
 from torrent2000.engine import persistence
 from torrent2000.engine.session_manager import SessionManager
@@ -162,5 +162,26 @@ def test_a_magnet_started_before_its_metadata_still_waits_for_it_after_a_restart
     sm2 = SessionManager(_loopback_settings())
     try:
         assert info_hash in sm2._start_once_analysed
+    finally:
+        sm2.shutdown(timeout_ms=0)
+
+
+def test_after_an_abnormal_exit_the_awaiting_set_wins_over_the_resume_data(qapp, tmp_path):
+    """awaiting_analysis.json is written at once, the .fastresume only every
+    so often: each can be the older one after a crash."""
+    sm1 = SessionManager(_loopback_settings())
+    saved_held = sm1.add_torrent_from_magnet(_MAGNET, str(tmp_path))
+    saved_started = sm1.add_torrent_from_magnet("magnet:?xt=urn:btih:" + "cd" * 20, str(tmp_path))
+    sm1.start_after_analysis(saved_started)
+    sm1.shutdown()
+    # The awaiting set says the opposite of each one's resume data.
+    persistence.save_json(get_awaiting_analysis_path(), [saved_started])
+
+    sm2 = SessionManager(_loopback_settings())
+    try:
+        assert _pump(qapp, sm2, lambda: saved_held in sm2._handles and saved_started in sm2._handles)
+        started_now, held_now = sm2._handles[saved_held].status(), sm2._handles[saved_started].status()
+        assert not started_now.upload_mode and started_now.auto_managed
+        assert held_now.upload_mode and not held_now.paused and not held_now.auto_managed
     finally:
         sm2.shutdown(timeout_ms=0)
