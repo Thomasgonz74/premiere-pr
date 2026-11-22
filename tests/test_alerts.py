@@ -21,6 +21,7 @@ def callbacks():
         "on_torrent_removed": MagicMock(),
         "on_torrent_added": MagicMock(),
         "on_storage_moved": MagicMock(),
+        "on_storage_move_failed": MagicMock(),
         "on_file_error": MagicMock(),
     }
 
@@ -36,6 +37,7 @@ def dispatcher(callbacks):
         on_torrent_removed=callbacks["on_torrent_removed"],
         on_torrent_added=callbacks["on_torrent_added"],
         on_storage_moved=callbacks["on_storage_moved"],
+        on_storage_move_failed=callbacks["on_storage_move_failed"],
         on_file_error=callbacks["on_file_error"],
     )
 
@@ -129,6 +131,16 @@ def test_tracker_error_fallback_drops_the_passkey_from_the_announce_url(dispatch
     )
 
 
+def test_storage_moved_failed_alert_forwards_hash_and_message(dispatcher, callbacks):
+    alert = MagicMock(spec=lt.storage_moved_failed_alert)
+    alert.handle = _handle_with_hash("hash3")
+    alert.message.return_value = "disk full"
+
+    dispatcher.dispatch(alert)
+
+    callbacks["on_storage_move_failed"].assert_called_once_with("hash3", "disk full")
+
+
 def test_save_resume_data_alert_forwards_hash_and_params(dispatcher, callbacks):
     alert = MagicMock(spec=lt.save_resume_data_alert)
     alert.handle = _handle_with_hash("hash1")
@@ -150,6 +162,17 @@ def test_alert_on_an_invalid_handle_is_skipped_not_routed_under_a_null_hash(disp
     dispatcher.dispatch_all([alert])
 
     callbacks["on_save_resume_data"].assert_not_called()
+
+
+def test_the_save_of_a_torrent_removed_meanwhile_logs_no_error(dispatcher, caplog):
+    """Removing a torrent while the autosave is draining is a normal action:
+    it wrote an ERROR traceback to the log users attach to their reports."""
+    alert = MagicMock(spec=lt.save_resume_data_alert)
+    alert.handle = lt.torrent_handle()
+
+    dispatcher.dispatch_all([alert])
+
+    assert not [r for r in caplog.records if r.levelname == "ERROR"]
 
 
 def test_torrent_removed_alert_uses_info_hashes_directly_not_handle(dispatcher, callbacks):
@@ -358,6 +381,27 @@ def test_status_to_record_sets_awaiting_metadata_when_no_metadata_yet():
 
     assert record.is_magnet_awaiting_metadata is True
     assert record.state == TorrentState.CHECKING_METADATA
+
+
+def test_a_paused_magnet_without_metadata_shows_paused():
+    """Shown as fetching metadata, its row offered only a no-op pause."""
+    status = _status_stub(has_metadata=False, paused=True)
+    record = TorrentRecord(info_hash="hash0")
+
+    status_to_record(status, record)
+
+    assert record.state == TorrentState.PAUSED
+
+
+def test_a_paused_torrent_reports_no_rate():
+    """libtorrent's averages decay for ~30 s after a pause, which showed a
+    rate and an ETA on a paused row."""
+    status = _status_stub(paused=True, download_rate=6949, upload_rate=290)
+    record = TorrentRecord(info_hash="hash0")
+
+    status_to_record(status, record)
+
+    assert (record.download_rate, record.upload_rate) == (0, 0)
 
 
 def test_status_to_record_queue_position_is_coerced_to_int():

@@ -35,6 +35,10 @@ def isolated_data_dir(tmp_path, monkeypatch):
 
 class FakeSessionManager(QObject):
     torrent_finished = Signal(str)
+    storage_moved = Signal(str, str)
+    storage_move_failed = Signal(str, str)
+    move_storage_refused = Signal(str, str)
+    torrent_removed = Signal(str)
 
     def __init__(self):
         super().__init__()
@@ -66,6 +70,31 @@ def test_move_action_calls_move_storage_with_the_rules_destination():
     session_manager.torrent_finished.emit("hash1")
 
     assert session_manager.move_storage_calls == [("hash1", "E:/archive")]
+
+
+def test_a_move_is_pending_until_libtorrent_reports_it_ended():
+    """What auto-shutdown waits on before its countdown (see
+    AutoShutdownService), failed moves included."""
+    RoutingRuleStore().save_rule(
+        RoutingRule(
+            name="linux", pattern="ubuntu", match_field="name", destination="D:/linux",
+            post_complete_action="move", post_complete_move_to="E:/archive",
+        )
+    )
+    session_manager = FakeSessionManager()
+    for info_hash in ("hash1", "hash2"):
+        session_manager.records[info_hash] = TorrentRecord(info_hash=info_hash, matched_rule_name="linux")
+    service = PostCompleteActionService(session_manager, RoutingRuleStore())
+    idle = []
+    service.moves_idle.connect(lambda: idle.append(True))
+
+    session_manager.torrent_finished.emit("hash1")
+    session_manager.torrent_finished.emit("hash2")
+    session_manager.storage_moved.emit("hash1", "E:/archive")
+    assert service.has_pending_moves() and idle == []
+
+    session_manager.storage_move_failed.emit("hash2", "disk full")
+    assert not service.has_pending_moves() and idle == [True]
 
 
 def test_unzip_action_extracts_zip_files_found_among_the_torrents_files(tmp_path):

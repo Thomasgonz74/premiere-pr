@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 from pathlib import Path
@@ -42,3 +43,22 @@ def load_all_resume_params() -> list["lt.add_torrent_params"]:
 
 def delete_resume_file(info_hash: str) -> None:
     resume_file_path(info_hash).unlink(missing_ok=True)
+
+
+def load_json(path: Path, default):
+    """A small per-torrent state file the resume data has no field for, or
+    default when it is missing, unreadable or of another type."""
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return default
+    return data if type(data) is type(default) else default
+
+
+def save_json(path: Path, data) -> None:
+    tmp_path = path.with_suffix(path.suffix + ".tmp")
+    try:
+        tmp_path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+        os.replace(tmp_path, path)
+    except OSError:
+        logger.exception("Failed to save %s", path.name)
