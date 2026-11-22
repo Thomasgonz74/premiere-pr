@@ -5,11 +5,10 @@ ui/widgets/security_center_section.py, ui/widgets/remote_access_section.py)
 into one bridge, since they all live under the same Network heading in the
 web UI.
 
-NetworkPrivacySection and RemoteAccessSection's port field are save-on-click
-(getSettings/saveSettings, mirroring the native Save button's live-apply
-sequence). RemoteAccessSection's enable checkbox and "regenerate token"
-button are live-apply, exactly as in the native section -- see their
-dedicated slots below.
+NetworkPrivacySection is save-on-click (getSettings/saveSettings, mirroring
+the native Save button's live-apply sequence). RemoteAccessSection's enable
+checkbox, port field and "regenerate token" button are live-apply -- see
+their dedicated slots below.
 
 remote_access_server is constructed by the caller and passed in rather than
 built here, so there is exactly one RemoteAccessServer instance backing the
@@ -26,6 +25,8 @@ from torrent2000.config.settings import Settings
 from torrent2000.engine.remote_server import RemoteAccessServer
 from torrent2000.engine.session_manager import SessionManager
 from torrent2000.ui.widgets.security_center_section import risk_report_summary
+
+_START_FAILED = "Échec de démarrage du serveur (port déjà utilisé ?)"
 
 
 class ProfileNetworkBridge(QObject):
@@ -111,7 +112,7 @@ class ProfileNetworkBridge(QObject):
         s = self._settings
         if enabled:
             if not self._remote_access_server.start():
-                return {"ok": False, "error": "Échec de démarrage du serveur (port déjà utilisé ?)"}
+                return {"ok": False, "error": _START_FAILED}
             s.remote_access_enabled = True
             s.save()
             return {"ok": True}
@@ -130,10 +131,22 @@ class ProfileNetworkBridge(QObject):
             "token": s.remote_access_token,
         }
 
-    @Slot(int)
-    def setRemoteAccessPort(self, port: int) -> None:
-        self._settings.remote_access_port = port
-        self._settings.save()
+    @Slot(int, result="QVariantMap")
+    def setRemoteAccessPort(self, port: int) -> dict:
+        # Live-apply like the enable checkbox: a running server is rebound
+        # to the new port, or put back on the old one if that fails.
+        s = self._settings
+        server = self._remote_access_server
+        old_port = s.remote_access_port
+        s.remote_access_port = port
+        if server.is_running:
+            server.stop()
+            if not server.start():
+                s.remote_access_port = old_port
+                server.start()
+                return {"ok": False, "error": _START_FAILED}
+        s.save()
+        return {"ok": True}
 
     @Slot(result=str)
     def regenerateToken(self) -> str:
