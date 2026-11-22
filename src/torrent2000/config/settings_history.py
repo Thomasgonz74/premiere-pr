@@ -17,9 +17,10 @@ from dataclasses import fields
 from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
+from urllib.parse import urlsplit
 
 from torrent2000.config.paths import get_config_backups_dir, retry_if_dir_vanished
-from torrent2000.config.redaction import _redact_feed_url, redact_settings_dict
+from torrent2000.config.redaction import _redact_feed_url
 
 if TYPE_CHECKING:
     from torrent2000.config.settings import Settings
@@ -43,35 +44,41 @@ def _history_path() -> Path:
 
 
 def _redact_feeds(data: dict) -> dict:
-    """A copy of `data` whose feed URLs lost their passkey, as in an export."""
+    """A copy of `data` whose feed URLs lost their passkey, as in an export.
+    A feed whose URL this changed says so ("url_redacted"), so a restore
+    never writes it back."""
     if not isinstance(data.get("rss_feeds"), list):
         return data
-    feeds = [dict(feed) if isinstance(feed, dict) else feed for feed in data["rss_feeds"]]
-    return {**data, **redact_settings_dict({"rss_feeds": feeds})}
+    feeds = []
+    for feed in data["rss_feeds"]:
+        if isinstance(feed, dict) and isinstance(feed.get("url"), str):
+            url = _redact_feed_url(feed["url"])
+            if url != feed["url"]:
+                feed = {**feed, "url": url, "url_redacted": True}
+        feeds.append(feed)
+    return {**data, "rss_feeds": feeds}
 
 
 def _with_live_feed_urls(old_feeds: list, live_feeds: list) -> list:
-    """The restored feeds, each with the URL of the live feed it matches --
-    same (redacted) URL, else same position -- since history.jsonl only has
-    redacted ones. An old feed left with no live match is dropped rather than
-    written back without its passkey."""
+    """The restored feeds. A URL kept whole in history.jsonl comes back as
+    recorded; a redacted one is taken from the live feed it matches -- same
+    redacted URL, else same position on the same host -- and its feed is
+    dropped if none does, rather than written back without its passkey."""
     from torrent2000.config.settings import RssFeedSubscription, _from_dict
 
     old_feeds = [feed for feed in old_feeds if isinstance(feed, dict)]
     unclaimed = dict(enumerate(live_feeds))
-    matches = {}
-    for i, feed in enumerate(old_feeds):
-        j = next((j for j, live in unclaimed.items() if feed.get("url") in (live.url, _redact_feed_url(live.url))), None)
+    urls = {i: feed.get("url", "") for i, feed in enumerate(old_feeds) if not feed.get("url_redacted")}
+    redacted = [i for i in range(len(old_feeds)) if i not in urls]
+    for i in redacted:
+        j = next((j for j, live in unclaimed.items() if _redact_feed_url(live.url) == old_feeds[i]["url"]), None)
         if j is not None:
-            matches[i] = unclaimed.pop(j)
-    for i in range(len(old_feeds)):
-        if i not in matches and i in unclaimed:
-            matches[i] = unclaimed.pop(i)
-    return [
-        _from_dict(RssFeedSubscription, {**feed, "url": matches[i].url})
-        for i, feed in enumerate(old_feeds)
-        if i in matches
-    ]
+            urls[i] = unclaimed.pop(j).url
+    for i in redacted:
+        live = unclaimed.get(i)
+        if i not in urls and live is not None and urlsplit(live.url).hostname == urlsplit(old_feeds[i]["url"]).hostname:
+            urls[i] = unclaimed.pop(i).url
+    return [_from_dict(RssFeedSubscription, {**feed, "url": urls[i]}) for i, feed in enumerate(old_feeds) if i in urls]
 
 
 def record_settings_change(old_data: dict, new_data: dict) -> None:

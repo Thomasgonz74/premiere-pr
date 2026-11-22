@@ -129,3 +129,27 @@ def test_history_redacts_feed_passkeys_and_restore_keeps_live_urls(tmp_path, mon
     assert [(feed.url, feed.filter_keyword) for feed in settings.rss_feeds] == [
         ("https://t.invalid/rss?passkey=SECRET", "old")
     ]
+
+
+def test_restore_puts_back_a_public_feed_url_and_pairs_feeds_by_position_only_on_one_host(tmp_path, monkeypatch):
+    monkeypatch.setenv("TORRENT2000_DATA_DIR", str(tmp_path))
+    settings = Settings.load()
+    settings.rss_feeds = [
+        RssFeedSubscription(url="https://a.invalid/user/111.rss", filter_keyword="show-a"),
+        RssFeedSubscription(url="https://b.invalid/rss?cat=1&passkey=SECRET", filter_keyword="show-b"),
+    ]
+    settings.save()
+    settings.rss_feeds = [
+        RssFeedSubscription(url="https://c.invalid/rss", filter_keyword="show-c"),
+        RssFeedSubscription(url="https://b.invalid/rss?cat=2&passkey=SECRET", filter_keyword="show-b2"),
+    ]
+    settings.save()
+
+    restore_settings_snapshot(read_settings_history()[0], settings)
+
+    # The public URL was kept whole, so it comes back; the private one only
+    # redacted, so its feed keeps the live URL on the same host.
+    assert [(feed.url, feed.filter_keyword) for feed in settings.rss_feeds] == [
+        ("https://a.invalid/user/111.rss", "show-a"),
+        ("https://b.invalid/rss?cat=2&passkey=SECRET", "show-b"),
+    ]
