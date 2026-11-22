@@ -6,6 +6,7 @@
 // inline add-form + listbox pattern.
 
 let searchSources = []; // [{name, urlTemplate, enabled}]
+const searchFetchTitles = new Map(); // link -> title, while SearchBridge.fetchTorrent runs
 
 function searchBuildPage() {
   const root = document.getElementById("searchContainer");
@@ -204,7 +205,11 @@ function searchRenderResults(results) {
         switchToTab("add");
         window.bridge.add.analyzeMagnet(result.link);
       } else {
-        window.bridge.dialogs.openExternalUrl(result.link);
+        // Reviewed on the Add page if it is a .torrent (a Torznab/Jackett
+        // enclosure), opened in the browser otherwise -- see torrentFetched.
+        searchFetchTitles.set(result.link, result.title);
+        document.getElementById("searchStatus").textContent = t("web.search.fetching_torrent_status");
+        window.bridge.search.fetchTorrent(result.link);
       }
     });
     actions.appendChild(addBtn);
@@ -239,6 +244,22 @@ function wireSearchPage() {
   searchBridge.resultsReady.connect((results) => {
     document.getElementById("searchStatus").textContent = "";
     searchRenderResults(results);
+  });
+
+  searchBridge.torrentFetched.connect((link, path) => {
+    const title = searchFetchTitles.get(link) || "";
+    searchFetchTitles.delete(link);
+    document.getElementById("searchStatus").textContent = "";
+    if (!path) {
+      window.bridge.dialogs.openExternalUrl(link);
+      return;
+    }
+    switchToTab("add");
+    if (path.startsWith("magnet:")) {
+      window.bridge.add.analyzeMagnet(path); // the link redirected to it
+    } else {
+      addLoadTorrentFile(path, title);
+    }
   });
 
   searchReloadSources();

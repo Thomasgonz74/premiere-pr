@@ -18,12 +18,14 @@ os.replace() pattern.
 import json
 import logging
 import os
+import tempfile
 from dataclasses import asdict, dataclass
 from urllib.parse import quote
 
 from torrent2000.config.paths import get_torrent_search_sources_path
 from torrent2000.config.settings import ProxySettings
 from torrent2000.engine.rss_feed_service import parse_rss_items
+from torrent2000.engine.torrent_files import files_from_torrent_path
 from torrent2000.engine.url_fetch import FetchError, fetch_url
 
 logger = logging.getLogger(__name__)
@@ -119,3 +121,32 @@ def search_all(
             continue
         results.extend(search_source(source, query, proxy=proxy))
     return results
+
+
+def download_result_torrent(link: str, proxy: "ProxySettings | None" = None) -> str:
+    """Fetches an http(s) result link to a temp .torrent for the Add page's
+    review -- a Torznab/Jackett enclosure is the .torrent itself -- or the
+    magnet it redirects to (Jackett's link for a magnet-only indexer),
+    which urllib refuses to follow. Returns "" when the link can't be
+    fetched or isn't a .torrent (an item's details page): the caller opens
+    it in the browser instead. Runs on a QThreadPool worker, never the GUI
+    thread -- see ui/web/bridge_search.py."""
+    try:
+        data = fetch_url(link, USER_AGENT, SEARCH_TIMEOUT_SECONDS, proxy=proxy)
+    except FetchError as exc:
+        location = (getattr(exc.__cause__, "headers", None) or {}).get("Location", "")
+        if location.startswith("magnet:"):
+            return location
+        logger.warning("Could not fetch a search result's .torrent")
+        return ""
+    # Same prefix family as dropped files: the path lives until the user
+    # clicks Start, so the startup sweep (dropped_file) removes a leftover.
+    fd, path = tempfile.mkstemp(suffix=".torrent", prefix="search_")
+    try:
+        with os.fdopen(fd, "wb") as f:
+            f.write(data)
+        files_from_torrent_path(path)
+    except Exception:
+        os.unlink(path)
+        return ""
+    return path

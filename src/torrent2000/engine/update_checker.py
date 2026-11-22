@@ -38,8 +38,9 @@ logger = logging.getLogger(__name__)
 GITHUB_API_URL = "https://api.github.com/repos/Thomasgonz74/premiere-pr/releases/latest"
 USER_AGENT = f"Torrent2000/{APP_VERSION}"
 FETCH_TIMEOUT_SECONDS = 10
-DOWNLOAD_TIMEOUT_SECONDS = 600  # the onedir installer now bundles a full QtWebEngine (Chromium) runtime --
-# hundreds of MB compressed, not the old onefile app's tens-of-MB installer; unlike the small JSON check above
+# An idle timeout, not a deadline: the ~130 MB installer (it bundles QtWebEngine) takes as long as the link
+# needs, and only a connection silent this long fails -- see url_fetch.fetch_url_to_file.
+DOWNLOAD_TIMEOUT_SECONDS = 30
 # GitHub's own API should never return anything else for this endpoint's
 # html_url -- reject anything else as a malformed/spoofed response rather
 # than later opening it in a browser.

@@ -32,9 +32,10 @@ kind), so there is no path-traversal surface to worry about:
   - POST /api/torrents/add          add a torrent (catalogue idea "ajout a
                                      distance") -- {"magnet": "..."} or
                                      {"torrentBase64": "...", "filename":
-                                     "..."}, started immediately with no
-                                     human review, same auto-exclude cutoff
-                                     as the RSS/watch-folder auto-add paths
+                                     "..."}, started with no human review,
+                                     same auto-exclude cutoff as the
+                                     RSS/watch-folder auto-add paths (a
+                                     magnet once its metadata has arrived)
 
 Runs on a dedicated background thread (ThreadingHTTPServer's own
 serve_forever loop, itself spawning one short-lived thread per request) so
@@ -44,6 +45,7 @@ harmless no-op.
 """
 
 import base64
+import concurrent.futures
 import functools
 import hmac
 import json
@@ -53,11 +55,15 @@ import secrets
 import tempfile
 import threading
 from http import HTTPStatus
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 from urllib.parse import parse_qs, urlsplit
 
+from PySide6.QtCore import QObject, Signal, Slot
+
+from torrent2000.config.paths import get_remote_pending_magnets_path
 from torrent2000.config.settings import Settings
 from torrent2000.danger_scanner.scanner import auto_exclude_indices, scan_files
+from torrent2000.engine import persistence
 from torrent2000.engine.session_manager import SessionManager
 from torrent2000.engine.torrent_files import files_from_torrent_path
 
@@ -78,6 +84,8 @@ logger = logging.getLogger(__name__)
 # Bound to every interface (see module docstring) -- this is deliberate, not
 # an oversight, and is exactly why remote_access_token is non-negotiable.
 _BIND_HOST = "0.0.0.0"
+# How long a request thread waits for the GUI thread to run its add.
+_GUI_CALL_TIMEOUT_SECONDS = 30
 
 _REMOTE_ACCESS_PAGE_HTML = """<!doctype html>
 <html lang="en">
@@ -227,6 +235,36 @@ _REMOTE_ACCESS_PAGE_HTML = """<!doctype html>
 """
 
 
+class _GuiThreadCall(QObject):
+    """Runs a function on the thread this object was created on -- the GUI
+    thread -- for a request thread, and hands back its result: an add
+    changes SessionManager's records, which the GUI thread iterates on every
+    status tick, and a magnet's danger scan waits for metadata_received
+    there too."""
+
+    _job = Signal(object)
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._job.connect(self._run)
+
+    @Slot(object)
+    def _run(self, job) -> None:
+        job()
+
+    def call(self, fn, *args):
+        future = concurrent.futures.Future()
+
+        def job() -> None:
+            try:
+                future.set_result(fn(*args))
+            except Exception as exc:
+                future.set_exception(exc)
+
+        self._job.emit(job)
+        return future.result(timeout=_GUI_CALL_TIMEOUT_SECONDS)
+
+
 def _torrent_to_json(record) -> dict:
     return {
         "info_hash": record.info_hash,
@@ -311,9 +349,10 @@ class _RemoteAccessHandler:
         "filename": "..."} (the second is used by no built-in client today --
         the embedded page below only ever sends a magnet -- but is supported
         for any other phone client that wants to upload a real .torrent
-        file). Both start immediately, same "no human reviews the file list"
+        file). Both start with no human review of the file list, same
         convention as the RSS/watch-folder auto-add paths, including the
-        same danger-scanner auto-exclude cutoff."""
+        same danger-scanner auto-exclude cutoff -- a magnet only once its
+        metadata has arrived (RemoteAccessServer._on_metadata_received)."""
         try:
             content_length = int(self.headers.get("Content-Length", 0) or 0)
         except ValueError:
@@ -332,15 +371,15 @@ class _RemoteAccessHandler:
 
         session_manager: SessionManager = self.server.session_manager  # type: ignore[attr-defined]
         settings: Settings = self.server.settings  # type: ignore[attr-defined]
+        on_gui_thread = self.server.call_on_gui_thread  # type: ignore[attr-defined]
         magnet = str(payload.get("magnet") or "").strip()
         torrent_base64 = payload.get("torrentBase64")
 
         try:
             if magnet:
-                info_hash = session_manager.add_torrent_from_magnet(magnet, settings.default_download_dir)
-                session_manager.start_after_analysis(info_hash)
+                info_hash = on_gui_thread(self.server.add_magnet, magnet)  # type: ignore[attr-defined]
             elif torrent_base64:
-                info_hash = self._add_from_base64(session_manager, settings, str(torrent_base64))
+                info_hash = on_gui_thread(self._add_from_base64, session_manager, settings, str(torrent_base64))
             else:
                 self._send_json(HTTPStatus.BAD_REQUEST, {"error": "magnet or torrentBase64 required"})
                 return
@@ -409,6 +448,8 @@ def _http_classes():
         # docstring for why this is how the handler gets at them.
         session_manager: SessionManager
         settings: Settings
+        call_on_gui_thread: Callable
+        add_magnet: Callable[[str], str]
 
     return Handler, Server
 
@@ -422,6 +463,17 @@ class RemoteAccessServer:
         self._settings = settings
         self._httpd: "ThreadingHTTPServer | None" = None
         self._thread: threading.Thread | None = None
+        # Constructed on the GUI thread, like this server.
+        self._gui_thread = _GuiThreadCall()
+        # Remotely added magnets held in upload mode until their file list is
+        # known and scanned -- see _on_metadata_received. Saved, like RSS's:
+        # after a restart the restored magnet still awaits its scan.
+        self._pending_magnet_scans: set[str] = {
+            h
+            for h in persistence.load_json(get_remote_pending_magnets_path(), [])
+            if isinstance(h, str) and session_manager.get_record(h) is not None
+        }
+        session_manager.metadata_received.connect(self._on_metadata_received)
 
     @property
     def is_running(self) -> bool:
@@ -455,7 +507,7 @@ class RemoteAccessServer:
         handler_class, server_class = _http_classes()
         try:
             httpd = server_class((_BIND_HOST, self._settings.remote_access_port), handler_class)
-        except OSError:
+        except (OSError, OverflowError):  # OverflowError: a port outside 0-65535 in config.json
             logger.exception(
                 "Remote access server failed to bind port %s -- leaving the feature effectively off",
                 self._settings.remote_access_port,
@@ -463,11 +515,39 @@ class RemoteAccessServer:
             return False
         httpd.session_manager = self._session_manager
         httpd.settings = self._settings
+        httpd.call_on_gui_thread = self._gui_thread.call
+        httpd.add_magnet = self._add_magnet
         self._httpd = httpd
         self._thread = threading.Thread(target=httpd.serve_forever, name="RemoteAccessServer", daemon=True)
         self._thread.start()
         logger.info("Remote access server listening on port %s", self.bound_port)
         return True
+
+    def _add_magnet(self, magnet: str) -> str:
+        # GUI thread (see _GuiThreadCall). add_torrent_from_magnet holds it
+        # in upload mode (metadata only); _on_metadata_received starts it.
+        info_hash = self._session_manager.add_torrent_from_magnet(magnet, self._settings.default_download_dir)
+        self._pending_magnet_scans.add(info_hash)
+        self._save_pending_magnet_scans()
+        return info_hash
+
+    def _on_metadata_received(self, info_hash: str) -> None:
+        # Same cutoff as RssFeedService._on_rss_metadata_received.
+        if info_hash not in self._pending_magnet_scans:
+            return
+        self._pending_magnet_scans.discard(info_hash)
+        self._save_pending_magnet_scans()
+        try:
+            files = self._session_manager.get_torrent_files(info_hash)
+            excluded = auto_exclude_indices(scan_files(files), self._settings.danger_auto_exclude_threshold)
+            if excluded:
+                self._session_manager.exclude_files(info_hash, excluded)
+        except Exception:
+            logger.exception("Failed to scan remotely added magnet torrent %s for dangerous files", info_hash)
+        self._session_manager.start_after_analysis(info_hash)
+
+    def _save_pending_magnet_scans(self) -> None:
+        persistence.save_json(get_remote_pending_magnets_path(), sorted(self._pending_magnet_scans))
 
     def stop(self) -> None:
         if self._httpd is None:

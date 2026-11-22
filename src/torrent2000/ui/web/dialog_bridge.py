@@ -5,9 +5,13 @@ on cancel) comes back through the slot's own return value, exactly like
 DownloadsBridge.listTorrents() already does for its JS callback.
 """
 
+import logging
+
 from PySide6.QtCore import QObject, QUrl, Slot
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QFileDialog
+
+logger = logging.getLogger(__name__)
 
 
 class DialogBridge(QObject):
@@ -38,9 +42,13 @@ class DialogBridge(QObject):
 
     @Slot(str)
     def openExternalUrl(self, url: str) -> None:
-        # Used by the Search page for non-magnet (http/https) results --
-        # AddBridge.selectTorrentFile() needs a local path, not a remote
-        # URL, so these are handed to the user's default browser instead of
-        # being fetched/added directly (out of scope: a download-then-add
-        # pipeline for arbitrary third-party search results).
-        QDesktopServices.openUrl(QUrl(url))
+        # Used by the Search page for a result link that isn't a .torrent
+        # (see SearchBridge.fetchTorrent). The link comes from a third-party
+        # feed: only a web page may open. openUrl hands anything else
+        # (file:, a UNC path, search-ms:, ms-settings:...) to ShellExecute,
+        # which can run a program.
+        qurl = QUrl(url)
+        if qurl.scheme() not in ("http", "https"):
+            logger.warning("Refusing to open a %r link from a search result", qurl.scheme())
+            return
+        QDesktopServices.openUrl(qurl)

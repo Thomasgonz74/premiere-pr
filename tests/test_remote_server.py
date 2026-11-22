@@ -7,16 +7,28 @@ fixed port.
 """
 
 import json
+import os
+import threading
 import time
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
 
+os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+
 import pytest
+from PySide6.QtCore import QCoreApplication, QObject, Signal
+from PySide6.QtWidgets import QApplication
 
 from torrent2000.config.settings import Settings
+from torrent2000.danger_scanner.models import FileEntry
 from torrent2000.engine.remote_server import RemoteAccessServer
 from torrent2000.engine.torrent_item import TorrentState
+
+
+@pytest.fixture(scope="module", autouse=True)
+def qapp():
+    return QApplication.instance() or QApplication([])
 
 
 @pytest.fixture(autouse=True)
@@ -36,9 +48,14 @@ class FakeRecord:
     upload_rate: int = 500
 
 
-class FakeSessionManager:
+class FakeSessionManager(QObject):
+    metadata_received = Signal(str)
+
     def __init__(self):
+        super().__init__()
         self.records: list = []
+        self.files: list[FileEntry] = []
+        self.excluded: list[tuple[str, set]] = []
         self.paused: list[str] = []
         self.resumed: list[str] = []
         self.added_magnets: list[tuple[str, str]] = []
@@ -47,6 +64,9 @@ class FakeSessionManager:
 
     def all_records(self):
         return list(self.records)
+
+    def get_record(self, info_hash: str):
+        return next((r for r in self.records if r.info_hash == info_hash), None)
 
     def pause_torrent(self, info_hash: str) -> None:
         self.paused.append(info_hash)
@@ -60,6 +80,12 @@ class FakeSessionManager:
 
     def start_after_analysis(self, info_hash: str) -> None:
         self.started_after_analysis.append(info_hash)
+
+    def get_torrent_files(self, info_hash: str):
+        return list(self.files)
+
+    def exclude_files(self, info_hash: str, excluded_indices: set[int]) -> None:
+        self.excluded.append((info_hash, set(excluded_indices)))
 
     def add_torrent_from_file(self, path: str, save_path=None, excluded_indices=None) -> str:
         self.added_files.append((path, save_path, excluded_indices))
@@ -98,13 +124,25 @@ def _request(url: str, method: str = "GET"):
 
 
 def _post_json(url: str, payload, raw_body: bytes | None = None):
+    # An add runs on the GUI thread -- this one, here -- so its events must
+    # keep flowing while the request waits for the answer.
     body = raw_body if raw_body is not None else json.dumps(payload).encode("utf-8")
     req = urllib.request.Request(url, data=body, method="POST", headers={"Content-Type": "application/json"})
-    try:
-        with urllib.request.urlopen(req, timeout=5) as resp:
-            return resp.status, resp.read()
-    except urllib.error.HTTPError as exc:
-        return exc.code, exc.read()
+    outcome = []
+
+    def post():
+        try:
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                outcome.append((resp.status, resp.read()))
+        except urllib.error.HTTPError as exc:
+            outcome.append((exc.code, exc.read()))
+
+    thread = threading.Thread(target=post)
+    thread.start()
+    while thread.is_alive():
+        QCoreApplication.processEvents()
+        thread.join(0.01)
+    return outcome[0]
 
 
 # ------------------------------------------------------------------ token gate
@@ -295,8 +333,14 @@ def test_start_returns_false_and_leaves_is_running_false_on_bind_failure():
 # ----------------------------------------------------------- remote add
 
 
-def test_add_magnet_starts_immediately_with_no_review(running_server):
+def test_add_magnet_starts_once_metadata_arrives_with_dangerous_files_excluded(running_server):
+    # No human reviews a remote add, so the danger scan must run first, as
+    # for an RSS magnet -- its files are only known once metadata arrives.
     server, fake_sm, settings = running_server
+    fake_sm.files = [
+        FileEntry(index=0, path="Show/Show.S01E01.mkv", size=300_000),
+        FileEntry(index=1, path="Show/Show.S01E01.mkv.exe", size=200_000),
+    ]
     status, body = _post_json(
         _url(server, f"/api/torrents/add?token={settings.remote_access_token}"),
         {"magnet": "magnet:?xt=urn:btih:abc"},
@@ -307,7 +351,36 @@ def test_add_magnet_starts_immediately_with_no_review(running_server):
     assert data["ok"] is True
     assert data["info_hash"] == "remotehash"
     assert fake_sm.added_magnets == [("magnet:?xt=urn:btih:abc", settings.default_download_dir)]
+    assert fake_sm.started_after_analysis == []  # nothing to scan yet
+
+    fake_sm.metadata_received.emit("remotehash")
+
+    assert fake_sm.excluded == [("remotehash", {1})]
     assert fake_sm.started_after_analysis == ["remotehash"]
+
+
+def test_a_magnet_still_awaiting_metadata_at_quit_is_scanned_after_a_restart(running_server):
+    # It comes back in upload mode, awaiting analysis: if the pending set
+    # were lost, nothing would ever scan or start it.
+    server, _fake_sm, settings = running_server
+    status, _body = _post_json(
+        _url(server, f"/api/torrents/add?token={settings.remote_access_token}"),
+        {"magnet": "magnet:?xt=urn:btih:abc"},
+    )
+    assert status == 200
+    server.stop()
+
+    restarted_sm = FakeSessionManager()
+    restarted_sm.records = [FakeRecord(info_hash="remotehash")]
+    restarted_sm.files = [
+        FileEntry(index=0, path="Show/Show.S01E01.mkv", size=300_000),
+        FileEntry(index=1, path="Show/Show.S01E01.mkv.exe", size=200_000),
+    ]
+    _restarted = RemoteAccessServer(restarted_sm, settings)
+    restarted_sm.metadata_received.emit("remotehash")
+
+    assert restarted_sm.excluded == [("remotehash", {1})]
+    assert restarted_sm.started_after_analysis == ["remotehash"]
 
 
 def test_add_without_token_never_reaches_session_manager(running_server):

@@ -325,7 +325,10 @@ function buildRemoteAccessSection(container, bridge) {
   });
 
   portInput.addEventListener("change", () => {
-    bridge.setRemoteAccessPort(parseInt(portInput.value, 10) || 0);
+    bridge.setRemoteAccessPort(parseInt(portInput.value, 10) || 0, (result) => {
+      status.textContent = result.ok ? "" : result.error || "";
+      refresh();
+    });
   });
 
   regenerateBtn.addEventListener("click", () => {
