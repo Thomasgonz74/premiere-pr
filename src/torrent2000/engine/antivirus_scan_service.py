@@ -99,6 +99,7 @@ class _ScanRunnable(QRunnable):
                 [mpcmdrun_path, "-Scan", "-ScanType", "3", "-File", self._save_path],
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
+                creationflags=subprocess.CREATE_NO_WINDOW,  # MpCmdRun is a console app
             )
         except OSError:
             logger.exception("Defender scan of %s failed to run", self._save_path)

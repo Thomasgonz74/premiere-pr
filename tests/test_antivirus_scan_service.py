@@ -205,6 +205,7 @@ def test_scan_runnable_invokes_mpcmdrun_with_expected_args():
         ["C:\\MpCmdRun.exe", "-Scan", "-ScanType", "3", "-File", "C:\\Downloads\\some-torrent"],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
+        creationflags=subprocess.CREATE_NO_WINDOW,
     )
     mock_popen.return_value.kill.assert_not_called()
 

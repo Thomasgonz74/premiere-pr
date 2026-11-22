@@ -64,6 +64,8 @@ def _lock_down_acl(path: Path) -> None:
             capture_output=True,
             timeout=5,
             check=False,
+            # The packaged app has no console: without this, icacls opens one.
+            creationflags=subprocess.CREATE_NO_WINDOW,
         )
     except (OSError, subprocess.SubprocessError):
         pass
