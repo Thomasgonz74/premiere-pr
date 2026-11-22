@@ -507,7 +507,7 @@ class RemoteAccessServer:
         handler_class, server_class = _http_classes()
         try:
             httpd = server_class((_BIND_HOST, self._settings.remote_access_port), handler_class)
-        except OSError:
+        except (OSError, OverflowError):  # OverflowError: a port outside 0-65535 in config.json
             logger.exception(
                 "Remote access server failed to bind port %s -- leaving the feature effectively off",
                 self._settings.remote_access_port,

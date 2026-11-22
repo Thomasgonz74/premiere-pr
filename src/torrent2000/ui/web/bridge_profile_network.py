@@ -24,9 +24,8 @@ from PySide6.QtCore import QObject, Slot
 from torrent2000.config.settings import Settings
 from torrent2000.engine.remote_server import RemoteAccessServer
 from torrent2000.engine.session_manager import SessionManager
+from torrent2000.i18n.translator import tr
 from torrent2000.ui.widgets.security_center_section import risk_report_summary
-
-_START_FAILED = "Échec de démarrage du serveur (port déjà utilisé ?)"
 
 
 class ProfileNetworkBridge(QObject):
@@ -112,7 +111,7 @@ class ProfileNetworkBridge(QObject):
         s = self._settings
         if enabled:
             if not self._remote_access_server.start():
-                return {"ok": False, "error": _START_FAILED}
+                return {"ok": False, "error": tr("remote_access.bind_failed_message", port=s.remote_access_port)}
             s.remote_access_enabled = True
             s.save()
             return {"ok": True}
@@ -124,10 +123,11 @@ class ProfileNetworkBridge(QObject):
     @Slot(result="QVariantMap")
     def getRemoteAccessInfo(self) -> dict:
         s = self._settings
+        port = self._remote_access_server.bound_port or s.remote_access_port
         return {
             "enabled": s.remote_access_enabled,
             "port": s.remote_access_port,
-            "url": f"http://localhost:{s.remote_access_port}",
+            "url": f"http://localhost:{port}",
             "token": s.remote_access_token,
         }
 
@@ -135,6 +135,9 @@ class ProfileNetworkBridge(QObject):
     def setRemoteAccessPort(self, port: int) -> dict:
         # Live-apply like the enable checkbox: a running server is rebound
         # to the new port, or put back on the old one if that fails.
+        # The page's min/max don't stop a typed 70000 (or an emptied field, 0).
+        if not 1 <= port <= 65535:
+            return {"ok": False, "error": tr("remote_access.port_out_of_range")}
         s = self._settings
         server = self._remote_access_server
         old_port = s.remote_access_port
@@ -144,7 +147,7 @@ class ProfileNetworkBridge(QObject):
             if not server.start():
                 s.remote_access_port = old_port
                 server.start()
-                return {"ok": False, "error": _START_FAILED}
+                return {"ok": False, "error": tr("remote_access.bind_failed_message", port=port)}
         s.save()
         return {"ok": True}
 

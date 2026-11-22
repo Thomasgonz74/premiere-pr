@@ -52,3 +52,33 @@ def test_a_port_change_rebinds_the_running_server():
         assert bridge.getRemoteAccessInfo()["url"] == f"http://localhost:{new_port}"
     finally:
         server.stop()
+
+
+@pytest.mark.parametrize("bad_port", [70000, -1, 0])
+def test_an_out_of_range_port_is_refused_and_leaves_the_server_running(bad_port):
+    # bind() raises OverflowError past 65535 (the slot used to stop the
+    # server and raise), and 0 binds a random port the URL can't name.
+    settings = Settings()
+    settings.remote_access_port = _free_port()
+    session_manager = FakeSessionManager()
+    server = RemoteAccessServer(session_manager, settings)
+    bridge = ProfileNetworkBridge(session_manager, settings, server)
+    assert bridge.setRemoteAccessEnabled(True)["ok"]
+    old_port = server.bound_port
+    try:
+        result = bridge.setRemoteAccessPort(bad_port)
+        assert result["ok"] is False and result["error"]
+        assert server.bound_port == old_port
+        assert settings.remote_access_port == old_port
+        assert bridge.getRemoteAccessInfo()["url"] == f"http://localhost:{old_port}"
+    finally:
+        server.stop()
+
+
+def test_a_saved_port_past_65535_fails_start_instead_of_raising():
+    # e.g. config.json edited by hand: the launch must not die on it.
+    settings = Settings()
+    settings.remote_access_port = 70000
+    server = RemoteAccessServer(FakeSessionManager(), settings)
+    assert server.start() is False
+    assert not server.is_running
