@@ -112,3 +112,26 @@ def test_every_tracker_error_is_posted(wired):
         session_manager.tracker_error.emit("abc123", "connection refused")
 
     assert len(pool.started) == 3
+
+
+def test_the_post_body_is_sent_as_utf8_plain_text():
+    # urllib's default for a POST body is form encoding: a generic endpoint
+    # would split "A+B & C" at "&" and turn "+" into a space.
+    from unittest.mock import MagicMock, patch
+
+    from torrent2000.engine.webhook_notification_service import _WebhookPostRunnable
+
+    sent = []
+
+    def urlopen(request, timeout):
+        sent.append(request)
+        response = MagicMock()
+        response.__enter__.return_value = response
+        response.read.return_value = b""
+        return response
+
+    with patch("urllib.request.urlopen", urlopen):
+        _WebhookPostRunnable("https://ntfy.sh/my-topic", "Téléchargement terminé : A+B & C").run()
+
+    assert sent[0].get_header("Content-type") == "text/plain; charset=utf-8"
+    assert sent[0].data == "Téléchargement terminé : A+B & C".encode("utf-8")

@@ -19,7 +19,7 @@ from PySide6.QtCore import QObject, QRunnable, QThreadPool
 from torrent2000.config.settings import Settings
 from torrent2000.engine.session_manager import SessionManager
 from torrent2000.engine.share_limits import ShareLimitService
-from torrent2000.engine.url_fetch import FetchError, fetch_url
+from torrent2000.engine.url_fetch import FetchCancelled, FetchError, fetch_url
 
 logger = logging.getLogger(__name__)
 
@@ -37,8 +37,17 @@ class _WebhookPostRunnable(QRunnable):
     def run(self) -> None:
         try:
             fetch_url(
-                self._url, USER_AGENT, TIMEOUT_SECONDS, data=self._message.encode("utf-8"), proxy=self._proxy
+                self._url,
+                USER_AGENT,
+                TIMEOUT_SECONDS,
+                # Not urllib's default form encoding: a generic endpoint would
+                # split the message at "&" and turn "+" into a space.
+                extra_headers={"Content-Type": "text/plain; charset=utf-8"},
+                data=self._message.encode("utf-8"),
+                proxy=self._proxy,
             )
+        except FetchCancelled:
+            return  # quitting
         except FetchError:
             logger.exception("Webhook notification POST failed")
 
