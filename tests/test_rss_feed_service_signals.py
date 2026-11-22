@@ -58,6 +58,9 @@ class FakeSessionManager(QObject):
     def get_torrent_files(self, info_hash):
         return []
 
+    def get_record(self, info_hash):
+        return object()  # every torrent the service asks about is still in the session
+
     def exclude_files(self, info_hash, excluded_indices):
         self.excluded_calls.append((info_hash, excluded_indices))
 
@@ -94,6 +97,21 @@ def test_new_matching_magnet_item_is_added_and_marked_seen(tmp_path):
     assert len(found) == 1
     assert found[0][0] == feed.url
     assert found[0][1][0]["guid"] == "guid-1"
+
+
+def test_a_magnet_still_awaiting_its_metadata_is_started_after_a_restart(tmp_path):
+    """The item is already marked seen, so a restart that forgot the pending
+    scan left the episode awaiting analysis for good."""
+    feed = RssFeedSubscription(url="https://example.com/feed.xml", filter_keyword="", enabled=True)
+    service, _session_manager, _seen_store, settings = _make_service(tmp_path, [feed])
+    items = [{"title": "Show.S01E06", "link": "magnet:?xt=urn:btih:abc", "guid": "guid-6"}]
+    service._signals.feed_fetched.emit(feed.url, items)
+
+    restarted_session_manager = FakeSessionManager()
+    _restarted = RssFeedService(restarted_session_manager, settings, RssSeenStore(tmp_path / "rss_seen.sqlite3"))
+    restarted_session_manager.metadata_received.emit("fakehash")
+
+    assert restarted_session_manager.started_after_analysis == ["fakehash"]
 
 
 def test_non_matching_item_is_not_added_or_marked_seen(tmp_path):

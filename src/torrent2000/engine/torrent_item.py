@@ -16,12 +16,14 @@ class TorrentState(Enum):
 
     @staticmethod
     def from_libtorrent_state(lt_state, paused: bool, has_metadata: bool, awaiting_analysis: bool) -> "TorrentState":
+        # Paused first: a paused magnet fetches no metadata, and the row's
+        # button only offers to resume a PAUSED torrent.
+        if paused:
+            return TorrentState.PAUSED
         if awaiting_analysis:
             return TorrentState.AWAITING_ANALYSIS
         if not has_metadata:
             return TorrentState.CHECKING_METADATA
-        if paused:
-            return TorrentState.PAUSED
         name = str(lt_state)
         if "seeding" in name:
             return TorrentState.SEEDING
@@ -107,7 +109,6 @@ class TorrentRecord:
     # destination at add time (see engine.routing_rules.find_matching_rule),
     # if any -- lets a post-completion action look up which rule (and
     # therefore which post_complete_action) applies once the torrent
-    # finishes. Plain in-memory field like the others above -- not
-    # re-derived on restart (a rule change after restart simply doesn't
-    # retroactively apply to already-restored torrents).
+    # finishes. Saved by SessionManager (a long download often spans a
+    # restart); the rule itself is looked up by name only at finish time.
     matched_rule_name: str | None = None

@@ -21,8 +21,10 @@ def status_to_record(status: "lt.torrent_status", record: TorrentRecord) -> None
     record.save_path = status.save_path
     record.total_size = status.total_wanted
     record.progress = status.progress
-    record.download_rate = status.download_rate
-    record.upload_rate = status.upload_rate
+    # libtorrent lets a paused torrent's rolling averages decay for ~30 s:
+    # still a rate (and an ETA) on a row that says "En pause".
+    record.download_rate = 0 if status.paused else status.download_rate
+    record.upload_rate = 0 if status.paused else status.upload_rate
     record.num_peers = status.num_peers
     record.num_seeds = status.num_seeds
     record.total_downloaded = status.total_download
@@ -54,6 +56,7 @@ class AlertDispatcher:
         on_torrent_removed: Callable[[str], None],
         on_torrent_added: Callable[[str, "lt.torrent_handle", str], None],
         on_storage_moved: Callable[[str, str], None],
+        on_storage_move_failed: Callable[[str, str], None],
         on_file_error: Callable[[str, str], None],
     ) -> None:
         self._on_state_update = on_state_update
@@ -64,6 +67,7 @@ class AlertDispatcher:
         self._on_torrent_removed = on_torrent_removed
         self._on_torrent_added = on_torrent_added
         self._on_storage_moved = on_storage_moved
+        self._on_storage_move_failed = on_storage_move_failed
         self._on_file_error = on_file_error
 
     def dispatch_all(self, alerts: list) -> None:
@@ -89,7 +93,10 @@ class AlertDispatcher:
         elif isinstance(alert, lt.tracker_error_alert):
             self._on_tracker_error(_hash_of(alert.handle), alert.error_message() or _tracker_error_text(alert))
         elif isinstance(alert, lt.save_resume_data_alert):
-            self._on_save_resume_data(_hash_of(alert.handle), alert.params)
+            # Invalid: the torrent was removed while this periodic save was in
+            # flight -- nothing left to save, and no error worth a traceback.
+            if alert.handle.is_valid():
+                self._on_save_resume_data(_hash_of(alert.handle), alert.params)
         elif isinstance(alert, lt.torrent_removed_alert):
             self._on_torrent_removed(_info_hash_hex(alert.info_hashes))
         elif isinstance(alert, lt.add_torrent_alert):
@@ -100,6 +107,8 @@ class AlertDispatcher:
         elif isinstance(alert, lt.storage_moved_alert):
             # storage_path is a method in the 2.0 bindings, not a property like .path
             self._on_storage_moved(_hash_of(alert.handle), alert.storage_path())
+        elif isinstance(alert, lt.storage_moved_failed_alert):
+            self._on_storage_move_failed(_hash_of(alert.handle), str(alert.message()))
         elif isinstance(alert, lt.file_error_alert):
             # alert.message() is libtorrent's own composed description
             # (torrent name + which file + the underlying OS error, e.g. "the

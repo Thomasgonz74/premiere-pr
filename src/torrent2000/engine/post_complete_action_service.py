@@ -118,6 +118,8 @@ class PostCompleteActionService(QObject):
     # Emitted on the GUI thread when the last running extraction ends --
     # AutoShutdownService waits for it before starting its countdown.
     extractions_idle = Signal()
+    # Same for the last "move": libtorrent moves the files in the background.
+    moves_idle = Signal()
 
     def __init__(
         self, session_manager: SessionManager, routing_rule_store: RoutingRuleStore, parent=None
@@ -126,10 +128,18 @@ class PostCompleteActionService(QObject):
         self._session_manager = session_manager
         self._routing_rule_store = routing_rule_store
         self._pending_extractions = 0
+        self._pending_moves: set[str] = set()
         session_manager.torrent_finished.connect(self._on_torrent_finished)
+        session_manager.storage_moved.connect(self._on_move_ended)
+        session_manager.storage_move_failed.connect(self._on_move_ended)
+        session_manager.move_storage_refused.connect(self._on_move_ended)
+        session_manager.torrent_removed.connect(self._on_move_ended)
 
     def has_pending_extractions(self) -> bool:
         return self._pending_extractions > 0
+
+    def has_pending_moves(self) -> bool:
+        return bool(self._pending_moves)
 
     def _on_torrent_finished(self, info_hash: str) -> None:
         record = self._session_manager.get_record(info_hash)
@@ -141,6 +151,7 @@ class PostCompleteActionService(QObject):
         if rule is None or rule.post_complete_action == "none":
             return
         if rule.post_complete_action == "move" and rule.post_complete_move_to:
+            self._pending_moves.add(info_hash)  # first: a refused move is reported synchronously
             self._session_manager.move_storage(info_hash, rule.post_complete_move_to)
         elif rule.post_complete_action == "unzip":
             self._unzip_files(record.save_path, info_hash)
@@ -158,6 +169,12 @@ class PostCompleteActionService(QObject):
             signals.finished.connect(self._on_extraction_finished)
             self._pending_extractions += 1
             QThreadPool.globalInstance().start(_UnzipRunnable(zip_paths, info_hash, signals))
+
+    def _on_move_ended(self, info_hash: str, _detail: str = "") -> None:
+        if info_hash in self._pending_moves:
+            self._pending_moves.discard(info_hash)
+            if not self._pending_moves:
+                self.moves_idle.emit()
 
     def _on_extraction_finished(self) -> None:
         self.sender().deleteLater()

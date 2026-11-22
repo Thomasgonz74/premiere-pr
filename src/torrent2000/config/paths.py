@@ -127,6 +127,18 @@ def get_scheduled_recheck_path() -> Path:
     return get_app_data_dir() / "scheduled_recheck.json"
 
 
+def get_awaiting_analysis_path() -> Path:
+    return get_app_data_dir() / "awaiting_analysis.json"
+
+
+def get_rss_pending_magnets_path() -> Path:
+    return get_app_data_dir() / "rss_pending_magnets.json"
+
+
+def get_matched_rules_path() -> Path:
+    return get_app_data_dir() / "matched_rules.json"
+
+
 def get_categories_path() -> Path:
     return get_config_path().parent / "categories.json"
 

@@ -41,8 +41,10 @@ from xml.etree import ElementTree
 from PySide6.QtCore import QObject, QRunnable, QThreadPool, Signal
 
 from torrent2000 import APP_VERSION
+from torrent2000.config.paths import get_rss_pending_magnets_path
 from torrent2000.config.settings import ProxySettings, Settings
 from torrent2000.danger_scanner.scanner import auto_exclude_indices, scan_files
+from torrent2000.engine import persistence
 from torrent2000.engine.routing_rules import RoutingRuleStore, find_matching_rule
 from torrent2000.engine.torrent_files import files_from_torrent_path
 from torrent2000.engine.rss_seen_store import RssSeenStore
@@ -233,7 +235,12 @@ class RssFeedService(QObject):
         # auto-exclude (see danger_scanner.scanner.auto_exclude_indices)
         # hasn't run yet -- its files aren't known until metadata arrives,
         # so start_after_analysis() is deferred until _on_rss_metadata_received.
-        self._pending_magnet_scans: set[str] = set()
+        # Saved: after a restart the restored magnet still awaits it.
+        self._pending_magnet_scans: set[str] = {
+            h
+            for h in persistence.load_json(get_rss_pending_magnets_path(), [])
+            if isinstance(h, str) and session_manager.get_record(h) is not None
+        }
 
         self._signals = _RunnableSignals()
         self._signals.feed_fetched.connect(self._on_feed_fetched)
@@ -309,15 +316,16 @@ class RssFeedService(QObject):
             if link.startswith("magnet:"):
                 self._seen_store.mark_seen(guid, feed_url, item.get("title", ""), commit=False)
                 try:
-                    # add_torrent_from_magnet always adds paused/awaiting
-                    # analysis by design (see AddTorrentTab's manual review
-                    # flow) -- an RSS auto-download has no one to review the
-                    # file list. Unlike before, start_after_analysis() is now
+                    # add_torrent_from_magnet always adds awaiting analysis
+                    # (metadata only, no piece) by design (see the Add page's
+                    # manual review flow) -- an RSS auto-download has no one
+                    # to review the file list. start_after_analysis() is
                     # deferred to _on_rss_metadata_received() below, so the
                     # danger scan + auto-exclude can run once the file list
                     # is actually known, same cutoff the manual Add page uses.
                     info_hash = self._session_manager.add_torrent_from_magnet(link, save_path)
                     self._pending_magnet_scans.add(info_hash)
+                    self._save_pending_magnet_scans()
                     if matched_rule is not None:
                         self._session_manager.set_matched_rule_name(info_hash, matched_rule.name)
                 except Exception:
@@ -378,6 +386,7 @@ class RssFeedService(QObject):
         if info_hash not in self._pending_magnet_scans:
             return
         self._pending_magnet_scans.discard(info_hash)
+        self._save_pending_magnet_scans()
         try:
             files = self._session_manager.get_torrent_files(info_hash)
             excluded = auto_exclude_indices(scan_files(files), self._settings.danger_auto_exclude_threshold)
@@ -386,6 +395,9 @@ class RssFeedService(QObject):
         except Exception:
             logger.exception("Failed to scan RSS-added magnet torrent %s for dangerous files", info_hash)
         self._session_manager.start_after_analysis(info_hash)
+
+    def _save_pending_magnet_scans(self) -> None:
+        persistence.save_json(get_rss_pending_magnets_path(), sorted(self._pending_magnet_scans))
 
     def _on_torrent_download_failed(self, feed_url: str, item: dict, message: str) -> None:
         logger.warning("Failed to download .torrent linked from RSS feed %s: %s", _redact_url(feed_url), message)

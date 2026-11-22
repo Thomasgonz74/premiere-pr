@@ -111,6 +111,26 @@ def test_genuine_completion_during_the_session_still_notifies(qapp, tmp_path):
     sm.shutdown()
 
 
+def test_a_recheck_of_a_complete_torrent_does_not_refire_finished(qapp, tmp_path):
+    """libtorrent fires torrent_finished_alert again once a recheck confirms
+    the data: a scheduled recheck re-ran the post-complete unzip, posted the
+    webhook and started a shutdown countdown with nobody at the PC."""
+    save_path = tmp_path / "downloads"
+    save_path.mkdir()
+    torrent_path = _make_already_complete_torrent(save_path)
+    sm = SessionManager(Settings())
+    finished_events = []
+    sm.torrent_finished.connect(finished_events.append)
+    info_hash = sm.add_torrent_from_file(torrent_path, save_path=str(save_path))
+    assert _run_ticks(qapp, sm, lambda: finished_events and sm.get_record(info_hash).progress >= 1.0)
+
+    sm.recheck_torrent(info_hash)
+    _run_ticks(qapp, sm, lambda: len(finished_events) > 1, timeout=3.0)
+
+    assert finished_events == [info_hash]
+    sm.shutdown()
+
+
 # ------------------------------------------------------- resume_data_is_complete
 
 

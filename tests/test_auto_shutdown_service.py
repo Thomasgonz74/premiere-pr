@@ -177,13 +177,18 @@ def test_second_finish_event_does_not_start_a_second_countdown():
 
 class FakePostCompleteActions(QObject):
     extractions_idle = Signal()
+    moves_idle = Signal()
 
     def __init__(self):
         super().__init__()
         self.pending = False
+        self.moving = False
 
     def has_pending_extractions(self):
         return self.pending
+
+    def has_pending_moves(self):
+        return self.moving
 
 
 def test_countdown_waits_for_a_running_extraction_to_finish():
@@ -202,6 +207,27 @@ def test_countdown_waits_for_a_running_extraction_to_finish():
     extractions.pending = False
     extractions.extractions_idle.emit()
     QTest.qWait(20)  # started on the next event-loop turn
+    assert started == [30]
+
+
+def test_countdown_waits_for_a_post_complete_move_to_finish():
+    """libtorrent moves the files in the background: shutting down mid-move
+    leaves them split between both folders."""
+    settings = _make_settings(auto_shutdown_delay_seconds=30)
+    fake_sm = FakeSessionManager()
+    fake_sm.records = [FakeRecord(state=TorrentState.SEEDING)]
+    actions = FakePostCompleteActions()
+    actions.moving = True
+    service = AutoShutdownService(fake_sm, settings, actions)
+    started = []
+    service.shutdown_countdown_started.connect(started.append)
+
+    fake_sm.torrent_finished.emit("abc")
+    assert started == []
+
+    actions.moving = False
+    actions.moves_idle.emit()
+    QTest.qWait(20)
     assert started == [30]
 
 

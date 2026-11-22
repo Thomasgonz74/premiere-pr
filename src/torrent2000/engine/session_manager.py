@@ -11,7 +11,7 @@ import libtorrent as lt
 from PySide6.QtCore import QCoreApplication, QObject, QThreadPool, QTimer, Signal
 
 from torrent2000 import APP_VERSION
-from torrent2000.config.paths import get_default_download_dir
+from torrent2000.config.paths import get_awaiting_analysis_path, get_default_download_dir, get_matched_rules_path
 from torrent2000.config.settings import Settings
 from torrent2000.engine import add_params, persistence, proxy, trackers as tracker_ops
 from torrent2000.engine.alerts import AlertDispatcher, _hash_of, status_to_record
@@ -20,6 +20,7 @@ from torrent2000.engine.ip_blocklist import BlocklistLoadRunnable, BlocklistSign
 from torrent2000.engine.peer_reputation import PeerReputationStore, PeerReputationTracker, ip_from_display, score_label
 from torrent2000.engine.torrent_categories import TorrentCategoryService
 from torrent2000.engine.torrent_item import ACTIVE_DOWNLOAD_STATES, PeerInfo, TorrentRecord, TorrentState, TrackerInfo
+from torrent2000.i18n.translator import tr
 from torrent2000.theme_ids import CCCP_THEME_ID
 from torrent2000.utils.qt_timers import start_periodic_timer
 
@@ -236,6 +237,12 @@ def _is_confined(file_path: Path, resolved_root: Path) -> bool:
     return resolved == resolved_root or resolved_root in resolved.parents
 
 
+class TorrentAlreadyPresentError(ValueError):
+    def __init__(self, info_hash: str) -> None:
+        super().__init__(tr("add_tab.duplicate_message"))
+        self.info_hash = info_hash
+
+
 class SessionManager(QObject):
     torrent_added = Signal(str)
     torrent_removed = Signal(str)
@@ -259,6 +266,7 @@ class SessionManager(QObject):
     theme_downloads_paused = Signal(int)
     storage_moved = Signal(str, str)  # str info_hash, str new_path
     move_storage_refused = Signal(str, str)  # str info_hash, str refused path
+    storage_move_failed = Signal(str, str)  # str info_hash, str error message
     # A disk/file I/O error (e.g. an external drive dropping out mid-write)
     # paused this torrent automatically. str info_hash, str error message.
     file_error = Signal(str, str)
@@ -286,11 +294,23 @@ class SessionManager(QObject):
         # complete (all wanted pieces present) before this process started --
         # see _on_torrent_finished. libtorrent re-fires torrent_finished_alert
         # for these while verifying their fast-resume data on every restart,
-        # even though nothing was actually (re)downloaded this session.
+        # even though nothing was actually (re)downloaded this session. Same
+        # for a recheck of a complete torrent, or a share of data already on
+        # disk (see expect_existing_data).
         self._pending_restore_confirmation: set[str] = set()
         # info_hashes queued by _restore_previous_session's async_add_torrent
         # whose add_torrent_alert hasn't arrived yet -- see _on_torrent_added.
         self._pending_restore: set[str] = set()
+        # Magnets still waiting for start_after_analysis, saved so a restart
+        # brings them back awaiting it (their upload mode is in the resume data).
+        self._awaiting_analysis: set[str] = {
+            h for h in persistence.load_json(get_awaiting_analysis_path(), []) if isinstance(h, str)
+        }
+        # info_hash -> TorrentRecord.matched_rule_name, saved so a download
+        # that spans a restart still gets its rule's post-complete action.
+        self._matched_rules: dict[str, str] = {
+            h: name for h, name in persistence.load_json(get_matched_rules_path(), {}).items() if isinstance(name, str)
+        }
         self._categories = TorrentCategoryService()
         # In-memory only (not persisted): ~60s of (download_rate, upload_rate)
         # samples per torrent at this timer's 300ms tick, for the speed-over-
@@ -329,6 +349,7 @@ class SessionManager(QObject):
             on_torrent_removed=self._on_torrent_removed,
             on_torrent_added=self._on_torrent_added,
             on_storage_moved=self._on_storage_moved,
+            on_storage_move_failed=self._on_storage_move_failed,
             on_file_error=self._on_file_error,
         )
 
@@ -467,6 +488,10 @@ class SessionManager(QObject):
                 record = self._records.get(info_hash)
                 if record is None:
                     continue
+                if status.state == lt.torrent_status.downloading:
+                    # The check found pieces missing after all: the finish
+                    # once they're downloaded again is a real one.
+                    self._pending_restore_confirmation.discard(info_hash)
                 status_to_record(status, record)
                 history = self._speed_history.get(info_hash)
                 if history is None:
@@ -527,6 +552,11 @@ class SessionManager(QObject):
         getattr(self, "_file_entries_cache", {}).pop(info_hash, None)
         self._pending_restore_confirmation.discard(info_hash)
         self._categories.remove(info_hash)
+        if info_hash in self._awaiting_analysis:
+            self._awaiting_analysis.discard(info_hash)
+            self._save_awaiting_analysis()
+        if self._matched_rules.pop(info_hash, None) is not None:
+            persistence.save_json(get_matched_rules_path(), self._matched_rules)
         persistence.delete_resume_file(info_hash)
         self.torrent_removed.emit(info_hash)
 
@@ -538,6 +568,11 @@ class SessionManager(QObject):
         self._pending_restore.discard(info_hash)
         if not error:
             self._handles[info_hash] = handle
+            record = self._records.get(info_hash)
+            if record is not None and record.awaiting_analysis and not record.is_magnet_awaiting_metadata:
+                # Its metadata came in at the quit, too late for whoever
+                # analyses it (e.g. RSS), and libtorrent won't announce it again.
+                self._on_metadata_received(info_hash)
             return
         logger.error("Failed to restore torrent %s from saved resume data: %s", info_hash, error)
         self._pending_restore_confirmation.discard(info_hash)
@@ -553,6 +588,10 @@ class SessionManager(QObject):
         if record is not None:
             record.save_path = new_path
         self.storage_moved.emit(info_hash, new_path)
+
+    def _on_storage_move_failed(self, info_hash: str, message: str) -> None:
+        logger.warning("Moving torrent %s failed: %s", info_hash, message)
+        self.storage_move_failed.emit(info_hash, message)
 
     def _on_file_error(self, info_hash: str, message: str) -> None:
         # self.pause_torrent, not a raw handle.pause() -- it also clears
@@ -572,7 +611,7 @@ class SessionManager(QObject):
         )
         blocked = _is_download_start_blocked(self._settings.theme, progress=0.0)
         if blocked:
-            # Unlike a magnet (always added paused pending analysis), a
+            # Unlike a magnet (held in upload mode pending analysis), a
             # .torrent file normally starts downloading immediately -- hold
             # it paused instead so "no downloading under CCCP" is actually
             # enforced here too, not just at start_after_analysis/resume.
@@ -586,24 +625,36 @@ class SessionManager(QObject):
     def add_torrent_from_magnet(self, uri: str, save_path: str | None = None) -> str:
         save_path = save_path or str(get_default_download_dir())
         atp = add_params.from_magnet_uri(uri, save_path, restrict_discovery=self._settings.restrict_discovery)
-        # Hold the torrent paused (and outside auto-management) until the
-        # user has had a chance to analyze the file list once metadata
-        # arrives -- see AddTorrentTab / metadata_received signal.
-        atp.flags &= ~lt.torrent_flags.auto_managed
-        atp.flags |= lt.torrent_flags.paused
-        return self._add(atp, awaiting_analysis=True)
+        # Running, or it would contact no peer and its metadata would never
+        # arrive, but in upload mode: no piece is downloaded until
+        # start_after_analysis, once the file list has been analysed (see
+        # metadata_received). Not auto-managed, or libtorrent would leave upload
+        # mode by itself after optimistic_disk_retry.
+        atp.flags &= ~(lt.torrent_flags.auto_managed | lt.torrent_flags.paused)
+        atp.flags |= lt.torrent_flags.upload_mode
+        info_hash = self._add(atp, awaiting_analysis=True)
+        self._awaiting_analysis.add(info_hash)
+        self._save_awaiting_analysis()
+        return info_hash
+
+    def _save_awaiting_analysis(self) -> None:
+        persistence.save_json(get_awaiting_analysis_path(), sorted(self._awaiting_analysis))
 
     def _add(self, atp: "lt.add_torrent_params", awaiting_analysis: bool) -> str:
         info_hash = add_params.info_hash_hex(atp)
-        record = TorrentRecord(
+        if info_hash in self._records:
+            # libtorrent hands a magnet the live handle back (and refuses a
+            # file): a new record must not replace the live one's category,
+            # pin, rule and state.
+            raise TorrentAlreadyPresentError(info_hash)
+        handle = self._session.add_torrent(atp)
+        self._records[info_hash] = TorrentRecord(
             info_hash=info_hash,
             name=atp.name or "",
             save_path=atp.save_path,
             awaiting_analysis=awaiting_analysis,
             is_magnet_awaiting_metadata=atp.ti is None,
         )
-        self._records[info_hash] = record
-        handle = self._session.add_torrent(atp)
         self._handles[info_hash] = handle
         if self._settings.lan_peer_cache_enabled:
             # If this exact torrent was already seen on this LAN before,
@@ -761,6 +812,11 @@ class SessionManager(QObject):
         record = self._records.get(info_hash)
         if record is not None:
             record.matched_rule_name = rule_name
+            if rule_name:
+                self._matched_rules[info_hash] = rule_name
+            else:
+                self._matched_rules.pop(info_hash, None)
+            persistence.save_json(get_matched_rules_path(), self._matched_rules)
 
     def pin_torrent(self, info_hash: str) -> None:
         """Pin panel: no disk/engine effect, just an in-memory flag the UI
@@ -852,6 +908,10 @@ class SessionManager(QObject):
             self.download_blocked_by_theme.emit(info_hash)
             return
         record.awaiting_analysis = False
+        if info_hash in self._awaiting_analysis:
+            self._awaiting_analysis.discard(info_hash)
+            self._save_awaiting_analysis()
+        handle.unset_flags(lt.torrent_flags.upload_mode)
         handle.set_flags(lt.torrent_flags.auto_managed)
         handle.resume()
 
@@ -881,7 +941,10 @@ class SessionManager(QObject):
         if record is not None and _is_download_start_blocked(self._settings.theme, record.progress):
             self.download_blocked_by_theme.emit(info_hash)
             return
-        handle.set_flags(lt.torrent_flags.auto_managed)
+        # A magnet awaiting analysis only goes back to fetching its metadata,
+        # in upload mode: auto-management would end that mode by itself.
+        if record is None or not record.awaiting_analysis:
+            handle.set_flags(lt.torrent_flags.auto_managed)
         handle.resume()
 
     def enforce_theme_download_policy(self) -> None:
@@ -1066,7 +1129,17 @@ class SessionManager(QObject):
     def recheck_torrent(self, info_hash: str) -> None:
         handle = self._handles.get(info_hash)
         if handle is not None:
+            record = self._records.get(info_hash)
+            if record is not None and record.progress >= 1.0:
+                self.expect_existing_data(info_hash)
             handle.force_recheck()
+
+    def expect_existing_data(self, info_hash: str) -> None:
+        """The torrent's data should already be complete on disk (a recheck,
+        a share): libtorrent fires torrent_finished_alert once its check
+        confirms it, and that is no download to report -- no toast, webhook,
+        post-complete action or shutdown countdown."""
+        self._pending_restore_confirmation.add(info_hash)
 
     def move_storage(self, info_hash: str, new_path: str) -> None:
         if not is_safe_move_destination(new_path):
@@ -1147,6 +1220,9 @@ class SessionManager(QObject):
                 all_time_downloaded=getattr(atp, "total_downloaded", 0),
                 all_time_uploaded=getattr(atp, "total_uploaded", 0),
                 category=self._categories.get(info_hash),
+                awaiting_analysis=info_hash in self._awaiting_analysis,
+                is_magnet_awaiting_metadata=atp.ti is None,
+                matched_rule_name=self._matched_rules.get(info_hash),
             )
             self._records[info_hash] = record
             if add_params.resume_data_is_complete(atp):
