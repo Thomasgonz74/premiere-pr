@@ -34,6 +34,9 @@ import logging
 import re
 import tempfile
 import uuid
+from collections import Counter
+from datetime import date
+from email.utils import parsedate_to_datetime
 from pathlib import Path
 from xml.etree import ElementTree
 
@@ -48,7 +51,7 @@ from torrent2000.engine import persistence
 from torrent2000.engine.routing_rules import RoutingRuleStore, find_matching_rule
 from torrent2000.engine.torrent_files import files_from_torrent_path
 from torrent2000.engine.rss_seen_store import RssSeenStore
-from torrent2000.engine.session_manager import SessionManager
+from torrent2000.engine.session_manager import SessionManager, TorrentAlreadyPresentError
 from torrent2000.engine.url_fetch import FetchError, fetch_url
 from torrent2000.i18n.translator import tr
 from torrent2000.utils.qt_timers import start_periodic_timer
@@ -57,13 +60,19 @@ logger = logging.getLogger(__name__)
 
 CHECK_INTERVAL_MS = 15 * 60 * 1000  # 15 minutes
 FETCH_TIMEOUT_SECONDS = 20
+# Tries per item and app session: one whose .torrent is gone (404) or whose
+# link answers with a login page is not fetched again at every check.
+# ponytail: per-session count, a restart tries again; a backoff if a
+# tracker's outages outlast three checks.
+MAX_ITEM_ATTEMPTS = 3
 USER_AGENT = f"Torrent2000/{APP_VERSION}"
 
 
 def parse_rss_items(xml_bytes: bytes) -> list[dict]:
-    """Parse an RSS 2.0 document into a list of {"title", "link", "guid"}
-    dicts, one per <channel>/<item>. Pure stdlib parsing, no network or Qt
-    involved, so it's directly unit-testable.
+    """Parse an RSS 2.0 document into a list of {"title", "link", "guid",
+    "published"} dicts, one per <channel>/<item> -- published is the POSIX
+    time of its <pubDate>, 0.0 when absent or unreadable. Pure stdlib
+    parsing, no network or Qt involved, so it's directly unit-testable.
 
     <link> is overridden by an <enclosure url="..."> when present (many
     RSS-based torrent trackers publish the actual .torrent/magnet link via
@@ -85,7 +94,11 @@ def parse_rss_items(xml_bytes: bytes) -> list[dict]:
         guid = _child_text(item_el, "guid") or link
         if not link or not guid:
             continue
-        items.append({"title": title, "link": link, "guid": guid})
+        try:
+            published = parsedate_to_datetime(_child_text(item_el, "pubDate")).timestamp()
+        except (TypeError, ValueError, OverflowError, OSError):
+            published = 0.0
+        items.append({"title": title, "link": link, "guid": guid, "published": published})
     return items
 
 
@@ -104,12 +117,28 @@ def matches_keyword(title: str, filter_keyword: str) -> bool:
 
 
 _RESOLUTION_RE = re.compile(r"(\d{3,4})p\b", re.IGNORECASE)
-# "S01E05"/"s01.e05"/"1x05" -- the number that actually identifies an
-# episode, unlike the resolution/codec/audio tags ("720p", "x264", "H.265",
-# "AAC2.0") release names usually end with.
-_SEASON_EPISODE_RE = re.compile(r"(?<![a-z0-9])(?:s(\d{1,3})[ ._-]?e(\d{1,4})|(\d{1,2})x(\d{2,3}))(?!\d)", re.IGNORECASE)
+# The episode markers latest_episode_only ranks by. A number right after
+# "S", "E", "Episode" or " - " is still not one when it is a resolution,
+# bit depth or audio layout ("720p", "1080i", "10bit", "5.1"); the codec
+# numbers ("x264", "H.265") never follow such a prefix.
+_MARKER_START = r"(?<![a-z0-9'\u2019])"
+_NOT_TECH = r"(?![\dp]|i\b|bit|[.,]\d(?!\d))"
+# "S01E05", "s01.e05", "Season 2 Episode 3", "1x05" (not the "1x264" of "5.1x264").
+_SEASON_EPISODE_RE = re.compile(
+    _MARKER_START + r"(?:s(?:eason)?[ ._-]{0,3}(\d{1,4})[ ._-]{0,3}e(?:p(?:isode)?)?[ ._-]{0,3}(\d{1,4})"
+    r"|(?<!\d[.,])(\d{1,2})x(\d{2,3}))(?!\d)",
+    re.IGNORECASE,
+)
+# Daily shows: "2026-11-22", "2026.11.22", and "22.11.2026" (or "11.22.2026").
+_YMD_RE = re.compile(r"(?<!\d)((?:19|20)\d\d)([-._])(\d\d)\2(\d\d)(?!\d)")
+_DMY_RE = re.compile(r"(?<!\d)(\d\d)([-._])(\d\d)\2((?:19|20)\d\d)(?!\d)")
+# A season pack: "S02", "Season 2" -- ranked after every episode of that season.
+_SEASON_RE = re.compile(_MARKER_START + r"s(?:eason)?[ ._-]?(\d{1,4})" + _NOT_TECH, re.IGNORECASE)
+_WHOLE_SEASON = 10**6
 # No season: "Episode.42", "Ep 7", "E05", or the anime-style "Show - 05".
-_EPISODE_RE = re.compile(r"(?:(?<![a-z0-9])(?:ep?|episode)[ ._-]?|\s-\s)(\d{1,4})(?![\dp])", re.IGNORECASE)
+_EPISODE_RE = re.compile(
+    r"(?:" + _MARKER_START + r"e(?:p(?:isode)?)?[ ._-]?|\s-\s)(\d{1,4})" + _NOT_TECH, re.IGNORECASE
+)
 
 
 def _title_resolution(title: str) -> int | None:
@@ -120,17 +149,89 @@ def _title_resolution(title: str) -> int | None:
     return int(match.group(1)) if match else None
 
 
-def _title_episode(title: str) -> tuple[int, int] | None:
-    """(season, episode) for latest_episode_only -- "S02E15" -> (2, 15),
-    "Episode.42" -> (0, 42) -- or None when the title carries no episode
-    marker, so such an item is never ranked against (and silently dropped
-    in favour of) a numbered one."""
+def _title_words(text: str) -> tuple[str, ...]:
+    """Lower-cased words of a title, without a leading "[Group]" tag --
+    "Show.Name" and "[Subs] Show Name" both give ("show", "name")."""
+    return tuple(re.findall(r"[^\W_]+", re.sub(r"^\s*\[[^\]]*\]", "", text).lower()))
+
+
+def _title_date(title: str) -> tuple[int, tuple[int, int, int] | None] | None:
+    """(where it starts, (year, month, day)) of an air date in a title --
+    (where it starts, None) for an ambiguous one."""
+    match = _YMD_RE.search(title)
+    if match:
+        year, month, day = int(match.group(1)), int(match.group(3)), int(match.group(4))
+    else:
+        match = _DMY_RE.search(title)
+        if match is None:
+            return None
+        first, second, year = int(match.group(1)), int(match.group(3)), int(match.group(4))
+        if first != second and first <= 12 and second <= 12:
+            return match.start(), None  # "05.11.2026": 5 November or May 11?
+        day, month = (first, second) if first > 12 else (second, first)
+    try:
+        date(year, month, day)
+    except ValueError:
+        return None
+    return match.start(), (year, month, day)
+
+
+def _title_episode(title: str) -> tuple[tuple[str, ...], tuple[int, ...]] | None:
+    """(show, rank) for latest_episode_only -- "Show.S02E15.720p" ->
+    (("show",), (2, 15)), "Show.2026.11.22" -> (("show",), (2026, 11, 22)),
+    "Show.S02" (a season pack) -> after every S02 episode, "Episode.42" or
+    "Show - 42" -> (0, 42) -- or None when the title carries no marker at
+    all (a special, a movie, an ambiguous "05.11.2026"), which then ranks
+    by publication date instead."""
     match = _SEASON_EPISODE_RE.search(title)
     if match:
         season, episode = (match.group(1), match.group(2)) if match.group(1) else (match.group(3), match.group(4))
-        return int(season), int(episode)
+        return _title_words(title[: match.start()]), (int(season), int(episode))
+    dated = _title_date(title)
+    if dated:
+        # Nor is the "05" of an ambiguous "Show - 05.11.2026" an episode.
+        return (_title_words(title[: dated[0]]), dated[1]) if dated[1] else None
+    match = _SEASON_RE.search(title)
+    if match:
+        # "Show S2 - 05", "Show (Season 2) Episode 5": an episode of that season.
+        episode = _EPISODE_RE.search(title, match.end())
+        if episode and not title[match.end() : episode.start()].strip(" ._-()[]"):
+            return _title_words(title[: match.start()]), (int(match.group(1)), int(episode.group(1)))
+        return _title_words(title[: match.start()]), (int(match.group(1)), _WHOLE_SEASON)
     match = _EPISODE_RE.search(title)
-    return (0, int(match.group(1))) if match else None
+    if match:
+        return _title_words(title[: match.start()]), (0, int(match.group(1)))
+    return None
+
+
+def _latest_per_show(items: list[dict], taken: set[str]) -> list[tuple[dict, list[dict]]]:
+    """latest_episode_only: (newest item, [its show's other items not in
+    taken]) for each show among items -- in feed order, newest first; taken
+    holds the guids already downloaded (or downloading), which compete but
+    win a tie, so a new copy of an episode already taken loses. Items with
+    an episode marker rank by it; those with none rank by publication date
+    (else feed order) among the show's other unmarked items (only the
+    newest one counts), under the marked show their title starts with,
+    else under the words before their first number."""
+    parsed = [(item, _title_episode(item.get("title", ""))) for item in items]
+    shows = {episode[0] for _item, episode in parsed if episode and episode[0]}
+    groups: dict[tuple, list[tuple[tuple, dict]]] = {}
+    for index, (item, episode) in enumerate(parsed):
+        if episode:
+            key, rank = (episode[0], True), episode[1]
+        else:
+            words = _title_words(item.get("title", ""))
+            show = max((s for s in shows if words[: len(s)] == s), key=len, default=None)
+            if show is None:
+                first_number = next((i for i, w in enumerate(words) if any(c.isdigit() for c in w)), len(words))
+                show = words[:first_number] or words
+            key, rank = (show, False), (item.get("published", 0.0), -index)
+        groups.setdefault(key, []).append(((rank, item.get("guid") in taken), item))
+    result = []
+    for members in groups.values():
+        newest = max(members, key=lambda member: member[0])[1]
+        result.append((newest, [it for _rank, it in members if it is not newest and it.get("guid") not in taken]))
+    return result
 
 
 def filter_regex_error(*patterns: str) -> str | None:
@@ -264,6 +365,13 @@ class RssFeedService(QObject):
             if isinstance(h, str) and session_manager.get_record(h) is not None
         }
 
+        # guid -> the items to mark seen with it, for each .torrent being
+        # downloaded: an item is marked seen only once added, so this keeps
+        # the next check from queueing it again meanwhile.
+        self._downloads_in_flight: dict[str, list[dict]] = {}
+        # guid -> failed adds/downloads this session, see MAX_ITEM_ATTEMPTS.
+        self._failed_attempts: Counter[str] = Counter()
+
         self._signals = _RunnableSignals()
         self._signals.feed_fetched.connect(self._on_feed_fetched)
         self._signals.feed_failed.connect(self._on_feed_failed)
@@ -304,34 +412,42 @@ class RssFeedService(QObject):
             self.feed_check_failed.emit(feed_url, regex_error)
             return
 
-        candidates = []
-        for item in items:
-            guid = item.get("guid", "")
-            if not guid or self._seen_store.is_seen(guid):
-                continue
-            title = item.get("title", "")
-            if not matches_keyword(title, feed_config.filter_keyword):
-                continue
-            if not matches_advanced_filters(title, feed_config):
-                continue
-            candidates.append(item)
-
+        matching = [
+            item
+            for item in items
+            if item.get("guid")
+            and matches_keyword(item.get("title", ""), feed_config.filter_keyword)
+            and matches_advanced_filters(item.get("title", ""), feed_config)
+        ]
+        taken = {
+            item["guid"]
+            for item in matching
+            if item["guid"] in self._downloads_in_flight or self._seen_store.is_seen(item["guid"])
+        }
+        # guid of each item to add -> the older (or same-episode) items
+        # skipped for it, marked seen once it is added -- never before, so a
+        # failed add or download leaves the whole show for the next check.
+        skipped_for: dict[str, list[dict]] = {}
         if feed_config.latest_episode_only:
-            episodes = {id(it): _title_episode(it.get("title", "")) for it in candidates}
-            numbered = [it for it in candidates if episodes[id(it)] is not None]
-            if len(numbered) > 1:
-                best = max(numbered, key=lambda it: episodes[id(it)])
-                for item in numbered:
-                    if item is not best:
-                        # Marked seen (never retried) but never downloaded --
-                        # avoids flooding on the first check of a feed with a
-                        # long backlog of matching items.
-                        self._seen_store.mark_seen(item.get("guid", ""), feed_url, item.get("title", ""), commit=False)
-                candidates = [it for it in candidates if it is best or episodes[id(it)] is None]
+            # Avoids flooding on the first check of a feed with a long
+            # backlog of matching items.
+            for newest, older in _latest_per_show(matching, taken):
+                if newest["guid"] not in taken:
+                    skipped_for[newest["guid"]] = older
+                elif newest["guid"] not in self._downloads_in_flight:
+                    self._mark_seen(feed_url, older)  # an older-or-equal one was taken
+        else:
+            skipped_for = {item["guid"]: [] for item in matching if item["guid"] not in taken}
+        candidates = [
+            item
+            for item in matching
+            if item["guid"] in skipped_for and self._failed_attempts[item["guid"]] < MAX_ITEM_ATTEMPTS
+        ]
 
         newly_added = []
         for item in candidates:
             guid = item.get("guid", "")
+            done = [item, *skipped_for[guid]]
             # Name-only matching: an RSS item exposes nothing but its title
             # at this point -- the actual .torrent (and therefore its
             # tracker list) hasn't been downloaded yet, so a "tracker"
@@ -346,7 +462,6 @@ class RssFeedService(QObject):
 
             link = item.get("link", "")
             if link.startswith("magnet:"):
-                self._seen_store.mark_seen(guid, feed_url, item.get("title", ""), commit=False)
                 try:
                     # add_torrent_from_magnet always adds awaiting analysis
                     # (metadata only, no piece) by design (see the Add page's
@@ -360,12 +475,17 @@ class RssFeedService(QObject):
                     self._save_pending_magnet_scans()
                     if matched_rule is not None:
                         self._session_manager.set_matched_rule_name(info_hash, matched_rule.name)
+                except TorrentAlreadyPresentError:
+                    self._mark_seen(feed_url, done)
+                    continue
                 except Exception:
                     logger.exception("Failed to add magnet from RSS feed %s", _redact_url(feed_url))
-                    continue
+                    self._failed_attempts[guid] += 1
+                    continue  # not marked seen: tried again at the next check
+                self._mark_seen(feed_url, done)
                 newly_added.append(item)
             elif link.startswith("http://") or link.startswith("https://"):
-                self._seen_store.mark_seen(guid, feed_url, item.get("title", ""), commit=False)
+                self._downloads_in_flight[guid] = done
                 runnable = _DownloadTorrentRunnable(
                     feed_url, item, save_path, self._signals, proxy=self._settings.proxy
                 )
@@ -373,7 +493,6 @@ class RssFeedService(QObject):
             else:
                 logger.warning("Skipping RSS item with unsupported link scheme: %s", _redact_url(link))
 
-        self._seen_store.commit()
         if newly_added:
             self.items_found.emit(feed_url, newly_added)
 
@@ -382,6 +501,7 @@ class RssFeedService(QObject):
         self.feed_check_failed.emit(feed_url, message)
 
     def _on_torrent_downloaded(self, feed_url: str, item: dict, temp_path: str, save_path: str) -> None:
+        done = self._downloads_in_flight.pop(item.get("guid", ""), [item])
         excluded: set[int] = set()
         try:
             # The .torrent is already on disk here, so -- unlike the magnet
@@ -400,8 +520,12 @@ class RssFeedService(QObject):
             matched_rule = find_matching_rule(self._routing_store.list_rules(), name=item.get("title", ""))
             if matched_rule is not None:
                 self._session_manager.set_matched_rule_name(info_hash, matched_rule.name)
+        except TorrentAlreadyPresentError:
+            self._mark_seen(feed_url, done)
+            return
         except Exception:
             logger.exception("Failed to add torrent downloaded from RSS feed %s", _redact_url(feed_url))
+            self._failed_attempts[item.get("guid", "")] += 1
             return
         finally:
             # libtorrent has parsed the file by now (the metadata lives on in
@@ -412,6 +536,7 @@ class RssFeedService(QObject):
                 Path(temp_path).unlink(missing_ok=True)
             except OSError:
                 pass
+        self._mark_seen(feed_url, done)
         self.items_found.emit(feed_url, [item])
 
     def _on_rss_metadata_received(self, info_hash: str) -> None:
@@ -432,10 +557,17 @@ class RssFeedService(QObject):
         persistence.save_json(get_rss_pending_magnets_path(), sorted(self._pending_magnet_scans))
 
     def _on_torrent_download_failed(self, feed_url: str, item: dict, message: str) -> None:
+        self._downloads_in_flight.pop(item.get("guid", ""), None)  # not marked seen: tried again
+        self._failed_attempts[item.get("guid", "")] += 1
         logger.warning("Failed to download .torrent linked from RSS feed %s: %s", _redact_url(feed_url), message)
         self.feed_check_failed.emit(feed_url, message)
 
     # ------------------------------------------------------------------ helpers
+
+    def _mark_seen(self, feed_url: str, items: list[dict]) -> None:
+        for item in items:
+            self._seen_store.mark_seen(item.get("guid", ""), feed_url, item.get("title", ""), commit=False)
+        self._seen_store.commit()
 
     def _find_feed_config(self, feed_url: str):
         for feed in self._settings.rss_feeds:

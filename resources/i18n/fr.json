@@ -645,7 +645,7 @@
   "web.rss.filter_res_min_placeholder": "ex. 720",
   "web.rss.filter_res_max_label": "Résolution maximale (p)",
   "web.rss.filter_res_max_placeholder": "ex. 1080",
-  "web.rss.filter_latest_only_label": "Ne télécharger que le dernier épisode d'un lot",
+  "web.rss.filter_latest_only_label": "Ne télécharger que le dernier épisode de chaque série",
   "web.rss.filters_dialog_title": "Filtres avancés — {url}",
   "web.rss.filters_save_button": "Enregistrer",
   "web.rss.filter_invalid_regex": "Regex invalide « {pattern} » : {message}",
