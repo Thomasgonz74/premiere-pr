@@ -96,3 +96,14 @@ def test_import_resets_the_diff_base_of_the_next_save(tmp_path, monkeypatch):
     settings.save()
 
     assert read_settings_history()[0]["changes"]["language"] == {"old": "ja", "new": "en"}
+
+
+def test_import_refuses_a_json_object_that_is_not_a_torrent2000_config(tmp_path, monkeypatch):
+    monkeypatch.setenv("TORRENT2000_DATA_DIR", str(tmp_path))
+    settings = Settings.load()
+    foreign = tmp_path / "package.json"
+    foreign.write_text(json.dumps({"name": "some-other-app", "version": "1.0", "dependencies": {}}), encoding="utf-8")
+    before = get_config_path().read_text(encoding="utf-8")
+
+    assert ProfileSecurityBridge(settings).importConfig(str(foreign))["ok"] is False
+    assert get_config_path().read_text(encoding="utf-8") == before  # all settings reset to defaults otherwise

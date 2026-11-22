@@ -58,6 +58,10 @@ def _is_valid_settings_payload(data: object) -> bool:
     """Same shape-check as native ConfigImportExportSection._is_valid_settings_payload."""
     if not isinstance(data, dict):
         return False
+    # _from_dict drops unknown keys, so any JSON object passed the checks
+    # below: one sharing no field with Settings is some other app's file.
+    if not data.keys() & Settings.__dataclass_fields__.keys():
+        return False
     data = dict(data)
     proxy_data = data.pop("proxy", {})
     schedule_data = data.pop("bandwidth_schedule", {})
