@@ -182,14 +182,17 @@ class AddBridge(QObject):
             if record is None or not record.awaiting_analysis:
                 self.statusChanged.emit(f"Erreur : {exc}")
                 return
-            info_hash = exc.info_hash  # still awaiting its analysis (e.g. added before a restart): resume it
+            # Still awaiting its analysis (e.g. added before a restart): pick it
+            # back up -- its metadata may be in already, never to be announced again.
+            self._pending_magnet_hash = exc.info_hash
+            if self._session_manager.get_torrent_files(exc.info_hash):
+                self._on_metadata_received(exc.info_hash)
+                return
+            info_hash = exc.info_hash
         except Exception as exc:
             self.statusChanged.emit(f"Erreur : {exc}")
             return
         self._pending_magnet_hash = info_hash
-        if self._session_manager.get_torrent_files(info_hash):
-            self._on_metadata_received(info_hash)  # picked back up with its metadata already in
-            return
         self.statusChanged.emit("En attente des métadonnées…")
 
     def _on_metadata_received(self, info_hash: str) -> None:

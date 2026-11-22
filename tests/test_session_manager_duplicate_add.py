@@ -9,11 +9,14 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 import libtorrent as lt
 import pytest
+from PySide6.QtCore import QObject, Signal
 from PySide6.QtWidgets import QApplication
 
 from torrent2000.config.settings import Settings
+from torrent2000.danger_scanner.models import FileEntry
 from torrent2000.engine.routing_rules import RoutingRuleStore
 from torrent2000.engine.session_manager import SessionManager, TorrentAlreadyPresentError
+from torrent2000.engine.torrent_item import TorrentRecord
 from torrent2000.ui.web.bridge_add import AddBridge
 
 _MAGNET = "magnet:?xt=urn:btih:" + "cd" * 20 + "&dn=twice"
@@ -81,3 +84,28 @@ def test_the_add_page_picks_back_up_a_magnet_still_awaiting_analysis(sm, tmp_pat
     assert statuses == ["En attente des métadonnées…"]
     assert reopened._pending_magnet_hash == record.info_hash
     assert sm.get_record(record.info_hash) is record
+
+
+def test_a_magnet_picked_back_up_with_its_metadata_in_is_scanned_at_once():
+    """Its metadata_received has come and gone (before a restart, say)."""
+
+    class _SessionManager(QObject):
+        metadata_received = Signal(str)
+        download_blocked_by_theme = Signal(str)
+
+        def add_torrent_from_magnet(self, uri, save_path=None):
+            raise TorrentAlreadyPresentError("ih")
+
+        def get_record(self, info_hash):
+            return TorrentRecord(info_hash=info_hash, name="pending", awaiting_analysis=True)
+
+        def get_torrent_files(self, info_hash):
+            return [FileEntry(index=0, path="pending/video.mkv", size=1024)]
+
+    bridge = AddBridge(_SessionManager(), Settings(), RoutingRuleStore())
+    scans = []
+    bridge.scanReady.connect(scans.append)
+
+    bridge.analyzeMagnet(_MAGNET)
+
+    assert len(scans) == 1 and bridge._pending_magnet_hash == "ih"
