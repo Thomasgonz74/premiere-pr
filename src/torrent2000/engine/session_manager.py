@@ -346,6 +346,7 @@ class SessionManager(QObject):
             on_state_update=self._on_state_update,
             on_metadata_received=self._on_metadata_received,
             on_torrent_finished=self._on_torrent_finished,
+            on_torrent_checked=self._on_torrent_checked,
             on_tracker_error=self._on_tracker_error,
             on_save_resume_data=self._on_save_resume_data,
             on_torrent_removed=self._on_torrent_removed,
@@ -490,10 +491,6 @@ class SessionManager(QObject):
                 record = self._records.get(info_hash)
                 if record is None:
                     continue
-                if status.state == lt.torrent_status.downloading:
-                    # The check found pieces missing after all: the finish
-                    # once they're downloaded again is a real one.
-                    self._pending_restore_confirmation.discard(info_hash)
                 status_to_record(status, record)
                 history = self._speed_history.get(info_hash)
                 if history is None:
@@ -540,6 +537,13 @@ class SessionManager(QObject):
             if self._settings.provenance_manifest_enabled:
                 _write_provenance_manifest(record)
         self.torrent_finished.emit(info_hash)
+
+    def _on_torrent_checked(self, info_hash: str) -> None:
+        # libtorrent posts torrent_finished_alert *before* torrent_checked_alert
+        # when the check finds the data complete. A check that ends without
+        # it found pieces missing: the finish once they are downloaded again
+        # is a real one (toast, webhook, Defender scan...).
+        self._pending_restore_confirmation.discard(info_hash)
 
     def _on_tracker_error(self, info_hash: str, message: str) -> None:
         self.tracker_error.emit(info_hash, message)
@@ -1151,7 +1155,8 @@ class SessionManager(QObject):
         """The torrent's data should already be complete on disk (a recheck,
         a share): libtorrent fires torrent_finished_alert once its check
         confirms it, and that is no download to report -- no toast, webhook,
-        post-complete action or shutdown countdown."""
+        post-complete action or shutdown countdown. A check that finds data
+        missing drops the mark (_on_torrent_checked)."""
         self._pending_restore_confirmation.add(info_hash)
 
     def move_storage(self, info_hash: str, new_path: str, quiet: bool = False) -> None:

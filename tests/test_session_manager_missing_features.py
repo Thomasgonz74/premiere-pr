@@ -479,10 +479,8 @@ def test_a_recheck_that_finds_pieces_missing_still_reports_the_repair():
     sm.torrent_finished = MagicMock()
     sm._records["hash0"] = TorrentRecord(info_hash="hash0", progress=1.0)
     sm.recheck_torrent("hash0")
-    damaged = _status_stub("hash0")
-    damaged.state = lt.torrent_status.downloading
 
-    sm._on_state_update([damaged])
+    sm._on_torrent_checked("hash0")  # the check ended without a finish: pieces were missing
     sm._on_torrent_finished("hash0")
 
     sm.torrent_finished.emit.assert_called_once_with("hash0")
