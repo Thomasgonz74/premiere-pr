@@ -1,5 +1,5 @@
 """Behaviour of a few web-UI scripts that run without any bridge round trip
-(modal.js, profile_stats.js, piece_map_dialog.js, downloads.js,
+(modal.js, profile_stats.js, piece_map_dialog.js, downloads.js, keydown.js,
 theme_switcher.js, profile_general.js, add.js, file_priority.js), exercised in
 the real resources/web/spike/index.html loaded in an offscreen QWebEngineView
 with hand-made bridge stubs (same page-loading convention as
@@ -352,6 +352,34 @@ def test_removing_the_filtered_tag_hides_the_row_at_once(view):
       return JSON.stringify(seen);
     })()""")
     assert result == '["","none"]'
+
+
+def test_a_held_magnet_row_offers_to_start_it(view):
+    """AWAITING_ANALYSIS (a held magnet, not paused): ▶, the shortcut and the
+    menu start it (DownloadsBridge.resumeTorrent scans it first); the menu
+    still offers to pause it too."""
+    result = run_js(view, """(function () {
+      const calls = [];
+      window.bridge = { downloads: {
+        resumeTorrent(ih) { calls.push('resume'); },
+        pauseTorrent(ih) { calls.push('pause'); },
+      } };
+      downloadsRenderRecord({ infoHash: 'held', name: 'held', progress: 0, state: 'AWAITING_ANALYSIS',
+        downloadRate: 0, uploadRate: 0, numPeers: 0, numSeeds: 0, totalSize: 0, category: '' });
+      const entry = downloadsRows.get('held');
+      const label = entry.pauseResumeBtn.textContent;
+      entry.pauseResumeBtn.click();
+      const page = document.getElementById('page-downloads');
+      const wasActive = page.classList.contains('active');
+      page.classList.add('active');
+      entry.el.classList.add('selected');
+      shortcutPauseResumeSelectedDownload();
+      page.classList.toggle('active', wasActive);
+      const menu = downloadsBuildSingleMenu('held').map((item) => item.label);
+      downloadsRemoveRecord('held');
+      return JSON.stringify([label, calls, menu.includes(t('common.resume')), menu.includes(t('common.pause'))]);
+    })()""")
+    assert result == '["▶",["resume","resume"],true,true]'
 
 
 def test_add_page_routing_destination_never_carries_over_to_the_next_torrent(view):

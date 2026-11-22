@@ -141,7 +141,7 @@ class DownloadsBridge(QObject):
     # The page's "waiting for the IP filter" notice; isWaitingForIpBlocklist
     # gives the state at page load.
     ipBlocklistWaitChanged = Signal(bool)
-    # resumeTorrent on a magnet still awaiting analysis: the page says it
+    # resumeTorrent on a magnet still awaiting its metadata: the page says it
     # starts once its files are scanned, rather than nothing visible happening.
     awaitingMagnetStarted = Signal()
 
@@ -211,8 +211,8 @@ class DownloadsBridge(QObject):
     def resumeTorrent(self, info_hash: str) -> None:
         record = self._session_manager.get_record(info_hash)
         if record is not None and record.awaiting_analysis:
-            self._session_manager.start_awaiting_magnet(info_hash)
-            self.awaitingMagnetStarted.emit()
+            if self._session_manager.start_awaiting_magnet(info_hash):
+                self.awaitingMagnetStarted.emit()
             return
         self._session_manager.resume_torrent(info_hash)
 

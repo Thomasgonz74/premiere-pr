@@ -15,8 +15,9 @@ from PySide6.QtWidgets import QApplication
 
 from torrent2000.config.paths import get_awaiting_analysis_path, get_magnets_to_start_path
 from torrent2000.config.settings import Settings
-from torrent2000.engine import persistence
+from torrent2000.engine import add_params, persistence
 from torrent2000.engine.session_manager import SessionManager
+from torrent2000.theme_ids import CCCP_THEME_ID
 
 _MAGNET = "magnet:?xt=urn:btih:" + "ab" * 20 + "&dn=pending"
 
@@ -185,3 +186,59 @@ def test_after_an_abnormal_exit_the_awaiting_set_wins_over_the_resume_data(qapp,
         assert held_now.upload_mode and not held_now.paused and not held_now.auto_managed
     finally:
         sm2.shutdown(timeout_ms=0)
+
+
+def test_starting_a_held_magnet_under_cccp_is_refused_not_queued(qapp, tmp_path):
+    settings = _loopback_settings()
+    settings.theme = CCCP_THEME_ID
+    sm = SessionManager(settings)
+    blocked = []
+    sm.download_blocked_by_theme.connect(blocked.append)
+    try:
+        info_hash = sm.add_torrent_from_magnet(_MAGNET, str(tmp_path))
+
+        assert sm.start_awaiting_magnet(info_hash) is False  # the page shows no "will start" banner
+        assert blocked == [info_hash]
+        assert info_hash not in sm._start_once_analysed
+    finally:
+        sm.shutdown(timeout_ms=0)
+
+
+def test_a_torrent_file_added_after_its_magnet_was_lost_in_a_crash_is_not_held(qapp, tmp_path):
+    (tmp_path / "data").mkdir()
+    (tmp_path / "data" / "f.bin").write_bytes(os.urandom(64 * 1024))
+    fs = lt.file_storage()
+    lt.add_files(fs, str(tmp_path / "data" / "f.bin"))
+    ct = lt.create_torrent(fs, piece_size=16 * 1024)
+    lt.set_piece_hashes(ct, str(tmp_path / "data"))
+    torrent_path = tmp_path / "t.torrent"
+    torrent_path.write_bytes(lt.bencode(ct.generate()))
+    # Its magnet was added, then the app crashed before any resume save.
+    info_hash = str(lt.torrent_info(str(torrent_path)).info_hashes().v1)
+    persistence.save_json(get_awaiting_analysis_path(), [info_hash])
+
+    sm = SessionManager(_loopback_settings())
+    try:
+        assert sm.add_torrent_from_file(str(torrent_path), str(tmp_path / "dl")) == info_hash
+        # Else the next restore holds it in upload mode, its download stopped.
+        assert persistence.load_json(get_awaiting_analysis_path(), []) == []
+    finally:
+        sm.shutdown(timeout_ms=0)
+
+
+def test_a_magnet_paused_while_held_then_started_is_saved_started_at_once(qapp, tmp_path):
+    """Not at the next periodic save: a crash meanwhile would bring it back
+    paused, the start lost."""
+    sm = SessionManager(_loopback_settings())
+    try:
+        info_hash = sm.add_torrent_from_magnet(_MAGNET, str(tmp_path))
+        sm.pause_torrent(info_hash)
+        sm.start_after_analysis(info_hash)
+
+        def saved_started():
+            saved = [atp for atp in persistence.load_all_resume_params() if add_params.info_hash_hex(atp) == info_hash]
+            return bool(saved) and not saved[0].flags & (lt.torrent_flags.paused | lt.torrent_flags.upload_mode)
+
+        assert _pump(qapp, sm, saved_started, timeout=5.0)
+    finally:
+        sm.shutdown(timeout_ms=0)

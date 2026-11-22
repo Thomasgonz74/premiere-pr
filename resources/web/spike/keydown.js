@@ -37,7 +37,7 @@ function shortcutPauseResumeSelectedDownload() {
   const infoHash = _selectedDownloadInfoHash();
   if (!infoHash) return;
   const record = downloadsRows.get(infoHash)?.record;
-  if (record && record.state === "PAUSED") {
+  if (record && downloadsOffersStart(record)) {
     window.bridge.downloads.resumeTorrent(infoHash);
   } else {
     window.bridge.downloads.pauseTorrent(infoHash);

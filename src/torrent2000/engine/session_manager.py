@@ -671,18 +671,24 @@ class SessionManager(QObject):
     def _save_start_once_analysed(self) -> None:
         persistence.save_json(get_magnets_to_start_path(), sorted(self._start_once_analysed))
 
-    def start_awaiting_magnet(self, info_hash: str) -> None:
+    def start_awaiting_magnet(self, info_hash: str) -> bool:
         """The user starts, from the Downloads page, a magnet nobody will
         analyse any more (left awaiting by a restart, or by another magnet
         analysed on the Add page): what RSS and remote add do -- danger scan
         with the auto-exclude threshold, then start_after_analysis -- now if
-        its metadata is in, else as soon as it arrives (saved for a restart)."""
+        its metadata is in, else as soon as it arrives (saved for a restart).
+        True when it waits for its metadata."""
+        record = self._records.get(info_hash)
+        if record is not None and _is_download_start_blocked(self._settings.theme, record.progress):
+            self.download_blocked_by_theme.emit(info_hash)
+            return False
         if self.get_torrent_files(info_hash):
             self._scan_and_start(info_hash)
-            return
+            return False
         self._start_once_analysed.add(info_hash)
         self._save_start_once_analysed()
         self.resume_torrent(info_hash)  # a paused magnet would never fetch its metadata
+        return True
 
     def _scan_and_start(self, info_hash: str) -> None:
         from torrent2000.danger_scanner.scanner import auto_exclude_indices, scan_files
@@ -704,6 +710,11 @@ class SessionManager(QObject):
             # pin, rule and state.
             raise TorrentAlreadyPresentError(info_hash)
         handle = self._session.add_torrent(atp)
+        if not awaiting_analysis and info_hash in self._awaiting_analysis:
+            # Left by a magnet of it lost in a crash before its first resume
+            # save: the restore would hold this one in upload mode.
+            self._awaiting_analysis.discard(info_hash)
+            self._save_awaiting_analysis()
         self._records[info_hash] = TorrentRecord(
             info_hash=info_hash,
             name=atp.name or "",
@@ -978,6 +989,10 @@ class SessionManager(QObject):
         handle.unset_flags(lt.torrent_flags.upload_mode)
         handle.set_flags(lt.torrent_flags.auto_managed)
         handle.resume()
+        # awaiting_analysis.json just changed: a .fastresume left until the
+        # periodic save would still hold it (and any pause from while it
+        # was held) after a crash -- see _restore_previous_session.
+        handle.save_resume_data(lt.torrent_handle.save_info_dict)
 
     def pause_torrent(self, info_hash: str) -> None:
         handle = self._handles.get(info_hash)
@@ -1289,6 +1304,8 @@ class SessionManager(QObject):
                     atp.flags |= lt.torrent_flags.upload_mode
                     atp.flags &= ~lt.torrent_flags.auto_managed
                 elif atp.flags & lt.torrent_flags.upload_mode:
+                    # Kept paused if it was: libtorrent also enters upload
+                    # mode on a full disk, and _on_file_error pauses it.
                     atp.flags &= ~lt.torrent_flags.upload_mode
                     if not atp.flags & lt.torrent_flags.paused:
                         atp.flags |= lt.torrent_flags.auto_managed
