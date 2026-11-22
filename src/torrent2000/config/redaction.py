@@ -30,8 +30,13 @@ _SECRET_PATH_UUID = re.compile(r"[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}", r
 
 def _redact_feed_url(url: str) -> str:
     """Blanks only what looks like a passkey, so a public feed's own query
-    (search, category...) survives the round trip and two feeds stay two."""
-    parts = urlsplit(url)
+    (search, category...) survives the round trip and two feeds stay two.
+    A URL urlsplit refuses (an unclosed IPv6 bracket) is blanked whole:
+    raising here made every later Settings.save() raise too."""
+    try:
+        parts = urlsplit(url)
+    except ValueError:
+        return ""
     path = _SECRET_PATH_RUN.sub("", _SECRET_PATH_B64.sub("", _SECRET_PATH_UUID.sub("", parts.path)))
     query = _QUERY_PARAM.sub(
         lambda m: f"{m.group(1)}=" if _SECRET_PARAM.search(m.group(1)) else m.group(0), parts.query

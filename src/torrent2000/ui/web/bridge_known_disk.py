@@ -22,6 +22,7 @@ from PySide6.QtCore import QObject, Signal, Slot
 
 from torrent2000.engine.known_disk_service import KnownDisk, KnownDiskService, KnownDiskStore
 from torrent2000.engine.session_manager import SessionManager
+from torrent2000.i18n.translator import tr
 
 
 def _target_dir(mountpoint: str, category: str) -> str:
@@ -53,7 +54,7 @@ class KnownDiskBridge(QObject):
     def saveDisk(self, label: str, action: str) -> dict:
         label = (label or "").strip()
         if not label:
-            return {"ok": False, "error": "Le label du disque est requis."}
+            return {"ok": False, "error": tr("web.profile_automation.known_disk_label_required")}
         self._store.save_disk(KnownDisk(label=label, action=(action or "").strip()))
         return {"ok": True}
 

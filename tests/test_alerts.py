@@ -406,6 +406,17 @@ def test_a_paused_torrent_reports_no_rate():
     assert (record.download_rate, record.upload_rate) == (0, 0)
 
 
+def test_a_magnet_held_for_its_analysis_reports_no_download_rate():
+    """Running in upload mode, not paused: its protocol traffic showed as
+    "↓ 1 o/s" and a "2342h 24m" ETA while nothing was downloaded."""
+    status = _status_stub(download_rate=631, upload_rate=0)
+    record = TorrentRecord(info_hash="hash0", awaiting_analysis=True)
+
+    status_to_record(status, record)
+
+    assert record.download_rate == 0
+
+
 def test_status_to_record_queue_position_is_coerced_to_int():
     status = _status_stub(queue_position=7.0)
     record = TorrentRecord(info_hash="hash0")

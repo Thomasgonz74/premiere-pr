@@ -22,8 +22,10 @@ def status_to_record(status: "lt.torrent_status", record: TorrentRecord) -> None
     record.total_size = status.total_wanted
     record.progress = status.progress
     # libtorrent lets a paused torrent's rolling averages decay for ~30 s:
-    # still a rate (and an ETA) on a row that says "En pause".
-    record.download_rate = 0 if status.paused else status.download_rate
+    # still a rate (and an ETA) on a row that says "En pause". A magnet held
+    # for its analysis (upload mode) downloads no piece either: what it gets
+    # is protocol traffic.
+    record.download_rate = 0 if status.paused or record.awaiting_analysis else status.download_rate
     record.upload_rate = 0 if status.paused else status.upload_rate
     record.num_peers = status.num_peers
     record.num_seeds = status.num_seeds

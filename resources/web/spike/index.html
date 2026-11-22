@@ -85,7 +85,7 @@
         <span data-i18n-key="downloads_tab.column_eta">Temps restant</span>
         <span data-i18n-key="downloads_tab.column_download_rate">↓ Vitesse</span>
         <span data-i18n-key="downloads_tab.column_upload_rate">↑ Vitesse</span>
-        <span><span data-i18n-key="downloads_tab.column_peers">Pairs</span><span class="info-hint" tabindex="0" data-tooltip="Nombre de pairs connectés. Le nombre entre parenthèses est celui des « seeds » (graines) : des pairs qui possèdent déjà le fichier complet et ne font que l'envoyer.">?</span></span>
+        <span><span data-i18n-key="downloads_tab.column_peers">Pairs</span><span class="info-hint" tabindex="0" data-i18n-tooltip="web.downloads.peers_column_tooltip" data-tooltip="Nombre de pairs connectés. Le nombre entre parenthèses est celui des « seeds » (graines) : des pairs qui possèdent déjà le fichier complet et ne font que l'envoyer.">?</span></span>
         <span data-i18n-key="downloads_tab.column_state">État</span>
         <span data-i18n-key="downloads_tab.column_category">Catégorie</span>
         <span data-i18n-key="downloads_tab.column_action">Action</span>
@@ -114,12 +114,12 @@
         <label class="field-row">
           <input type="checkbox" id="downloadsDetailsSequential">
           <span data-i18n-key="downloads_tab.sequential">Téléchargement séquentiel (pour lecture en streaming)</span>
-          <span class="info-hint" tabindex="0" data-tooltip="Télécharge les morceaux du fichier dans l'ordre plutôt qu'en fonction de leur disponibilité, pour pouvoir commencer la lecture avant la fin du téléchargement.">?</span>
+          <span class="info-hint" tabindex="0" data-i18n-tooltip="web.downloads.sequential_tooltip" data-tooltip="Télécharge les morceaux du fichier dans l'ordre plutôt qu'en fonction de leur disponibilité, pour pouvoir commencer la lecture avant la fin du téléchargement.">?</span>
         </label>
         <div class="field-row">
           <label class="field-label inline" for="downloadsDetailsDeadlineInput" data-i18n-key="web.downloads.deadline_label">Échéance</label>
           <input type="datetime-local" id="downloadsDetailsDeadlineInput">
-          <span class="info-hint" tabindex="0" data-tooltip="Fixez une date/heure cible : ce torrent est automatiquement remonté dans la file d'attente à mesure que l'échéance approche (moins de 24h restantes).">?</span>
+          <span class="info-hint" tabindex="0" data-i18n-tooltip="web.downloads.deadline_tooltip" data-tooltip="Fixez une date/heure cible : ce torrent est automatiquement remonté dans la file d'attente à mesure que l'échéance approche (moins de 24h restantes).">?</span>
           <button id="downloadsDetailsDeadlineSetBtn" data-i18n-key="web.downloads.deadline_set_button">Définir</button>
           <button id="downloadsDetailsDeadlineClearBtn" data-i18n-key="web.downloads.deadline_clear_button">Effacer</button>
         </div>
@@ -196,7 +196,7 @@
           <label class="field-label inline" data-i18n-key="web.share_page.data_limit_label">Données (Mo)</label>
           <input type="number" id="shareDataLimitInput" min="0" max="1000000" value="0" style="width: 80px;">
           <label class="field-label inline" for="shareRatioLimitInput" data-i18n-key="web.share_page.ratio_limit_label">Ratio</label>
-          <span class="info-hint" tabindex="0" data-tooltip="Rapport entre les données envoyées et les données reçues (envoi ÷ réception). Le partage s'arrête automatiquement une fois ce ratio atteint. 0 = pas de limite.">?</span>
+          <span class="info-hint" tabindex="0" data-i18n-tooltip="web.share_page.ratio_limit_tooltip" data-tooltip="Rapport entre les données envoyées et les données reçues (envoi ÷ réception). Le partage s'arrête automatiquement une fois ce ratio atteint. 0 = pas de limite.">?</span>
           <input type="number" id="shareRatioLimitInput" min="0" max="100" step="0.1" value="0" style="width: 60px;">
         </div>
         <p class="status-line" id="shareStatus"></p>

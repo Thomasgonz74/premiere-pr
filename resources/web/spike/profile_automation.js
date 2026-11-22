@@ -282,6 +282,7 @@ function wireProfileAutomation() {
       const note = document.createElement("p");
       note.className = "empty-note";
       note.textContent = t("web.profile_automation.decision_journal_empty");
+      note.dataset.i18nKey = "web.profile_automation.decision_journal_empty";
       journalList.appendChild(note);
       return;
     }
@@ -355,6 +356,7 @@ function wireProfileAutomation() {
       const note = document.createElement("p");
       note.className = "empty-note";
       note.textContent = t("web.profile_automation.known_disk_empty");
+      note.dataset.i18nKey = "web.profile_automation.known_disk_empty";
       knownDiskList.appendChild(note);
       return;
     }

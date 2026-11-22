@@ -11,7 +11,7 @@ from PySide6.QtCore import QObject, Signal, Slot
 from torrent2000.config.settings import Settings
 from torrent2000.engine import startup_registration
 from torrent2000.engine.session_manager import SessionManager
-from torrent2000.i18n.translator import LANGUAGE_LABELS, set_language
+from torrent2000.i18n.translator import LANGUAGE_LABELS, set_language, tr
 from torrent2000.ui.theme.theme_manager import appearance_mode_labels
 
 # The 34 real-CSS charter themes (see plan: idempotent-gathering-fern.md,
@@ -23,6 +23,8 @@ from torrent2000.ui.theme.theme_manager import appearance_mode_labels
 # (CCCP's "no downloading" rule, macOS's stats-leveling weight) keys off
 # those exact strings -- reusing them keeps that logic working untouched.
 # The other 27 are brand new themes with no native counterpart.
+# A label with words to translate is a catalog key (web.profile_general.
+# theme_*); a proper name is shown as is -- tr() returns it unchanged.
 WEB_THEME_LABELS: list[tuple[str, str]] = [
     ("Windows XP (Luna)", "luna_xp"),
     ("Windows 7 (Aero)", "win7_aero"),
@@ -30,13 +32,13 @@ WEB_THEME_LABELS: list[tuple[str, str]] = [
     ("Windows 11 (Fluent 2)", "win11_mica"),
     ("Windows 95", "win95_classic"),
     ("macOS 26 (Tahoe Liquid Glass)", "macos_modern"),
-    ("Soviétique productiviste (Constructivisme)", "cccp_soviet"),
+    ("web.profile_general.theme_cccp_soviet", "cccp_soviet"),
     ("Windows 8.1 (Metro)", "windows-8"),
     ("Amiga Workbench", "amiga-workbench"),
-    ("Art déco (Paris 1925)", "art-deco"),
+    ("web.profile_general.theme_art_deco", "art-deco"),
     ("Bauhaus (Dessau)", "bauhaus"),
     ("BeOS R5", "beos-r5"),
-    ("Blueprint (cyanotype)", "blueprint"),
+    ("web.profile_general.theme_blueprint", "blueprint"),
     ("CDE Motif", "cde-motif"),
     ("ChromeOS (Material Google)", "chromeos"),
     ("Frutiger Aero (2004-2013)", "frutiger-aero"),
@@ -45,19 +47,19 @@ WEB_THEME_LABELS: list[tuple[str, str]] = [
     ("Linux Mint (Cinnamon Mint-Y)", "linux-mint"),
     ("Mac OS 9 (Platinum)", "macos-9"),
     ("Mac OS X 10.0 (Aqua Cheetah)", "macos-x-aqua"),
-    ("Mac OS X Leopard (métal unifié)", "macos-x-leopard"),
+    ("web.profile_general.theme_macos_x_leopard", "macos-x-leopard"),
     ("Macintosh System 1 (1984)", "macintosh-system-1"),
     ("Memphis (Milano 1981)", "memphis"),
     ("NeXTSTEP", "nextstep"),
     ("Palm OS (LCD monochrome)", "palm-os"),
-    ("Soviétique cosmique (Rétrofuturisme)", "soviet-cosmic"),
-    ("Suisse international (Zurich 1957)", "swiss-international"),
+    ("web.profile_general.theme_soviet_cosmic", "soviet-cosmic"),
+    ("web.profile_general.theme_swiss_international", "swiss-international"),
     ("Synthwave (Outrun)", "synthwave"),
     ("TUI DOS (Turbo Vision)", "tui-dos"),
-    ("Terminal phosphore (P1)", "terminal-phosphor"),
+    ("web.profile_general.theme_terminal_phosphor", "terminal-phosphor"),
     ("Ubuntu (Yaru)", "ubuntu"),
     ("Ubuntu Unity (Ambiance)", "ubuntu-unity"),
-    ("Web-brutalisme", "web-brutalism"),
+    ("web.profile_general.theme_web_brutalism", "web-brutalism"),
 ]
 
 
@@ -125,7 +127,8 @@ class ProfileGeneralBridge(QObject):
         # theme/appearance_mode/language/audio_volume are intentionally NOT
         # written here -- they live-apply and persist immediately on change
         # via their own dedicated slots below.
-        s.save()
+        if not s.save():
+            return {"ok": False, "error": tr("web.profile_security.save_held_after_import")}
         return {"ok": True}
 
     @Slot(result=bool)
@@ -137,7 +140,7 @@ class ProfileGeneralBridge(QObject):
 
     @Slot(result="QVariantList")
     def getThemeOptions(self) -> list:
-        return [{"id": theme_id, "label": label} for label, theme_id in WEB_THEME_LABELS]
+        return [{"id": theme_id, "label": tr(label)} for label, theme_id in WEB_THEME_LABELS]
 
     @Slot(result="QVariantList")
     def getAppearanceModeOptions(self) -> list:

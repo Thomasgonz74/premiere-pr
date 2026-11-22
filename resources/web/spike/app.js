@@ -72,10 +72,9 @@ new QWebChannel(qt.webChannelTransport, (channel) => {
     _applyCccpPanelState(themeId, channel.objects.windowBridge);
   });
 
-  // Re-fetch the fallback-resolved catalog (see i18n.js/bridge_i18n.py) and
-  // refresh static DOM whenever the Profile > General language selector
-  // changes it -- dynamically-rendered content (list rows, dialogs) needs
-  // no extra wiring here, it already calls t() fresh on its own next render.
+  // Re-fetch the fallback-resolved catalog (see i18n.js/bridge_i18n.py)
+  // whenever the Profile > General language selector changes it: setCatalog
+  // re-applies the tagged text and has the pages rebuild the rest.
   channel.objects.profileGeneral.languageChanged.connect(() => {
     channel.objects.i18n.getCatalog((catalog) => setCatalog(catalog));
   });
@@ -86,7 +85,7 @@ new QWebChannel(qt.webChannelTransport, (channel) => {
   channel.objects.windowBridge.magnetDetected.connect((magnetUri) => {
     if (confirm(t("web.app.magnet_detected_confirm", { magnetUri }))) {
       switchToTab("add");
-      channel.objects.add.analyzeMagnet(magnetUri);
+      addAnalyzeMagnet(magnetUri);
     }
   });
 

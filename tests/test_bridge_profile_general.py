@@ -30,3 +30,24 @@ def test_toggling_the_checkbox_rewrites_a_run_key_out_of_step_with_the_setting(t
 
     assert registry["enabled"] is (not run_key)
     assert settings.launch_at_startup is (not run_key)
+
+
+def test_theme_names_follow_the_language():
+    """"Soviétique productiviste (Constructivisme)" in every language."""
+    import json
+    from pathlib import Path
+
+    from torrent2000.i18n import translator
+
+    english = json.loads(
+        (Path(__file__).resolve().parents[1] / "resources" / "i18n" / "en.json").read_text(encoding="utf-8")
+    )
+    translator.set_language("en")
+    try:
+        labels = {option["id"]: option["label"] for option in ProfileGeneralBridge(None, None).getThemeOptions()}
+    finally:
+        translator.set_language(translator.DEFAULT_LANGUAGE)
+
+    assert labels["cccp_soviet"] == english["web.profile_general.theme_cccp_soviet"]
+    assert labels["luna_xp"] == "Windows XP (Luna)"  # a proper name, as is
+    assert not [label for label in labels.values() if label.startswith("web.")]

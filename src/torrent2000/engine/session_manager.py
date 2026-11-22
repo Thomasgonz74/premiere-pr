@@ -311,6 +311,9 @@ class SessionManager(QObject):
         self._awaiting_analysis: set[str] = {
             h for h in persistence.load_json(get_awaiting_analysis_path(), []) if isinstance(h, str)
         }
+        # add_torrent_from_magnet's save, made once per event-loop pass: an RSS
+        # check adding a hundred magnets writes the file once, not a hundred times.
+        self._awaiting_save_queued = False
         # Those of them the user started from the Downloads page before their
         # metadata was in -- see start_awaiting_magnet.
         self._start_once_analysed: set[str] = {
@@ -662,10 +665,13 @@ class SessionManager(QObject):
         atp.flags |= lt.torrent_flags.upload_mode
         info_hash = self._add(atp, awaiting_analysis=True)
         self._awaiting_analysis.add(info_hash)
-        self._save_awaiting_analysis()
+        if not self._awaiting_save_queued:
+            self._awaiting_save_queued = True
+            QTimer.singleShot(0, self, lambda: self._awaiting_save_queued and self._save_awaiting_analysis())
         return info_hash
 
     def _save_awaiting_analysis(self) -> None:
+        self._awaiting_save_queued = False
         persistence.save_json(get_awaiting_analysis_path(), sorted(self._awaiting_analysis))
 
     def _save_start_once_analysed(self) -> None:
@@ -717,7 +723,7 @@ class SessionManager(QObject):
             self._save_awaiting_analysis()
         self._records[info_hash] = TorrentRecord(
             info_hash=info_hash,
-            name=atp.name or "",
+            name=_atp_name(atp),
             save_path=atp.save_path,
             awaiting_analysis=awaiting_analysis,
             is_magnet_awaiting_metadata=atp.ti is None,
@@ -1208,9 +1214,11 @@ class SessionManager(QObject):
     def recheck_torrent(self, info_hash: str) -> None:
         handle = self._handles.get(info_hash)
         if handle is not None:
-            record = self._records.get(info_hash)
-            if record is not None and record.progress >= 1.0:
-                self.expect_existing_data(info_hash)
+            # Whatever its progress -- 0 for a complete torrent restored while
+            # its drive was unplugged: data the check itself finds complete
+            # is no download. Pieces it finds missing drop the mark
+            # (_on_torrent_checked), so the finish once they're downloaded is.
+            self.expect_existing_data(info_hash)
             handle.force_recheck()
 
     def expect_existing_data(self, info_hash: str) -> None:
@@ -1316,7 +1324,7 @@ class SessionManager(QObject):
             self._pending_restore.add(info_hash)
             record = TorrentRecord(
                 info_hash=info_hash,
-                name=atp.name or "",
+                name=_atp_name(atp),
                 save_path=atp.save_path,
                 all_time_downloaded=getattr(atp, "total_downloaded", 0),
                 all_time_uploaded=getattr(atp, "total_uploaded", 0),
@@ -1333,6 +1341,8 @@ class SessionManager(QObject):
     def shutdown(self, timeout_ms: int = 3000) -> None:
         self._timer.stop()
         self._resume_save_timer.stop()
+        if self._awaiting_save_queued:
+            self._save_awaiting_analysis()
         # Tracked per torrent, not counted: up to _RESUME_SAVES_PER_TICK
         # periodic saves can still be in flight, and counting their alerts
         # could end the wait before some torrent's final save arrives. (A
@@ -1372,6 +1382,14 @@ class SessionManager(QObject):
                 elif isinstance(alert, (lt.save_resume_data_failed_alert,)):
                     pending.discard(alert.handle)
             time.sleep(0.05)
+
+
+def _atp_name(atp: "lt.add_torrent_params") -> str:
+    """A .torrent's name is in its ti, not in atp.name (a magnet's dn=):
+    else a torrent finishing before its first status tick had no name in the
+    "download finished" toast and webhook, and Defender scanned the whole
+    download folder for it."""
+    return atp.name or (atp.ti.name() if atp.ti is not None else "")
 
 
 def _hash_hex(hashes) -> str:

@@ -157,3 +157,42 @@ def test_a_restart_within_the_interval_keeps_the_clock(monkeypatch):
     restarted.evaluate_now()
 
     assert restarted_session_manager.rechecked == ["hash1"]
+
+
+def test_a_paused_complete_torrent_is_rechecked_once_resumed_not_before(monkeypatch):
+    """libtorrent leaves a paused torrent's recheck at 0 % until it is resumed
+    (never, under CCCP), and that resume after a restart re-fired the whole
+    "download finished" chain. Its clock is kept meanwhile."""
+    clock = _fake_clock(monkeypatch)
+    service, session_manager = _service(monkeypatch, interval_days=30)
+    session_manager.records = [TorrentRecord(info_hash="hash1", state=TorrentState.PAUSED, progress=1.0)]
+    service.evaluate_now()
+
+    clock["now"] += 31 * 86400
+    service.evaluate_now()
+    assert session_manager.rechecked == []
+
+    session_manager.records[0].state = TorrentState.SEEDING  # resumed (e.g. its share limit raised)
+    service.evaluate_now()
+    assert session_manager.rechecked == ["hash1"]
+
+
+def test_a_session_shorter_than_an_hour_still_gets_its_overdue_rechecks(monkeypatch):
+    """Only the hourly timer evaluated: someone whose sessions last under an
+    hour never got a recheck, the option ticked."""
+    import time
+
+    from PySide6.QtTest import QTest
+
+    monkeypatch.setattr("torrent2000.engine.scheduled_recheck_service.FIRST_CHECK_DELAY_MS", 50)
+    settings = Settings()
+    settings.scheduled_recheck_enabled = True
+    settings.scheduled_recheck_interval_days = 1
+    session_manager = FakeSessionManager()
+    session_manager.records = [TorrentRecord(info_hash="hash1", state=TorrentState.SEEDING, progress=1.0)]
+    service = ScheduledRecheckService(session_manager, settings)
+    service._last_checked["hash1"] = time.time() - 3 * 86400  # saved by a previous session
+
+    QTest.qWait(300)
+
+    assert session_manager.rechecked == ["hash1"]

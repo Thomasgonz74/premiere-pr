@@ -31,6 +31,7 @@ function statsRenderHistory(entries) {
     const note = document.createElement("p");
     note.className = "empty-note";
     note.textContent = t("web.profile_stats.empty_history");
+    note.dataset.i18nKey = "web.profile_stats.empty_history";
     body.appendChild(note);
     return;
   }
@@ -202,6 +203,10 @@ function wireProfileStats() {
 
   bridge.getStatsSnapshot((snap) => statsFormatSnapshot(snap));
   bridge.snapshotUpdated.connect(statsFormatSnapshot);
+  document.addEventListener("catalogchange", () => {
+    bridge.getStatsSnapshot((snap) => statsFormatSnapshot(snap));
+    statsRefreshHistory(bridge); // sizes in the language's units
+  });
 
   statsRefreshHistory(bridge);
   bridge.historyChanged.connect(() => statsScheduleHistoryRefresh(bridge));

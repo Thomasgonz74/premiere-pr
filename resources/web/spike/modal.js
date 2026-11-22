@@ -131,6 +131,12 @@ function alertModal(titleText, message, buttonLabel, onClose) {
   openModal(titleText, content, onClose);
 }
 
+// moveStorage's answer on the Downloads and Share pages: a refused folder
+// (a drive root...) is said here, whether or not tray notifications are on.
+function showMoveRefusal(refusal) {
+  if (refusal) alertModal(t("notifications.move_storage_refused_title"), refusal);
+}
+
 // Cancellable countdown for AutoShutdownService -- ticks down once per
 // second entirely in JS (no per-second Python->JS call needed), and calls
 // the bridge to cancel if "Annuler" is clicked before it reaches zero.

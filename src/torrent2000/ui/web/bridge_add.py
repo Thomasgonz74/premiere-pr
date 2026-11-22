@@ -31,7 +31,7 @@ from torrent2000.config.settings import Settings
 from torrent2000.danger_scanner import FileRisk, ScanResult, scan_files
 from torrent2000.engine.disk_space_monitor import free_space_mb
 from torrent2000.engine.routing_rules import RoutingRuleStore, resolve_destination
-from torrent2000.engine.session_manager import SessionManager, TorrentAlreadyPresentError
+from torrent2000.engine.session_manager import SessionManager, TorrentAlreadyPresentError, is_safe_move_destination
 from torrent2000.engine.torrent_files import files_from_torrent_path
 from torrent2000.i18n.translator import tr
 from torrent2000.ui.web.dropped_file import save_dropped_bytes_to_temp_file
@@ -78,8 +78,9 @@ class AddBridge(QObject):
         self._torrent_path: str | None = None
         self._torrent_files: list | None = None
         self._pending_magnet_hash: str | None = None
-        # temp path -> name the user dropped, so routing rules match that
-        # name and not "dropped_xxxx" (see saveDroppedTorrent).
+        # temp path -> name the user dropped (or the search result's title),
+        # so routing rules match that name and not "dropped_xxxx" (see
+        # saveDroppedTorrent, nameTorrentFile).
         self._dropped_names: dict[str, str] = {}
         self._threshold = settings.danger_auto_exclude_threshold
         session_manager.metadata_received.connect(self._on_metadata_received)
@@ -152,7 +153,7 @@ class AddBridge(QObject):
         try:
             files = files_from_torrent_path(path)
         except Exception as exc:
-            self.statusChanged.emit(f"Erreur de lecture du fichier torrent : {exc}")
+            self.statusChanged.emit(tr("add_tab.analysis_failed_message", error=exc))
             return
         self._torrent_files = files
         result = scan_files(files)
@@ -163,7 +164,7 @@ class AddBridge(QObject):
             name=self._dropped_names.get(path) or Path(path).stem,
         )
         self.scanReady.emit(payload)
-        self.statusChanged.emit(f"{len(files)} fichier(s) analysé(s).")
+        self.statusChanged.emit(tr("add_tab.files_analyzed", count=len(files)))
 
     @Slot(str, str, result=str)
     def saveDroppedTorrent(self, filename: str, base64_data: str) -> str:
@@ -178,31 +179,46 @@ class AddBridge(QObject):
             self._dropped_names[path] = Path(filename).stem
         return path
 
+    @Slot(str, str)
+    def nameTorrentFile(self, path: str, name: str) -> None:
+        """A search result's .torrent, fetched to a "search_xxxx" temp file:
+        routing rules match the result's title, as a dropped file's name."""
+        if name:
+            self._dropped_names[path] = name
+
     @Slot(str)
     def analyzeMagnet(self, uri: str) -> None:
+        self._analyze_magnet(uri)
+
+    def _analyze_magnet(self, uri: str) -> str:
+        """The error, also shown through statusChanged -- "" once the magnet
+        awaits its metadata (or is scanned already)."""
         uri = uri.strip()
         if not uri:
-            return
+            return ""
         self._torrent_path = None
         try:
             info_hash = self._session_manager.add_torrent_from_magnet(uri, self._settings.default_download_dir)
         except TorrentAlreadyPresentError as exc:
             record = self._session_manager.get_record(exc.info_hash)
             if record is None or not record.awaiting_analysis:
-                self.statusChanged.emit(f"Erreur : {exc}")
-                return
+                return self._show_error(tr("add_tab.duplicate_message"))
             # Still awaiting its analysis (e.g. added before a restart): pick it
             # back up -- its metadata may be in already, never to be announced again.
             self._pending_magnet_hash = exc.info_hash
             if self._session_manager.get_torrent_files(exc.info_hash):
                 self._on_metadata_received(exc.info_hash)
-                return
+                return ""
             info_hash = exc.info_hash
         except Exception as exc:
-            self.statusChanged.emit(f"Erreur : {exc}")
-            return
+            return self._show_error(tr("web.add.magnet_error", error=exc))
         self._pending_magnet_hash = info_hash
-        self.statusChanged.emit("En attente des métadonnées…")
+        self.statusChanged.emit(tr("add_tab.awaiting_metadata"))
+        return ""
+
+    def _show_error(self, message: str) -> str:
+        self.statusChanged.emit(message)
+        return message
 
     def _on_metadata_received(self, info_hash: str) -> None:
         if info_hash != self._pending_magnet_hash:
@@ -217,7 +233,7 @@ class AddBridge(QObject):
             name=record.name if record is not None else "",
         )
         self.scanReady.emit(payload)
-        self.statusChanged.emit(f"{len(files)} fichier(s) analysé(s).")
+        self.statusChanged.emit(tr("add_tab.files_analyzed", count=len(files)))
 
     @Slot(str, str, str, "QVariantList", result="QVariantMap")
     def startTorrent(self, dest_path: str, magnet_uri: str, category: str, excluded_indices) -> dict:
@@ -231,6 +247,17 @@ class AddBridge(QObject):
             # placing it is part of the add, not a "move finished" toast.
             record = self._session_manager.get_record(self._pending_magnet_hash)
             if record is not None and Path(dest_path) != Path(record.save_path):
+                # Checked before it starts: the move runs in the background,
+                # and a refused or failed one (a drive root, a drive not
+                # plugged in) would leave it downloading in the default folder.
+                if not is_safe_move_destination(dest_path):
+                    return {"ok": False, "error": tr(
+                        "notifications.move_storage_refused_message", name=record.name, path=dest_path
+                    )}
+                try:
+                    Path(dest_path).mkdir(parents=True, exist_ok=True)
+                except OSError as exc:
+                    return {"ok": False, "error": tr("web.add.destination_unusable", error=exc.strerror or exc)}
                 self._session_manager.move_storage(self._pending_magnet_hash, dest_path, quiet=True)
             if excluded:
                 self._session_manager.exclude_files(self._pending_magnet_hash, excluded)
@@ -252,7 +279,7 @@ class AddBridge(QObject):
             total_size = sum(f.size for f in files if f.index not in excluded)
             free_mb = free_space_mb(dest_path)
             if free_mb is not None and free_mb < total_size / (1024 * 1024):
-                return {"ok": False, "error": "Espace disque insuffisant sur le volume de destination."}
+                return {"ok": False, "error": tr("add_tab.insufficient_space_message")}
             try:
                 info_hash = self._session_manager.add_torrent_from_file(self._torrent_path, dest_path, excluded)
             except TorrentAlreadyPresentError:
@@ -270,10 +297,12 @@ class AddBridge(QObject):
 
         magnet_uri = (magnet_uri or "").strip()
         if magnet_uri:
-            self.analyzeMagnet(magnet_uri)
-            return {"ok": False, "pending": True, "error": "Analyse en cours — cliquez de nouveau sur Démarrer une fois prêt."}
+            error = self._analyze_magnet(magnet_uri)
+            if error:
+                return {"ok": False, "error": error}
+            return {"ok": False, "pending": True, "error": tr("add_tab.magnet_analysis_required_message")}
 
-        return {"ok": False, "error": "Sélectionnez un fichier .torrent ou saisissez un lien magnet."}
+        return {"ok": False, "error": tr("add_tab.no_source_message")}
 
     def _reset(self) -> None:
         self._torrent_path = None

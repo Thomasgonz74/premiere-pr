@@ -471,6 +471,7 @@ function anpRenderAssociations(list) {
     const note = document.createElement("p");
     note.className = "empty-note";
     note.textContent = t("web.profile_advanced.no_network_associations");
+    note.dataset.i18nKey = "web.profile_advanced.no_network_associations";
     box.appendChild(note);
     return;
   }
@@ -590,6 +591,7 @@ function wireProfileAdvanced() {
   arBuildRulesSection(container);
   arBuildProfilesSection(container);
   anpBuildSection(container);
+  document.addEventListener("catalogchange", arRenderRules);
   arReloadRules();
   arReloadProfiles();
   anpReloadAssociations();

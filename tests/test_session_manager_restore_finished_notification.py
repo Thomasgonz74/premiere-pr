@@ -178,6 +178,55 @@ def test_a_recheck_that_redownloads_bad_pieces_reports_the_finish_and_scans(qapp
     sm.shutdown()
 
 
+def test_a_recheck_once_its_drive_is_back_reports_no_new_finish(qapp, tmp_path):
+    """Restored while its drive was unplugged, a complete torrent checks as
+    missing (progress 0); rechecked once the drive is back, its data is whole
+    again: nothing was downloaded -- no toast, webhook, post-complete move or
+    shutdown countdown."""
+    save_path = tmp_path / "drive"
+    save_path.mkdir()
+    torrent_path = _make_already_complete_torrent(save_path)
+    sm1 = SessionManager(Settings())
+    info_hash = sm1.add_torrent_from_file(torrent_path, save_path=str(save_path))
+    assert _run_ticks(qapp, sm1, lambda: sm1.get_record(info_hash).progress >= 1.0)
+    sm1.shutdown()
+    unplugged = tmp_path / "unplugged"
+    save_path.rename(unplugged)
+
+    sm2 = SessionManager(Settings())
+    finished_events = []
+    sm2.torrent_finished.connect(finished_events.append)
+    try:
+        # Bound, and its check found the data missing.
+        assert _run_ticks(
+            qapp, sm2, lambda: info_hash in sm2._handles and info_hash not in sm2._pending_restore_confirmation
+        )
+        unplugged.rename(save_path)  # the drive is back
+        sm2.recheck_torrent(info_hash)
+        assert _run_ticks(qapp, sm2, lambda: sm2.get_record(info_hash).progress >= 1.0)
+        _run_ticks(qapp, sm2, lambda: False, timeout=1.0)
+    finally:
+        sm2.shutdown()
+
+    assert finished_events == []
+
+
+def test_a_torrent_file_is_named_at_the_add_not_at_its_first_status(qapp, tmp_path):
+    """atp.name only holds a magnet's dn=: a .torrent finishing before its
+    first status tick had an empty name in the "download finished" toast and
+    webhook, and Defender scanned the whole download folder for it."""
+    save_path = tmp_path / "downloads"
+    save_path.mkdir()
+    torrent_path = _make_already_complete_torrent(save_path)
+    sm = SessionManager(Settings())
+    try:
+        info_hash = sm.add_torrent_from_file(torrent_path, save_path=str(save_path))
+
+        assert sm.get_record(info_hash).name == "already_complete.bin"
+    finally:
+        sm.shutdown()
+
+
 # ------------------------------------------------------- resume_data_is_complete
 
 

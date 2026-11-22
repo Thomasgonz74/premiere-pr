@@ -16,6 +16,7 @@ import threading
 from PySide6.QtCore import QCoreApplication, QObject, QRunnable, QThreadPool, Signal, Slot
 
 from torrent2000.engine.torrent_creator import CreationCancelled, create_torrent_file
+from torrent2000.i18n.translator import tr
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +51,7 @@ class _CreateTorrentRunnable(QRunnable):
             return
         except Exception:
             logger.exception("Torrent creation failed for %s", self._source_path)
-            result = {"ok": False, "path": self._output_path, "error": "La création du torrent a échoué."}
+            result = {"ok": False, "path": self._output_path, "error": tr("create_torrent.error_message")}
         else:
             result = {"ok": True, "path": self._output_path}
         if self._cancel.is_set():

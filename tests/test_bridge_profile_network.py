@@ -82,3 +82,17 @@ def test_a_saved_port_past_65535_fails_start_instead_of_raising():
     server = RemoteAccessServer(FakeSessionManager(), settings)
     assert server.start() is False
     assert not server.is_running
+
+
+def test_the_port_reaches_the_slot_unwrapped():
+    """QWebChannel converted the page's number to the slot's 32-bit int
+    first: a typed 4294967297 became port 1, past the range check."""
+    meta = ProfileNetworkBridge.staticMetaObject
+    assert meta.indexOfSlot("setRemoteAccessPort(double)") != -1
+
+    settings = Settings()
+    session_manager = FakeSessionManager()
+    bridge = ProfileNetworkBridge(session_manager, settings, RemoteAccessServer(session_manager, settings))
+    for bad_port in (4294967297.0, 8642.5):
+        assert bridge.setRemoteAccessPort(bad_port)["ok"] is False
+    assert settings.remote_access_port == 8642

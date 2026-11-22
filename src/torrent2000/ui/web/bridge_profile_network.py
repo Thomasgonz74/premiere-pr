@@ -79,12 +79,14 @@ class ProfileNetworkBridge(QObject):
         # launch, not live-applied.
         s.ip_blocklist_enabled = bool(values.get("ipBlocklistEnabled", s.ip_blocklist_enabled))
         s.ip_blocklist_path = str(values.get("ipBlocklistPath", "")).strip()
-        s.save()
+        saved = s.save()
 
         # Live-apply, matching the native Save handler's sequence exactly.
         self._session_manager.set_restrict_discovery(s.restrict_discovery)
         self._session_manager.set_proxy(s)
         self._session_manager.set_encryption_mode(s.encryption_mode)
+        if not saved:
+            return {"ok": False, "error": tr("web.profile_security.save_held_after_import")}
         return {"ok": True}
 
     # ---------- Security center (read-only) ----------
@@ -131,13 +133,16 @@ class ProfileNetworkBridge(QObject):
             "token": s.remote_access_token,
         }
 
-    @Slot(int, result="QVariantMap")
-    def setRemoteAccessPort(self, port: int) -> dict:
+    @Slot(float, result="QVariantMap")
+    def setRemoteAccessPort(self, port: float) -> dict:
         # Live-apply like the enable checkbox: a running server is rebound
         # to the new port, or put back on the old one if that fails.
         # The page's min/max don't stop a typed 70000 (or an emptied field, 0).
-        if not 1 <= port <= 65535:
+        # A float, not an int: QWebChannel wrapped a typed 4294967297 to 1
+        # before this check saw it.
+        if not (float(port).is_integer() and 1 <= port <= 65535):
             return {"ok": False, "error": tr("remote_access.port_out_of_range")}
+        port = int(port)
         s = self._settings
         server = self._remote_access_server
         old_port = s.remote_access_port

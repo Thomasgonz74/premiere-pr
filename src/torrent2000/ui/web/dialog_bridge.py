@@ -11,6 +11,8 @@ from PySide6.QtCore import QObject, QUrl, Slot
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QFileDialog
 
+from torrent2000.i18n.translator import tr
+
 logger = logging.getLogger(__name__)
 
 
@@ -22,22 +24,24 @@ class DialogBridge(QObject):
     @Slot(result=str)
     def browseTorrentFile(self) -> str:
         path, _filter = QFileDialog.getOpenFileName(
-            self._window, "Choisir un fichier .torrent", "", "Torrent (*.torrent)"
+            self._window, tr("add_tab.choose_torrent_title"), "", "Torrent (*.torrent)"
         )
         return path
 
     @Slot(str, result=str)
     def browseFolder(self, current_path: str) -> str:
-        return QFileDialog.getExistingDirectory(self._window, "Choisir un dossier", current_path or "")
+        return QFileDialog.getExistingDirectory(self._window, tr("web.dialogs.choose_folder_title"), current_path or "")
 
     @Slot(str, str, result=str)
     def browseSaveFile(self, default_name: str, filter_str: str) -> str:
-        path, _filter = QFileDialog.getSaveFileName(self._window, "Enregistrer sous", default_name, filter_str)
+        path, _filter = QFileDialog.getSaveFileName(
+            self._window, tr("web.dialogs.save_as_title"), default_name, filter_str
+        )
         return path
 
     @Slot(str, result=str)
     def browseOpenFile(self, filter_str: str) -> str:
-        path, _filter = QFileDialog.getOpenFileName(self._window, "Choisir un fichier", "", filter_str)
+        path, _filter = QFileDialog.getOpenFileName(self._window, tr("web.dialogs.choose_file_title"), "", filter_str)
         return path
 
     @Slot(str)

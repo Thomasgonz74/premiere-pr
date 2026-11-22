@@ -232,6 +232,21 @@ def test_title_episode_reads_real_world_release_names():
         assert _title_episode(title) == expected, title
 
 
+def test_title_episode_reads_an_nxnn_marker_after_a_number():
+    """Unrecognised, "Doctor.Who.2005.7x06" ranked by date: a newer REPACK
+    of 7x05 was downloaded instead, and 7x06 marked seen."""
+    cases = {
+        "Doctor.Who.2005.7x06.HDTV.x264-FoV": (("doctor", "who", "2005"), (7, 6)),
+        "Doctor_Who_2005.7x06.The_Bells_Of_Saint_John.720p_HDTV_x264-FoV": (("doctor", "who", "2005"), (7, 6)),
+        "The.4400.1x05.HDTV": (("the", "4400"), (1, 5)),
+        # Still no episode: an audio layout followed by its codec.
+        "Movie.2019.DD5.1x264-GRP": None,
+        "Movie.2019.DTS7.1x265-GRP": None,
+    }
+    for title, expected in cases.items():
+        assert _title_episode(title) == expected, title
+
+
 def test_latest_episode_only_takes_the_newest_item_of_each_show(tmp_path):
     feed = RssFeedSubscription(url="https://example.com/feed.xml", filter_keyword="", enabled=True, latest_episode_only=True)
     service, seen_store = _make_service(tmp_path, feed)

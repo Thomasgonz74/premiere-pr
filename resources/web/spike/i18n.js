@@ -10,17 +10,19 @@
 // *BuildPage() function -- is tagged with data-i18n-key (and
 // data-i18n-placeholder/-title/-aria-label/-tooltip for those attributes) instead of
 // being rebuilt on every language change: rebuilding would drop any
-// in-progress user input and re-register event listeners. Dynamically
-// rendered content (list rows, dialogs) isn't tagged -- it already calls
-// t() fresh on its own next render (next poll tick, next add/remove, next
-// dialog open), so it naturally picks up a language change without any
-// extra wiring here.
+// in-progress user input and re-register event listeners. Runtime-built
+// text that is a plain key (an empty-list note, a row's button) is tagged
+// the same way. Text built from more than a key (a row's state and rates, a
+// value read from the bridge) is rebuilt by its page on "catalogchange":
+// an idle torrent's row, say, gets no next render to pick the language up.
+// Dialogs call t() afresh each time they open.
 
 let __catalog = {};
 
 function setCatalog(catalog) {
   __catalog = catalog || {};
   applyStaticTranslations();
+  document.dispatchEvent(new Event("catalogchange"));
 }
 
 function t(key, params) {

@@ -124,6 +124,7 @@ function searchRenderSourceList() {
     const note = document.createElement("p");
     note.className = "empty-note";
     note.textContent = t("web.search.no_sources");
+    note.dataset.i18nKey = "web.search.no_sources";
     list.appendChild(note);
     return;
   }
@@ -178,6 +179,7 @@ function searchRenderResults(results) {
     const note = document.createElement("p");
     note.className = "empty-note";
     note.textContent = t("web.search.no_results");
+    note.dataset.i18nKey = "web.search.no_results";
     list.appendChild(note);
     return;
   }
@@ -200,13 +202,16 @@ function searchRenderResults(results) {
     actions.className = "row-actions";
     const addBtn = document.createElement("button");
     addBtn.textContent = t("common.add");
+    addBtn.dataset.i18nKey = "common.add";
     addBtn.addEventListener("click", () => {
       if (result.link.startsWith("magnet:")) {
         switchToTab("add");
-        window.bridge.add.analyzeMagnet(result.link);
+        addAnalyzeMagnet(result.link);
       } else {
         // Reviewed on the Add page if it is a .torrent (a Torznab/Jackett
         // enclosure), opened in the browser otherwise -- see torrentFetched.
+        // A double click fetched it twice, the second one with no title.
+        if (searchFetchTitles.has(result.link)) return;
         searchFetchTitles.set(result.link, result.title);
         document.getElementById("searchStatus").textContent = t("web.search.fetching_torrent_status");
         window.bridge.search.fetchTorrent(result.link);
@@ -256,11 +261,14 @@ function wireSearchPage() {
     }
     switchToTab("add");
     if (path.startsWith("magnet:")) {
-      window.bridge.add.analyzeMagnet(path); // the link redirected to it
+      addAnalyzeMagnet(path); // the link redirected to it
     } else {
+      // Routing rules match the result's title, not the "search_xxxx" temp file.
+      window.bridge.add.nameTorrentFile(path, title);
       addLoadTorrentFile(path, title);
     }
   });
 
+  document.addEventListener("catalogchange", searchRenderSourceList);
   searchReloadSources();
 }

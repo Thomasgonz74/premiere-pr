@@ -17,6 +17,7 @@ from torrent2000.danger_scanner.models import FileEntry
 from torrent2000.engine.routing_rules import RoutingRuleStore
 from torrent2000.engine.session_manager import SessionManager, TorrentAlreadyPresentError
 from torrent2000.engine.torrent_item import TorrentRecord
+from torrent2000.i18n.translator import tr
 from torrent2000.ui.web.bridge_add import AddBridge
 
 _MAGNET = "magnet:?xt=urn:btih:" + "cd" * 20 + "&dn=twice"
@@ -81,7 +82,7 @@ def test_the_add_page_picks_back_up_a_magnet_still_awaiting_analysis(sm, tmp_pat
 
     reopened.analyzeMagnet(_MAGNET)
 
-    assert statuses == ["En attente des métadonnées…"]
+    assert statuses == [tr("add_tab.awaiting_metadata")]
     assert reopened._pending_magnet_hash == record.info_hash
     assert sm.get_record(record.info_hash) is record
 

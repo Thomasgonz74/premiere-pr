@@ -10,6 +10,7 @@ from PySide6.QtCore import QObject, Signal, Slot
 from torrent2000.config.settings import RssFeedSubscription, Settings
 from torrent2000.engine.rss_feed_service import RssFeedService, filter_regex_error
 from torrent2000.engine.session_manager import SessionManager
+from torrent2000.i18n.translator import tr
 
 
 def _feed_to_dict(feed: RssFeedSubscription) -> dict:
@@ -48,7 +49,7 @@ class RssBridge(QObject):
     def addFeed(self, url: str, filter_keyword: str) -> dict:
         url = (url or "").strip()
         if not url:
-            return {"ok": False, "error": "URL requise"}
+            return {"ok": False, "error": tr("web.rss.url_required")}
         self._settings.rss_feeds.append(RssFeedSubscription(url=url, filter_keyword=filter_keyword or "", enabled=True))
         self._settings.save()
         return {"ok": True}

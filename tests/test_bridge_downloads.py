@@ -144,3 +144,66 @@ def test_starting_a_held_magnet_whose_metadata_is_in_says_nothing_more():
     bridge.resumeTorrent("h1")
 
     assert announced == []
+
+
+def test_pinning_or_categorising_an_idle_torrent_updates_its_row_at_once():
+    """No status tick reports an idle torrent, nor a pin libtorrent knows
+    nothing of: the row kept its old pin (a second click pinned it again)."""
+    record = TorrentRecord(info_hash="h1", state=TorrentState.SEEDING)
+    session_manager = MagicMock()
+    session_manager.get_record.return_value = record
+    session_manager.pin_torrent.side_effect = lambda ih: setattr(record, "pinned", True)
+    session_manager.set_torrent_category.side_effect = lambda ih, category: setattr(record, "category", category)
+    bridge = DownloadsBridge(session_manager, MagicMock())
+    pushed = []
+    bridge.recordUpdated.connect(lambda row: pushed.append((row["pinned"], row["category"])))
+
+    bridge.pinTorrent("h1")
+    bridge.setCategory("h1", "Docs")
+
+    assert pushed == [(True, ""), (True, "Docs")]
+
+
+def test_a_move_to_a_drive_root_is_refused_with_a_message_for_the_page(tmp_path):
+    """Its only feedback was a tray toast, and none with notifications off."""
+    from torrent2000.i18n.translator import tr
+
+    session_manager = MagicMock()
+    session_manager.get_record.return_value = TorrentRecord(info_hash="h1", name="HotelFile")
+    bridge = DownloadsBridge(session_manager, MagicMock())
+
+    refusal = bridge.moveStorage("h1", "D:/")
+
+    assert refusal == tr("notifications.move_storage_refused_message", name="HotelFile", path="D:/")
+    session_manager.move_storage.assert_not_called()
+    assert bridge.moveStorage("h1", str(tmp_path / "films")) == ""  # under way
+    session_manager.move_storage.assert_called_once_with("h1", str(tmp_path / "films"))
+
+
+def test_the_slowness_explanation_follows_the_language():
+    import json
+    from pathlib import Path
+
+    from torrent2000.i18n import translator
+
+    english = json.loads(
+        (Path(__file__).resolve().parents[1] / "resources" / "i18n" / "en.json").read_text(encoding="utf-8")
+    )
+    record = _downloading_record(num_seeds=0, trackers=[TrackerInfo(url="udp://t.example", last_error="timed out")])
+    session_manager = MagicMock()
+    session_manager.get_record.return_value = record
+    session_manager.all_records.return_value = [record]
+    scheduler = MagicMock()
+    scheduler.current_download_limit_kbps.return_value = 0
+    bridge = DownloadsBridge(session_manager, scheduler)
+    translator.set_language("en")
+    try:
+        result = bridge.explainSlowness("h1")
+    finally:
+        translator.set_language(translator.DEFAULT_LANGUAGE)
+
+    assert [cause["text"] for cause in result["causes"]] == [
+        english["web.downloads.slowness_no_seeds"],
+        english["web.downloads.slowness_tracker_error"].format(url="udp://t.example", error="timed out"),
+    ]
+    assert result["note"] == english["web.downloads.slowness_encryption_note"]

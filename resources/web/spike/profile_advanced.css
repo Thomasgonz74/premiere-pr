@@ -22,13 +22,18 @@
 
 .rule-row {
   display: grid;
-  grid-template-columns: 1fr 1fr 110px 1fr 160px;
+  /* The actions column fits ▲ ▼ and both buttons on one line in German
+     ("Bearbeiten", "Entfernen"): at 160 px they overflowed onto each other. */
+  grid-template-columns: 1fr 1fr 110px 1fr 208px;
   gap: var(--space-3);
   align-items: center;
   padding: var(--space-2) var(--space-3);
   border-bottom: 1px solid var(--border-group);
 }
 .rule-row:last-child { border-bottom: none; }
+/* A wider label (another theme's font) wraps onto a second line rather
+   than squeezing the buttons under their own text. */
+.rule-row .row-actions { flex-wrap: wrap; }
 .rule-header { font-weight: bold; color: var(--text-legend); border-bottom: 1px solid var(--border-tab); }
 .rule-cell { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 

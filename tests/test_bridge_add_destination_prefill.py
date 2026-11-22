@@ -15,6 +15,8 @@ from PySide6.QtWidgets import QApplication
 
 from torrent2000.config.settings import Settings
 from torrent2000.engine.routing_rules import RoutingRule, RoutingRuleStore
+from torrent2000.engine.session_manager import TorrentAlreadyPresentError
+from torrent2000.i18n.translator import tr
 from torrent2000.ui.web.bridge_add import AddBridge
 
 
@@ -160,7 +162,7 @@ class FakeMagnetRecord(FakeRecord):
         self.save_path = save_path
 
 
-def test_starting_an_analyzed_magnet_moves_it_to_the_chosen_destination():
+def test_starting_an_analyzed_magnet_moves_it_to_the_chosen_destination(tmp_path):
     bridge, session_manager, _routing_rule_store = _make_bridge()
     default = bridge._settings.default_download_dir
     session_manager.records["hash1"] = FakeMagnetRecord("Ubuntu", default)
@@ -168,8 +170,70 @@ def test_starting_an_analyzed_magnet_moves_it_to_the_chosen_destination():
     session_manager.move_storage = lambda info_hash, path, quiet=False: moves.append((info_hash, path, quiet))
     session_manager.start_after_analysis = lambda info_hash: None
     bridge._pending_magnet_hash = "hash1"
+    destination = str(tmp_path / "linux")
 
-    assert bridge.startTorrent("D:/linux", "", "", []) == {"ok": True}
+    assert bridge.startTorrent(destination, "", "", []) == {"ok": True}
 
     # Quiet: placing a magnet being added is no "move finished" toast.
-    assert moves == [("hash1", "D:/linux", True)]
+    assert moves == [("hash1", destination, True)]
+
+
+def test_a_magnet_is_not_started_toward_a_folder_that_cannot_be_used(tmp_path):
+    """The move failed in the background (a drive not plugged in) and it
+    downloaded into the default folder unannounced -- nor is a drive root,
+    which move_storage refuses, any better."""
+    bridge, session_manager, _routing_rule_store = _make_bridge()
+    session_manager.records["hash1"] = FakeMagnetRecord("DeltaClip", bridge._settings.default_download_dir)
+    started = []
+    session_manager.move_storage = lambda *args, **kwargs: started.append("moved")
+    session_manager.start_after_analysis = started.append
+    bridge._pending_magnet_hash = "hash1"
+    (tmp_path / "a-file").write_text("")
+
+    unusable = bridge.startTorrent(str(tmp_path / "a-file" / "Films"), "", "", [])
+    drive_root = bridge.startTorrent("D:/", "", "", [])
+
+    assert unusable["ok"] is False and unusable["error"].startswith(tr("web.add.destination_unusable", error=""))
+    assert drive_root == {"ok": False, "error": tr(
+        "notifications.move_storage_refused_message", name="DeltaClip", path="D:/"
+    )}
+    assert started == [] and bridge._pending_magnet_hash == "hash1"  # still waiting for a usable folder
+
+
+def test_a_magnet_start_shows_why_it_could_not_be_analysed():
+    """The "already present" (or libtorrent's) error flashed by, replaced by
+    "Analyse en cours — cliquez de nouveau sur Démarrer": each click the same."""
+    bridge, session_manager, _routing_rule_store = _make_bridge()
+    session_manager.records["hash1"] = FakeMagnetRecord("HotelFile", "C:/dl")
+    session_manager.records["hash1"].awaiting_analysis = False  # live, not a held magnet
+
+    def add_torrent_from_magnet(uri, save_path=None):
+        if "zzzz" in uri:
+            raise RuntimeError("invalid info-hash [libtorrent:39]")
+        raise TorrentAlreadyPresentError("hash1")
+
+    session_manager.add_torrent_from_magnet = add_torrent_from_magnet
+
+    duplicate = bridge.startTorrent("", "magnet:?xt=urn:btih:" + "a4" * 20, "", [])
+    invalid = bridge.startTorrent("", "magnet:?xt=urn:btih:zzzz", "", [])
+
+    assert duplicate == {"ok": False, "error": tr("add_tab.duplicate_message")}
+    assert invalid == {"ok": False, "error": tr("web.add.magnet_error", error="invalid info-hash [libtorrent:39]")}
+
+
+def test_a_search_result_torrent_is_routed_by_its_title(tmp_path):
+    """Fetched to "search_xxxx.torrent", it was matched against that name:
+    the default folder, never the routing rule's."""
+    bridge, _sm, routing_rule_store = _make_bridge()
+    routing_rule_store.save_rule(
+        RoutingRule(name="linux", pattern="ubuntu", match_field="name", destination="D:/linux")
+    )
+    torrent_path = tmp_path / "search_0lu5u8.torrent"
+    _write_real_torrent(torrent_path)
+    payloads = []
+    bridge.scanReady.connect(payloads.append)
+
+    bridge.nameTorrentFile(str(torrent_path), "Ubuntu 24.04 Server")
+    bridge.selectTorrentFile(str(torrent_path))
+
+    assert payloads[0]["suggestedDestination"] == "D:/linux"

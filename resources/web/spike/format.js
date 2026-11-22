@@ -2,17 +2,19 @@
 // Mirrors the native app's human_rate/human_size/human_eta (utils/format.py)
 // closely enough for this spike; not a byte-for-byte port.
 
+// Units from the catalog: "o/Ko/Mo/Go" are French only (B/KB/MB/GB...).
 function formatRate(bytesPerSec) {
-  if (bytesPerSec < 1024) return `${bytesPerSec} o/s`;
-  if (bytesPerSec < 1024 * 1024) return `${(bytesPerSec / 1024).toFixed(1)} Ko/s`;
-  return `${(bytesPerSec / 1024 / 1024).toFixed(1)} Mo/s`;
+  const perSecond = t("web.units.per_second");
+  if (bytesPerSec < 1024) return `${bytesPerSec} ${t("web.units.byte")}${perSecond}`;
+  if (bytesPerSec < 1024 * 1024) return `${(bytesPerSec / 1024).toFixed(1)} ${t("web.units.kilobyte")}${perSecond}`;
+  return `${(bytesPerSec / 1024 / 1024).toFixed(1)} ${t("web.units.megabyte")}${perSecond}`;
 }
 
 function formatSize(bytes) {
-  if (bytes < 1024) return `${bytes} o`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} Ko`;
-  if (bytes < 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} Mo`;
-  return `${(bytes / 1024 / 1024 / 1024).toFixed(2)} Go`;
+  if (bytes < 1024) return `${bytes} ${t("web.units.byte")}`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} ${t("web.units.kilobyte")}`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} ${t("web.units.megabyte")}`;
+  return `${(bytes / 1024 / 1024 / 1024).toFixed(2)} ${t("web.units.gigabyte")}`;
 }
 
 function formatEta(seconds) {

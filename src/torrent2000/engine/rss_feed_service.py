@@ -123,10 +123,12 @@ _RESOLUTION_RE = re.compile(r"(\d{3,4})p\b", re.IGNORECASE)
 # numbers ("x264", "H.265") never follow such a prefix.
 _MARKER_START = r"(?<![a-z0-9'\u2019])"
 _NOT_TECH = r"(?![\dp]|i\b|bit|[.,]\d(?!\d))"
-# "S01E05", "s01.e05", "Season 2 Episode 3", "1x05" (not the "1x264" of "5.1x264").
+# "S01E05", "s01.e05", "Season 2 Episode 3", "1x05" -- also after a year or
+# a number ("Doctor.Who.2005.7x06", "The.4400.1x05"), but not the "1x264" of
+# an audio layout and codec ("5.1x264", "7.1x265").
 _SEASON_EPISODE_RE = re.compile(
     _MARKER_START + r"(?:s(?:eason)?[ ._-]{0,3}(\d{1,4})[ ._-]{0,3}e(?:p(?:isode)?)?[ ._-]{0,3}(\d{1,4})"
-    r"|(?<!\d[.,])(\d{1,2})x(\d{2,3}))(?!\d)",
+    r"|(\d{1,2})x(?!26[456](?!\d))(\d{2,3}))(?!\d)",
     re.IGNORECASE,
 )
 # Daily shows: "2026-11-22", "2026.11.22", and "22.11.2026" (or "11.22.2026").
@@ -435,7 +437,7 @@ class RssFeedService(QObject):
                 if newest["guid"] not in taken:
                     skipped_for[newest["guid"]] = older
                 elif newest["guid"] not in self._downloads_in_flight:
-                    self._mark_seen(feed_url, older)  # an older-or-equal one was taken
+                    self._mark_seen(feed_url, older, commit=False)  # an older-or-equal one was taken
         else:
             skipped_for = {item["guid"]: [] for item in matching if item["guid"] not in taken}
         candidates = [
@@ -444,6 +446,9 @@ class RssFeedService(QObject):
             if item["guid"] in skipped_for and self._failed_attempts[item["guid"]] < MAX_ITEM_ATTEMPTS
         ]
 
+        # Committed, and the pending scans saved, once for the whole check:
+        # one sqlite commit and two JSON writes per magnet froze the GUI
+        # thread for 1-2 s on a check adding a hundred.
         newly_added = []
         for item in candidates:
             guid = item.get("guid", "")
@@ -472,17 +477,16 @@ class RssFeedService(QObject):
                     # is actually known, same cutoff the manual Add page uses.
                     info_hash = self._session_manager.add_torrent_from_magnet(link, save_path)
                     self._pending_magnet_scans.add(info_hash)
-                    self._save_pending_magnet_scans()
                     if matched_rule is not None:
                         self._session_manager.set_matched_rule_name(info_hash, matched_rule.name)
                 except TorrentAlreadyPresentError:
-                    self._mark_seen(feed_url, done)
+                    self._mark_seen(feed_url, done, commit=False)
                     continue
                 except Exception:
                     logger.exception("Failed to add magnet from RSS feed %s", _redact_url(feed_url))
                     self._failed_attempts[guid] += 1
                     continue  # not marked seen: tried again at the next check
-                self._mark_seen(feed_url, done)
+                self._mark_seen(feed_url, done, commit=False)
                 newly_added.append(item)
             elif link.startswith("http://") or link.startswith("https://"):
                 self._downloads_in_flight[guid] = done
@@ -493,7 +497,9 @@ class RssFeedService(QObject):
             else:
                 logger.warning("Skipping RSS item with unsupported link scheme: %s", _redact_url(link))
 
+        self._seen_store.commit()
         if newly_added:
+            self._save_pending_magnet_scans()
             self.items_found.emit(feed_url, newly_added)
 
     def _on_feed_failed(self, feed_url: str, message: str) -> None:
@@ -564,10 +570,11 @@ class RssFeedService(QObject):
 
     # ------------------------------------------------------------------ helpers
 
-    def _mark_seen(self, feed_url: str, items: list[dict]) -> None:
+    def _mark_seen(self, feed_url: str, items: list[dict], commit: bool = True) -> None:
         for item in items:
             self._seen_store.mark_seen(item.get("guid", ""), feed_url, item.get("title", ""), commit=False)
-        self._seen_store.commit()
+        if commit:
+            self._seen_store.commit()
 
     def _find_feed_config(self, feed_url: str):
         for feed in self._settings.rss_feeds:

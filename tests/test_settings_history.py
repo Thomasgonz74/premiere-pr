@@ -153,3 +153,22 @@ def test_restore_puts_back_a_public_feed_url_and_pairs_feeds_by_position_only_on
         ("https://a.invalid/user/111.rss", "show-a"),
         ("https://b.invalid/rss?cat=2&passkey=SECRET", "show-b"),
     ]
+
+
+def test_a_feed_url_urlsplit_refuses_does_not_break_every_later_save(tmp_path, monkeypatch):
+    """"http://[::1/rss" (a typo'd IPv6 bracket) made the history's redaction
+    raise after config.json was written: every later save raised, so theme
+    and language changes no longer applied, and the export failed."""
+    from dataclasses import asdict
+
+    from torrent2000.config.redaction import redact_settings_dict
+
+    monkeypatch.setenv("TORRENT2000_DATA_DIR", str(tmp_path))
+    settings = Settings.load()
+    settings.rss_feeds.append(RssFeedSubscription(url="http://[::1/rss"))
+    settings.save()
+    settings.audio_volume = 30
+    settings.save()
+
+    assert read_settings_history()[0]["changes"]["audio_volume"]["new"] == 30
+    assert redact_settings_dict(asdict(settings))["rss_feeds"][0]["url"] == ""

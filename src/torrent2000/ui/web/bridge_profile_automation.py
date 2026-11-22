@@ -15,6 +15,7 @@ from torrent2000.config.settings import Settings
 from torrent2000.engine.bandwidth_scheduler import BandwidthScheduler
 from torrent2000.engine.decision_journal import DecisionJournalService
 from torrent2000.engine.disk_space_monitor import DiskSpaceMonitor
+from torrent2000.i18n.translator import tr
 
 
 class ProfileAutomationBridge(QObject):
@@ -118,12 +119,14 @@ class ProfileAutomationBridge(QObject):
             values.get("clipboardMagnetDetectionEnabled", s.clipboard_magnet_detection_enabled)
         )
 
-        s.save()
+        saved = s.save()
         # Disk-space monitor re-reads settings on its own timer tick, no
         # explicit apply call needed. The bandwidth schedule, though, is
         # cached in-memory by the scheduler -- nudge it so a currently
         # active window re-evaluates against the new values immediately.
         self._bandwidth_scheduler.settings_changed()
+        if not saved:
+            return {"ok": False, "error": tr("web.profile_security.save_held_after_import")}
         return {"ok": True}
 
     @Slot(result="QVariantList")

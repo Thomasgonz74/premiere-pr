@@ -22,6 +22,7 @@ from torrent2000.engine.network_profile_switcher import NetworkProfileAssociatio
 from torrent2000.engine.routing_rules import RoutingRule, RoutingRuleStore
 from torrent2000.engine.session_manager import SessionManager
 from torrent2000.engine.settings_profiles import SettingsProfile, SettingsProfileStore
+from torrent2000.i18n.translator import tr
 
 
 def _rule_to_dict(rule: RoutingRule) -> dict:
@@ -124,7 +125,7 @@ class ProfileAdvancedBridge(QObject):
     def applyProfile(self, name: str) -> dict:
         profile = self._settings_profile_store.get_profile(name)
         if profile is None:
-            return {"ok": False, "error": "Profil introuvable."}
+            return {"ok": False, "error": tr("web.profile_advanced.profile_not_found")}
         # Same live-apply calls, in the same order, as SettingsProfilesSection's
         # Apply button (see settings_profiles_section.py's _on_apply_clicked).
         self._settings_profile_store.apply_to_settings(profile, self._settings)
@@ -163,9 +164,9 @@ class ProfileAdvancedBridge(QObject):
         ssid = (ssid or "").strip()
         profile_name = (profile_name or "").strip()
         if not ssid:
-            return {"ok": False, "error": "Le nom du réseau (SSID) est requis."}
+            return {"ok": False, "error": tr("web.profile_advanced.ssid_required")}
         if not profile_name:
-            return {"ok": False, "error": "Un profil de réglages doit être sélectionné."}
+            return {"ok": False, "error": tr("web.profile_advanced.profile_required")}
         self._network_profile_store.save_association(NetworkProfileAssociation(ssid=ssid, profile_name=profile_name))
         return {"ok": True}
 

@@ -24,6 +24,7 @@ from torrent2000.config.settings import (
     _from_dict,
     hold_config_until_restart,
 )
+from torrent2000.i18n.translator import tr
 
 _MAX_CONFIG_BACKUPS = 5
 
@@ -54,8 +55,19 @@ def _backup_current_config() -> None:
         stale.unlink(missing_ok=True)
 
 
+def _keeps_every_value(cls, raw: object) -> bool:
+    """Every field of cls in raw loads as it is: none falls back to its
+    default for a value of the wrong type (see settings._typed)."""
+    if not isinstance(raw, dict):
+        return False
+    built = _from_dict(cls, raw)
+    return all(getattr(built, key) == value for key, value in raw.items() if key in cls.__dataclass_fields__)
+
+
 def _is_valid_settings_payload(data: object) -> bool:
-    """Same shape-check as native ConfigImportExportSection._is_valid_settings_payload."""
+    """Same shape-check as native ConfigImportExportSection._is_valid_settings_payload,
+    plus every value's type: a "fast" rate limit was imported, and the app
+    could never start again."""
     if not isinstance(data, dict):
         return False
     # _from_dict drops unknown keys, so any JSON object passed the checks
@@ -63,18 +75,14 @@ def _is_valid_settings_payload(data: object) -> bool:
     if not data.keys() & Settings.__dataclass_fields__.keys():
         return False
     data = dict(data)
-    proxy_data = data.pop("proxy", {})
-    schedule_data = data.pop("bandwidth_schedule", {})
-    rss_feeds_data = data.pop("rss_feeds", [])
-    try:
-        _from_dict(Settings, data)
-        _from_dict(ProxySettings, proxy_data)
-        _from_dict(BandwidthSchedule, schedule_data)
-        for feed in rss_feeds_data:
-            _from_dict(RssFeedSubscription, feed)
-    except (TypeError, AttributeError):
-        return False
-    return True
+    feeds = data.pop("rss_feeds", [])
+    return (
+        _keeps_every_value(ProxySettings, data.pop("proxy", {}))
+        and _keeps_every_value(BandwidthSchedule, data.pop("bandwidth_schedule", {}))
+        and isinstance(feeds, list)
+        and all(_keeps_every_value(RssFeedSubscription, feed) for feed in feeds)
+        and _keeps_every_value(Settings, data)
+    )
 
 
 class ProfileSecurityBridge(QObject):
@@ -92,7 +100,8 @@ class ProfileSecurityBridge(QObject):
     def saveSettings(self, values) -> dict:
         try:
             self._settings.scan_completed_files_with_defender = bool(values.get("scanCompletedFilesWithDefender"))
-            self._settings.save()
+            if not self._settings.save():
+                return {"ok": False, "error": tr("web.profile_security.save_held_after_import")}
         except Exception as exc:
             return {"ok": False, "error": str(exc)}
         return {"ok": True}
@@ -146,12 +155,12 @@ class ProfileSecurityBridge(QObject):
             return {"ok": False}
         try:
             data = json.loads(Path(path).read_text(encoding="utf-8"))
-        except json.JSONDecodeError as exc:
-            return {"ok": False, "error": f"JSON invalide : {exc}"}
+        except json.JSONDecodeError:
+            return {"ok": False, "error": tr("profile_tab.import_failed_message_invalid")}
         except OSError as exc:
             return {"ok": False, "error": str(exc)}
         if not _is_valid_settings_payload(data):
-            return {"ok": False, "error": "Le fichier ne correspond pas à une configuration Torrent 2000 valide."}
+            return {"ok": False, "error": tr("profile_tab.import_failed_message_schema")}
         # Snapshot whatever's currently on disk before overwriting it, so a
         # bad or regretted import can be recovered by hand from
         # config_backups/ -- best-effort, never blocks the import itself.

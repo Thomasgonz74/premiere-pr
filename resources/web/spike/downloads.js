@@ -78,8 +78,9 @@ function downloadsRemovalImpact(hashes) {
 }
 
 function downloadsEta(record) {
-  // Mirrors downloads_tab.py's _eta_text() exactly.
-  if (record.downloadRate > 0 && record.progress < 1.0) {
+  // Mirrors downloads_tab.py's _eta_text(), less a magnet's "0s" while its
+  // size is still unknown (no metadata yet).
+  if (record.downloadRate > 0 && record.progress < 1.0 && record.totalSize > 0) {
     const remainingBytes = record.totalSize * (1 - record.progress);
     return formatEta(remainingBytes / record.downloadRate);
   }
@@ -314,6 +315,15 @@ function downloadsRenderRecord(record) {
   downloadsSetRowVisibility(entry, downloadsCurrentFilterQuery());
 }
 
+// A language switch: a row and the details panel hold text built from the
+// catalog (state, pin title, rates, tracker line...) that no status tick
+// rebuilds for an idle torrent. Its disk usage and trackers are re-read.
+document.addEventListener("catalogchange", () => {
+  downloadsDetailsAllocatedFor = null;
+  downloadsDetailsTrackerEditorFor = null;
+  downloadsRows.forEach((entry) => downloadsRenderRecord(entry.record));
+});
+
 function downloadsRemoveRecord(infoHash) {
   // Its tags were cleared server-side too (see DownloadsBridge.__init__), so
   // the filter's tag list may have lost one. Skipped only for a torrent known
@@ -331,6 +341,7 @@ function downloadsRemoveRecord(infoHash) {
     note.className = "empty-note";
     note.id = "emptyNote";
     note.textContent = t("web.downloads.empty_note");
+    note.dataset.i18nKey = "web.downloads.empty_note";
     list.appendChild(note);
   }
   downloadsUpdateDetailsPanel();
@@ -588,7 +599,7 @@ function downloadsBuildSingleMenu(infoHash) {
     label: t("common.context_move_storage"),
     onClick: () => {
       window.bridge.dialogs.browseFolder("", (path) => {
-        if (path) window.bridge.downloads.moveStorage(infoHash, path);
+        if (path) window.bridge.downloads.moveStorage(infoHash, path, showMoveRefusal);
       });
     },
   });
@@ -718,6 +729,7 @@ function downloadsRefreshTagFilterOptions() {
     const allOpt = document.createElement("option");
     allOpt.value = "";
     allOpt.textContent = t("web.downloads.all_tags_option");
+  allOpt.dataset.i18nKey = "web.downloads.all_tags_option";
     select.appendChild(allOpt);
     tags.forEach((tag) => {
       const opt = document.createElement("option");

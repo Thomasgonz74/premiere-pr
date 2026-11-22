@@ -120,6 +120,7 @@ function rssRenderFeedList() {
     const note = document.createElement("p");
     note.className = "empty-note";
     note.textContent = t("web.rss.no_feeds");
+    note.dataset.i18nKey = "web.rss.no_feeds";
     list.appendChild(note);
     return;
   }
@@ -151,6 +152,7 @@ function rssRenderFeedList() {
     actions.className = "row-actions";
     const filtersBtn = document.createElement("button");
     filtersBtn.textContent = t("web.rss.filters_button");
+    filtersBtn.dataset.i18nKey = "web.rss.filters_button";
     filtersBtn.addEventListener("click", () => rssOpenFiltersDialog(feed));
     actions.appendChild(filtersBtn);
     const removeBtn = document.createElement("button");
@@ -267,6 +269,7 @@ function rssAppendLog(text, isError) {
 function wireRssPage() {
   rssBuildPage();
   const rssBridge = window.bridge.rss;
+  document.addEventListener("catalogchange", rssRenderFeedList);
 
   document.getElementById("rssCheckNowBtn").addEventListener("click", () => {
     rssBridge.checkNow();

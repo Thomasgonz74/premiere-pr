@@ -91,7 +91,7 @@ function shareEnsureRow(record) {
         label: t("web.share.context_move_data"),
         onClick: () => {
           window.bridge.dialogs.browseFolder("", (path) => {
-            if (path) window.bridge.share.moveStorage(infoHash, path);
+            if (path) window.bridge.share.moveStorage(infoHash, path, showMoveRefusal);
           });
         },
       },
@@ -144,6 +144,7 @@ function shareRemoveRow(infoHash) {
     note.className = "empty-note";
     note.id = "shareEmptyNote";
     note.textContent = t("web.share.no_shares");
+    note.dataset.i18nKey = "web.share.no_shares";
     document.getElementById("shareList").appendChild(note);
   }
 }
@@ -171,6 +172,8 @@ function shareResetForm() {
 function wireSharePage() {
   const shareBridge = window.bridge.share;
   const dialogs = window.bridge.dialogs;
+  // Rates and sizes in the new language's units, even on a row no tick updates.
+  document.addEventListener("catalogchange", () => shareBridge.listTorrents((rows) => rows.forEach(shareRenderRow)));
 
   shareBridge.defaultDataDir((dir) => {
     document.getElementById("shareDataDirInput").value = dir;

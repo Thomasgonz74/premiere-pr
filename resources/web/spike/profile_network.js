@@ -176,7 +176,8 @@ function buildNetworkPrivacySection(container, bridge) {
   blocklistBrowseBtn.textContent = t("web.profile_network.browse_button");
   blocklistBrowseBtn.dataset.i18nKey = "web.profile_network.browse_button";
   blocklistBrowseBtn.addEventListener("click", () => {
-    window.bridge.dialogs.browseOpenFile("Listes noires (*.txt *.dat);;Tous les fichiers (*)", (path) => {
+    const filter = `${t("web.profile_network.ip_blocklist_filter")};;${t("web.create_torrent.all_files_filter")}`;
+    window.bridge.dialogs.browseOpenFile(filter, (path) => {
       if (path) blocklistPathInput.value = path;
     });
   });
@@ -273,6 +274,7 @@ function buildSecurityCenterSection(container, bridge) {
   }
 
   refreshBtn.addEventListener("click", refresh);
+  document.addEventListener("catalogchange", refresh);
   refresh();
 
   container.appendChild(section);
@@ -346,6 +348,7 @@ function buildRemoteAccessSection(container, bridge) {
     bridge.regenerateToken(() => refresh());
   });
 
+  document.addEventListener("catalogchange", refresh);
   refresh();
 
   container.appendChild(section);

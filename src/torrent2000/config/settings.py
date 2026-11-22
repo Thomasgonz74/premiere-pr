@@ -84,12 +84,30 @@ class RssFeedSubscription:
     latest_episode_only: bool = False
 
 
+def _typed(value, default):
+    """value if it has default's type, else default: a hand-edited or
+    imported "fast" rate limit reached lt.session() and the app could never
+    start again. An int stands for a float, a number for a string (a
+    numeric password)."""
+    kind = type(default)
+    if kind is float and type(value) is int:
+        return float(value)
+    if kind is str and type(value) in (int, float):
+        return str(value)
+    return value if type(value) is kind else default
+
+
 def _from_dict(cls, raw: dict):
     """Builds a dataclass instance from a raw dict, silently dropping any
     key that isn't one of the dataclass's own fields -- so a settings.json
     left over from an older/newer schema version loads without a
-    TypeError on unexpected keys."""
-    return cls(**{k: v for k, v in raw.items() if k in cls.__dataclass_fields__})
+    TypeError on unexpected keys -- and any value of the wrong type (see
+    _typed)."""
+    instance = cls()
+    for key, value in (raw if isinstance(raw, dict) else {}).items():
+        if key in cls.__dataclass_fields__:
+            setattr(instance, key, _typed(value, getattr(instance, key)))
+    return instance
 
 
 @dataclass
@@ -333,13 +351,17 @@ class Settings:
         settings = _from_dict(Settings, data)
         settings.proxy = _from_dict(ProxySettings, proxy_data)
         settings.bandwidth_schedule = _from_dict(BandwidthSchedule, schedule_data)
-        settings.rss_feeds = [_from_dict(RssFeedSubscription, feed) for feed in rss_feeds_data]
+        settings.rss_feeds = [
+            _from_dict(RssFeedSubscription, feed) for feed in rss_feeds_data if isinstance(feed, dict)
+        ] if isinstance(rss_feeds_data, list) else []
         return settings
 
-    def save(self) -> None:
+    def save(self) -> bool:
+        """False when nothing was written: a config import is waiting for
+        the next launch (see _held_until_restart)."""
         path = get_config_path()
         if str(path) in _held_until_restart:
-            return
+            return False
         # The state being overwritten, so the diff-based history log
         # (settings_history.py) can journal only what changed: what this
         # process last wrote if known (see _last_saved_config), else whatever's
@@ -372,3 +394,4 @@ class Settings:
             from torrent2000.config.settings_history import record_settings_change
 
             record_settings_change(old_data, new_data)
+        return True

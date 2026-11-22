@@ -80,6 +80,7 @@ function addRenderScan(scan) {
     const note = document.createElement("p");
     note.className = "empty-note";
     note.textContent = t("web.add.no_files_in_torrent");
+    note.dataset.i18nKey = "web.add.no_files_in_torrent";
     list.appendChild(note);
     return;
   }
@@ -108,6 +109,7 @@ function addRenderScan(scan) {
     const level = document.createElement("span");
     level.className = `risk-badge risk-${risk.level.toLowerCase()}`;
     level.textContent = addLevelLabel(risk.level);
+    if (LEVEL_LABEL_KEYS[risk.level]) level.dataset.i18nKey = LEVEL_LABEL_KEYS[risk.level];
     row.appendChild(level);
 
     const reasons = document.createElement("span");
@@ -135,6 +137,7 @@ function addClearScanList() {
   const note = document.createElement("p");
   note.className = "empty-note";
   note.textContent = t("web.add.no_scan_yet");
+  note.dataset.i18nKey = "web.add.no_scan_yet";
   list.appendChild(note);
 }
 
@@ -160,6 +163,16 @@ function addResetForm() {
   document.getElementById("addSharePolicyNote").textContent = "";
   addClearScanList();
   addLastScan = null;
+}
+
+// A magnet from elsewhere (a search result, the clipboard): the .torrent
+// picked before must not stay on screen, nor be what Analyser picks again.
+function addAnalyzeMagnet(uri) {
+  addSelectedPath = null;
+  document.getElementById("addSelectedFile").textContent = "";
+  addClearScanList();
+  addLastScan = null;
+  window.bridge.add.analyzeMagnet(uri);
 }
 
 // Also used by search.js for a result's fetched .torrent.

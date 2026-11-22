@@ -8,9 +8,11 @@ gate entirely (data is presumed already trusted/on disk, same as native).
 
 from PySide6.QtCore import QObject, Signal, Slot
 
-from torrent2000.engine.session_manager import SessionManager
+from torrent2000.engine.session_manager import SessionManager, TorrentAlreadyPresentError
 from torrent2000.engine.share_limits import ShareLimit, ShareLimitService
 from torrent2000.engine.torrent_item import TorrentRecord
+from torrent2000.i18n.translator import tr
+from torrent2000.ui.web.bridge_downloads import move_storage_or_refusal
 from torrent2000.ui.web.dropped_file import save_dropped_bytes_to_temp_file
 
 
@@ -104,10 +106,9 @@ class ShareBridge(QObject):
     def recheckTorrent(self, info_hash: str) -> None:
         self._session_manager.recheck_torrent(info_hash)
 
-    @Slot(str, str)
-    def moveStorage(self, info_hash: str, new_path: str) -> None:
-        if new_path:
-            self._session_manager.move_storage(info_hash, new_path)
+    @Slot(str, str, result=str)
+    def moveStorage(self, info_hash: str, new_path: str) -> str:
+        return move_storage_or_refusal(self._session_manager, info_hash, new_path)
 
     @Slot(result=str)
     def defaultDataDir(self) -> str:
@@ -127,7 +128,7 @@ class ShareBridge(QObject):
     ) -> dict:
         data_dir = (data_dir or "").strip()
         if not data_dir:
-            return {"ok": False, "error": "Indiquez le dossier contenant déjà les fichiers."}
+            return {"ok": False, "error": tr("share_tab.missing_dir_message")}
 
         time_limit = time_limit_hours * 3600 or None
         data_limit = data_limit_mb * 1024 * 1024 or None
@@ -136,12 +137,15 @@ class ShareBridge(QObject):
         if self._torrent_path:
             try:
                 info_hash = self._session_manager.add_torrent_from_file(self._torrent_path, data_dir)
-            except Exception:
-                return {"ok": False, "error": "Ce torrent est déjà présent."}
+            except TorrentAlreadyPresentError:
+                return {"ok": False, "error": tr("add_tab.duplicate_message")}
+            except Exception as exc:
+                # A corrupt .torrent, a file gone since it was picked...
+                return {"ok": False, "error": str(exc)}
         else:
             magnet_uri = (magnet_uri or "").strip()
             if not magnet_uri:
-                return {"ok": False, "error": "Sélectionnez un fichier .torrent ou saisissez un lien magnet."}
+                return {"ok": False, "error": tr("share_tab.no_source_message")}
             try:
                 info_hash = self._session_manager.add_torrent_from_magnet(magnet_uri, data_dir)
             except Exception as exc:

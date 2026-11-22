@@ -445,3 +445,106 @@ def test_file_editor_starts_an_excluded_file_unchecked_and_saving_keeps_it_out(v
       return JSON.stringify([checks, saved]);
     })()""")
     assert result == '[[true,false],["h1",[2]]]'
+
+
+def test_byte_units_follow_the_language(view):
+    result = run_js(view, """(function () {
+      setCatalog({ 'web.units.byte': 'B', 'web.units.kilobyte': 'KB', 'web.units.megabyte': 'MB',
+                   'web.units.gigabyte': 'GB', 'web.units.per_second': '/s' });
+      const seen = [formatRate(5000), formatSize(3 * 1024 * 1024), formatSize(5 * 1024 ** 3)];
+      setCatalog({});
+      return JSON.stringify(seen);
+    })()""")
+    # "4.9 Ko/s" next to "KB/s" labels in English.
+    assert result == '["4.9 KB/s","3.0 MB","5.00 GB"]'
+
+
+def test_a_language_switch_rebuilds_runtime_text_no_tick_would(view):
+    """An idle torrent's row, the Add page's "no scan yet" note... stayed in
+    the previous language until a restart."""
+    result = run_js(view, """(function () {
+      window.bridge = { downloads: { listAllTags(cb) { cb([]); } } };
+      downloadsRenderRecord({ infoHash: 'idle', name: 'idle', progress: 1, state: 'SEEDING', downloadRate: 0,
+        uploadRate: 0, numPeers: 0, numSeeds: 0, totalSize: 10, category: '', pinned: false });
+      addClearScanList();
+      setCatalog({ 'downloads_tab.state_seeding': 'Seeding', 'web.downloads.pin_tooltip': 'Pin to the top',
+                   'web.add.no_scan_yet': 'No scan yet.' });
+      const entry = downloadsRows.get('idle');
+      const seen = [entry.stateEl.textContent, entry.pinBtn.title,
+                    document.querySelector('#addScanList .empty-note').textContent];
+      downloadsRemoveRecord('idle');
+      setCatalog({});
+      return JSON.stringify(seen);
+    })()""")
+    assert result == '["Seeding","Pin to the top","No scan yet."]'
+
+
+def test_a_magnet_from_the_search_page_replaces_the_torrent_shown_and_add_fetches_once(view):
+    """The previous .torrent's name and files stayed on the Add page (and
+    Analyser picked it again over the magnet); a double click on a .torrent
+    result fetched it twice, the second time with no title."""
+    result = run_js(view, """(function () {
+      if (!document.getElementById('searchResultsList')) searchBuildPage();
+      const active = document.querySelector('.tab-btn.active').dataset.tab;
+      const calls = [];
+      window.bridge = { add: { analyzeMagnet(uri) { calls.push(['magnet', uri]); } },
+                        search: { fetchTorrent(link) { calls.push(['fetch', link]); } } };
+      addSelectedPath = 'C:/Temp/search_1.torrent';
+      document.getElementById('addSelectedFile').textContent = 'Debian 12';
+      addRenderScan({ fileRisks: [{ index: 0, path: 'debian/x.iso', size: 1, score: 0, level: 'SAFE', reasons: [] }],
+                      threshold: 60, suggestedDestination: '' });
+      searchRenderResults([{ title: 'some-magnet', link: 'magnet:?xt=urn:btih:abab', source: 's' },
+                           { title: 'Ubuntu', link: 'http://127.0.0.1/u.torrent', source: 's' }]);
+      const buttons = document.querySelectorAll('#searchResultsList .row-actions button');
+      buttons[0].click();
+      const shown = [addSelectedPath, document.getElementById('addSelectedFile').textContent,
+                     document.querySelectorAll('#addScanList .scan-row').length];
+      buttons[1].click();
+      buttons[1].click();
+      searchFetchTitles.clear();
+      document.getElementById('searchResultsList').replaceChildren();
+      switchToTab(active);
+      return JSON.stringify([shown, calls]);
+    })()""")
+    assert result == '[[null,"",0],[["magnet","magnet:?xt=urn:btih:abab"],["fetch","http://127.0.0.1/u.torrent"]]]'
+
+
+def test_german_and_russian_labels_fit_their_columns(view):
+    """'↓ Geschwindigkeit' ran into the next header, 'Bearbeiten' and
+    'Изменить' overflowed their buttons onto each other."""
+    import json
+
+    catalogs = {
+        lang: json.loads((INDEX_HTML.parents[2] / "i18n" / f"{lang}.json").read_text(encoding="utf-8"))
+        for lang in ("de", "ru")
+    }
+    result = run_js(view, """(function (catalogs) {
+      const overflow = [];
+      const active = document.querySelector('.tab-btn.active').dataset.tab;
+      for (const [lang, catalog] of Object.entries(catalogs)) {
+        setCatalog(catalog);
+        switchToTab('downloads');
+        document.querySelectorAll('.downloads-row-header > span').forEach((cell) => {
+          const text = document.createRange();
+          text.selectNodeContents(cell);
+          if (text.getBoundingClientRect().width > cell.getBoundingClientRect().width + 0.5) {
+            overflow.push(lang + ' ' + cell.textContent);
+          }
+        });
+        switchToTab('profile');
+        const box = document.createElement('div');
+        box.style.width = '900px';
+        document.getElementById('page-profile').appendChild(box);
+        arRules = [{ name: 'r', pattern: 'p', matchField: 'name', destination: 'D:/x', postCompleteAction: 'none' }];
+        box.appendChild(arRuleRow(arRules[0], 0));
+        box.querySelectorAll('button').forEach((b) => {
+          if (b.scrollWidth > b.clientWidth) overflow.push(lang + ' ' + b.textContent);
+        });
+        box.remove();
+      }
+      arRules = [];
+      setCatalog({});
+      switchToTab(active);
+      return JSON.stringify(overflow);
+    })(""" + json.dumps(catalogs) + ")")
+    assert result == "[]"

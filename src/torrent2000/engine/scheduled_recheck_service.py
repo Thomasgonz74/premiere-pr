@@ -19,16 +19,22 @@ import logging
 import os
 import time
 
-from PySide6.QtCore import QObject
+from PySide6.QtCore import QObject, QTimer
 
 from torrent2000.config.paths import get_scheduled_recheck_path
 from torrent2000.config.settings import Settings
 from torrent2000.engine.session_manager import SessionManager
+from torrent2000.engine.torrent_item import TorrentState
 from torrent2000.utils.qt_timers import start_periodic_timer
 
 logger = logging.getLogger(__name__)
 
 CHECK_INTERVAL_MS = 60 * 60 * 1000  # hourly is plenty of granularity for a day-scale interval setting
+# The first evaluation, so a session shorter than an hour still gets its
+# overdue rechecks: not at startup, where the async restore has left the
+# records missing or at progress 0 -- an evaluation then would drop their
+# saved clocks (see evaluate_now).
+FIRST_CHECK_DELAY_MS = 5 * 60 * 1000
 
 _SECONDS_PER_DAY = 86400
 
@@ -43,6 +49,7 @@ class ScheduledRecheckService(QObject):
         self._last_checked: dict[str, float] = self._load()
 
         self._timer = start_periodic_timer(self, CHECK_INTERVAL_MS, self.evaluate_now)
+        QTimer.singleShot(FIRST_CHECK_DELAY_MS, self, self.evaluate_now)
 
     def evaluate_now(self) -> None:
         if not self._settings.scheduled_recheck_enabled:
@@ -53,9 +60,8 @@ class ScheduledRecheckService(QObject):
         # progress, not state: a fully downloaded torrent is SEEDING (or
         # PAUSED); FINISHED only means the wanted part of a partial
         # selection is done.
-        finished_hashes = {
-            record.info_hash for record in self._session_manager.all_records() if record.progress >= 1.0
-        }
+        complete = {r.info_hash: r for r in self._session_manager.all_records() if r.progress >= 1.0}
+        finished_hashes = set(complete)
         # Drop bookkeeping for torrents no longer complete/present (removed,
         # or resumed back to downloading after a manual recheck failure) so
         # this dict doesn't grow unbounded.
@@ -72,7 +78,10 @@ class ScheduledRecheckService(QObject):
                 # already-finished torrents).
                 self._last_checked[info_hash] = now
                 continue
-            if now - last_checked >= interval_seconds:
+            # A paused one keeps its clock and waits: libtorrent leaves a
+            # paused torrent's check at 0 % until it is resumed (never, under
+            # CCCP), and that resume after a restart reported a new finish.
+            if now - last_checked >= interval_seconds and complete[info_hash].state != TorrentState.PAUSED:
                 self._session_manager.recheck_torrent(info_hash)
                 self._last_checked[info_hash] = now
 

@@ -22,6 +22,7 @@ def _session_manager_with_mock_handles(*handles):
     sm._session = MagicMock()
     sm._handles = {f"hash{i}": h for i, h in enumerate(handles)}
     sm._resume_save_queue = collections.deque()
+    sm._awaiting_save_queued = False
     return sm
 
 

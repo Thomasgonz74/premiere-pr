@@ -377,3 +377,44 @@ def test_failing_item_is_tried_a_few_times_per_session_and_never_marked_seen(tmp
 
     assert len(started) == len(failed) == 3
     assert seen_store.is_seen("guid-404") is False
+
+
+def test_a_check_adding_many_magnets_writes_each_store_once(tmp_path, monkeypatch):
+    """One sqlite commit and two JSON writes per magnet, all on the GUI
+    thread, froze it for 1-2 s on a check adding a hundred (real
+    SessionManager: its awaiting-analysis file is one of those writes)."""
+    from torrent2000.engine import persistence
+    from torrent2000.engine.session_manager import SessionManager
+
+    feed = RssFeedSubscription(url="https://example.com/feed.xml", filter_keyword="", enabled=True)
+    settings = Settings()
+    settings.default_download_dir = str(tmp_path / "downloads")
+    settings.network_interface = "127.0.0.1"
+    settings.rss_feeds = [feed]
+    seen_store = RssSeenStore(tmp_path / "rss_seen.sqlite3")
+    commits = []
+    real_commit = seen_store.commit
+    monkeypatch.setattr(seen_store, "commit", lambda: (commits.append(1), real_commit()))
+    writes = []
+    real_save_json = persistence.save_json
+    monkeypatch.setattr(
+        persistence, "save_json", lambda path, data: (writes.append(path.name), real_save_json(path, data))
+    )
+    session_manager = SessionManager(settings)
+    try:
+        service = RssFeedService(session_manager, settings, seen_store)
+        writes.clear()
+        items = [
+            {"title": f"Show.S01E0{i}", "link": "magnet:?xt=urn:btih:" + f"{i:02d}" * 20, "guid": f"guid-{i}"}
+            for i in range(1, 6)
+        ]
+        service._signals.feed_fetched.emit(feed.url, items)
+        QApplication.processEvents()
+
+        assert len(session_manager.all_records()) == 5
+        assert all(seen_store.is_seen(f"guid-{i}") for i in range(1, 6))
+    finally:
+        session_manager.shutdown(timeout_ms=0)
+    assert len(commits) == 1
+    assert writes.count("awaiting_analysis.json") == 1
+    assert writes.count("rss_pending_magnets.json") == 1

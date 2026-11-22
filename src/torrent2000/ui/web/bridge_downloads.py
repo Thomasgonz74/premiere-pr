@@ -10,8 +10,9 @@ DownloadsTab uses today, just re-exposed to JS instead of a QTableWidget.
 from PySide6.QtCore import QObject, Signal, Slot
 
 from torrent2000.engine.bandwidth_scheduler import BandwidthScheduler
-from torrent2000.engine.session_manager import SessionManager
+from torrent2000.engine.session_manager import SessionManager, is_safe_move_destination
 from torrent2000.engine.torrent_item import TorrentRecord, TorrentState
+from torrent2000.i18n.translator import tr
 
 # States where a health verdict wouldn't mean anything yet -- mirrors
 # downloads_tab.py's _HEALTH_MEANINGLESS_STATES exactly.
@@ -62,16 +63,6 @@ def _record_to_dict(record: TorrentRecord) -> dict:
     }
 
 
-# Encryption excluding peers is a real, well-known slowness cause -- but
-# there's no rejection counter for it anywhere in the current data model, so
-# a "probably encryption" verdict would just be an invented signal. Surfaced
-# instead as an explicit disclaimer alongside whatever real causes are found.
-_ENCRYPTION_NOT_DETERMINABLE_NOTE = (
-    "Le chiffrement qui exclurait certains pairs n'est pas déterminable avec "
-    "les données actuelles (aucun compteur de rejets liés au chiffrement "
-    "n'existe) : cette cause potentielle n'est donc pas incluse ci-dessus."
-)
-
 # Bandwidth is only plausibly "the" bottleneck when the torrent is already
 # using most of the configured cap -- below this, the cap isn't what's
 # holding it back.
@@ -88,24 +79,13 @@ def _compute_slowness_causes(
     causes: list[dict] = []
 
     if record.num_seeds == 0:
-        causes.append({
-            "code": "no_seeds",
-            "text": (
-                "Aucun seed n'est actuellement disponible pour ce torrent : "
-                "personne ne détient le fichier complet, ce qui limite "
-                "fortement la vitesse de téléchargement."
-            ),
-        })
+        causes.append({"code": "no_seeds", "text": tr("web.downloads.slowness_no_seeds")})
 
     error_tracker = next((t for t in record.trackers if t.last_error), None)
     if error_tracker is not None:
         causes.append({
             "code": "tracker_error",
-            "text": (
-                f"Le tracker {error_tracker.url} renvoie une erreur active "
-                f"({error_tracker.last_error}) : moins de pairs peuvent être "
-                "découverts via ce tracker."
-            ),
+            "text": tr("web.downloads.slowness_tracker_error", url=error_tracker.url, error=error_tracker.last_error),
         })
 
     if download_limit_kbps > 0:
@@ -118,22 +98,36 @@ def _compute_slowness_causes(
             if others_downloading:
                 causes.append({
                     "code": "bandwidth_limit",
-                    "text": (
-                        f"Le débit actuel (~{record.download_rate // 1024} Ko/s) est proche "
-                        f"du plafond global configuré ({download_limit_kbps} Ko/s), et "
-                        "d'autres torrents téléchargent en même temps : la bande passante "
-                        "globale est probablement le facteur limitant."
+                    "text": tr(
+                        "web.downloads.slowness_bandwidth_limit",
+                        rate=record.download_rate // 1024,
+                        limit=download_limit_kbps,
                     ),
                 })
 
     return causes
 
 
+def move_storage_or_refusal(session_manager: SessionManager, info_hash: str, new_path: str) -> str:
+    """The Move… of the Downloads and Share pages: the refusal for the page
+    to show ("" once the move is under way) -- the tray toast says nothing
+    when notifications are off."""
+    if not new_path:
+        return ""
+    if not is_safe_move_destination(new_path):
+        record = session_manager.get_record(info_hash)
+        name = record.name if record is not None and record.name else info_hash[:12]
+        return tr("notifications.move_storage_refused_message", name=name, path=new_path)
+    session_manager.move_storage(info_hash, new_path)
+    return ""
+
+
 class DownloadsBridge(QObject):
     """One instance, constructed after SessionManager and registered on a
     QWebChannel before the page loads. recordUpdated (one torrent, e.g. just
-    added), recordsUpdated (one list per status tick) and recordRemoved push
-    changes to JS -- the page never polls."""
+    added, or pinned: no status tick reports a change libtorrent doesn't
+    know of, and an idle torrent gets none), recordsUpdated (one list per
+    status tick) and recordRemoved push changes to JS -- the page never polls."""
 
     recordUpdated = Signal("QVariantMap")
     recordsUpdated = Signal("QVariantList")
@@ -227,18 +221,22 @@ class DownloadsBridge(QObject):
     @Slot(str)
     def lockTorrent(self, info_hash: str) -> None:
         self._session_manager.lock_torrent(info_hash)
+        self._on_added_or_updated(info_hash)
 
     @Slot(str)
     def unlockTorrent(self, info_hash: str) -> None:
         self._session_manager.unlock_torrent(info_hash)
+        self._on_added_or_updated(info_hash)
 
     @Slot(str)
     def pinTorrent(self, info_hash: str) -> None:
         self._session_manager.pin_torrent(info_hash)
+        self._on_added_or_updated(info_hash)
 
     @Slot(str)
     def unpinTorrent(self, info_hash: str) -> None:
         self._session_manager.unpin_torrent(info_hash)
+        self._on_added_or_updated(info_hash)
 
     @Slot(str, float)
     def setDeadline(self, info_hash: str, timestamp: float) -> None:
@@ -247,14 +245,14 @@ class DownloadsBridge(QObject):
         # slot just for this.
         self._session_manager.set_deadline(info_hash, timestamp if timestamp > 0 else None)
 
-    @Slot(str, str)
-    def moveStorage(self, info_hash: str, new_path: str) -> None:
-        if new_path:
-            self._session_manager.move_storage(info_hash, new_path)
+    @Slot(str, str, result=str)
+    def moveStorage(self, info_hash: str, new_path: str) -> str:
+        return move_storage_or_refusal(self._session_manager, info_hash, new_path)
 
     @Slot(str, str)
     def setCategory(self, info_hash: str, category: str) -> None:
         self._session_manager.set_torrent_category(info_hash, category.strip())
+        self._on_added_or_updated(info_hash)
 
     @Slot(result="QVariantList")
     def listCategories(self) -> list:
@@ -313,4 +311,9 @@ class DownloadsBridge(QObject):
             return {"applicable": False, "causes": [], "note": ""}
         download_limit_kbps = self._bandwidth_scheduler.current_download_limit_kbps()
         causes = _compute_slowness_causes(record, self._session_manager.all_records(), download_limit_kbps)
-        return {"applicable": True, "causes": causes, "note": _ENCRYPTION_NOT_DETERMINABLE_NOTE}
+        # Encryption excluding peers is a real, well-known slowness cause --
+        # but there's no rejection counter for it anywhere in the current data
+        # model, so a "probably encryption" verdict would just be an invented
+        # signal. Surfaced instead as an explicit disclaimer alongside
+        # whatever real causes are found.
+        return {"applicable": True, "causes": causes, "note": tr("web.downloads.slowness_encryption_note")}
