@@ -127,3 +127,49 @@ def test_metadata_received_falls_back_to_default_when_no_rule_matches():
     session_manager.metadata_received.emit("hash1")
 
     assert payloads[0]["suggestedDestination"] == bridge._settings.default_download_dir
+
+
+def test_dropped_torrent_suggests_destination_from_its_dropped_name(tmp_path):
+    import base64
+
+    bridge, _sm, routing_rule_store = _make_bridge()
+    routing_rule_store.save_rule(
+        RoutingRule(name="linux", pattern="ubuntu", match_field="name", destination="D:/linux")
+    )
+    torrent_path = tmp_path / "source.torrent"
+    _write_real_torrent(torrent_path)
+
+    payloads = []
+    bridge.scanReady.connect(payloads.append)
+
+    # The drop is written to a "dropped_xxxx.torrent" temp file first.
+    temp_path = bridge.saveDroppedTorrent(
+        "ubuntu-24.04.torrent", base64.b64encode(torrent_path.read_bytes()).decode()
+    )
+    try:
+        bridge.selectTorrentFile(temp_path)
+    finally:
+        os.remove(temp_path)
+
+    assert payloads[0]["suggestedDestination"] == "D:/linux"
+
+
+class FakeMagnetRecord(FakeRecord):
+    def __init__(self, name, save_path):
+        super().__init__(name)
+        self.save_path = save_path
+
+
+def test_starting_an_analyzed_magnet_moves_it_to_the_chosen_destination():
+    bridge, session_manager, _routing_rule_store = _make_bridge()
+    default = bridge._settings.default_download_dir
+    session_manager.records["hash1"] = FakeMagnetRecord("Ubuntu", default)
+    moves = []
+    session_manager.move_storage = lambda info_hash, path, quiet=False: moves.append((info_hash, path, quiet))
+    session_manager.start_after_analysis = lambda info_hash: None
+    bridge._pending_magnet_hash = "hash1"
+
+    assert bridge.startTorrent("D:/linux", "", "", []) == {"ok": True}
+
+    # Quiet: placing a magnet being added is no "move finished" toast.
+    assert moves == [("hash1", "D:/linux", True)]

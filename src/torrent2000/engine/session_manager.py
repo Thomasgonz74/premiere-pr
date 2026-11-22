@@ -311,6 +311,8 @@ class SessionManager(QObject):
         self._matched_rules: dict[str, str] = {
             h: name for h, name in persistence.load_json(get_matched_rules_path(), {}).items() if isinstance(name, str)
         }
+        # info_hashes whose pending move is move_storage(quiet=True): see there.
+        self._quiet_moves: set[str] = set()
         self._categories = TorrentCategoryService()
         # In-memory only (not persisted): ~60s of (download_rate, upload_rate)
         # samples per torrent at this timer's 300ms tick, for the speed-over-
@@ -587,6 +589,9 @@ class SessionManager(QObject):
         record = self._records.get(info_hash)
         if record is not None:
             record.save_path = new_path
+        if info_hash in self._quiet_moves:
+            self._quiet_moves.discard(info_hash)
+            return
         self.storage_moved.emit(info_hash, new_path)
 
     def _on_storage_move_failed(self, info_hash: str, message: str) -> None:
@@ -885,6 +890,14 @@ class SessionManager(QObject):
                 priorities[idx] = FILE_PRIORITY_EXCLUDED
         handle.prioritize_files(priorities)
 
+    def get_file_priorities(self, info_hash: str) -> list[int]:
+        """libtorrent's per-file priorities, indexed like get_torrent_files'
+        entries; [] if there's no handle."""
+        handle = self._handles.get(info_hash)
+        if handle is None:
+            return []
+        return list(handle.get_file_priorities())
+
     def set_file_priorities(self, info_hash: str, excluded_indices: set[int]) -> None:
         """Full replacement, unlike exclude_files: every file's priority is
         set explicitly (excluded or default), so a file previously excluded
@@ -1141,13 +1154,19 @@ class SessionManager(QObject):
         post-complete action or shutdown countdown."""
         self._pending_restore_confirmation.add(info_hash)
 
-    def move_storage(self, info_hash: str, new_path: str) -> None:
+    def move_storage(self, info_hash: str, new_path: str, quiet: bool = False) -> None:
+        """quiet: no storage_moved (the "move finished" toast) for this one,
+        e.g. a just-added magnet placed in the folder chosen on the Add page."""
         if not is_safe_move_destination(new_path):
             logger.warning("Refusing to move torrent %s to disallowed destination: %r", info_hash, new_path)
             self.move_storage_refused.emit(info_hash, new_path)  # callers are fire-and-forget
             return
         handle = self._handles.get(info_hash)
         if handle is not None:
+            if quiet:
+                self._quiet_moves.add(info_hash)
+            else:
+                self._quiet_moves.discard(info_hash)
             handle.move_storage(new_path)
 
     def set_proxy(self, settings: Settings) -> None:

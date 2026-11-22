@@ -1,6 +1,6 @@
 """Behaviour of a few web-UI scripts that run without any bridge round trip
 (modal.js, profile_stats.js, piece_map_dialog.js, downloads.js,
-theme_switcher.js, profile_general.js), exercised in
+theme_switcher.js, profile_general.js, add.js, file_priority.js), exercised in
 the real resources/web/spike/index.html loaded in an offscreen QWebEngineView
 with hand-made bridge stubs (same page-loading convention as
 test_theme_readability.py)."""
@@ -322,3 +322,98 @@ def test_propaganda_messages_are_translated_once_the_catalog_arrives(view):
       return JSON.stringify([first.startsWith('Camarade '), next.startsWith('Camarade ')]);
     })()""")
     assert result == "[true,true]"
+
+
+def test_removing_the_filtered_tag_hides_the_row_at_once(view):
+    result = run_js(view, """(function () {
+      window.bridge = { downloads: {
+        getTags(ih, cb) { cb(['x']); },
+        removeTag() {},
+        listAllTags(cb) { cb(['x']); },  // another torrent still carries it
+      } };
+      const el = document.createElement('div');
+      downloadsRows.set('alpha', { el, record: { infoHash: 'alpha', name: 'alpha' } });
+      downloadsTagsCache.set('alpha', ['x']);
+      downloadsRefreshTagFilterOptions();
+      const select = document.getElementById('downloadsTagFilterSelect');
+      select.value = 'x';
+      downloadsTagFilterValue = 'x';
+      downloadsApplyFilter();
+      const seen = [el.style.display];
+      // A paused torrent gets no status tick to re-filter its row later.
+      downloadsOpenTagsDialog('alpha', 'alpha');
+      document.querySelector('#modalBox .listbox .row button').click();
+      seen.push(el.style.display);
+      closeModal();
+      downloadsRows.delete('alpha');
+      downloadsTagsCache.delete('alpha');
+      select.value = '';
+      downloadsTagFilterValue = '';
+      return JSON.stringify(seen);
+    })()""")
+    assert result == '["","none"]'
+
+
+def test_add_page_routing_destination_never_carries_over_to_the_next_torrent(view):
+    result = run_js(view, """(function () {
+      window.bridge = { add: { defaultDestination(cb) { cb('C:/dl'); } } };
+      const dest = document.getElementById('addDestInput');
+      const scan = (suggested) => addRenderScan({ fileRisks: [], threshold: 60, suggestedDestination: suggested });
+      addDefaultDestination = 'C:/dl';
+      dest.value = 'C:/dl';
+      const seen = [];
+      scan('C:/films');  // a routing rule matched
+      seen.push(dest.value);
+      scan('C:/dl');  // another file picked, no rule matches it
+      seen.push(dest.value);
+      scan('C:/films');
+      addResetForm();  // started
+      seen.push(dest.value);
+      dest.value = 'D:/mine';
+      scan('C:/films');  // typed by the user: kept
+      seen.push(dest.value);
+      addResetForm();
+      return JSON.stringify(seen);
+    })()""")
+    assert result == '["C:/films","C:/dl","C:/dl","D:/mine"]'
+
+
+def test_add_page_follows_a_default_folder_changed_in_profile(view):
+    result = run_js(view, """(function () {
+      let profileDefault = 'C:/dl';
+      window.bridge = { add: { defaultDestination(cb) { cb(profileDefault); } } };
+      const dest = document.getElementById('addDestInput');
+      addDefaultDestination = '';
+      dest.value = '';
+      addRefreshDefaultDestination();  // page load
+      const seen = [dest.value];
+      profileDefault = 'C:/new';  // Profile > Enregistrer
+      addResetForm();  // a torrent was started
+      seen.push(dest.value);
+      profileDefault = 'C:/newer';
+      addRefreshDefaultDestination();  // the Add tab shown again
+      seen.push(dest.value);
+      dest.value = 'D:/mine';
+      profileDefault = 'C:/newest';
+      addRefreshDefaultDestination();  // typed by the user: kept
+      seen.push(dest.value);
+      addResetForm();
+      return JSON.stringify(seen);
+    })()""")
+    assert result == '["C:/dl","C:/new","C:/newer","D:/mine"]'
+
+
+def test_file_editor_starts_an_excluded_file_unchecked_and_saving_keeps_it_out(view):
+    result = run_js(view, """(function () {
+      const saved = [];
+      window.bridge = { filePriority: { saveFilePriorities(ih, excluded) { saved.push(ih, excluded); } } };
+      const container = document.createElement('div');
+      fpRenderContent(container, 'h1', [
+        { index: 0, path: 'film.mkv', size: 1, priority: 4 },
+        { index: 2, path: 'film.mkv.exe', size: 1, priority: 0 },  // excluded by the danger scan
+      ]);
+      const checks = Array.from(container.querySelectorAll('.fp-check'), (c) => c.checked);
+      container.querySelector('.modal-close-row button').click();  // Enregistrer, nothing changed
+      return JSON.stringify([checks, saved]);
+    })()""")
+    assert result == '[[true,false],["h1",[2]]]'

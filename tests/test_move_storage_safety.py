@@ -72,3 +72,19 @@ def test_a_refused_move_is_reported_not_just_logged():
 
     handle.move_storage.assert_not_called()
     assert refused == [("hash1", "C:" + "\\")]
+
+
+def test_a_quiet_move_announces_nothing_and_the_next_move_does(tmp_path):
+    sm = SessionManager.__new__(SessionManager)  # bypass __init__, no libtorrent session
+    QObject.__init__(sm)
+    sm._handles = {"hash1": MagicMock()}
+    sm._records = {}
+    sm._quiet_moves = set()
+    moved = []
+    sm.storage_moved.connect(lambda info_hash, path: moved.append(path))
+
+    for path, quiet in ((str(tmp_path / "added"), True), (str(tmp_path / "moved"), False)):
+        sm.move_storage("hash1", path, quiet=quiet)
+        sm._on_storage_moved("hash1", path)  # its storage_moved_alert
+
+    assert moved == [str(tmp_path / "moved")]
