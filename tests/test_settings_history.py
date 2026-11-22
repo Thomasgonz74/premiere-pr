@@ -6,8 +6,8 @@ and a past entry can be restored.
 import json
 from pathlib import Path
 
-from torrent2000.config.paths import get_config_path
-from torrent2000.config.settings import Settings
+from torrent2000.config.paths import get_config_backups_dir, get_config_path
+from torrent2000.config.settings import RssFeedSubscription, Settings
 from torrent2000.config.settings_history import read_settings_history, restore_settings_snapshot
 
 
@@ -109,3 +109,23 @@ def test_first_save_after_an_upgrade_journals_only_what_the_user_changed(tmp_pat
     settings.save()
 
     assert list(read_settings_history()[0]["changes"]) == ["audio_volume"]
+
+
+def test_history_redacts_feed_passkeys_and_restore_keeps_live_urls(tmp_path, monkeypatch):
+    monkeypatch.setenv("TORRENT2000_DATA_DIR", str(tmp_path))
+
+    settings = Settings.load()
+    settings.rss_feeds = [RssFeedSubscription(url="https://t.invalid/rss?passkey=SECRET", filter_keyword="old")]
+    settings.save()
+    settings.rss_feeds[0].filter_keyword = "new"
+    settings.rss_feeds.append(RssFeedSubscription(url="https://u.invalid/rss/0123456789abcdef0123456789abcdef"))
+    settings.save()
+
+    history_text = (get_config_backups_dir() / "history.jsonl").read_text(encoding="utf-8")
+    assert "SECRET" not in history_text and "0123456789abcdef" not in history_text
+
+    restore_settings_snapshot(read_settings_history()[0], settings)
+
+    assert [(feed.url, feed.filter_keyword) for feed in settings.rss_feeds] == [
+        ("https://t.invalid/rss?passkey=SECRET", "old")
+    ]
