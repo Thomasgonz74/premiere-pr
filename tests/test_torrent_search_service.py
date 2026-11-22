@@ -201,3 +201,32 @@ def test_a_result_link_is_fetched_as_a_torrent_only_if_it_is_one(tmp_path, monke
 
     assert download_result_torrent("https://x.example/details/1") == ""
     assert [p.name for p in temp_dir.iterdir()] == [os.path.basename(path)]
+
+
+def test_a_result_link_that_redirects_to_a_magnet_returns_the_magnet():
+    # Jackett's link for a magnet-only indexer: urllib refuses the redirect,
+    # and the magnet must still reach the Add page, not the browser.
+    import threading
+    from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+    from torrent2000.engine.torrent_search_service import download_result_torrent
+
+    magnet = "magnet:?xt=urn:btih:" + "a" * 40 + "&dn=Show"
+
+    class Handler(BaseHTTPRequestHandler):
+        def do_GET(self):
+            self.send_response(302)
+            self.send_header("Location", magnet)
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+
+        def log_message(self, *args):
+            pass
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    try:
+        assert download_result_torrent(f"http://127.0.0.1:{server.server_address[1]}/dl/1") == magnet
+    finally:
+        server.shutdown()
+        server.server_close()

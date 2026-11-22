@@ -255,7 +255,11 @@ function wireSearchPage() {
       return;
     }
     switchToTab("add");
-    addLoadTorrentFile(path, title);
+    if (path.startsWith("magnet:")) {
+      window.bridge.add.analyzeMagnet(path); // the link redirected to it
+    } else {
+      addLoadTorrentFile(path, title);
+    }
   });
 
   searchReloadSources();

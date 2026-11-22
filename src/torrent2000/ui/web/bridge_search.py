@@ -47,12 +47,12 @@ class _FetchTorrentRunnable(QRunnable):
 
 class _SearchSignals(QObject):
     resultsReady = Signal(int, list)  # search id, results
-    torrentFetched = Signal(str, str)  # link, temp .torrent path ("" = not a .torrent)
+    torrentFetched = Signal(str, str)  # link, temp .torrent path or magnet ("" = neither)
 
 
 class SearchBridge(QObject):
     resultsReady = Signal("QVariantList")
-    torrentFetched = Signal(str, str)  # link, temp .torrent path, "" when the link isn't one
+    torrentFetched = Signal(str, str)  # link, temp .torrent path or magnet, "" when neither
 
     def __init__(self, source_store: TorrentSearchSourceStore, settings: Settings, parent=None) -> None:
         super().__init__(parent)
@@ -101,6 +101,7 @@ class SearchBridge(QObject):
     @Slot(str)
     def fetchTorrent(self, link: str) -> None:
         """A non-magnet result's "Ajouter": fetched off the GUI thread, then
-        torrentFetched -- search.js reviews a .torrent on the Add page and
-        opens anything else in the browser (DialogBridge.openExternalUrl)."""
+        torrentFetched -- search.js reviews a .torrent (or the magnet the link
+        redirects to) on the Add page and opens anything else in the browser
+        (DialogBridge.openExternalUrl)."""
         QThreadPool.globalInstance().start(_FetchTorrentRunnable(link, self._settings.proxy, self._signals))
