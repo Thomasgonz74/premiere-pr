@@ -152,6 +152,17 @@ def test_alert_on_an_invalid_handle_is_skipped_not_routed_under_a_null_hash(disp
     callbacks["on_save_resume_data"].assert_not_called()
 
 
+def test_the_save_of_a_torrent_removed_meanwhile_logs_no_error(dispatcher, caplog):
+    """Removing a torrent while the autosave is draining is a normal action:
+    it wrote an ERROR traceback to the log users attach to their reports."""
+    alert = MagicMock(spec=lt.save_resume_data_alert)
+    alert.handle = lt.torrent_handle()
+
+    dispatcher.dispatch_all([alert])
+
+    assert not [r for r in caplog.records if r.levelname == "ERROR"]
+
+
 def test_torrent_removed_alert_uses_info_hashes_directly_not_handle(dispatcher, callbacks):
     """torrent_removed_alert fires after the handle is already gone, so
     dispatch() must read alert.info_hashes directly rather than going

@@ -91,7 +91,10 @@ class AlertDispatcher:
         elif isinstance(alert, lt.tracker_error_alert):
             self._on_tracker_error(_hash_of(alert.handle), alert.error_message() or _tracker_error_text(alert))
         elif isinstance(alert, lt.save_resume_data_alert):
-            self._on_save_resume_data(_hash_of(alert.handle), alert.params)
+            # Invalid: the torrent was removed while this periodic save was in
+            # flight -- nothing left to save, and no error worth a traceback.
+            if alert.handle.is_valid():
+                self._on_save_resume_data(_hash_of(alert.handle), alert.params)
         elif isinstance(alert, lt.torrent_removed_alert):
             self._on_torrent_removed(_info_hash_hex(alert.info_hashes))
         elif isinstance(alert, lt.add_torrent_alert):
