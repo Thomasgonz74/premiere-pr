@@ -683,7 +683,7 @@
   "web.profile_automation.decision_journal_empty": "Aucune décision automatique enregistrée.",
   "web.profile_automation.known_disk_empty": "Aucun disque enregistré.",
   "web.profile_automation.known_disk_confirm_message": "Le disque \"{label}\" ({mountpoint}) est associé à la catégorie \"{category}\".",
-  "web.profile_automation.known_disk_impact_message": "{count} torrent(s) de cette catégorie seront déplacés vers \"{mountpoint}\\{category}\" (taille totale : {totalSize}).",
+  "web.profile_automation.known_disk_impact_message": "{count} torrent(s) de cette catégorie seront déplacés vers \"{targetDir}\" (taille totale : {totalSize}).",
   "web.profile_automation.known_disk_impact_none": "Aucun torrent actif n'appartient à cette catégorie -- rien à déplacer.",
   "web.profile_automation.known_disk_confirm_button": "Confirmer et déplacer",
   "web.profile_automation.known_disk_move_result_errors": "{moved} torrent(s) déplacé(s), {errorCount} échec(s) : {errors}",

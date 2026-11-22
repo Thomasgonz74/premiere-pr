@@ -69,13 +69,14 @@ def test_preview_counts_matching_records_and_sums_size():
     other = TorrentRecord(info_hash="h3", category="Musique", total_size=500)
     bridge = _bridge(FakeSessionManager([films1, films2, other]))
 
-    result = bridge.previewCategoryMove("Films")
-    assert result == {"count": 2, "totalSize": 3000}
+    result = bridge.previewCategoryMove("Films", "Z:\\")
+    # psutil's "Z:\" mountpoint used to show as "Z:\\Films" in the confirmation.
+    assert result == {"count": 2, "totalSize": 3000, "targetDir": "Z:\\Films"}
 
 
 def test_preview_is_empty_for_unmatched_category():
     bridge = _bridge(FakeSessionManager([TorrentRecord(info_hash="h1", category="Films")]))
-    assert bridge.previewCategoryMove("Musique") == {"count": 0, "totalSize": 0}
+    assert bridge.previewCategoryMove("Musique", "Z:\\")["count"] == 0
 
 
 def test_execute_moves_each_matching_record_under_mountpoint_category():

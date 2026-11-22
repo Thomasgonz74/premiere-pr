@@ -428,7 +428,7 @@ function wireProfileAutomation() {
       info = {};
     }
     const category = action || "";
-    knownDiskBridge.previewCategoryMove(category, (impact) => {
+    knownDiskBridge.previewCategoryMove(category, info.mountpoint || "", (impact) => {
       const content = document.createElement("div");
       content.className = "form-grid";
 
@@ -445,8 +445,7 @@ function wireProfileAutomation() {
       details.textContent = impact.count > 0
         ? t("web.profile_automation.known_disk_impact_message", {
             count: impact.count,
-            mountpoint: info.mountpoint || "?",
-            category,
+            targetDir: impact.targetDir,
             totalSize: formatSize(impact.totalSize),
           })
         : t("web.profile_automation.known_disk_impact_none");
