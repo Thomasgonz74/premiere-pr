@@ -22,7 +22,7 @@ from torrent2000.config.settings import (
     RssFeedSubscription,
     Settings,
     _from_dict,
-    forget_saved_config,
+    hold_config_until_restart,
 )
 
 _MAX_CONFIG_BACKUPS = 5
@@ -157,12 +157,11 @@ class ProfileSecurityBridge(QObject):
         # config_backups/ -- best-effort, never blocks the import itself.
         _backup_current_config()
         # Written straight to the real config file, same as native -- applies
-        # fully on next launch, no attempt to hot-reload the running Settings.
-        # Bypasses Settings.save(), so its in-memory copy of config.json (the
-        # base of the next history diff) must be dropped.
-        forget_saved_config()
+        # fully on next launch, no attempt to hot-reload the running Settings,
+        # which therefore must not save its own state over it until then.
         try:
             get_config_path().write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
         except OSError as exc:
             return {"ok": False, "error": str(exc)}
+        hold_config_until_restart()
         return {"ok": True}

@@ -11,13 +11,20 @@ SCHEMA_VERSION = 1
 # config.json exactly as Settings.save() last wrote it, keyed by path (tests
 # switch TORRENT2000_DATA_DIR per case): save() diffs against this instead of
 # re-reading the file it just wrote -- reopening a freshly modified file
-# triggers a Defender scan, ~14 ms of a ~19 ms save. Anything else that
-# writes config.json must call forget_saved_config().
+# triggers a Defender scan, ~14 ms of a ~19 ms save. Nothing else writes
+# config.json but a config import, after which save() stops (see below).
 _last_saved_config: dict[str, dict] = {}
 
 
-def forget_saved_config() -> None:
-    _last_saved_config.clear()
+# config.json files a config import replaced for the next launch, keyed by
+# path like _last_saved_config: save() leaves them alone until then, or the
+# first live-saved setting (volume, theme...) would write the running,
+# pre-import state back over the import.
+_held_until_restart: set[str] = set()
+
+
+def hold_config_until_restart() -> None:
+    _held_until_restart.add(str(get_config_path()))
 
 
 @dataclass
@@ -318,6 +325,8 @@ class Settings:
 
     def save(self) -> None:
         path = get_config_path()
+        if str(path) in _held_until_restart:
+            return
         # The state being overwritten, so the diff-based history log
         # (settings_history.py) can journal only what changed: what this
         # process last wrote if known (see _last_saved_config), else whatever's

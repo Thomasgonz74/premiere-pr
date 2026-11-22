@@ -82,20 +82,20 @@ def test_only_the_five_most_recent_backups_are_kept(tmp_path, monkeypatch):
     assert not (backups_dir / "config-00000000-000000.json").exists()
 
 
-def test_import_resets_the_diff_base_of_the_next_save(tmp_path, monkeypatch):
-    """Settings.save() diffs against its in-memory copy of config.json -- an
-    import writes that file directly, so the next save must diff against
-    the imported content, not the pre-import state."""
+def test_a_live_save_after_an_import_does_not_overwrite_it(tmp_path, monkeypatch):
+    """The import applies on the next launch: until then the running Settings
+    (still the pre-import state) must not be written back over it."""
     monkeypatch.setenv("TORRENT2000_DATA_DIR", str(tmp_path))
     settings = Settings.load()  # first save: language "fr" in memory and on disk
     imported = tmp_path / "import.json"
     imported.write_text(json.dumps({"language": "ja"}), encoding="utf-8")
     assert ProfileSecurityBridge(settings).importConfig(str(imported))["ok"]
 
-    settings.language = "en"
+    settings.audio_volume = 10  # what setVolume does
     settings.save()
 
-    assert read_settings_history()[0]["changes"]["language"] == {"old": "ja", "new": "en"}
+    assert Settings.load().language == "ja"
+    assert read_settings_history() == []
 
 
 def test_import_refuses_a_json_object_that_is_not_a_torrent2000_config(tmp_path, monkeypatch):
