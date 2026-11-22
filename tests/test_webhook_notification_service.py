@@ -104,12 +104,11 @@ def test_limit_reached_schedules_a_webhook_post(wired):
     assert "ratio" in pool.started[0]._message
 
 
-def test_a_retrying_tracker_error_posts_once_per_episode(wired):
+def test_every_tracker_error_is_posted(wired):
+    # No per-episode de-duplication: declined by the user (2026-09-27).
     _service, session_manager, _sls, _settings, pool = wired
 
-    for _ in range(3):  # libtorrent re-fires it on every announce retry
+    for _ in range(3):
         session_manager.tracker_error.emit("abc123", "connection refused")
-    session_manager.torrent_removed.emit("abc123")
-    session_manager.tracker_error.emit("abc123", "connection refused")
 
-    assert len(pool.started) == 2
+    assert len(pool.started) == 3
