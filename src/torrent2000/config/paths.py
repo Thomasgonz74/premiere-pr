@@ -137,10 +137,6 @@ def get_magnets_to_start_path() -> Path:
     return get_app_data_dir() / "magnets_to_start.json"
 
 
-def get_resume_after_check_path() -> Path:
-    return get_app_data_dir() / "resume_after_check.json"
-
-
 def get_rss_pending_magnets_path() -> Path:
     return get_app_data_dir() / "rss_pending_magnets.json"
 

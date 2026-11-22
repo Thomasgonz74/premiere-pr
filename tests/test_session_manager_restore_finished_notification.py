@@ -332,9 +332,11 @@ def test_under_cccp_a_resume_during_a_check_waits_for_it_then_seeds(qapp, tmp_pa
 
 
 
-def test_under_cccp_a_torrent_file_whose_data_is_complete_seeds_and_a_new_one_is_refused(qapp, tmp_path):
-    """The Share page's .torrent with its data: "Nyet." next to "Sharing
-    started.", and the share left paused at 0 % with its check never run."""
+def test_under_cccp_a_torrent_file_is_held_paused_and_a_recheck_then_a_resume_shares_complete_data(qapp, tmp_path):
+    """As in 1.1.2: added paused and unchecked, complete data or not (seeding
+    it by itself once checked was tried and withdrawn before 1.2.0). The way
+    to share it under CCCP: a recheck, which leaves it paused, then a resume,
+    allowed at 100 % -- and still refused for one whose data is missing."""
     from torrent2000.theme_ids import CCCP_THEME_ID
 
     save_path = tmp_path / "downloads"
@@ -347,19 +349,32 @@ def test_under_cccp_a_torrent_file_whose_data_is_complete_seeds_and_a_new_one_is
     settings = Settings()
     settings.theme = CCCP_THEME_ID
     sm = SessionManager(settings)
-    blocked = []
+    blocked, finished_events = [], []
     sm.download_blocked_by_theme.connect(blocked.append)
+    sm.torrent_finished.connect(finished_events.append)
     try:
         share_hash = sm.add_torrent_from_file(shared, save_path=str(save_path))
         download_hash = sm.add_torrent_from_file(new, save_path=str(elsewhere))
         share, download = sm._handles[share_hash], sm._handles[download_hash]
-        assert _run_ticks(qapp, sm, lambda: blocked and share.status().is_seeding and not share.status().paused)
+        _run_ticks(qapp, sm, lambda: False, timeout=1.0)
+        held = [(h.status().paused, bool(h.status().flags & lt.torrent_flags.auto_managed)) for h in (share, download)]
+        assert blocked == [share_hash, download_hash] and held == [(True, False), (True, False)]
+
+        sm.recheck_torrent(share_hash)
+        sm.recheck_torrent(download_hash)
+        assert _run_ticks(qapp, sm, lambda: sm.get_record(share_hash).progress >= 1.0 and share.status().paused)
+        _run_ticks(qapp, sm, lambda: False, timeout=1.0)
+        sm.resume_torrent(share_hash)
+        sm.resume_torrent(download_hash)
+
+        assert _run_ticks(qapp, sm, lambda: share.status().is_seeding and not share.status().paused)
         _run_ticks(qapp, sm, lambda: False, timeout=1.0)
         status = download.status()
     finally:
         sm.shutdown()
 
-    assert blocked == [download_hash] and status.paused and status.progress == 0.0
+    assert blocked == [share_hash, download_hash, download_hash]
+    assert status.paused and status.total_done == 0 and finished_events == []
 
 
 def _make_new_torrent(save_path) -> str:
@@ -370,10 +385,10 @@ def _make_new_torrent(save_path) -> str:
 
 
 def test_under_cccp_a_new_torrent_file_stays_paused_however_late_the_gui_thread_is(qapp, tmp_path):
-    """Its flags were set after the add: libtorrent leaves checking_resume_data
-    within 8 ms, stop_when_ready then fired at once and the resume() that
-    followed started the download, next to "Nyet. This download stays paused".
-    Any busy Python thread (the IP blocklist being parsed) delays this one so."""
+    """Held by the add itself: flags set after it once arrived too late
+    (libtorrent leaves checking_resume_data within 8 ms) and the download ran
+    next to "Nyet. This download stays paused". Any busy Python thread (the
+    IP blocklist being parsed) delays this one so."""
     from torrent2000.theme_ids import CCCP_THEME_ID
 
     tmp_path.joinpath("downloads").mkdir()
@@ -425,37 +440,6 @@ def test_under_cccp_a_download_whose_check_just_ended_is_paused_not_restarted(qa
 
     assert paused_by_libtorrent and blocked == [info_hash]
     assert status.paused and not status.flags & lt.torrent_flags.auto_managed
-
-
-def test_under_cccp_a_share_quit_before_its_check_was_seen_seeds_after_the_restart(qapp, tmp_path):
-    """Which torrents to resume once checked was only kept in memory, their
-    stop_when_ready in the resume data: back paused at 100 %, until a ▶."""
-    from torrent2000.config.paths import get_resume_after_check_path
-    from torrent2000.engine import persistence
-    from torrent2000.theme_ids import CCCP_THEME_ID
-
-    save_path = tmp_path / "downloads"
-    save_path.mkdir()
-    torrent_path = _make_already_complete_torrent(save_path)
-    settings = Settings()
-    settings.theme = CCCP_THEME_ID
-    sm1 = SessionManager(settings)
-    info_hash = sm1.add_torrent_from_file(torrent_path, save_path=str(save_path))
-    sm1.shutdown()  # no tick: the end of its check never reached _on_torrent_checked
-
-    sm2 = SessionManager(settings)
-    try:
-        seeds = _run_ticks(
-            qapp,
-            sm2,
-            lambda: info_hash in sm2._handles
-            and sm2._handles[info_hash].status().is_seeding
-            and not sm2._handles[info_hash].status().paused,
-        )
-    finally:
-        sm2.shutdown()
-
-    assert seeds and persistence.load_json(get_resume_after_check_path(), ["unsaved"]) == []
 
 
 def test_a_torrent_file_is_named_at_the_add_not_at_its_first_status(qapp, tmp_path):
