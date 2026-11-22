@@ -16,6 +16,7 @@ from torrent2000.engine.rss_feed_service import (
     _title_episode,
     _title_resolution,
     matches_advanced_filters,
+    parse_rss_items,
 )
 from torrent2000.engine.rss_seen_store import RssSeenStore
 
@@ -305,3 +306,42 @@ def test_latest_episode_only_skips_a_new_copy_of_an_episode_already_taken(tmp_pa
 
     assert [item["guid"] for item in found] == ["g720"]
     assert seen_store.is_seen("g1080") is True
+
+
+def test_title_episode_reads_a_season_number_before_an_anime_episode_number():
+    cases = {
+        "[SubsPlease] Jujutsu Kaisen S3 - 05 (1080p) [ABCD1234].mkv": (("jujutsu", "kaisen"), (3, 5)),
+        "[Erai-raws] Kimetsu no Yaiba Season 4 - 07 [1080p][Multiple Subtitle]": (("kimetsu", "no", "yaiba"), (4, 7)),
+        "Show Name - S2 - 05": (("show", "name"), (2, 5)),
+        "Show Name (Season 2) Episode 5": (("show", "name"), (2, 5)),
+        # Still a season pack: the "E12" of a CRC tag is no episode.
+        "[Group] Show S2 (1080p) [E12AB34C]": (("show",), (2, 10**6)),
+    }
+    for title, expected in cases.items():
+        assert _title_episode(title) == expected, title
+
+
+def test_title_episode_takes_no_episode_from_an_ambiguous_date():
+    assert _title_episode("Quotidien - 01.12.2026 FRENCH 720p") is None
+    assert _title_episode("Show - 05-11-2026") is None
+
+
+def test_latest_episode_only_ranks_unmarked_items_by_publication_date(tmp_path):
+    feed = RssFeedSubscription(url="https://example.com/feed.xml", filter_keyword="", enabled=True, latest_episode_only=True)
+    service, seen_store = _make_service(tmp_path, feed)
+    found = []
+    service.items_found.connect(lambda url, items: found.extend(item["title"] for item in items))
+
+    def check(*entries):  # an oldest-first feed
+        xml = "".join(
+            f"<item><title>{title}</title><link>magnet:?xt=urn:btih:{i}</link><guid>g{i}</guid>"
+            f"<pubDate>{day} Dec 2026 20:00:00 +0000</pubDate></item>"
+            for i, (title, day) in enumerate(entries)
+        )
+        items = parse_rss_items(f"<rss><channel>{xml}</channel></rss>".encode())
+        service._signals.feed_fetched.emit(feed.url, items)
+
+    check(("Show.S01E05.720p", "Mon, 21"), ("Show.Christmas.Special.720p", "Fri, 25"))
+    check(("Show.S01E05.720p", "Mon, 21"), ("Show.Christmas.Special.720p", "Fri, 25"), ("Show.New.Year.Special.720p", "Thu, 31"))
+
+    assert found == ["Show.S01E05.720p", "Show.Christmas.Special.720p", "Show.New.Year.Special.720p"]

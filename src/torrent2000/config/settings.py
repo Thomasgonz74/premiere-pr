@@ -76,9 +76,10 @@ class RssFeedSubscription:
     # title's SxxEyy / 1x05 / "Episode N" / air date (2026.11.22,
     # 2026-11-22, 22.11.2026) marker, a season pack after that season's
     # episodes -- never by a resolution/codec number (720p, x264, 5.1);
-    # a title with no marker ranks by feed order among the show's other
-    # unmarked items. The older (or same-episode) items are marked seen,
-    # never added, but only once the newest one was added. See
+    # a title with no marker (or an ambiguous date) ranks by <pubDate>,
+    # else feed order, among the show's other unmarked items. The older
+    # (or same-episode) items are marked seen, never added, but only once
+    # the newest one was added. See
     # engine/rss_feed_service.py::_latest_per_show.
     latest_episode_only: bool = False
 

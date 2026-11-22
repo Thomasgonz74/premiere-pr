@@ -350,3 +350,30 @@ def test_on_feed_fetched_passes_settings_proxy_to_fetch_url_for_torrent_download
     service._signals.feed_fetched.emit(feed.url, [item])
 
     assert captured_proxies == [settings.proxy]
+
+
+def test_failing_item_is_tried_a_few_times_per_session_and_never_marked_seen(tmp_path, monkeypatch):
+    started = []
+
+    class _RecordingThreadPool:
+        def start(self, runnable, priority=0):
+            started.append(runnable)
+
+    monkeypatch.setattr(
+        "torrent2000.engine.rss_feed_service.QThreadPool.globalInstance",
+        staticmethod(lambda: _RecordingThreadPool()),
+    )
+    feed = RssFeedSubscription(url="https://example.com/feed.xml", filter_keyword="", enabled=True)
+    service, session_manager, seen_store, settings = _make_service(tmp_path, [feed])
+    failed = []
+    service.feed_check_failed.connect(lambda url, message: failed.append(message))
+    nuked = {"title": "Nuked", "link": "https://example.com/nuked.torrent", "guid": "guid-404"}
+
+    for _check in range(5):
+        queued = len(started)
+        service._signals.feed_fetched.emit(feed.url, [nuked])
+        if len(started) > queued:  # its download fails again
+            service._signals.torrent_download_failed.emit(feed.url, nuked, "HTTP Error 404: Not Found")
+
+    assert len(started) == len(failed) == 3
+    assert seen_store.is_seen("guid-404") is False
