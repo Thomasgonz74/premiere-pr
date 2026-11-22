@@ -303,24 +303,31 @@ class Settings:
             settings = Settings()
             settings.default_download_dir = str(get_default_download_dir())
             return settings
-        proxy_data = data.pop("proxy", {})
-        schedule_data = data.pop("bandwidth_schedule", {})
-        rss_feeds_data = data.pop("rss_feeds", [])
+        settings = Settings._from_config_dict(data)
         # Decrypted here, at the JSON-dict boundary, so every Settings field
         # in memory is always plaintext -- see engine/dpapi.py. A pre-existing
         # plaintext value (config saved before this feature existed) passes
         # through unprotect() unchanged and is re-encrypted on the next save().
         # A hand-edited or imported file can hold a number here: str() it, or
         # protect() fails on it in every later save().
-        for holder, key in ((proxy_data, "password"), (data, "remote_access_token")):
-            if holder.get(key) is not None:
-                holder[key] = dpapi.unprotect(str(holder[key]))
+        for holder, key in ((settings.proxy, "password"), (settings, "remote_access_token")):
+            if getattr(holder, key) is not None:
+                setattr(holder, key, dpapi.unprotect(str(getattr(holder, key))))
+        if not settings.default_download_dir:
+            settings.default_download_dir = str(get_default_download_dir())
+        return settings
+
+    @staticmethod
+    def _from_config_dict(data: dict) -> "Settings":
+        """config.json's dict as a Settings, nested objects included: unknown
+        keys dropped, fields missing from an older version at their default."""
+        proxy_data = data.pop("proxy", {})
+        schedule_data = data.pop("bandwidth_schedule", {})
+        rss_feeds_data = data.pop("rss_feeds", [])
         settings = _from_dict(Settings, data)
         settings.proxy = _from_dict(ProxySettings, proxy_data)
         settings.bandwidth_schedule = _from_dict(BandwidthSchedule, schedule_data)
         settings.rss_feeds = [_from_dict(RssFeedSubscription, feed) for feed in rss_feeds_data]
-        if not settings.default_download_dir:
-            settings.default_download_dir = str(get_default_download_dir())
         return settings
 
     def save(self) -> None:
@@ -332,12 +339,14 @@ class Settings:
         # process last wrote if known (see _last_saved_config), else whatever's
         # on disk. None on first-ever save (no prior state to diff against)
         # or if the existing file is unreadable -- either way, nothing gets
-        # journaled.
+        # journaled. The file is read back as load() would: a config from an
+        # older version lacks fields added since, which are no change of the
+        # user's (journaling them would copy rss_feeds, passkeys and all).
         old_data = _last_saved_config.get(str(path))
         if old_data is None and path.exists():
             try:
-                old_data = json.loads(path.read_text(encoding="utf-8"))
-            except (json.JSONDecodeError, OSError):
+                old_data = asdict(Settings._from_config_dict(json.loads(path.read_text(encoding="utf-8"))))
+            except (ValueError, OSError, TypeError, AttributeError):
                 old_data = None
         new_data = asdict(self)
         # Encrypted only in the dict about to be written to disk -- `self`
