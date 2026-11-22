@@ -96,6 +96,12 @@ class ShareBridge(QObject):
 
     @Slot(str)
     def resumeTorrent(self, info_hash: str) -> None:
+        record = self._session_manager.get_record(info_hash)
+        if record is not None and record.awaiting_analysis:
+            # A magnet share CCCP held: as startShare, or resumed it would
+            # stay "awaiting analysis", in upload mode, whatever the theme.
+            self._session_manager.start_after_analysis(info_hash)
+            return
         self._session_manager.resume_torrent(info_hash)
 
     @Slot(str, bool)

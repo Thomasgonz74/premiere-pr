@@ -43,10 +43,13 @@ function addGuessCategory(intent, existingCategories) {
 
 // A language switch: the share-policy note shown comes from the bridge, in
 // the previous language, and so do the scan's reasons (only their text: the
-// user's ticks stay).
+// user's ticks stay). Its sizes were written in that language's units.
 document.addEventListener("catalogchange", () => {
   const note = document.getElementById("addSharePolicyNote");
   if (note.textContent) window.bridge.add.defaultSharePolicyNote((text) => (note.textContent = text));
+  document.querySelectorAll("#addScanList .scan-size").forEach((cell) => {
+    cell.textContent = formatSize(Number(cell.dataset.bytes));
+  });
   if (!addLastScan || !addLastScan.fileRisks.length) return;
   window.bridge.add.scanReasons((byIndex) => {
     document.querySelectorAll("#addScanList .scan-row").forEach((row) => {
@@ -128,6 +131,7 @@ function addRenderScan(scan) {
 
     const size = document.createElement("span");
     size.className = "scan-size";
+    size.dataset.bytes = String(risk.size); // for the catalogchange listener above
     size.textContent = formatSize(risk.size);
     row.appendChild(size);
 

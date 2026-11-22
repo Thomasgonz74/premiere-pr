@@ -21,3 +21,18 @@ def test_a_torrent_file_that_cannot_be_added_says_why(tmp_path):
         {"ok": False, "error": "expected value in bencoded string [bdecode:4]"},
         {"ok": False, "error": tr("add_tab.duplicate_message")},
     ]
+
+
+def test_resuming_a_share_still_awaiting_analysis_starts_it():
+    """Its ▶ only un-paused it: a magnet share CCCP had held stayed "awaiting
+    analysis", in upload mode, whatever the theme since."""
+    session_manager = MagicMock()
+    bridge = ShareBridge(session_manager, MagicMock(), MagicMock())
+
+    session_manager.get_record.return_value.awaiting_analysis = True
+    bridge.resumeTorrent("held")
+    session_manager.get_record.return_value.awaiting_analysis = False
+    bridge.resumeTorrent("paused")
+
+    session_manager.start_after_analysis.assert_called_once_with("held")
+    session_manager.resume_torrent.assert_called_once_with("paused")

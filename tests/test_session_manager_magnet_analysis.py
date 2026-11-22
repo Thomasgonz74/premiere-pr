@@ -204,6 +204,38 @@ def test_starting_a_held_magnet_under_cccp_is_refused_not_queued(qapp, tmp_path)
         sm.shutdown(timeout_ms=0)
 
 
+def test_under_cccp_a_magnet_started_before_its_check_is_judged_on_the_check(qapp, tmp_path):
+    """The Share page starts its magnet at once: refused on the record's 0 %,
+    "Nyet." next to "Sharing started." and the share left awaiting analysis at
+    100 %. Complete data is a share; missing data is refused, once checked."""
+    import shutil
+
+    shared_seeder, shared_magnet = _seeder(tmp_path / "shared")
+    new_seeder, new_magnet = _seeder(tmp_path / "new")
+    shutil.copytree(tmp_path / "shared" / "seed", tmp_path / "mine")
+    settings = _loopback_settings()
+    settings.theme = CCCP_THEME_ID
+    sm = SessionManager(settings)
+    sm._session.apply_settings({"listen_interfaces": "127.0.0.1:0"})  # never clash on 6881
+    blocked = []
+    sm.download_blocked_by_theme.connect(blocked.append)
+    try:
+        shared = sm.add_torrent_from_magnet(shared_magnet, str(tmp_path / "mine"))
+        sm.start_after_analysis(shared)
+        new = sm.add_torrent_from_magnet(new_magnet, str(tmp_path / "leech"))
+        sm.start_after_analysis(new)
+
+        handle = sm._handles[shared]
+        assert _pump(qapp, sm, lambda: blocked and handle.status().is_seeding and not handle.status().upload_mode)
+        _pump(qapp, sm, lambda: False, timeout=1.0)
+        assert blocked == [new]
+        assert not sm.get_record(shared).awaiting_analysis and handle.status().auto_managed
+        assert sm.get_record(new).awaiting_analysis and sm._handles[new].status().total_done == 0
+    finally:
+        sm.shutdown(timeout_ms=0)
+        del shared_seeder, new_seeder
+
+
 def test_a_torrent_file_added_after_its_magnet_was_lost_in_a_crash_is_not_held(qapp, tmp_path):
     (tmp_path / "data").mkdir()
     (tmp_path / "data" / "f.bin").write_bytes(os.urandom(64 * 1024))

@@ -362,6 +362,102 @@ def test_under_cccp_a_torrent_file_whose_data_is_complete_seeds_and_a_new_one_is
     assert blocked == [download_hash] and status.paused and status.progress == 0.0
 
 
+def _make_new_torrent(save_path) -> str:
+    """A .torrent with nothing of it on disk: a download."""
+    torrent_path = _make_already_complete_torrent(save_path)
+    (save_path / "already_complete.bin").unlink()
+    return torrent_path
+
+
+def test_under_cccp_a_new_torrent_file_stays_paused_however_late_the_gui_thread_is(qapp, tmp_path):
+    """Its flags were set after the add: libtorrent leaves checking_resume_data
+    within 8 ms, stop_when_ready then fired at once and the resume() that
+    followed started the download, next to "Nyet. This download stays paused".
+    Any busy Python thread (the IP blocklist being parsed) delays this one so."""
+    from torrent2000.theme_ids import CCCP_THEME_ID
+
+    tmp_path.joinpath("downloads").mkdir()
+    torrent_path = _make_new_torrent(tmp_path / "downloads")
+    settings = Settings()
+    settings.theme = CCCP_THEME_ID
+    sm = SessionManager(settings)
+    blocked = []
+    sm.download_blocked_by_theme.connect(blocked.append)
+    sm.torrent_added.connect(lambda _info_hash: time.sleep(0.1))
+    try:
+        info_hash = sm.add_torrent_from_file(torrent_path, save_path=str(tmp_path / "downloads"))
+        assert _run_ticks(qapp, sm, lambda: blocked)
+        _run_ticks(qapp, sm, lambda: False, timeout=0.5)
+        status = sm._handles[info_hash].status()
+    finally:
+        sm.shutdown()
+
+    assert blocked == [info_hash] and status.paused and not status.flags & lt.torrent_flags.auto_managed
+
+
+def test_under_cccp_a_download_whose_check_just_ended_is_paused_not_restarted(qapp, tmp_path):
+    """The same race for a resume or a theme switch during a check, then the
+    last guard: a download found running once checked is refused and paused."""
+    from torrent2000.theme_ids import CCCP_THEME_ID
+
+    tmp_path.joinpath("downloads").mkdir()
+    torrent_path = _make_new_torrent(tmp_path / "downloads")
+    settings = Settings()
+    sm = SessionManager(settings)
+    blocked = []
+    sm.download_blocked_by_theme.connect(blocked.append)
+    try:
+        info_hash = sm.add_torrent_from_file(torrent_path, save_path=str(tmp_path / "downloads"))
+        handle = sm._handles[info_hash]
+        downloading = lt.torrent_status.downloading
+        assert _run_ticks(qapp, sm, lambda: handle.status().state == downloading and not handle.status().paused)
+        settings.theme = CCCP_THEME_ID
+
+        sm._resume_once_checked(handle, info_hash)  # seen checking, a download by the time libtorrent reads this
+        time.sleep(0.3)
+        paused_by_libtorrent = handle.status().paused
+        handle.resume()  # running all the same, e.g. restored from resume data older than the theme
+        sm._on_torrent_checked(info_hash)
+        time.sleep(0.3)
+        status = handle.status()
+    finally:
+        sm.shutdown()
+
+    assert paused_by_libtorrent and blocked == [info_hash]
+    assert status.paused and not status.flags & lt.torrent_flags.auto_managed
+
+
+def test_under_cccp_a_share_quit_before_its_check_was_seen_seeds_after_the_restart(qapp, tmp_path):
+    """Which torrents to resume once checked was only kept in memory, their
+    stop_when_ready in the resume data: back paused at 100 %, until a ▶."""
+    from torrent2000.config.paths import get_resume_after_check_path
+    from torrent2000.engine import persistence
+    from torrent2000.theme_ids import CCCP_THEME_ID
+
+    save_path = tmp_path / "downloads"
+    save_path.mkdir()
+    torrent_path = _make_already_complete_torrent(save_path)
+    settings = Settings()
+    settings.theme = CCCP_THEME_ID
+    sm1 = SessionManager(settings)
+    info_hash = sm1.add_torrent_from_file(torrent_path, save_path=str(save_path))
+    sm1.shutdown()  # no tick: the end of its check never reached _on_torrent_checked
+
+    sm2 = SessionManager(settings)
+    try:
+        seeds = _run_ticks(
+            qapp,
+            sm2,
+            lambda: info_hash in sm2._handles
+            and sm2._handles[info_hash].status().is_seeding
+            and not sm2._handles[info_hash].status().paused,
+        )
+    finally:
+        sm2.shutdown()
+
+    assert seeds and persistence.load_json(get_resume_after_check_path(), ["unsaved"]) == []
+
+
 def test_a_torrent_file_is_named_at_the_add_not_at_its_first_status(qapp, tmp_path):
     """atp.name only holds a magnet's dn=: a .torrent finishing before its
     first status tick had an empty name in the "download finished" toast and
