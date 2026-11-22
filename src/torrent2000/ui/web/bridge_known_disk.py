@@ -24,6 +24,11 @@ from torrent2000.engine.known_disk_service import KnownDisk, KnownDiskService, K
 from torrent2000.engine.session_manager import SessionManager
 
 
+def _target_dir(mountpoint: str, category: str) -> str:
+    # psutil mountpoints already end in a backslash ("Z:\"): joined, never concatenated.
+    return os.path.join(mountpoint, category.strip())
+
+
 def _matching_records(session_manager: SessionManager, category: str) -> list:
     wanted = category.strip().casefold()
     return [r for r in session_manager.all_records() if r.category.strip().casefold() == wanted]
@@ -56,13 +61,14 @@ class KnownDiskBridge(QObject):
     def deleteDisk(self, label: str) -> None:
         self._store.delete(label)
 
-    @Slot(str, result="QVariantMap")
-    def previewCategoryMove(self, category: str) -> dict:
+    @Slot(str, str, result="QVariantMap")
+    def previewCategoryMove(self, category: str, mountpoint: str) -> dict:
         """Read-only impact preview shown BEFORE any confirmation button is
-        even enabled -- never moves anything."""
+        even enabled -- never moves anything. targetDir is the exact folder
+        executeCategoryMove() would use, for the confirmation text."""
         records = _matching_records(self._session_manager, category)
         total_size = sum(r.total_size for r in records)
-        return {"count": len(records), "totalSize": total_size}
+        return {"count": len(records), "totalSize": total_size, "targetDir": _target_dir(mountpoint, category)}
 
     @Slot(str, str, result="QVariantMap")
     def executeCategoryMove(self, category: str, mountpoint: str) -> dict:
@@ -71,7 +77,7 @@ class KnownDiskBridge(QObject):
         category matches `category` under "<mountpoint>/<category>" via
         SessionManager.move_storage. Defensive: one torrent failing to move
         must not stop the rest."""
-        target_dir = os.path.join(mountpoint, category.strip())
+        target_dir = _target_dir(mountpoint, category)
         moved = 0
         errors: list[str] = []
         for record in _matching_records(self._session_manager, category):

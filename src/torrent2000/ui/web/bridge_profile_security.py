@@ -22,7 +22,7 @@ from torrent2000.config.settings import (
     RssFeedSubscription,
     Settings,
     _from_dict,
-    forget_saved_config,
+    hold_config_until_restart,
 )
 
 _MAX_CONFIG_BACKUPS = 5
@@ -57,6 +57,10 @@ def _backup_current_config() -> None:
 def _is_valid_settings_payload(data: object) -> bool:
     """Same shape-check as native ConfigImportExportSection._is_valid_settings_payload."""
     if not isinstance(data, dict):
+        return False
+    # _from_dict drops unknown keys, so any JSON object passed the checks
+    # below: one sharing no field with Settings is some other app's file.
+    if not data.keys() & Settings.__dataclass_fields__.keys():
         return False
     data = dict(data)
     proxy_data = data.pop("proxy", {})
@@ -127,8 +131,8 @@ class ProfileSecurityBridge(QObject):
     def exportConfig(self, path: str) -> dict:
         if not path:
             return {"ok": False}
-        # The proxy password and remote-access token must never leave the
-        # machine in a plain-text export -- redact both before serializing.
+        # Secrets (proxy password, remote-access token, webhook URL, RSS
+        # passkeys) must never leave the machine in a plain-text export.
         data = redact_settings_dict(asdict(self._settings))
         try:
             Path(path).write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
@@ -153,12 +157,11 @@ class ProfileSecurityBridge(QObject):
         # config_backups/ -- best-effort, never blocks the import itself.
         _backup_current_config()
         # Written straight to the real config file, same as native -- applies
-        # fully on next launch, no attempt to hot-reload the running Settings.
-        # Bypasses Settings.save(), so its in-memory copy of config.json (the
-        # base of the next history diff) must be dropped.
-        forget_saved_config()
+        # fully on next launch, no attempt to hot-reload the running Settings,
+        # which therefore must not save its own state over it until then.
         try:
             get_config_path().write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
         except OSError as exc:
             return {"ok": False, "error": str(exc)}
+        hold_config_until_restart()
         return {"ok": True}

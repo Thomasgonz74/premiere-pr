@@ -215,6 +215,7 @@ def test_appearance_selector_offers_dark_only_where_it_exists(view):
       const saved = [];
       const profileGeneral = {
         themeChanged: sig(),
+        languageChanged: sig(),
         getSettings(cb) { cb({ theme: 'synthwave', appearanceMode: 'dark', audioVolume: 50 }); },
         getThemeOptions(cb) { cb([]); },
         getAppearanceModeOptions(cb) { cb([{ id: 'light', label: 'Clair' }, { id: 'dark', label: 'Sombre' }, { id: 'dark_hc', label: 'Contraste' }]); },
@@ -222,7 +223,7 @@ def test_appearance_selector_offers_dark_only_where_it_exists(view):
         getLaunchAtStartupActual(cb) { cb(false); },
         setAppearanceMode(mode) { saved.push(mode); },
       };
-      window.bridge = { profileGeneral, dialogs: {} };
+      window.bridge = { profileGeneral, dialogs: {}, profileAdvanced: { settingsApplied: sig() } };
       wireProfileGeneral();
       const select = document.getElementById('pgAppearanceSelect');
       const seen = [];
@@ -238,3 +239,86 @@ def test_appearance_selector_offers_dark_only_where_it_exists(view):
     })()""")
     # Showing "light" for a saved dark saves nothing; only the user's change does.
     assert result == '[["light,dark_hc light","light,dark,dark_hc dark","light,dark_hc light"],["dark_hc"]]'
+
+
+def test_general_and_network_forms_reload_when_a_settings_profile_is_applied(view):
+    result = run_js(view, """(function () {
+      const sig = () => { const cbs = []; return { connect: (f) => cbs.push(f), emit: (...a) => cbs.forEach((f) => f(...a)) }; };
+      const saved = { downloadRateLimitKbps: 1111, proxyEnabled: false, theme: 'luna_xp', appearanceMode: 'light', audioVolume: 50 };
+      const noop = (cb) => cb([]);
+      window.bridge = {
+        dialogs: {},
+        profileAdvanced: { settingsApplied: sig() },
+        profileGeneral: { themeChanged: sig(), languageChanged: sig(), getSettings: (cb) => cb({ ...saved }),
+                          getThemeOptions: noop, getAppearanceModeOptions: noop, getLanguageOptions: noop,
+                          getLaunchAtStartupActual: (cb) => cb(false) },
+        profileNetwork: { getSettings: (cb) => cb({ ...saved }), getSecuritySnapshot() {}, getRemoteAccessSettings() {} },
+      };
+      document.getElementById('profileGeneralContainer').replaceChildren();
+      document.getElementById('profileNetworkContainer').replaceChildren();
+      wireProfileGeneral();
+      buildNetworkPrivacySection(document.getElementById('profileNetworkContainer'), window.bridge.profileNetwork);
+      Object.assign(saved, { downloadRateLimitKbps: 1234, proxyEnabled: true });  // applyProfile
+      window.bridge.profileAdvanced.settingsApplied.emit();
+      return JSON.stringify([document.getElementById('pgDownloadLimit').value,
+                             document.getElementById('pnProxyEnabled').checked]);
+    })()""")
+    # Stale 1111 / unticked would be saved back by the next Save, undoing the profile.
+    assert result == '["1234",true]'
+
+
+def test_appearance_labels_follow_a_language_change(view):
+    result = run_js(view, """(function () {
+      const sig = () => { const cbs = []; return { connect: (f) => cbs.push(f), emit: (...a) => cbs.forEach((f) => f(...a)) }; };
+      let lang = 'en';
+      const labels = { en: ['Light', 'Dark'], de: ['Hell', 'Dunkel'] };
+      const profileGeneral = {
+        themeChanged: sig(), languageChanged: sig(),
+        getSettings(cb) { cb({ theme: 'luna_xp', appearanceMode: 'light', audioVolume: 50 }); },
+        getThemeOptions(cb) { cb([]); },
+        getAppearanceModeOptions(cb) { cb([{ id: 'light', label: labels[lang][0] }, { id: 'dark', label: labels[lang][1] }]); },
+        getLanguageOptions(cb) { cb([]); },
+        getLaunchAtStartupActual(cb) { cb(false); },
+      };
+      window.bridge = { profileGeneral, dialogs: {}, profileAdvanced: { settingsApplied: sig() } };
+      document.getElementById('profileGeneralContainer').replaceChildren();
+      wireProfileGeneral();
+      lang = 'de';
+      profileGeneral.languageChanged.emit('de');
+      return Array.from(document.getElementById('pgAppearanceSelect').options, (o) => o.textContent).join();
+    })()""")
+    assert result == "Hell,Dunkel"
+
+
+def test_network_help_hints_survive_a_language_switch(view):
+    result = run_js(view, """(function () {
+      const sig = () => { const cbs = []; return { connect: (f) => cbs.push(f), emit: (...a) => cbs.forEach((f) => f(...a)) }; };
+      window.bridge = { profileAdvanced: { settingsApplied: sig() } };
+      const container = document.getElementById('profileNetworkContainer');
+      container.replaceChildren();
+      buildNetworkPrivacySection(container, { getSettings() {} });
+      const key = 'web.profile_network.encryption_mode_tooltip';
+      setCatalog({ [key]: 'Protocol encryption help', 'web.profile_network.encryption_mode_label': 'Protocol encryption' });
+      const hints = container.querySelectorAll('.info-hint');
+      const label = Array.from(container.querySelectorAll('label')).find((l) => l.textContent.startsWith('Protocol encryption'));
+      const seen = [hints.length, label.querySelector('.info-hint').getAttribute('data-tooltip')];
+      setCatalog({});
+      return JSON.stringify(seen);
+    })()""")
+    assert result == '[3,"Protocol encryption help"]'
+
+
+def test_propaganda_messages_are_translated_once_the_catalog_arrives(view):
+    result = run_js(view, """(function () {
+      startPropagandaPanel();  // app.js can start it before getCatalog answers
+      const catalog = {};
+      for (let i = 1; i <= 18; i++) catalog['web.propaganda_panel.message_' + String(i).padStart(2, '0')] = 'Camarade ' + i;
+      setCatalog(catalog);
+      const first = document.getElementById('propagandaMessage').textContent;
+      _showNextPropagandaMessage();
+      const next = document.getElementById('propagandaMessage').textContent;
+      stopPropagandaPanel();
+      setCatalog({});
+      return JSON.stringify([first.startsWith('Camarade '), next.startsWith('Camarade ')]);
+    })()""")
+    assert result == "[true,true]"

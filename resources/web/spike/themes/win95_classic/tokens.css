@@ -7,19 +7,13 @@
    Lire  : STYLE.md du dossier charte (règles & interdits) · components.html
    ========================================================================== */
 
-/* --- Police pixel (optionnelle : fallback Tahoma si hors-ligne) ---------- */
-@font-face {
-  font-family: "Pixelated MS Sans Serif";
-  src: url("https://unpkg.com/98.css@0.1.20/dist/ms_sans_serif.woff2") format("woff2");
-  font-weight: 400;
-  font-style: normal;
-}
-@font-face {
-  font-family: "Pixelated MS Sans Serif";
-  src: url("https://unpkg.com/98.css@0.1.20/dist/ms_sans_serif_bold.woff2") format("woff2");
-  font-weight: 700;
-  font-style: normal;
-}
+/* --- Police : pile locale uniquement ------------------------------------
+   La charte chargeait la police pixel de 98.css depuis unpkg.com : une page
+   file:// n'a pas le droit de la récupérer (ERR_NETWORK_ACCESS_DENIED, deux
+   erreurs console à chaque chargement) et l'appli ne va jamais chercher de
+   ressource sur le réseau. 98.css est sous MIT, mais son README ne dit rien
+   de l'origine ni de la licence de cette recréation de MS Sans Serif : pas
+   embarquée. --font-ui retombe sur MS Sans Serif / Tahoma, comme avant. */
 
 :root {
 

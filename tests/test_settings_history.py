@@ -3,8 +3,10 @@ journals a diff to config_backups/history.jsonl, excludes sensitive fields,
 and a past entry can be restored.
 """
 
+import json
 from pathlib import Path
 
+from torrent2000.config.paths import get_config_path
 from torrent2000.config.settings import Settings
 from torrent2000.config.settings_history import read_settings_history, restore_settings_snapshot
 
@@ -93,3 +95,17 @@ def test_save_diffs_without_rereading_config_or_history(tmp_path, monkeypatch):
         {"old": "ja", "new": "en"},
         {"old": "fr", "new": "ja"},
     ]
+
+
+def test_first_save_after_an_upgrade_journals_only_what_the_user_changed(tmp_path, monkeypatch):
+    """A config written by an older version lacks the fields added since:
+    the first save must not journal them all, rss_feeds (passkeys) included."""
+    monkeypatch.setenv("TORRENT2000_DATA_DIR", str(tmp_path))
+    feed = {"url": "https://tracker.invalid/rss?passkey=SECRET", "filter_keyword": "", "enabled": True}
+    get_config_path().write_text(json.dumps({"default_download_dir": "D:/dl", "rss_feeds": [feed]}), encoding="utf-8")
+
+    settings = Settings.load()
+    settings.audio_volume = 42
+    settings.save()
+
+    assert list(read_settings_history()[0]["changes"]) == ["audio_volume"]

@@ -8,7 +8,7 @@
 //
 // Static DOM -- built once, either directly in index.html or once inside a
 // *BuildPage() function -- is tagged with data-i18n-key (and
-// data-i18n-placeholder/-title/-aria-label for those attributes) instead of
+// data-i18n-placeholder/-title/-aria-label/-tooltip for those attributes) instead of
 // being rebuilt on every language change: rebuilding would drop any
 // in-progress user input and re-register event listeners. Dynamically
 // rendered content (list rows, dialogs) isn't tagged -- it already calls
@@ -44,5 +44,8 @@ function applyStaticTranslations() {
   });
   document.querySelectorAll("[data-i18n-aria-label]").forEach((el) => {
     el.setAttribute("aria-label", t(el.dataset.i18nAriaLabel));
+  });
+  document.querySelectorAll("[data-i18n-tooltip]").forEach((el) => {
+    el.setAttribute("data-tooltip", t(el.dataset.i18nTooltip));
   });
 }

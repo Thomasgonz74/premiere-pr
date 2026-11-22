@@ -33,3 +33,15 @@ def test_lock_down_acl_never_raises_on_a_real_directory(tmp_path):
     # genuinely broken command line -- best-effort by design, so a failure
     # (e.g. icacls unavailable) must still not raise.
     paths._lock_down_acl(tmp_path)
+
+
+def test_lock_down_acl_opens_no_console_window(tmp_path, monkeypatch):
+    # The packaged app is windowed: a console child spawned without
+    # CREATE_NO_WINDOW flashes a terminal on the first launch.
+    monkeypatch.setenv("USERNAME", "someone")
+    calls = []
+    monkeypatch.setattr(paths.subprocess, "run", lambda *a, **kw: calls.append(kw))
+
+    paths._lock_down_acl(tmp_path)
+
+    assert calls[0]["creationflags"] == paths.subprocess.CREATE_NO_WINDOW

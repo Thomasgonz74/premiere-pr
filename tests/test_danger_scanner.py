@@ -156,3 +156,16 @@ def test_common_document_and_media_extensions_still_score_zero():
     result = scan_files(files)
     for i in range(3):
         assert result.risk_for_index(i).level == RiskLevel.SAFE
+
+
+def test_extensionless_file_in_dotted_release_folder_scores_zero():
+    """The extension comes from the file name, not from the root folder the
+    torrent path carries ("server\\readme" is not an extension)."""
+    files = [
+        FileEntry(index=0, path="Ubuntu.22.04.Server\\README", size=1_000),
+        FileEntry(index=1, path="Ubuntu.22.04.Server/LICENSE", size=1_000),
+        FileEntry(index=2, path="Show.S01\\episode.ts", size=1_000_000),
+        FileEntry(index=3, path="Show.S01\\episode.ass", size=1_000),
+    ]
+    result = scan_files(files, torrent_name="Ubuntu.22.04.Server")
+    assert [result.risk_for_index(i).score for i in range(4)] == [0, 0, 0, 0]

@@ -144,3 +144,10 @@ def test_theme_tooltip_opt_in_sets_the_pair_together(path: Path):
     for block in re.findall(r"\{([^{}]*)\}", css):
         has_bg, has_fg = "--t2k-tooltip-bg" in block, "--t2k-tooltip-fg" in block
         assert has_bg == has_fg, f"{path.parent.name}: a block sets only one of --t2k-tooltip-bg/-fg"
+
+
+@pytest.mark.parametrize("path", SHARED_CSS + THEME_CSS, ids=lambda p: str(p.relative_to(SPIKE)))
+def test_stylesheet_fetches_nothing_from_the_network(path: Path):
+    # A file:// page may not load remote resources anyway (the win95 fonts
+    # from unpkg.com only ever produced console errors), and the app stays local.
+    assert not re.search(r"url\(\s*[\"']?(https?:)?//", path.read_text(encoding="utf-8"), re.IGNORECASE)

@@ -113,6 +113,7 @@ class SpikeWindow(QMainWindow):
         tag_service=None,
         clipboard_watcher_service=None,
         torrent_search_source_store=None,
+        network_profile_switcher_service=None,
         parent=None,
         debug: bool = False,
     ) -> None:
@@ -202,6 +203,8 @@ class SpikeWindow(QMainWindow):
         self._profile_advanced_bridge = ProfileAdvancedBridge(
             session_manager, settings, routing_rule_store, settings_profile_store, network_profile_store, self
         )
+        if network_profile_switcher_service is not None:
+            network_profile_switcher_service.profile_applied.connect(self._profile_advanced_bridge.settingsApplied)
         self._profile_stats_bridge = ProfileStatsBridge(stats_service, history_service, self)
         self._file_priority_bridge = FilePriorityBridge(session_manager, self)
         self._peer_list_bridge = PeerListBridge(session_manager, settings, self)

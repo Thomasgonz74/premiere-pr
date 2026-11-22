@@ -230,6 +230,11 @@ function wireProfileGeneral() {
     appearance.mode = mode;
     refreshAppearanceSelect();
   });
+  // These labels come translated from Python, out of applyStaticTranslations' reach.
+  bridge.languageChanged.connect(() => bridge.getAppearanceModeOptions((options) => {
+    appearance.options = options;
+    refreshAppearanceSelect();
+  }));
   languageSelect.addEventListener("change", () => bridge.setLanguage(languageSelect.value));
 
   // --value (0%-100%) is how CSS sees the position: themes whose charter
@@ -244,7 +249,7 @@ function wireProfileGeneral() {
     bridge.setVolume(parseInt(volumeSlider.value, 10));
   });
 
-  bridge.getSettings((values) => {
+  const loadSettings = () => bridge.getSettings((values) => {
     destInput.value = values.defaultDownloadDir;
     downloadLimitInput.value = values.downloadRateLimitKbps;
     uploadLimitInput.value = values.uploadRateLimitKbps;
@@ -267,6 +272,10 @@ function wireProfileGeneral() {
     });
     bridge.getLanguageOptions((options) => pgPopulateSelect(languageSelect, options, values.language));
   });
+  loadSettings();
+  // A settings profile applied (by hand or on a Wi-Fi switch) rewrote some of
+  // these fields: a Save from the stale form would undo it.
+  window.bridge.profileAdvanced.settingsApplied.connect(loadSettings);
 
   // Reflects the real HKCU Run key rather than the possibly-stale saved
   // setting, same as native (see bridge_profile_general.py).

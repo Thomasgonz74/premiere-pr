@@ -162,3 +162,15 @@ def test_preexisting_plaintext_secrets_load_then_get_encrypted_on_next_save(tmp_
     assert on_disk["proxy"]["password"].startswith("dpapi:")
     assert on_disk["remote_access_token"].startswith("dpapi:")
     assert Settings.load().proxy.password == "old-plaintext"
+
+
+def test_numeric_secrets_in_a_hand_edited_config_do_not_break_save(tmp_path, monkeypatch):
+    monkeypatch.setenv("TORRENT2000_DATA_DIR", str(tmp_path))
+    config_path = get_config_path()
+    config_path.write_text(json.dumps({"proxy": {"password": 1234}, "remote_access_token": 123456}), encoding="utf-8")
+
+    Settings.load().save()  # raised AttributeError: 'int' object has no attribute 'encode'
+
+    reloaded = Settings.load()
+    assert reloaded.proxy.password == "1234"
+    assert reloaded.remote_access_token == "123456"

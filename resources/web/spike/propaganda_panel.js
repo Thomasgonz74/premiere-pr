@@ -11,25 +11,27 @@
 
 const PROPAGANDA_MESSAGE_INTERVAL_MS = 17000;
 
+// Catalog keys, not t() results: this runs at script load, before the
+// catalog arrives (t() would return the raw keys for the whole session).
 const PROPAGANDA_MESSAGE_SPECS = [
-  ["star", t("web.propaganda_panel.message_01")],
-  ["hammer_sickle", t("web.propaganda_panel.message_02")],
-  ["gear", t("web.propaganda_panel.message_03")],
-  ["sun_rays", t("web.propaganda_panel.message_04")],
-  ["wheat", t("web.propaganda_panel.message_05")],
-  ["rocket", t("web.propaganda_panel.message_06")],
-  ["factory", t("web.propaganda_panel.message_07")],
-  ["fist", t("web.propaganda_panel.message_08")],
-  ["star", t("web.propaganda_panel.message_09")],
-  ["hammer_sickle", t("web.propaganda_panel.message_10")],
-  ["gear", t("web.propaganda_panel.message_11")],
-  ["sun_rays", t("web.propaganda_panel.message_12")],
-  ["wheat", t("web.propaganda_panel.message_13")],
-  ["rocket", t("web.propaganda_panel.message_14")],
-  ["factory", t("web.propaganda_panel.message_15")],
-  ["fist", t("web.propaganda_panel.message_16")],
-  ["star", t("web.propaganda_panel.message_17")],
-  ["hammer_sickle", t("web.propaganda_panel.message_18")],
+  ["star", "web.propaganda_panel.message_01"],
+  ["hammer_sickle", "web.propaganda_panel.message_02"],
+  ["gear", "web.propaganda_panel.message_03"],
+  ["sun_rays", "web.propaganda_panel.message_04"],
+  ["wheat", "web.propaganda_panel.message_05"],
+  ["rocket", "web.propaganda_panel.message_06"],
+  ["factory", "web.propaganda_panel.message_07"],
+  ["fist", "web.propaganda_panel.message_08"],
+  ["star", "web.propaganda_panel.message_09"],
+  ["hammer_sickle", "web.propaganda_panel.message_10"],
+  ["gear", "web.propaganda_panel.message_11"],
+  ["sun_rays", "web.propaganda_panel.message_12"],
+  ["wheat", "web.propaganda_panel.message_13"],
+  ["rocket", "web.propaganda_panel.message_14"],
+  ["factory", "web.propaganda_panel.message_15"],
+  ["fist", "web.propaganda_panel.message_16"],
+  ["star", "web.propaganda_panel.message_17"],
+  ["hammer_sickle", "web.propaganda_panel.message_18"],
 ];
 
 let _propagandaOrder = [];
@@ -51,11 +53,15 @@ function _showNextPropagandaMessage() {
     _propagandaPosition = 0;
     _propagandaOrder = _shuffledIndices(PROPAGANDA_MESSAGE_SPECS.length);
   }
-  const [kind, message] = PROPAGANDA_MESSAGE_SPECS[_propagandaOrder[_propagandaPosition]];
+  const [kind, key] = PROPAGANDA_MESSAGE_SPECS[_propagandaOrder[_propagandaPosition]];
   const iconEl = document.getElementById("propagandaIcon");
   iconEl.style.maskImage = `url("assets/propaganda/${kind}.png")`;
   iconEl.style.webkitMaskImage = `url("assets/propaganda/${kind}.png")`;
-  document.getElementById("propagandaMessage").textContent = message;
+  // Tagged so setCatalog() retranslates it: the panel can start before the
+  // catalog arrives (app.js), and the language can change mid-message.
+  const messageEl = document.getElementById("propagandaMessage");
+  messageEl.dataset.i18nKey = key;
+  messageEl.textContent = t(key);
 }
 
 function startPropagandaPanel() {
