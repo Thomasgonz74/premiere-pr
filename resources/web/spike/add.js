@@ -18,7 +18,7 @@ function addLevelLabel(level) {
 
 let addSelectedPath = null;
 let addLastScan = null; // { fileRisks, threshold }
-let addDefaultDestination = ""; // captured once from the bridge, used to tell "a routing rule matched" from "no match, same default"
+let addDefaultDestination = ""; // last default read from the bridge (addRefreshDefaultDestination): tells the field's untouched value from a chosen one
 let addSuggestedDestination = ""; // last routing-rule prefill: the next scan may replace it, unlike a destination the user chose
 
 // Intent-guided preset: purely a prefill convenience over existing mechanics
@@ -138,12 +138,23 @@ function addClearScanList() {
   list.appendChild(note);
 }
 
+// The default folder can change in Profile at any time: re-read it, and move
+// the field along while it still holds the old one.
+function addRefreshDefaultDestination() {
+  window.bridge.add.defaultDestination((dest) => {
+    const destInput = document.getElementById("addDestInput");
+    if (destInput.value === addDefaultDestination) destInput.value = dest;
+    addDefaultDestination = dest;
+  });
+}
+
 function addResetForm() {
   addSelectedPath = null;
   document.getElementById("addSelectedFile").textContent = "";
   document.getElementById("addMagnetInput").value = "";
   document.getElementById("addDestInput").value = addDefaultDestination;
   addSuggestedDestination = "";
+  addRefreshDefaultDestination();
   document.getElementById("addIntentSelect").value = "";
   document.getElementById("addCategoryInput").value = "";
   document.getElementById("addSharePolicyNote").textContent = "";
@@ -166,10 +177,8 @@ function wireAddPage() {
   const addBridge = window.bridge.add;
   const dialogs = window.bridge.dialogs;
 
-  addBridge.defaultDestination((dest) => {
-    addDefaultDestination = dest;
-    document.getElementById("addDestInput").value = dest;
-  });
+  addRefreshDefaultDestination();
+  document.querySelector('.tab-btn[data-tab="add"]').addEventListener("click", addRefreshDefaultDestination);
   addBridge.defaultThreshold((threshold) => {
     document.getElementById("addThresholdInput").value = threshold;
   });

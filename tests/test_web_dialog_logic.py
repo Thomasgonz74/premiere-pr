@@ -272,6 +272,7 @@ def test_removing_the_filtered_tag_hides_the_row_at_once(view):
 
 def test_add_page_routing_destination_never_carries_over_to_the_next_torrent(view):
     result = run_js(view, """(function () {
+      window.bridge = { add: { defaultDestination(cb) { cb('C:/dl'); } } };
       const dest = document.getElementById('addDestInput');
       const scan = (suggested) => addRenderScan({ fileRisks: [], threshold: 60, suggestedDestination: suggested });
       addDefaultDestination = 'C:/dl';
@@ -291,6 +292,31 @@ def test_add_page_routing_destination_never_carries_over_to_the_next_torrent(vie
       return JSON.stringify(seen);
     })()""")
     assert result == '["C:/films","C:/dl","C:/dl","D:/mine"]'
+
+
+def test_add_page_follows_a_default_folder_changed_in_profile(view):
+    result = run_js(view, """(function () {
+      let profileDefault = 'C:/dl';
+      window.bridge = { add: { defaultDestination(cb) { cb(profileDefault); } } };
+      const dest = document.getElementById('addDestInput');
+      addDefaultDestination = '';
+      dest.value = '';
+      addRefreshDefaultDestination();  // page load
+      const seen = [dest.value];
+      profileDefault = 'C:/new';  // Profile > Enregistrer
+      addResetForm();  // a torrent was started
+      seen.push(dest.value);
+      profileDefault = 'C:/newer';
+      addRefreshDefaultDestination();  // the Add tab shown again
+      seen.push(dest.value);
+      dest.value = 'D:/mine';
+      profileDefault = 'C:/newest';
+      addRefreshDefaultDestination();  // typed by the user: kept
+      seen.push(dest.value);
+      addResetForm();
+      return JSON.stringify(seen);
+    })()""")
+    assert result == '["C:/dl","C:/new","C:/newer","D:/mine"]'
 
 
 def test_file_editor_starts_an_excluded_file_unchecked_and_saving_keeps_it_out(view):
