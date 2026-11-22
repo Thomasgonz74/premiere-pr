@@ -303,10 +303,11 @@ class Settings:
         # in memory is always plaintext -- see engine/dpapi.py. A pre-existing
         # plaintext value (config saved before this feature existed) passes
         # through unprotect() unchanged and is re-encrypted on the next save().
-        if isinstance(proxy_data.get("password"), str):
-            proxy_data["password"] = dpapi.unprotect(proxy_data["password"])
-        if isinstance(data.get("remote_access_token"), str):
-            data["remote_access_token"] = dpapi.unprotect(data["remote_access_token"])
+        # A hand-edited or imported file can hold a number here: str() it, or
+        # protect() fails on it in every later save().
+        for holder, key in ((proxy_data, "password"), (data, "remote_access_token")):
+            if holder.get(key) is not None:
+                holder[key] = dpapi.unprotect(str(holder[key]))
         settings = _from_dict(Settings, data)
         settings.proxy = _from_dict(ProxySettings, proxy_data)
         settings.bandwidth_schedule = _from_dict(BandwidthSchedule, schedule_data)
