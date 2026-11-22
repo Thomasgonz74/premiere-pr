@@ -499,6 +499,13 @@ class SessionManager(QObject):
         record = self._records.get(info_hash)
         if record is not None:
             record.is_magnet_awaiting_metadata = False
+            handle = self._handles.get(info_hash)
+            if record.awaiting_analysis and handle is not None and handle.is_valid():
+                # add_torrent_from_magnet's upload_mode only fetched this
+                # metadata: hold the torrent paused from here until
+                # start_after_analysis. Paused first, so it never downloads.
+                self.pause_torrent(info_hash)
+                handle.unset_flags(lt.torrent_flags.upload_mode)
         self.metadata_received.emit(info_hash)
 
     def _on_torrent_finished(self, info_hash: str) -> None:
@@ -590,11 +597,14 @@ class SessionManager(QObject):
     def add_torrent_from_magnet(self, uri: str, save_path: str | None = None) -> str:
         save_path = save_path or str(get_default_download_dir())
         atp = add_params.from_magnet_uri(uri, save_path, restrict_discovery=self._settings.restrict_discovery)
-        # Hold the torrent paused (and outside auto-management) until the
-        # user has had a chance to analyze the file list once metadata
-        # arrives -- see AddTorrentTab / metadata_received signal.
-        atp.flags &= ~lt.torrent_flags.auto_managed
-        atp.flags |= lt.torrent_flags.paused
+        # Hold the torrent (outside auto-management) until the user has had a
+        # chance to analyze the file list once metadata arrives -- see
+        # AddTorrentTab / metadata_received signal. Not paused: a paused
+        # torrent reaches no peer, so its metadata never came. upload_mode
+        # fetches it without downloading a byte; _on_metadata_received then
+        # pauses it.
+        atp.flags &= ~(lt.torrent_flags.auto_managed | lt.torrent_flags.paused)
+        atp.flags |= lt.torrent_flags.upload_mode
         return self._add(atp, awaiting_analysis=True)
 
     def _add(self, atp: "lt.add_torrent_params", awaiting_analysis: bool) -> str:
@@ -867,6 +877,7 @@ class SessionManager(QObject):
             self.download_blocked_by_theme.emit(info_hash)
             return
         record.awaiting_analysis = False
+        handle.unset_flags(lt.torrent_flags.upload_mode)  # started before its metadata came
         handle.set_flags(lt.torrent_flags.auto_managed)
         handle.resume()
 
@@ -1144,6 +1155,11 @@ class SessionManager(QObject):
         queue_size = max(self._alert_queue_floor, 4 * len(atps))
         self._session.apply_settings({"alert_queue_size": queue_size})
         for atp in atps:
+            if atp.flags & lt.torrent_flags.upload_mode and not atp.flags & lt.torrent_flags.auto_managed:
+                # Saved while add_torrent_from_magnet held it for analysis:
+                # back paused, like a magnet never started, not stuck
+                # forever in upload_mode.
+                atp.flags = (atp.flags & ~lt.torrent_flags.upload_mode) | lt.torrent_flags.paused
             # One corrupt/stale resume entry must not take down startup for
             # every other torrent. Most bad data never gets here (refused by
             # read_resume_data, see load_all_resume_params); some raises here
