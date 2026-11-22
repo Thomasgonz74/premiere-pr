@@ -165,10 +165,11 @@ def test_starting_an_analyzed_magnet_moves_it_to_the_chosen_destination():
     default = bridge._settings.default_download_dir
     session_manager.records["hash1"] = FakeMagnetRecord("Ubuntu", default)
     moves = []
-    session_manager.move_storage = lambda info_hash, path: moves.append((info_hash, path))
+    session_manager.move_storage = lambda info_hash, path, quiet=False: moves.append((info_hash, path, quiet))
     session_manager.start_after_analysis = lambda info_hash: None
     bridge._pending_magnet_hash = "hash1"
 
     assert bridge.startTorrent("D:/linux", "", "", []) == {"ok": True}
 
-    assert moves == [("hash1", "D:/linux")]
+    # Quiet: placing a magnet being added is no "move finished" toast.
+    assert moves == [("hash1", "D:/linux", True)]

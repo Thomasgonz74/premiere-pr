@@ -295,6 +295,8 @@ class SessionManager(QObject):
         # info_hashes queued by _restore_previous_session's async_add_torrent
         # whose add_torrent_alert hasn't arrived yet -- see _on_torrent_added.
         self._pending_restore: set[str] = set()
+        # info_hashes whose pending move is move_storage(quiet=True): see there.
+        self._quiet_moves: set[str] = set()
         self._categories = TorrentCategoryService()
         # In-memory only (not persisted): ~60s of (download_rate, upload_rate)
         # samples per torrent at this timer's 300ms tick, for the speed-over-
@@ -563,6 +565,9 @@ class SessionManager(QObject):
         record = self._records.get(info_hash)
         if record is not None:
             record.save_path = new_path
+        if info_hash in self._quiet_moves:
+            self._quiet_moves.discard(info_hash)
+            return
         self.storage_moved.emit(info_hash, new_path)
 
     def _on_file_error(self, info_hash: str, message: str) -> None:
@@ -1094,13 +1099,19 @@ class SessionManager(QObject):
         if handle is not None:
             handle.force_recheck()
 
-    def move_storage(self, info_hash: str, new_path: str) -> None:
+    def move_storage(self, info_hash: str, new_path: str, quiet: bool = False) -> None:
+        """quiet: no storage_moved (the "move finished" toast) for this one,
+        e.g. a just-added magnet placed in the folder chosen on the Add page."""
         if not is_safe_move_destination(new_path):
             logger.warning("Refusing to move torrent %s to disallowed destination: %r", info_hash, new_path)
             self.move_storage_refused.emit(info_hash, new_path)  # callers are fire-and-forget
             return
         handle = self._handles.get(info_hash)
         if handle is not None:
+            if quiet:
+                self._quiet_moves.add(info_hash)
+            else:
+                self._quiet_moves.discard(info_hash)
             handle.move_storage(new_path)
 
     def set_proxy(self, settings: Settings) -> None:

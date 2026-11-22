@@ -215,10 +215,11 @@ class AddBridge(QObject):
 
         if self._pending_magnet_hash and not self._torrent_path:
             # analyzeMagnet added it under the default folder, before any
-            # destination (typed, or a routing rule's) could be known.
+            # destination (typed, or a routing rule's) could be known. Quiet:
+            # placing it is part of the add, not a "move finished" toast.
             record = self._session_manager.get_record(self._pending_magnet_hash)
             if record is not None and Path(dest_path) != Path(record.save_path):
-                self._session_manager.move_storage(self._pending_magnet_hash, dest_path)
+                self._session_manager.move_storage(self._pending_magnet_hash, dest_path, quiet=True)
             if excluded:
                 self._session_manager.exclude_files(self._pending_magnet_hash, excluded)
             if category:
