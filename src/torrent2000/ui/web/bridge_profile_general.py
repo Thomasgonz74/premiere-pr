@@ -106,7 +106,10 @@ class ProfileGeneralBridge(QObject):
         s.webhook_enabled = bool(values.get("webhookEnabled", s.webhook_enabled))
         s.webhook_url = str(values.get("webhookUrl", s.webhook_url)).strip()
         new_launch_at_startup = bool(values.get("launchAtStartup", s.launch_at_startup))
-        if new_launch_at_startup != s.launch_at_startup:
+        # Compared to the real Run key -- what the checkbox shows, see
+        # getLaunchAtStartupActual -- not to the saved setting, which an
+        # import or a startup cleaner can leave out of step with it.
+        if new_launch_at_startup != startup_registration.is_launch_at_startup_enabled():
             # Only touch the registry when the checkbox actually changed --
             # every Save in this section used to rewrite it unconditionally.
             # Trade-off: set_launch_at_startup(True) also refreshes the
