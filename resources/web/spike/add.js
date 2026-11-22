@@ -148,15 +148,18 @@ function addResetForm() {
   addLastScan = null;
 }
 
+// Also used by search.js for a result's fetched .torrent.
+function addLoadTorrentFile(path, label) {
+  addSelectedPath = path;
+  document.getElementById("addSelectedFile").textContent = label;
+  window.bridge.add.selectTorrentFile(path);
+}
+
 async function addHandleDroppedFile(file) {
   const buffer = await file.arrayBuffer();
   const bytes = new Uint8Array(buffer);
   const base64 = btoa(bytesToBinaryString(bytes));
-  window.bridge.add.saveDroppedTorrent(file.name, base64, (path) => {
-    addSelectedPath = path;
-    document.getElementById("addSelectedFile").textContent = file.name;
-    window.bridge.add.selectTorrentFile(path);
-  });
+  window.bridge.add.saveDroppedTorrent(file.name, base64, (path) => addLoadTorrentFile(path, file.name));
 }
 
 function wireAddPage() {

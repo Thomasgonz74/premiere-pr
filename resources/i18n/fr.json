@@ -569,6 +569,7 @@
   "web.search.no_sources": "Aucune source configurée.",
   "web.search.no_results": "Aucun résultat.",
   "web.search.searching_status": "Recherche en cours…",
+  "web.search.fetching_torrent_status": "Récupération du torrent…",
   "web.chrome.titlebar_title": "Torrent 2000 — spike Phase 1",
   "web.chrome.tab_search": "Recherche",
   "web.downloads.all_tags_option": "Toutes les étiquettes",

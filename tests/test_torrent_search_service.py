@@ -4,6 +4,8 @@ engine/torrent_search_service.py): URL templating, per-source RSS search
 TorrentSearchSourceStore's tmp-file + os.replace persistence."""
 
 import json
+import os
+from pathlib import Path
 
 import pytest
 
@@ -141,3 +143,61 @@ def test_persistence_file_with_wrong_shape_entries_are_skipped():
     store = TorrentSearchSourceStore()
 
     assert [s.name for s in store.list_sources()] == ["ok"]
+
+
+def test_a_source_with_a_malformed_http_reply_does_not_sink_the_others():
+    # http.client's own errors (a non-HTTP status line, a cut chunked body)
+    # are not OSErrors: fetch_url must still turn them into a FetchError.
+    import http.client
+    import io
+    from unittest.mock import MagicMock, patch
+
+    def urlopen(request, timeout):
+        if "broken" in request.full_url:
+            raise http.client.BadStatusLine("garbage-not-http")
+        response = MagicMock()
+        response.__enter__.return_value = response
+        response.read.side_effect = io.BytesIO(RSS_SAMPLE).read
+        return response
+
+    sources = [
+        TorrentSearchSource(name="broken", url_template="https://broken.example/rss?q={query}"),
+        TorrentSearchSource(name="good", url_template="https://good.example/rss?q={query}"),
+    ]
+    with patch("urllib.request.urlopen", urlopen):
+        results = search_all(sources, "linux")
+
+    assert [r["source"] for r in results] == ["good"]
+
+
+def test_a_result_link_is_fetched_as_a_torrent_only_if_it_is_one(tmp_path, monkeypatch):
+    # A Torznab/Jackett enclosure is the .torrent: added via the Add page. A
+    # details page is not: "" sends the link to the browser, nothing kept.
+    import tempfile
+
+    import libtorrent as lt
+
+    from torrent2000.engine.torrent_search_service import download_result_torrent
+
+    payload = tmp_path / "payload" / "file.txt"
+    payload.parent.mkdir()
+    payload.write_bytes(b"hello world")
+    fs = lt.file_storage()
+    lt.add_files(fs, str(payload))
+    ct = lt.create_torrent(fs, 0, flags=lt.create_torrent.v1_only)
+    lt.set_piece_hashes(ct, str(payload.parent))
+    torrent_bytes = lt.bencode(ct.generate())
+    temp_dir = tmp_path / "temp"
+    temp_dir.mkdir()
+    monkeypatch.setattr(tempfile, "tempdir", str(temp_dir))
+    pages = {"https://x.example/dl/1": torrent_bytes, "https://x.example/details/1": b"<html>details</html>"}
+    monkeypatch.setattr(
+        "torrent2000.engine.torrent_search_service.fetch_url", lambda url, *a, **k: pages[url]
+    )
+
+    path = download_result_torrent("https://x.example/dl/1")
+    assert path and Path(path).read_bytes() == torrent_bytes
+    assert os.path.basename(path).startswith("search_")  # swept at startup if never started
+
+    assert download_result_torrent("https://x.example/details/1") == ""
+    assert [p.name for p in temp_dir.iterdir()] == [os.path.basename(path)]
