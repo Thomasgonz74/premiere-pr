@@ -23,13 +23,24 @@ function pnSectionHeading(text) {
   return h;
 }
 
+// With a "?" hint the text gets its own span, as for index.html's Peers
+// column: applyStaticTranslations() replaces a [data-i18n-key] element's
+// whole content, which would drop the hint on a language switch.
+function pnFillLabel(label, labelText, tooltipText) {
+  const text = tooltipText ? label.appendChild(document.createElement("span")) : label;
+  text.textContent = t(labelText);
+  text.dataset.i18nKey = labelText;
+  if (!tooltipText) return;
+  const hint = makeInfoHint(t(tooltipText));
+  hint.dataset.i18nTooltip = tooltipText;
+  label.appendChild(hint);
+}
+
 function pnLabeledField(labelText, field, forId, tooltipText) {
   const label = document.createElement("label");
   label.className = "field-label";
-  label.textContent = t(labelText);
-  label.dataset.i18nKey = labelText;
+  pnFillLabel(label, labelText, tooltipText);
   if (forId) label.htmlFor = forId;
-  if (tooltipText) label.appendChild(makeInfoHint(t(tooltipText)));
   const wrap = document.createElement("div");
   wrap.className = "form-grid";
   wrap.appendChild(label);
@@ -45,10 +56,8 @@ function pnCheckboxRow(labelText, id, tooltipText) {
   input.id = id;
   const label = document.createElement("label");
   label.className = "field-label inline";
-  label.textContent = t(labelText);
-  label.dataset.i18nKey = labelText;
+  pnFillLabel(label, labelText, tooltipText);
   label.htmlFor = id;
-  if (tooltipText) label.appendChild(makeInfoHint(t(tooltipText)));
   row.appendChild(input);
   row.appendChild(label);
   return { row, input };

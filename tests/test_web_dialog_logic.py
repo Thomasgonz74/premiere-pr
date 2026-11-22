@@ -288,3 +288,21 @@ def test_appearance_labels_follow_a_language_change(view):
       return Array.from(document.getElementById('pgAppearanceSelect').options, (o) => o.textContent).join();
     })()""")
     assert result == "Hell,Dunkel"
+
+
+def test_network_help_hints_survive_a_language_switch(view):
+    result = run_js(view, """(function () {
+      const sig = () => { const cbs = []; return { connect: (f) => cbs.push(f), emit: (...a) => cbs.forEach((f) => f(...a)) }; };
+      window.bridge = { profileAdvanced: { settingsApplied: sig() } };
+      const container = document.getElementById('profileNetworkContainer');
+      container.replaceChildren();
+      buildNetworkPrivacySection(container, { getSettings() {} });
+      const key = 'web.profile_network.encryption_mode_tooltip';
+      setCatalog({ [key]: 'Protocol encryption help', 'web.profile_network.encryption_mode_label': 'Protocol encryption' });
+      const hints = container.querySelectorAll('.info-hint');
+      const label = Array.from(container.querySelectorAll('label')).find((l) => l.textContent.startsWith('Protocol encryption'));
+      const seen = [hints.length, label.querySelector('.info-hint').getAttribute('data-tooltip')];
+      setCatalog({});
+      return JSON.stringify(seen);
+    })()""")
+    assert result == '[3,"Protocol encryption help"]'
