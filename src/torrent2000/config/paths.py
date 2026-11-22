@@ -135,6 +135,10 @@ def get_rss_pending_magnets_path() -> Path:
     return get_app_data_dir() / "rss_pending_magnets.json"
 
 
+def get_remote_pending_magnets_path() -> Path:
+    return get_app_data_dir() / "remote_pending_magnets.json"
+
+
 def get_matched_rules_path() -> Path:
     return get_app_data_dir() / "matched_rules.json"
 

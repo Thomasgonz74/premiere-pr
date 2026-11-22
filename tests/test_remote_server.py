@@ -65,6 +65,9 @@ class FakeSessionManager(QObject):
     def all_records(self):
         return list(self.records)
 
+    def get_record(self, info_hash: str):
+        return next((r for r in self.records if r.info_hash == info_hash), None)
+
     def pause_torrent(self, info_hash: str) -> None:
         self.paused.append(info_hash)
 
@@ -354,6 +357,30 @@ def test_add_magnet_starts_once_metadata_arrives_with_dangerous_files_excluded(r
 
     assert fake_sm.excluded == [("remotehash", {1})]
     assert fake_sm.started_after_analysis == ["remotehash"]
+
+
+def test_a_magnet_still_awaiting_metadata_at_quit_is_scanned_after_a_restart(running_server):
+    # It comes back in upload mode, awaiting analysis: if the pending set
+    # were lost, nothing would ever scan or start it.
+    server, _fake_sm, settings = running_server
+    status, _body = _post_json(
+        _url(server, f"/api/torrents/add?token={settings.remote_access_token}"),
+        {"magnet": "magnet:?xt=urn:btih:abc"},
+    )
+    assert status == 200
+    server.stop()
+
+    restarted_sm = FakeSessionManager()
+    restarted_sm.records = [FakeRecord(info_hash="remotehash")]
+    restarted_sm.files = [
+        FileEntry(index=0, path="Show/Show.S01E01.mkv", size=300_000),
+        FileEntry(index=1, path="Show/Show.S01E01.mkv.exe", size=200_000),
+    ]
+    _restarted = RemoteAccessServer(restarted_sm, settings)
+    restarted_sm.metadata_received.emit("remotehash")
+
+    assert restarted_sm.excluded == [("remotehash", {1})]
+    assert restarted_sm.started_after_analysis == ["remotehash"]
 
 
 def test_add_without_token_never_reaches_session_manager(running_server):

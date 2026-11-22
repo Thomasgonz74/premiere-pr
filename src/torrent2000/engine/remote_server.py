@@ -60,8 +60,10 @@ from urllib.parse import parse_qs, urlsplit
 
 from PySide6.QtCore import QObject, Signal, Slot
 
+from torrent2000.config.paths import get_remote_pending_magnets_path
 from torrent2000.config.settings import Settings
 from torrent2000.danger_scanner.scanner import auto_exclude_indices, scan_files
+from torrent2000.engine import persistence
 from torrent2000.engine.session_manager import SessionManager
 from torrent2000.engine.torrent_files import files_from_torrent_path
 
@@ -463,9 +465,14 @@ class RemoteAccessServer:
         self._thread: threading.Thread | None = None
         # Constructed on the GUI thread, like this server.
         self._gui_thread = _GuiThreadCall()
-        # Remotely added magnets held paused until their file list is known
-        # and scanned -- see _on_metadata_received.
-        self._pending_magnet_scans: set[str] = set()
+        # Remotely added magnets held in upload mode until their file list is
+        # known and scanned -- see _on_metadata_received. Saved, like RSS's:
+        # after a restart the restored magnet still awaits its scan.
+        self._pending_magnet_scans: set[str] = {
+            h
+            for h in persistence.load_json(get_remote_pending_magnets_path(), [])
+            if isinstance(h, str) and session_manager.get_record(h) is not None
+        }
         session_manager.metadata_received.connect(self._on_metadata_received)
 
     @property
@@ -518,9 +525,10 @@ class RemoteAccessServer:
 
     def _add_magnet(self, magnet: str) -> str:
         # GUI thread (see _GuiThreadCall). add_torrent_from_magnet holds it
-        # paused; _on_metadata_received starts it.
+        # in upload mode (metadata only); _on_metadata_received starts it.
         info_hash = self._session_manager.add_torrent_from_magnet(magnet, self._settings.default_download_dir)
         self._pending_magnet_scans.add(info_hash)
+        self._save_pending_magnet_scans()
         return info_hash
 
     def _on_metadata_received(self, info_hash: str) -> None:
@@ -528,6 +536,7 @@ class RemoteAccessServer:
         if info_hash not in self._pending_magnet_scans:
             return
         self._pending_magnet_scans.discard(info_hash)
+        self._save_pending_magnet_scans()
         try:
             files = self._session_manager.get_torrent_files(info_hash)
             excluded = auto_exclude_indices(scan_files(files), self._settings.danger_auto_exclude_threshold)
@@ -536,6 +545,9 @@ class RemoteAccessServer:
         except Exception:
             logger.exception("Failed to scan remotely added magnet torrent %s for dangerous files", info_hash)
         self._session_manager.start_after_analysis(info_hash)
+
+    def _save_pending_magnet_scans(self) -> None:
+        persistence.save_json(get_remote_pending_magnets_path(), sorted(self._pending_magnet_scans))
 
     def stop(self) -> None:
         if self._httpd is None:
