@@ -6,8 +6,8 @@ and a past entry can be restored.
 import json
 from pathlib import Path
 
-from torrent2000.config.paths import get_config_path
-from torrent2000.config.settings import Settings
+from torrent2000.config.paths import get_config_backups_dir, get_config_path
+from torrent2000.config.settings import RssFeedSubscription, Settings
 from torrent2000.config.settings_history import read_settings_history, restore_settings_snapshot
 
 
@@ -109,3 +109,47 @@ def test_first_save_after_an_upgrade_journals_only_what_the_user_changed(tmp_pat
     settings.save()
 
     assert list(read_settings_history()[0]["changes"]) == ["audio_volume"]
+
+
+def test_history_redacts_feed_passkeys_and_restore_keeps_live_urls(tmp_path, monkeypatch):
+    monkeypatch.setenv("TORRENT2000_DATA_DIR", str(tmp_path))
+
+    settings = Settings.load()
+    settings.rss_feeds = [RssFeedSubscription(url="https://t.invalid/rss?passkey=SECRET", filter_keyword="old")]
+    settings.save()
+    settings.rss_feeds[0].filter_keyword = "new"
+    settings.rss_feeds.append(RssFeedSubscription(url="https://u.invalid/rss/0123456789abcdef0123456789abcdef"))
+    settings.save()
+
+    history_text = (get_config_backups_dir() / "history.jsonl").read_text(encoding="utf-8")
+    assert "SECRET" not in history_text and "0123456789abcdef" not in history_text
+
+    restore_settings_snapshot(read_settings_history()[0], settings)
+
+    assert [(feed.url, feed.filter_keyword) for feed in settings.rss_feeds] == [
+        ("https://t.invalid/rss?passkey=SECRET", "old")
+    ]
+
+
+def test_restore_puts_back_a_public_feed_url_and_pairs_feeds_by_position_only_on_one_host(tmp_path, monkeypatch):
+    monkeypatch.setenv("TORRENT2000_DATA_DIR", str(tmp_path))
+    settings = Settings.load()
+    settings.rss_feeds = [
+        RssFeedSubscription(url="https://a.invalid/user/111.rss", filter_keyword="show-a"),
+        RssFeedSubscription(url="https://b.invalid/rss?cat=1&passkey=SECRET", filter_keyword="show-b"),
+    ]
+    settings.save()
+    settings.rss_feeds = [
+        RssFeedSubscription(url="https://c.invalid/rss", filter_keyword="show-c"),
+        RssFeedSubscription(url="https://b.invalid/rss?cat=2&passkey=SECRET", filter_keyword="show-b2"),
+    ]
+    settings.save()
+
+    restore_settings_snapshot(read_settings_history()[0], settings)
+
+    # The public URL was kept whole, so it comes back; the private one only
+    # redacted, so its feed keeps the live URL on the same host.
+    assert [(feed.url, feed.filter_keyword) for feed in settings.rss_feeds] == [
+        ("https://a.invalid/user/111.rss", "show-a"),
+        ("https://b.invalid/rss?cat=2&passkey=SECRET", "show-b"),
+    ]

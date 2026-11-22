@@ -87,6 +87,42 @@ def test_feed_redaction_blanks_only_the_passkey():
     ]
 
 
+def test_feed_redaction_drops_userinfo_and_base64_path_keys():
+    data = redact_settings_dict(
+        {
+            "rss_feeds": [
+                {"url": "https://user:hunter2@t.invalid:8443/rss?cat=5"},
+                {"url": "http://me:pw@[2001:db8::1]:8080/rss?passkey=SECRET"},
+                {"url": "https://t.invalid/rss/aB3dE-fG_h1JkLmN0pQ_rS/feed.xml"},
+                {"url": "https://showrss.info/user/12345.rss?magnets=true&re=null"},
+            ]
+        }
+    )
+
+    assert [feed["url"] for feed in data["rss_feeds"]] == [
+        "https://t.invalid:8443/rss?cat=5",
+        "http://[2001:db8::1]:8080/rss?passkey=",
+        "https://t.invalid/rss//feed.xml",
+        "https://showrss.info/user/12345.rss?magnets=true&re=null",
+    ]
+
+
+def test_feed_redaction_blanks_a_uuid_key_and_keeps_a_title_slug():
+    data = redact_settings_dict(
+        {
+            "rss_feeds": [
+                {"url": "https://t.invalid/rss/550e8400-e29b-41d4-a716-446655440000"},
+                {"url": "https://t.invalid/feeds/The-Mandalorian-Season2-1080p.xml"},
+            ]
+        }
+    )
+
+    assert [feed["url"] for feed in data["rss_feeds"]] == [
+        "https://t.invalid/rss/",
+        "https://t.invalid/feeds/The-Mandalorian-Season2-1080p.xml",
+    ]
+
+
 def test_only_the_five_most_recent_backups_are_kept(tmp_path, monkeypatch):
     monkeypatch.setenv("TORRENT2000_DATA_DIR", str(tmp_path))
     get_config_path().write_text("{}", encoding="utf-8")

@@ -190,13 +190,13 @@ class DecisionJournalService(QObject):
         _append(f"Compte à rebours d'extinction automatique démarré ({delay_seconds} s).")
 
     def _on_rss_items_found(self, feed_url: str, items: list) -> None:
-        # Strips the query string (private-tracker passkeys ride there, see
-        # rss_feed_service._redact_url) before this ever reaches the journal
+        # Strips the query string and any path passkey (see
+        # config/redaction.py) before this ever reaches the journal
         # file / the Profile > Automatisation page that displays it.
-        from torrent2000.engine.rss_feed_service import _redact_url
+        from torrent2000.config.redaction import redact_url_for_log
 
         titles = ", ".join(item.get("title", "?") for item in items) if items else "?"
         _append(
             f"{len(items)} torrent(s) ajouté(s) automatiquement depuis le flux RSS "
-            f"({_redact_url(feed_url)}) : {titles}."
+            f"({redact_url_for_log(feed_url)}) : {titles}."
         )

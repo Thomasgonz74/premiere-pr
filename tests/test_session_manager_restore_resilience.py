@@ -84,6 +84,7 @@ def _restoring(*info_hashes) -> SessionManager:
     sm._pending_restore_confirmation = set(info_hashes)
     sm._records = {ih: TorrentRecord(info_hash=ih) for ih in info_hashes}
     sm._handles = {}
+    sm._start_once_analysed = set()
     return sm
 
 

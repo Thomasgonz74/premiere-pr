@@ -131,6 +131,53 @@ def test_a_recheck_of_a_complete_torrent_does_not_refire_finished(qapp, tmp_path
     sm.shutdown()
 
 
+def test_a_recheck_that_redownloads_bad_pieces_reports_the_finish_and_scans(qapp, tmp_path, monkeypatch):
+    """The pieces a recheck finds bad are downloaded again: that finish is
+    new data on disk, Defender must scan it. Whole window spent between two
+    status samples (no tick), as with a fast peer."""
+    from unittest.mock import MagicMock
+
+    from torrent2000.engine import antivirus_scan_service
+
+    save_path = tmp_path / "downloads"
+    save_path.mkdir()
+    torrent_path = _make_already_complete_torrent(save_path)
+    seed_path = tmp_path / "seed"
+    seed_path.mkdir()
+    (seed_path / "already_complete.bin").write_bytes((save_path / "already_complete.bin").read_bytes())
+    seeder = lt.session({"listen_interfaces": "127.0.0.1:0", "enable_dht": False, "enable_lsd": False})
+    seeder.add_torrent({"ti": lt.torrent_info(torrent_path), "save_path": str(seed_path)})
+
+    settings = Settings()
+    settings.scan_completed_files_with_defender = True
+    pool = MagicMock()
+    monkeypatch.setattr(antivirus_scan_service, "QThreadPool", pool)
+    sm = SessionManager(settings)
+    scanner = antivirus_scan_service.AntivirusScanService(sm, settings)  # noqa: F841 (kept alive)
+    finished_events = []
+    sm.torrent_finished.connect(finished_events.append)
+    info_hash = sm.add_torrent_from_file(torrent_path, save_path=str(save_path))
+    assert _run_ticks(qapp, sm, lambda: finished_events and sm.get_record(info_hash).progress >= 1.0)
+    pool.reset_mock()
+
+    with open(save_path / "already_complete.bin", "r+b") as f:
+        f.seek(16 * 1024 + 5)
+        f.write(b"XXXX")
+    handle = sm._handles[info_hash]
+    sm.recheck_torrent(info_hash)
+    deadline = time.monotonic() + 10
+    while handle.status().state != lt.torrent_status.downloading and time.monotonic() < deadline:
+        time.sleep(0.02)
+    handle.connect_peer(("127.0.0.1", seeder.listen_port()))
+    while not handle.status().is_seeding and time.monotonic() < deadline:
+        time.sleep(0.02)
+    _run_ticks(qapp, sm, lambda: len(finished_events) > 1, timeout=3.0)
+
+    assert finished_events == [info_hash, info_hash]
+    pool.globalInstance.return_value.start.assert_called_once()
+    sm.shutdown()
+
+
 # ------------------------------------------------------- resume_data_is_complete
 
 

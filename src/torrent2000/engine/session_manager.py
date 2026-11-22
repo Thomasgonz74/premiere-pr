@@ -11,7 +11,12 @@ import libtorrent as lt
 from PySide6.QtCore import QCoreApplication, QObject, QThreadPool, QTimer, Signal
 
 from torrent2000 import APP_VERSION
-from torrent2000.config.paths import get_awaiting_analysis_path, get_default_download_dir, get_matched_rules_path
+from torrent2000.config.paths import (
+    get_awaiting_analysis_path,
+    get_default_download_dir,
+    get_magnets_to_start_path,
+    get_matched_rules_path,
+)
 from torrent2000.config.settings import Settings
 from torrent2000.engine import add_params, persistence, proxy, trackers as tracker_ops
 from torrent2000.engine.alerts import AlertDispatcher, _hash_of, status_to_record
@@ -306,6 +311,12 @@ class SessionManager(QObject):
         self._awaiting_analysis: set[str] = {
             h for h in persistence.load_json(get_awaiting_analysis_path(), []) if isinstance(h, str)
         }
+        # Those of them the user started from the Downloads page before their
+        # metadata was in -- see start_awaiting_magnet.
+        self._start_once_analysed: set[str] = {
+            h for h in persistence.load_json(get_magnets_to_start_path(), [])
+            if isinstance(h, str) and h in self._awaiting_analysis
+        }
         # info_hash -> TorrentRecord.matched_rule_name, saved so a download
         # that spans a restart still gets its rule's post-complete action.
         self._matched_rules: dict[str, str] = {
@@ -346,6 +357,7 @@ class SessionManager(QObject):
             on_state_update=self._on_state_update,
             on_metadata_received=self._on_metadata_received,
             on_torrent_finished=self._on_torrent_finished,
+            on_torrent_checked=self._on_torrent_checked,
             on_tracker_error=self._on_tracker_error,
             on_save_resume_data=self._on_save_resume_data,
             on_torrent_removed=self._on_torrent_removed,
@@ -490,10 +502,6 @@ class SessionManager(QObject):
                 record = self._records.get(info_hash)
                 if record is None:
                     continue
-                if status.state == lt.torrent_status.downloading:
-                    # The check found pieces missing after all: the finish
-                    # once they're downloaded again is a real one.
-                    self._pending_restore_confirmation.discard(info_hash)
                 status_to_record(status, record)
                 history = self._speed_history.get(info_hash)
                 if history is None:
@@ -523,6 +531,11 @@ class SessionManager(QObject):
         if record is not None:
             record.is_magnet_awaiting_metadata = False
         self.metadata_received.emit(info_hash)
+        if info_hash in self._start_once_analysed:
+            self._start_once_analysed.discard(info_hash)
+            self._save_start_once_analysed()
+            if record is not None and record.awaiting_analysis:  # not started meanwhile (RSS, Add page...)
+                self._scan_and_start(info_hash)
 
     def _on_torrent_finished(self, info_hash: str) -> None:
         if info_hash in self._pending_restore_confirmation:
@@ -541,6 +554,13 @@ class SessionManager(QObject):
                 _write_provenance_manifest(record)
         self.torrent_finished.emit(info_hash)
 
+    def _on_torrent_checked(self, info_hash: str) -> None:
+        # libtorrent posts torrent_finished_alert *before* torrent_checked_alert
+        # when the check finds the data complete. A check that ends without
+        # it found pieces missing: the finish once they are downloaded again
+        # is a real one (toast, webhook, Defender scan...).
+        self._pending_restore_confirmation.discard(info_hash)
+
     def _on_tracker_error(self, info_hash: str, message: str) -> None:
         self.tracker_error.emit(info_hash, message)
 
@@ -557,6 +577,9 @@ class SessionManager(QObject):
         if info_hash in self._awaiting_analysis:
             self._awaiting_analysis.discard(info_hash)
             self._save_awaiting_analysis()
+        if info_hash in self._start_once_analysed:
+            self._start_once_analysed.discard(info_hash)
+            self._save_start_once_analysed()
         if self._matched_rules.pop(info_hash, None) is not None:
             persistence.save_json(get_matched_rules_path(), self._matched_rules)
         persistence.delete_resume_file(info_hash)
@@ -645,6 +668,40 @@ class SessionManager(QObject):
     def _save_awaiting_analysis(self) -> None:
         persistence.save_json(get_awaiting_analysis_path(), sorted(self._awaiting_analysis))
 
+    def _save_start_once_analysed(self) -> None:
+        persistence.save_json(get_magnets_to_start_path(), sorted(self._start_once_analysed))
+
+    def start_awaiting_magnet(self, info_hash: str) -> bool:
+        """The user starts, from the Downloads page, a magnet nobody will
+        analyse any more (left awaiting by a restart, or by another magnet
+        analysed on the Add page): what RSS and remote add do -- danger scan
+        with the auto-exclude threshold, then start_after_analysis -- now if
+        its metadata is in, else as soon as it arrives (saved for a restart).
+        True when it waits for its metadata."""
+        record = self._records.get(info_hash)
+        if record is not None and _is_download_start_blocked(self._settings.theme, record.progress):
+            self.download_blocked_by_theme.emit(info_hash)
+            return False
+        if self.get_torrent_files(info_hash):
+            self._scan_and_start(info_hash)
+            return False
+        self._start_once_analysed.add(info_hash)
+        self._save_start_once_analysed()
+        self.resume_torrent(info_hash)  # a paused magnet would never fetch its metadata
+        return True
+
+    def _scan_and_start(self, info_hash: str) -> None:
+        from torrent2000.danger_scanner.scanner import auto_exclude_indices, scan_files
+
+        try:
+            files = self.get_torrent_files(info_hash)
+            excluded = auto_exclude_indices(scan_files(files), self._settings.danger_auto_exclude_threshold)
+            if excluded:
+                self.exclude_files(info_hash, excluded)
+        except Exception:
+            logger.exception("Failed to scan magnet torrent %s for dangerous files", info_hash)
+        self.start_after_analysis(info_hash)
+
     def _add(self, atp: "lt.add_torrent_params", awaiting_analysis: bool) -> str:
         info_hash = add_params.info_hash_hex(atp)
         if info_hash in self._records:
@@ -653,6 +710,11 @@ class SessionManager(QObject):
             # pin, rule and state.
             raise TorrentAlreadyPresentError(info_hash)
         handle = self._session.add_torrent(atp)
+        if not awaiting_analysis and info_hash in self._awaiting_analysis:
+            # Left by a magnet of it lost in a crash before its first resume
+            # save: the restore would hold this one in upload mode.
+            self._awaiting_analysis.discard(info_hash)
+            self._save_awaiting_analysis()
         self._records[info_hash] = TorrentRecord(
             info_hash=info_hash,
             name=atp.name or "",
@@ -927,6 +989,10 @@ class SessionManager(QObject):
         handle.unset_flags(lt.torrent_flags.upload_mode)
         handle.set_flags(lt.torrent_flags.auto_managed)
         handle.resume()
+        # awaiting_analysis.json just changed: a .fastresume left until the
+        # periodic save would still hold it (and any pause from while it
+        # was held) after a crash -- see _restore_previous_session.
+        handle.save_resume_data(lt.torrent_handle.save_info_dict)
 
     def pause_torrent(self, info_hash: str) -> None:
         handle = self._handles.get(info_hash)
@@ -1151,7 +1217,8 @@ class SessionManager(QObject):
         """The torrent's data should already be complete on disk (a recheck,
         a share): libtorrent fires torrent_finished_alert once its check
         confirms it, and that is no download to report -- no toast, webhook,
-        post-complete action or shutdown countdown."""
+        post-complete action or shutdown countdown. A check that finds data
+        missing drops the mark (_on_torrent_checked)."""
         self._pending_restore_confirmation.add(info_hash)
 
     def move_storage(self, info_hash: str, new_path: str, quiet: bool = False) -> None:
@@ -1227,6 +1294,21 @@ class SessionManager(QObject):
             # (e.g. an empty save_path); the add_torrent_alert reports the rest.
             try:
                 info_hash = add_params.info_hash_hex(atp)
+                # awaiting_analysis.json is written at once, the .fastresume
+                # only every so often: after an abnormal exit they can
+                # disagree, and the awaiting set wins (see
+                # add_torrent_from_magnet and start_after_analysis).
+                if info_hash in self._awaiting_analysis:
+                    if not atp.flags & lt.torrent_flags.upload_mode:
+                        atp.flags &= ~lt.torrent_flags.paused  # saved started: no pause of the user's
+                    atp.flags |= lt.torrent_flags.upload_mode
+                    atp.flags &= ~lt.torrent_flags.auto_managed
+                elif atp.flags & lt.torrent_flags.upload_mode:
+                    # Kept paused if it was: libtorrent also enters upload
+                    # mode on a full disk, and _on_file_error pauses it.
+                    atp.flags &= ~lt.torrent_flags.upload_mode
+                    if not atp.flags & lt.torrent_flags.paused:
+                        atp.flags |= lt.torrent_flags.auto_managed
                 self._session.async_add_torrent(atp)
             except Exception:
                 logger.exception("Failed to restore a torrent from saved resume data")

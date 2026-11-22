@@ -51,6 +51,7 @@ class AlertDispatcher:
         on_state_update: Callable[[list], None],
         on_metadata_received: Callable[[str], None],
         on_torrent_finished: Callable[[str], None],
+        on_torrent_checked: Callable[[str], None],
         on_tracker_error: Callable[[str, str], None],
         on_save_resume_data: Callable[[str, "lt.add_torrent_params"], None],
         on_torrent_removed: Callable[[str], None],
@@ -62,6 +63,7 @@ class AlertDispatcher:
         self._on_state_update = on_state_update
         self._on_metadata_received = on_metadata_received
         self._on_torrent_finished = on_torrent_finished
+        self._on_torrent_checked = on_torrent_checked
         self._on_tracker_error = on_tracker_error
         self._on_save_resume_data = on_save_resume_data
         self._on_torrent_removed = on_torrent_removed
@@ -90,6 +92,8 @@ class AlertDispatcher:
             self._on_metadata_received(_hash_of(alert.handle))
         elif isinstance(alert, lt.torrent_finished_alert):
             self._on_torrent_finished(_hash_of(alert.handle))
+        elif isinstance(alert, lt.torrent_checked_alert):
+            self._on_torrent_checked(_hash_of(alert.handle))
         elif isinstance(alert, lt.tracker_error_alert):
             self._on_tracker_error(_hash_of(alert.handle), alert.error_message() or _tracker_error_text(alert))
         elif isinstance(alert, lt.save_resume_data_alert):

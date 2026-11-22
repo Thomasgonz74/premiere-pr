@@ -19,6 +19,12 @@ const DOWNLOADS_STATE_KEYS = {
   ERROR: "downloads_tab.state_error",
 };
 
+// A magnet held for analysis gets ▶ like a paused torrent: resumeTorrent
+// scans and starts it (DownloadsBridge.resumeTorrent).
+function downloadsOffersStart(record) {
+  return record.state === "PAUSED" || record.state === "AWAITING_ANALYSIS";
+}
+
 const downloadsRows = new Map(); // infoHash -> { el, tetris, record }
 let downloadsLastClickedHash = null;
 let downloadsDetailsTrackerEditorFor = null;
@@ -207,7 +213,7 @@ function downloadsEnsureRow(record) {
   pauseResumeBtn.addEventListener("click", () => {
     const current = downloadsRows.get(record.infoHash);
     if (!current) return;
-    if (current.record.state === "PAUSED") {
+    if (downloadsOffersStart(current.record)) {
       window.bridge.downloads.resumeTorrent(record.infoHash);
     } else {
       window.bridge.downloads.pauseTorrent(record.infoHash);
@@ -295,7 +301,7 @@ function downloadsRenderRecord(record) {
   entry.peersEl.textContent = t("downloads_tab.peers_seeds", { peers: record.numPeers, seeds: record.numSeeds });
   entry.stateEl.textContent = t(DOWNLOADS_STATE_KEYS[record.state]) || record.state;
   entry.categoryEl.textContent = record.category || "";
-  entry.pauseResumeBtn.textContent = record.state === "PAUSED" ? "▶" : "⏸";
+  entry.pauseResumeBtn.textContent = downloadsOffersStart(record) ? "▶" : "⏸";
   entry.tetris.setProgress(record.progress);
 
   // Only the torrent currently shown in the details panel needs it rebuilt;
@@ -561,9 +567,10 @@ function downloadsBuildSingleMenu(infoHash) {
       }
     },
   });
-  if (record && record.state === "PAUSED") {
+  if (record && downloadsOffersStart(record)) {
     items.push({ label: t("common.resume"), onClick: () => window.bridge.downloads.resumeTorrent(infoHash) });
-  } else {
+  }
+  if (!record || record.state !== "PAUSED") {
     items.push({ label: t("common.pause"), onClick: () => window.bridge.downloads.pauseTorrent(infoHash) });
   }
   items.push({ label: t("common.context_recheck"), onClick: () => window.bridge.downloads.recheckTorrent(infoHash) });
@@ -900,6 +907,7 @@ function wireDownloadsPage() {
   bridge.recordUpdated.connect(downloadsRenderRecord);
   bridge.recordsUpdated.connect((rows) => rows.forEach(downloadsRenderRecord));
   bridge.recordRemoved.connect(downloadsRemoveRecord);
+  bridge.awaitingMagnetStarted.connect(() => showSuggestionBanner(t("web.downloads.magnet_start_after_analysis")));
   bridge.listTorrents((initial) => initial.forEach(downloadsRenderRecord));
 
   document.getElementById("downloadsSearchInput").addEventListener("input", downloadsApplyFilter);

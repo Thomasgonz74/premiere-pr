@@ -35,13 +35,13 @@ import re
 import tempfile
 import uuid
 from pathlib import Path
-from urllib.parse import urlsplit, urlunsplit
 from xml.etree import ElementTree
 
 from PySide6.QtCore import QObject, QRunnable, QThreadPool, Signal
 
 from torrent2000 import APP_VERSION
 from torrent2000.config.paths import get_rss_pending_magnets_path
+from torrent2000.config.redaction import redact_url_for_log as _redact_url
 from torrent2000.config.settings import ProxySettings, Settings
 from torrent2000.danger_scanner.scanner import auto_exclude_indices, scan_files
 from torrent2000.engine import persistence
@@ -94,14 +94,6 @@ def _child_text(item_el, tag: str) -> str:
     if el is None or el.text is None:
         return ""
     return el.text.strip()
-
-
-def _redact_url(url: str) -> str:
-    """Strip the query string (and any fragment) from a URL before it is
-    ever written to a log line -- private-tracker RSS feed and item URLs
-    routinely carry the user's passkey as a query parameter."""
-    parts = urlsplit(url)
-    return urlunsplit((parts.scheme, parts.netloc, parts.path, "", ""))
 
 
 def matches_keyword(title: str, filter_keyword: str) -> bool:

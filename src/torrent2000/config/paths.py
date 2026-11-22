@@ -133,6 +133,10 @@ def get_awaiting_analysis_path() -> Path:
     return get_app_data_dir() / "awaiting_analysis.json"
 
 
+def get_magnets_to_start_path() -> Path:
+    return get_app_data_dir() / "magnets_to_start.json"
+
+
 def get_rss_pending_magnets_path() -> Path:
     return get_app_data_dir() / "rss_pending_magnets.json"
 

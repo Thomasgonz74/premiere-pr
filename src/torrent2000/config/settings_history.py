@@ -7,7 +7,8 @@ best-effort, silently skipped when there's nothing to compare against yet),
 just applied as a running diff log instead of full-file snapshots.
 
 Sensitive fields (the whole `proxy` sub-object -- host/username/password --
-the remote-access API token and the webhook URL) are never written to this file.
+the remote-access API token and the webhook URL) are never written to this file,
+and RSS feed URLs only with their passkey blanked (config/redaction.py).
 """
 
 import json
@@ -16,8 +17,10 @@ from dataclasses import fields
 from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
+from urllib.parse import urlsplit
 
 from torrent2000.config.paths import get_config_backups_dir, retry_if_dir_vanished
+from torrent2000.config.redaction import _redact_feed_url
 
 if TYPE_CHECKING:
     from torrent2000.config.settings import Settings
@@ -40,6 +43,44 @@ def _history_path() -> Path:
     return get_config_backups_dir() / _HISTORY_FILENAME
 
 
+def _redact_feeds(data: dict) -> dict:
+    """A copy of `data` whose feed URLs lost their passkey, as in an export.
+    A feed whose URL this changed says so ("url_redacted"), so a restore
+    never writes it back."""
+    if not isinstance(data.get("rss_feeds"), list):
+        return data
+    feeds = []
+    for feed in data["rss_feeds"]:
+        if isinstance(feed, dict) and isinstance(feed.get("url"), str):
+            url = _redact_feed_url(feed["url"])
+            if url != feed["url"]:
+                feed = {**feed, "url": url, "url_redacted": True}
+        feeds.append(feed)
+    return {**data, "rss_feeds": feeds}
+
+
+def _with_live_feed_urls(old_feeds: list, live_feeds: list) -> list:
+    """The restored feeds. A URL kept whole in history.jsonl comes back as
+    recorded; a redacted one is taken from the live feed it matches -- same
+    redacted URL, else same position on the same host -- and its feed is
+    dropped if none does, rather than written back without its passkey."""
+    from torrent2000.config.settings import RssFeedSubscription, _from_dict
+
+    old_feeds = [feed for feed in old_feeds if isinstance(feed, dict)]
+    unclaimed = dict(enumerate(live_feeds))
+    urls = {i: feed.get("url", "") for i, feed in enumerate(old_feeds) if not feed.get("url_redacted")}
+    redacted = [i for i in range(len(old_feeds)) if i not in urls]
+    for i in redacted:
+        j = next((j for j, live in unclaimed.items() if _redact_feed_url(live.url) == old_feeds[i]["url"]), None)
+        if j is not None:
+            urls[i] = unclaimed.pop(j).url
+    for i in redacted:
+        live = unclaimed.get(i)
+        if i not in urls and live is not None and urlsplit(live.url).hostname == urlsplit(old_feeds[i]["url"]).hostname:
+            urls[i] = unclaimed.pop(i).url
+    return [_from_dict(RssFeedSubscription, {**feed, "url": urls[i]}) for i, feed in enumerate(old_feeds) if i in urls]
+
+
 def record_settings_change(old_data: dict, new_data: dict) -> None:
     """Appends one JSONL line diffing old_data -> new_data (both as produced
     by dataclasses.asdict(settings)), keeping only top-level fields that
@@ -47,6 +88,7 @@ def record_settings_change(old_data: dict, new_data: dict) -> None:
     changed. Best-effort: never raises, matches _backup_current_config()'s
     silently-skipped-on-failure convention.
     """
+    old_data, new_data = _redact_feeds(old_data), _redact_feeds(new_data)
     changes = {}
     for key, new_value in new_data.items():
         if key in _EXCLUDED_FIELDS:
@@ -125,7 +167,7 @@ def restore_settings_snapshot(entry: dict, settings: "Settings") -> None:
     never in `entry` to begin with, so nothing to skip there beyond the
     defensive check below.
     """
-    from torrent2000.config.settings import BandwidthSchedule, RssFeedSubscription, _from_dict
+    from torrent2000.config.settings import BandwidthSchedule, _from_dict
 
     valid_fields = {f.name for f in fields(settings)}
     for key, change in entry.get("changes", {}).items():
@@ -138,6 +180,6 @@ def restore_settings_snapshot(entry: dict, settings: "Settings") -> None:
         if key == "bandwidth_schedule":
             old_value = _from_dict(BandwidthSchedule, old_value or {})
         elif key == "rss_feeds":
-            old_value = [_from_dict(RssFeedSubscription, feed) for feed in (old_value or [])]
+            old_value = _with_live_feed_urls(old_value or [], settings.rss_feeds)
         setattr(settings, key, old_value)
     settings.save()
