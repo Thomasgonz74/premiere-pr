@@ -1,6 +1,6 @@
 """Behaviour of a few web-UI scripts that run without any bridge round trip
 (modal.js, profile_stats.js, piece_map_dialog.js, downloads.js, keydown.js,
-theme_switcher.js, profile_general.js, add.js, file_priority.js), exercised in
+theme_switcher.js, profile_general.js, add.js, share.js, file_priority.js), exercised in
 the real resources/web/spike/index.html loaded in an offscreen QWebEngineView
 with hand-made bridge stubs (same page-loading convention as
 test_theme_readability.py)."""
@@ -380,6 +380,31 @@ def test_a_held_magnet_row_offers_to_start_it(view):
       return JSON.stringify([label, calls, menu.includes(t('common.resume')), menu.includes(t('common.pause'))]);
     })()""")
     assert result == '["▶",["resume","resume"],true,true]'
+
+
+def test_a_held_magnet_share_row_offers_to_start_it(view):
+    """The Share row only offered ⏸ for AWAITING_ANALYSIS (a magnet share under
+    CCCP): the pause it led to, before the metadata, left the share stuck at
+    0 %, and at 100 % it took that pause to reach ▶."""
+    result = run_js(view, """(function () {
+      const calls = [];
+      window.bridge = { share: {
+        resumeTorrent(ih) { calls.push('resume'); },
+        pauseTorrent(ih) { calls.push('pause'); },
+      } };
+      const row = (state) => ({ infoHash: 'held', name: 'held', state, uploadRate: 0, uploadedBytes: 0,
+        elapsedSeconds: 0, dataLimitBytes: null, timeLimitSeconds: null, reached: false });
+      const labels = [];
+      for (const state of ['AWAITING_ANALYSIS', 'PAUSED', 'SEEDING']) {
+        shareRenderRow(row(state));
+        const button = shareRows.get('held')._pauseBtn;
+        labels.push(button.textContent);
+        button.click();
+      }
+      shareRemoveRow('held');
+      return JSON.stringify([labels, calls]);
+    })()""")
+    assert result == '[["▶","▶","⏸"],["resume","resume","pause"]]'
 
 
 def test_add_page_routing_destination_never_carries_over_to_the_next_torrent(view):

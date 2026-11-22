@@ -66,7 +66,9 @@ function shareEnsureRow(record) {
 
   pauseBtn.addEventListener("click", () => {
     const current = shareRows.get(record.infoHash);
-    if (current && current.dataset.lastState === "PAUSED") {
+    // As the Downloads row: a magnet share held for analysis is started, not
+    // paused -- paused before its metadata, it never gets them.
+    if (current && downloadsOffersStart({ state: current.dataset.lastState })) {
       window.bridge.share.resumeTorrent(record.infoHash);
     } else {
       window.bridge.share.pauseTorrent(record.infoHash);
@@ -131,7 +133,7 @@ function shareRenderRow(record) {
       ? `${formatDuration(record.elapsedSeconds)} / ${formatDuration(record.timeLimitSeconds)}`
       : formatDuration(record.elapsedSeconds);
   el._stateEl.textContent = shareStateText(record);
-  el._pauseBtn.textContent = record.state === "PAUSED" ? "▶" : "⏸";
+  el._pauseBtn.textContent = downloadsOffersStart(record) ? "▶" : "⏸";
 }
 
 function shareRemoveRow(infoHash) {
