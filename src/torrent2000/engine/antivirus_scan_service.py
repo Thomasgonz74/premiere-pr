@@ -139,17 +139,3 @@ class AntivirusScanService(QObject):
             return
         runnable = _ScanRunnable(_scan_target(record.save_path, record.name))
         QThreadPool.globalInstance().start(runnable)
-
-
-def test_scan_target_follows_a_save_path_behind_a_junction(tmp_path):
-    """save_path reached through a junction (or subst/mapped drive) must still
-    narrow the scan to the torrent's folder, not fall back to the library."""
-    from torrent2000.engine.antivirus_scan_service import _scan_target
-
-    (tmp_path / "real" / "My.Torrent").mkdir(parents=True)
-    link = tmp_path / "link"
-    made = subprocess.run(["cmd", "/c", "mklink", "/J", str(link), str(tmp_path / "real")], capture_output=True)
-    if made.returncode != 0:
-        pytest.skip("cannot create a junction here")
-
-    assert _scan_target(str(link), "My.Torrent") == str(link / "My.Torrent")

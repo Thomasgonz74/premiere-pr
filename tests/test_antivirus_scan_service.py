@@ -7,7 +7,7 @@ from PySide6.QtCore import QObject, Signal
 from PySide6.QtWidgets import QApplication
 
 from torrent2000.config.settings import Settings
-from torrent2000.engine.antivirus_scan_service import AntivirusScanService, find_mpcmdrun
+from torrent2000.engine.antivirus_scan_service import AntivirusScanService, _scan_target, find_mpcmdrun
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -91,6 +91,18 @@ def test_scans_the_torrents_own_folder_rather_than_the_shared_save_path(tmp_path
 
     submitted_runnable = mock_start.call_args[0][0]
     assert submitted_runnable._save_path == str(tmp_path / expected if expected else tmp_path)
+
+
+def test_scan_target_follows_a_save_path_behind_a_junction(tmp_path):
+    """save_path reached through a junction (or subst/mapped drive) must still
+    narrow the scan to the torrent's folder, not fall back to the library."""
+    (tmp_path / "real" / "My.Torrent").mkdir(parents=True)
+    link = tmp_path / "link"
+    made = subprocess.run(["cmd", "/c", "mklink", "/J", str(link), str(tmp_path / "real")], capture_output=True)
+    if made.returncode != 0:
+        pytest.skip("cannot create a junction here")
+
+    assert _scan_target(str(link), "My.Torrent") == str(link / "My.Torrent")
 
 
 def test_no_scan_when_record_missing():
