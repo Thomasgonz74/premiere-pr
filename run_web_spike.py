@@ -96,7 +96,12 @@ def main() -> int:
     set_language(settings.language)
     session_manager = SessionManager(settings)
     share_limit_service = ShareLimitService(session_manager, settings)
-    watch_folder_service = WatchFolderService(session_manager, settings)
+    # One instance for every reader and the Profile tab's routing-rules
+    # editor (bridge_profile_advanced.py), so a rule added or edited there
+    # applies at once, not only after a restart: RoutingRuleStore reads
+    # routing_rules.json only when built.
+    routing_rule_store = RoutingRuleStore()
+    watch_folder_service = WatchFolderService(session_manager, settings, routing_rule_store)
     battery_pause_service = BatteryPauseService(session_manager, settings)
     disk_reconnect_service = DiskReconnectService(session_manager, settings)
     antivirus_scan_service = AntivirusScanService(session_manager, settings)
@@ -107,7 +112,7 @@ def main() -> int:
     history_store = HistoryStore(get_history_db_path())
     history_service = HistoryService(history_store, session_manager)
     rss_seen_store = RssSeenStore(get_rss_seen_db_path())
-    rss_feed_service = RssFeedService(session_manager, settings, rss_seen_store)
+    rss_feed_service = RssFeedService(session_manager, settings, rss_seen_store, routing_rule_store)
     memory_pressure_governor = MemoryPressureGovernor(session_manager, settings, rss_feed_service, history_service)
     bandwidth_scheduler = BandwidthScheduler(session_manager, settings)
     idle_activity_service = IdleActivityService(bandwidth_scheduler, settings)
@@ -115,11 +120,6 @@ def main() -> int:
     remote_access_server = RemoteAccessServer(session_manager, settings)
     if settings.remote_access_enabled:
         remote_access_server.start()
-    routing_rule_store = RoutingRuleStore()
-    # Shares this exact instance (not its own RoutingRuleStore()) so a rule
-    # edited via the Profile tab's routing-rules editor (bridge_profile_advanced.py,
-    # which also holds this instance) is visible immediately, not just after
-    # a restart.
     post_complete_action_service = PostCompleteActionService(session_manager, routing_rule_store)
     scheduled_recheck_service = ScheduledRecheckService(session_manager, settings)
     webhook_notification_service = WebhookNotificationService(session_manager, share_limit_service, settings)

@@ -240,13 +240,20 @@ class RssFeedService(QObject):
     feed_check_failed = Signal(str, str)  # feed_url, error message
 
     def __init__(
-        self, session_manager: SessionManager, settings: Settings, seen_store: RssSeenStore, parent=None
+        self,
+        session_manager: SessionManager,
+        settings: Settings,
+        seen_store: RssSeenStore,
+        routing_store: RoutingRuleStore | None = None,
+        parent=None,
     ) -> None:
         super().__init__(parent)
         self._session_manager = session_manager
         self._settings = settings
         self._seen_store = seen_store
-        self._routing_store = RoutingRuleStore()
+        # Shared with the Profile tab's rule editor in the app (see
+        # WatchFolderService.__init__).
+        self._routing_store = routing_store if routing_store is not None else RoutingRuleStore()
         # Set by MemoryPressureGovernor (see engine/memory_pressure_governor.py)
         # while system memory usage is over its configured threshold -- skips
         # feed checks entirely until pressure eases, rather than skipping
