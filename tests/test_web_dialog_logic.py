@@ -661,6 +661,26 @@ def test_the_add_pages_share_policy_note_follows_a_language_switch(view):
     assert result == '[["Default share policy active"],["en"]]'
 
 
+def test_the_add_pages_scan_reasons_follow_a_language_switch(view):
+    """Translated at the scan, they stayed in the previous language next to
+    translated badges; the user's ticks must stay."""
+    result = run_js(view, """(function () {
+      window.bridge = { add: { defaultSharePolicyNote(cb) { cb(''); },
+                               scanReasons(cb) { cb({ '0': ['Executable extension (exe)'] }); } } };
+      addRenderScan({ threshold: 50, fileRisks: [
+        { index: 0, path: 'setup.exe', size: 1, score: 35, level: 'MEDIUM', reasons: ['Extension exécutable (exe)'] },
+        { index: 1, path: 'readme.txt', size: 1, score: 0, level: 'SAFE', reasons: [] }] });
+      document.querySelector('#addScanList .scan-check').checked = false;
+      setCatalog({});
+      const rows = [...document.querySelectorAll('#addScanList .scan-row')];
+      const seen = rows.map((row) => [row.querySelector('.scan-reasons').textContent, row.querySelector('.scan-check').checked]);
+      addClearScanList();
+      addLastScan = null;
+      return JSON.stringify(seen);
+    })()""")
+    assert result == '[["Executable extension (exe)",false],["",true]]'
+
+
 def test_a_start_the_theme_refuses_is_said_in_a_dialog(view):
     """Only the hidden Add page's status line said it, and "Torrent ajouté."
     replaced it at once."""

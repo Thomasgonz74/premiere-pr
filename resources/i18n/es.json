@@ -724,7 +724,7 @@
   "decision_journal.file_error": "Descarga «{name}» pausada automáticamente (error de disco/archivo: {message}).",
   "decision_journal.known_disk_detected": "Disco conocido «{label}» detectado -- acción propuesta (requiere confirmación): {action}.",
   "decision_journal.low_space": "Poco espacio en disco detectado para «{path}».",
-  "decision_journal.share_limit_reached": "Compartición «{name}» pausada automáticamente (límite alcanzado: {reason}).",
+  "decision_journal.share_limit_reached": "Compartición «{name}» pausada automáticamente ({reason}).",
   "decision_journal.shutdown_countdown": "Cuenta atrás de apagado automático iniciada ({delay} s).",
   "decision_journal.rss_added": "{count} torrent(s) añadido(s) automáticamente desde el feed RSS ({url}): {titles}.",
   "web.profile_automation.known_disk_empty": "Ningún disco registrado.",

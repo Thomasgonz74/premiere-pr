@@ -82,3 +82,16 @@ def test_save_applies_the_rate_limits_and_the_maximum_to_the_running_session(tmp
     assert (live["download_rate_limit"], live["upload_rate_limit"]) == (50 * 1024, 20 * 1024)
     assert (live["active_downloads"], live["active_seeds"]) == (2, 2)
 
+
+def test_a_save_that_keeps_the_maximum_leaves_the_memory_governors_halving(tmp_path, monkeypatch):
+    """Applied again in full by any Save (a webhook change...), while the
+    governor, still throttling, never halved it again."""
+    monkeypatch.setenv("TORRENT2000_DATA_DIR", str(tmp_path))
+    monkeypatch.setattr(bridge_profile_general.startup_registration, "is_launch_at_startup_enabled", lambda: False)
+    session_manager = MagicMock()
+    bridge = ProfileGeneralBridge(session_manager, Settings())
+
+    bridge.saveSettings({"webhookEnabled": True, "maxActiveDownloads": Settings().max_active_downloads})
+    session_manager.set_max_active_downloads.assert_not_called()
+    bridge.saveSettings({"maxActiveDownloads": 3})
+    session_manager.set_max_active_downloads.assert_called_once_with(3)

@@ -125,7 +125,9 @@ class ShareLimitService(QObject):
         return elapsed, uploaded
 
     def _on_status_updated(self, info_hash: str, record: TorrentRecord) -> None:
-        if record.state == TorrentState.SEEDING:
+        # Not while libtorrent's queue holds it: its time limit would run out
+        # before the queue lets it share anything.
+        if record.state == TorrentState.SEEDING and not record.queued:
             self.apply_default_policy_if_enabled(info_hash)
 
         limit = self._limits.get(info_hash)

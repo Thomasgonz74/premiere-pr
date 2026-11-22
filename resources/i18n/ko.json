@@ -724,7 +724,7 @@
   "decision_journal.file_error": "다운로드 \"{name}\"이(가) 자동으로 일시 중지되었습니다(디스크/파일 오류: {message}).",
   "decision_journal.known_disk_detected": "알려진 디스크 \"{label}\"이(가) 감지되었습니다 -- 제안된 작업(확인 필요): {action}.",
   "decision_journal.low_space": "\"{path}\"의 디스크 공간 부족이 감지되었습니다.",
-  "decision_journal.share_limit_reached": "공유 \"{name}\"이(가) 자동으로 일시 중지되었습니다(제한 도달: {reason}).",
+  "decision_journal.share_limit_reached": "공유 \"{name}\"이(가) 자동으로 일시 중지되었습니다({reason}).",
   "decision_journal.shutdown_countdown": "자동 종료 카운트다운이 시작되었습니다({delay}초).",
   "decision_journal.rss_added": "RSS 피드({url})에서 토렌트 {count}개가 자동으로 추가되었습니다: {titles}.",
   "web.profile_automation.known_disk_empty": "등록된 디스크가 없습니다.",

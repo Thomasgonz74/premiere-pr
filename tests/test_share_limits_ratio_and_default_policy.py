@@ -168,3 +168,19 @@ def test_apply_default_policy_only_triggers_on_seeding_transition():
     service._on_status_updated("abc123", record)
 
     assert not service.is_tracked("abc123")
+
+
+def test_apply_default_policy_waits_while_libtorrents_queue_holds_the_seed():
+    """Tracked from its add, a seed the queue started after its time limit
+    was paused at once, having shared nothing -- and the next one too."""
+    settings = Settings(default_share_policy_enabled=True, default_share_time_limit_hours=24)
+    record = TorrentRecord(info_hash="abc123", name="x", save_path="C:\\x", state=TorrentState.SEEDING, queued=True)
+    sm = _session_manager_with_record(record)
+    service = ShareLimitService(sm, settings)
+
+    service._on_status_updated("abc123", record)
+    assert not service.is_tracked("abc123")
+
+    record.queued = False  # the queue starts it
+    service._on_status_updated("abc123", record)
+    assert service.is_tracked("abc123")

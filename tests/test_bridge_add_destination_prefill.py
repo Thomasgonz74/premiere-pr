@@ -249,3 +249,34 @@ def test_a_search_result_torrent_is_routed_by_its_title(tmp_path):
     bridge.selectTorrentFile(str(torrent_path))
 
     assert payloads[0]["suggestedDestination"] == "D:/linux"
+
+
+def test_scan_reasons_are_given_again_in_the_new_language(tmp_path):
+    """Translated at the scan: after a live language switch the Add page
+    showed them in the previous language, next to translated badges."""
+    import json
+    from pathlib import Path
+
+    from torrent2000.i18n import translator
+
+    payload = tmp_path / "payload" / "setup.exe"
+    payload.parent.mkdir()
+    payload.write_bytes(os.urandom(64 * 1024))
+    fs = lt.file_storage()
+    lt.add_files(fs, str(payload))
+    ct = lt.create_torrent(fs, 0, flags=lt.create_torrent.v1_only)
+    lt.set_piece_hashes(ct, str(payload.parent))
+    torrent_path = tmp_path / "setup.torrent"
+    torrent_path.write_bytes(lt.bencode(ct.generate()))
+    bridge, _sm, _store = _make_bridge()
+    bridge.selectTorrentFile(str(torrent_path))
+
+    translator.set_language("en")
+    try:
+        reasons = bridge.scanReasons()
+    finally:
+        translator.set_language(translator.DEFAULT_LANGUAGE)
+
+    english = json.loads((Path(__file__).resolve().parents[1] / "resources" / "i18n" / "en.json").read_text(encoding="utf-8"))
+    assert reasons == {"0": [english["file_tree_risk.reason_executable_extension"].format(ext="exe")]}
+

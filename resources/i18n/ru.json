@@ -724,7 +724,7 @@
   "decision_journal.file_error": "Загрузка «{name}» автоматически поставлена на паузу (ошибка диска/файла: {message}).",
   "decision_journal.known_disk_detected": "Обнаружен известный диск «{label}» -- предложенное действие (требуется подтверждение): {action}.",
   "decision_journal.low_space": "Обнаружено мало места на диске для «{path}».",
-  "decision_journal.share_limit_reached": "Раздача «{name}» автоматически поставлена на паузу (достигнут лимит: {reason}).",
+  "decision_journal.share_limit_reached": "Раздача «{name}» автоматически поставлена на паузу ({reason}).",
   "decision_journal.shutdown_countdown": "Запущен обратный отсчёт до автоматического выключения ({delay} с).",
   "decision_journal.rss_added": "Из RSS-ленты ({url}) автоматически добавлены торренты: {titles} (всего: {count}).",
   "web.profile_automation.known_disk_empty": "Нет зарегистрированных дисков.",

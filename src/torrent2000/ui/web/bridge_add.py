@@ -163,6 +163,16 @@ class AddBridge(QObject):
         self.scanReady.emit(payload)
         self.statusChanged.emit(tr("add_tab.files_analyzed", count=len(files)))
 
+    @Slot(result="QVariantMap")
+    def scanReasons(self) -> dict:
+        """The analysed torrent's reasons by file index, in the current
+        language: the Add page shows them again after a language switch."""
+        if self._pending_magnet_hash:
+            files = self._session_manager.get_torrent_files(self._pending_magnet_hash)
+        else:
+            files = self._torrent_files if self._torrent_path else None
+        return {str(risk.file.index): risk.reasons for risk in scan_files(files or []).file_risks}
+
     @Slot(str, str, result=str)
     def saveDroppedTorrent(self, filename: str, base64_data: str) -> str:
         """Chromium's File API never exposes an OS filesystem path (that's an

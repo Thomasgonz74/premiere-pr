@@ -724,7 +724,7 @@
   "decision_journal.file_error": "Pobieranie „{name}” wstrzymane automatycznie (błąd dysku/pliku: {message}).",
   "decision_journal.known_disk_detected": "Wykryto znany dysk „{label}” -- proponowana akcja (wymaga potwierdzenia): {action}.",
   "decision_journal.low_space": "Wykryto mało miejsca na dysku dla „{path}”.",
-  "decision_journal.share_limit_reached": "Udostępnianie „{name}” wstrzymane automatycznie (osiągnięto limit: {reason}).",
+  "decision_journal.share_limit_reached": "Udostępnianie „{name}” wstrzymane automatycznie ({reason}).",
   "decision_journal.shutdown_countdown": "Rozpoczęto odliczanie do automatycznego wyłączenia ({delay} s).",
   "decision_journal.rss_added": "Automatycznie dodane z kanału RSS ({url}) torrenty: {titles} (łącznie: {count}).",
   "web.profile_automation.known_disk_empty": "Brak zapisanych dysków.",

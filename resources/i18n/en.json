@@ -725,7 +725,7 @@
   "decision_journal.file_error": "Download \"{name}\" paused automatically (disk/file error: {message}).",
   "decision_journal.known_disk_detected": "Known disk \"{label}\" detected -- action suggested (confirmation required): {action}.",
   "decision_journal.low_space": "Low disk space detected for \"{path}\".",
-  "decision_journal.share_limit_reached": "Share \"{name}\" paused automatically (limit reached: {reason}).",
+  "decision_journal.share_limit_reached": "Share \"{name}\" paused automatically ({reason}).",
   "decision_journal.shutdown_countdown": "Automatic shutdown countdown started ({delay} s).",
   "decision_journal.rss_added": "{count} torrent(s) added automatically from the RSS feed ({url}): {titles}.",
   "web.profile_automation.known_disk_empty": "No registered disks.",

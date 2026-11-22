@@ -724,7 +724,7 @@
   "decision_journal.file_error": "ダウンロード「{name}」を自動的に一時停止しました（ディスク/ファイルのエラー: {message}）。",
   "decision_journal.known_disk_detected": "登録済みのディスク「{label}」を検出しました -- 提案された操作（確認が必要）: {action}。",
   "decision_journal.low_space": "「{path}」の空き容量が少なくなっています。",
-  "decision_journal.share_limit_reached": "共有「{name}」を自動的に一時停止しました（制限に到達: {reason}）。",
+  "decision_journal.share_limit_reached": "共有「{name}」を自動的に一時停止しました（{reason}）。",
   "decision_journal.shutdown_countdown": "自動シャットダウンのカウントダウンを開始しました（{delay} 秒）。",
   "decision_journal.rss_added": "RSSフィード（{url}）から {count} 件のトレントを自動的に追加しました: {titles}。",
   "web.profile_automation.known_disk_empty": "登録済みのディスクはありません。",

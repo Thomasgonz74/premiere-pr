@@ -724,7 +724,7 @@
   "decision_journal.file_error": "Download «{name}» messo in pausa automaticamente (errore di disco/file: {message}).",
   "decision_journal.known_disk_detected": "Disco noto «{label}» rilevato -- azione proposta (conferma richiesta): {action}.",
   "decision_journal.low_space": "Spazio su disco insufficiente rilevato per «{path}».",
-  "decision_journal.share_limit_reached": "Condivisione «{name}» messa in pausa automaticamente (limite raggiunto: {reason}).",
+  "decision_journal.share_limit_reached": "Condivisione «{name}» messa in pausa automaticamente ({reason}).",
   "decision_journal.shutdown_countdown": "Conto alla rovescia dello spegnimento automatico avviato ({delay} s).",
   "decision_journal.rss_added": "{count} torrent aggiunti automaticamente dal feed RSS ({url}): {titles}.",
   "web.profile_automation.known_disk_empty": "Nessun disco registrato.",

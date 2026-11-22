@@ -440,7 +440,7 @@ def test_a_torrent_held_by_the_queue_is_not_shown_paused_by_the_user(lt_state, e
 
     status_to_record(status, record)
 
-    assert record.state == expected
+    assert record.state == expected and record.queued
 
 
 def test_status_to_record_queue_position_is_coerced_to_int():

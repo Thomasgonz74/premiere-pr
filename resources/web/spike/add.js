@@ -42,10 +42,21 @@ function addGuessCategory(intent, existingCategories) {
 }
 
 // A language switch: the share-policy note shown comes from the bridge, in
-// the previous language.
+// the previous language, and so do the scan's reasons (only their text: the
+// user's ticks stay).
 document.addEventListener("catalogchange", () => {
   const note = document.getElementById("addSharePolicyNote");
   if (note.textContent) window.bridge.add.defaultSharePolicyNote((text) => (note.textContent = text));
+  if (!addLastScan || !addLastScan.fileRisks.length) return;
+  window.bridge.add.scanReasons((byIndex) => {
+    document.querySelectorAll("#addScanList .scan-row").forEach((row) => {
+      const reasons = byIndex[row.dataset.index];
+      if (!reasons) return;
+      const cell = row.querySelector(".scan-reasons");
+      cell.textContent = reasons.join("; ");
+      cell.title = cell.textContent;
+    });
+  });
 });
 
 // The active theme (CCCP) refused a start or resume, from any page or

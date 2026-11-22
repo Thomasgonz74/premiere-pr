@@ -103,6 +103,7 @@ class ProfileGeneralBridge(QObject):
         s.default_download_dir = str(values.get("defaultDownloadDir", s.default_download_dir)).strip() or s.default_download_dir
         s.download_rate_limit_kbps = int(values.get("downloadRateLimitKbps", s.download_rate_limit_kbps))
         s.upload_rate_limit_kbps = int(values.get("uploadRateLimitKbps", s.upload_rate_limit_kbps))
+        old_max_active_downloads = s.max_active_downloads
         s.max_active_downloads = max(1, min(100, int(values.get("maxActiveDownloads", s.max_active_downloads))))
         s.danger_auto_exclude_threshold = max(
             0, min(100, int(values.get("dangerAutoExcludeThreshold", s.danger_auto_exclude_threshold)))
@@ -132,7 +133,10 @@ class ProfileGeneralBridge(QObject):
         # via their own dedicated slots below.
         # The session reads these only when built: applied now, not at the
         # next launch. The scheduler applies the base limits or its window's.
-        self._session_manager.set_max_active_downloads(s.max_active_downloads)
+        # A new maximum only: the same one would undo the memory governor's
+        # halving, which it doesn't apply again while memory stays high.
+        if s.max_active_downloads != old_max_active_downloads:
+            self._session_manager.set_max_active_downloads(s.max_active_downloads)
         if self._bandwidth_scheduler is not None:
             self._bandwidth_scheduler.settings_changed()
         if not s.save():

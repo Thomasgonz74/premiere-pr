@@ -49,7 +49,12 @@ class AutoShutdownService(QObject):
         # Set by stop() at quit: never start or fire a countdown after that.
         self._stopped = False
 
+        # Finished since libtorrent's last status update, whose records still
+        # say DOWNLOADING: several can finish in the same alert pump.
+        self._finished_since_update: set[str] = set()
+
         session_manager.torrent_finished.connect(self._on_torrent_finished)
+        session_manager.torrent_status_batch_updated.connect(lambda _records: self._finished_since_update.clear())
         if post_complete_actions is not None:
             # A rule's "unzip" runs in the background, and shutting down
             # mid-extraction would leave half-written files.
@@ -73,6 +78,7 @@ class AutoShutdownService(QObject):
         self.cancel_shutdown()
 
     def _on_torrent_finished(self, info_hash: str) -> None:
+        self._finished_since_update.add(info_hash)
         self._maybe_start_countdown(info_hash)
 
     def _on_busy_source_idle(self) -> None:
@@ -84,13 +90,15 @@ class AutoShutdownService(QObject):
             QTimer.singleShot(0, self, lambda: self._maybe_start_countdown(finished))
 
     def _maybe_start_countdown(self, finished: str) -> None:
-        """finished: the torrent whose finish asks for it -- its record still
-        says DOWNLOADING until libtorrent's next status update."""
+        """finished: the torrent whose finish asks for it -- its record (and
+        those of _finished_since_update) still says DOWNLOADING until
+        libtorrent's next status update."""
         if self._stopped or not self._settings.auto_shutdown_enabled:
             return
         if self._pending_action is not None:
             return  # a countdown is already running
-        if not all_torrents_idle([r for r in self._session_manager.all_records() if r.info_hash != finished]):
+        stale = self._finished_since_update | {finished}
+        if not all_torrents_idle([r for r in self._session_manager.all_records() if r.info_hash not in stale]):
             return
         if any(is_busy() for is_busy in self._busy_sources):
             self._deferred_finish = finished  # tried again on that source's idle signal

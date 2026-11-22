@@ -56,6 +56,12 @@ _MAX_ENTRIES = 200  # ponytail: flat line cap like settings_history.py, revisit 
 # (~160 B each). ponytail: fixed byte threshold -- if 200 real lines ever
 # exceed it, every append re-reads again (the old cost, never worse).
 _TRIM_THRESHOLD_BYTES = 64 * 1024
+# A share limit's reason is stored as ShareLimitService's code.
+_LIMIT_REASON_KEYS = {
+    "time": "share_tab.limit_reason_time",
+    "data": "share_tab.limit_reason_data",
+    "ratio": "share_tab.limit_reason_ratio",
+}
 
 
 def _append(key: str, **params) -> None:
@@ -114,7 +120,10 @@ def read_recent_entries(limit: int = 100) -> list[dict]:
         except json.JSONDecodeError:
             continue
         if isinstance(entry, dict) and "key" in entry:  # older lines hold their French "text"
-            entry["text"] = tr(entry["key"], **entry.get("params", {}))
+            params = dict(entry.get("params", {}))
+            if params.get("reason") in _LIMIT_REASON_KEYS:
+                params["reason"] = tr(_LIMIT_REASON_KEYS[params["reason"]])
+            entry["text"] = tr(entry["key"], **params)
         entries.append(entry)
     entries.reverse()
     return entries[:limit]

@@ -712,7 +712,7 @@
   "decision_journal.file_error": "下载“{name}”已自动暂停（磁盘/文件错误：{message}）。",
   "decision_journal.known_disk_detected": "检测到已知磁盘“{label}”——建议的操作（需要确认）：{action}。",
   "decision_journal.low_space": "检测到“{path}”的磁盘空间不足。",
-  "decision_journal.share_limit_reached": "分享“{name}”已自动暂停（已达到限制：{reason}）。",
+  "decision_journal.share_limit_reached": "分享“{name}”已自动暂停（{reason}）。",
   "decision_journal.shutdown_countdown": "自动关机倒计时已开始（{delay} 秒）。",
   "decision_journal.rss_added": "已从 RSS 订阅源（{url}）自动添加 {count} 个种子：{titles}。",
   "web.profile_automation.known_disk_empty": "没有已登记的磁盘。",

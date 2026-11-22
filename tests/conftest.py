@@ -20,3 +20,21 @@ if sys.version_info < (3, 13):
         raise OSError("WMI disabled in tests (CPython 3.12 _wmi race)")
 
     platform._wmi_query = _wmi_query
+
+
+# The suite must never be able to shut the PC down for real: on 2026-11-22 a
+# run of these tests reached AutoShutdownService._execute unmocked and ran
+# `shutdown /s /t 0`, twice. A test that wants to assert on the command can
+# still monkeypatch os.system over this guard.
+import os  # noqa: E402
+
+_real_os_system = os.system
+
+
+def _os_system_without_shutdown(command):
+    if str(command).strip().lower().startswith("shutdown"):
+        raise RuntimeError(f"tests must never shut the PC down (blocked: {command!r})")
+    return _real_os_system(command)
+
+
+os.system = _os_system_without_shutdown

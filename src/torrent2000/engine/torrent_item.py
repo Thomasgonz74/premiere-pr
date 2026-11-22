@@ -94,6 +94,9 @@ class TorrentRecord:
     danger_report: ScanResult | None = None
     sequential_download: bool = False
     queue_position: int = -1
+    # Held by libtorrent's queue for a free slot (see status_to_record): a seed
+    # waiting there says SEEDING but shares nothing yet.
+    queued: bool = False
     is_private: bool = False
     category: str = ""
     # Archive mode (see SessionManager.lock_torrent/unlock_torrent): files

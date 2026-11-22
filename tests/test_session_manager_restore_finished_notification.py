@@ -331,6 +331,37 @@ def test_under_cccp_a_resume_during_a_check_waits_for_it_then_seeds(qapp, tmp_pa
     assert blocked == [] and finished_events == [info_hash]
 
 
+
+def test_under_cccp_a_torrent_file_whose_data_is_complete_seeds_and_a_new_one_is_refused(qapp, tmp_path):
+    """The Share page's .torrent with its data: "Nyet." next to "Sharing
+    started.", and the share left paused at 0 % with its check never run."""
+    from torrent2000.theme_ids import CCCP_THEME_ID
+
+    save_path = tmp_path / "downloads"
+    save_path.mkdir()
+    shared = _make_already_complete_torrent(save_path)
+    elsewhere = tmp_path / "elsewhere"
+    elsewhere.mkdir()
+    new = _make_already_complete_torrent(elsewhere)
+    (elsewhere / "already_complete.bin").unlink()  # nothing on disk: a download
+    settings = Settings()
+    settings.theme = CCCP_THEME_ID
+    sm = SessionManager(settings)
+    blocked = []
+    sm.download_blocked_by_theme.connect(blocked.append)
+    try:
+        share_hash = sm.add_torrent_from_file(shared, save_path=str(save_path))
+        download_hash = sm.add_torrent_from_file(new, save_path=str(elsewhere))
+        share, download = sm._handles[share_hash], sm._handles[download_hash]
+        assert _run_ticks(qapp, sm, lambda: blocked and share.status().is_seeding and not share.status().paused)
+        _run_ticks(qapp, sm, lambda: False, timeout=1.0)
+        status = download.status()
+    finally:
+        sm.shutdown()
+
+    assert blocked == [download_hash] and status.paused and status.progress == 0.0
+
+
 def test_a_torrent_file_is_named_at_the_add_not_at_its_first_status(qapp, tmp_path):
     """atp.name only holds a magnet's dn=: a .torrent finishing before its
     first status tick had an empty name in the "download finished" toast and

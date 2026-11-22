@@ -724,7 +724,7 @@
   "decision_journal.file_error": "Transferência «{name}» colocada em pausa automaticamente (erro de disco/ficheiro: {message}).",
   "decision_journal.known_disk_detected": "Disco conhecido «{label}» detetado -- ação proposta (requer confirmação): {action}.",
   "decision_journal.low_space": "Pouco espaço em disco detetado para «{path}».",
-  "decision_journal.share_limit_reached": "Partilha «{name}» colocada em pausa automaticamente (limite atingido: {reason}).",
+  "decision_journal.share_limit_reached": "Partilha «{name}» colocada em pausa automaticamente ({reason}).",
   "decision_journal.shutdown_countdown": "Contagem decrescente do encerramento automático iniciada ({delay} s).",
   "decision_journal.rss_added": "{count} torrent(s) adicionado(s) automaticamente a partir do feed RSS ({url}): {titles}.",
   "web.profile_automation.known_disk_empty": "Nenhum disco registado.",

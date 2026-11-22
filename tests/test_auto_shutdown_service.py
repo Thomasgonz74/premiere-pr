@@ -26,6 +26,7 @@ class FakeRecord:
 
 class FakeSessionManager(QObject):
     torrent_finished = Signal(str)
+    torrent_status_batch_updated = Signal(list)
 
     def __init__(self):
         super().__init__()
@@ -295,4 +296,23 @@ def test_countdown_starts_when_the_last_download_finishes():
     service.shutdown_countdown_started.connect(started.append)
     fake_sm.torrent_finished.emit("last")
 
+    assert started == [42]
+
+
+def test_countdown_starts_when_the_last_two_downloads_finish_in_the_same_alert_pump():
+    """Each finish saw the other's record still DOWNLOADING: no countdown."""
+    settings = _make_settings(auto_shutdown_delay_seconds=42)
+    fake_sm = FakeSessionManager()
+    fake_sm.records = [FakeRecord(info_hash="a"), FakeRecord(info_hash="b")]
+    service = AutoShutdownService(fake_sm, settings)
+    started = []
+    service.shutdown_countdown_started.connect(started.append)
+
+    fake_sm.torrent_finished.emit("a")
+    fake_sm.torrent_finished.emit("b")
+    assert started == [42]
+
+    service.cancel_shutdown()
+    fake_sm.torrent_status_batch_updated.emit(fake_sm.records)  # "a" downloads again, e.g. after a recheck
+    fake_sm.torrent_finished.emit("b")
     assert started == [42]

@@ -259,3 +259,21 @@ def test_entries_are_shown_in_the_language_of_whoever_reads_them():
         translator.set_language(translator.DEFAULT_LANGUAGE)
 
     assert texts == ['Low disk space detected for "C:/downloads".', "Ancienne ligne."]
+
+
+def test_a_share_limits_reason_is_shown_in_the_readers_language():
+    """Its code (time/data/ratio) ended up raw in the translated sentence."""
+    from torrent2000.i18n import translator
+
+    session_manager, share_limit_service, _asd, _rfs, _svc = _fully_wired_service()
+    session_manager.records["abc123"] = FakeRecord("Some.Show")
+    share_limit_service.limit_reached.emit("abc123", "ratio")
+
+    translator.set_language("en")
+    try:
+        text = read_recent_entries()[0]["text"]
+    finally:
+        translator.set_language(translator.DEFAULT_LANGUAGE)
+
+    assert text == 'Share "Some.Show" paused automatically (Ratio limit reached).'
+

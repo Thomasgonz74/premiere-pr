@@ -659,7 +659,10 @@ class SessionManager(QObject):
             atp.flags |= lt.torrent_flags.paused
         info_hash = self._add(atp, awaiting_analysis=False)
         if blocked:
-            self.download_blocked_by_theme.emit(info_hash)
+            # Its data may already be on disk (the Share page, a re-add): a
+            # share then, which CCCP allows. Only its check tells; refused
+            # once checked if pieces are missing.
+            self._resume_once_checked(self._handles[info_hash], info_hash)
         return info_hash
 
     def add_torrent_from_magnet(self, uri: str, save_path: str | None = None) -> str:
