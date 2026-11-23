@@ -43,8 +43,13 @@ function addGuessCategory(intent, existingCategories) {
 
 // A language switch: the share-policy note shown comes from the bridge, in
 // the previous language, and so do the scan's reasons (only their text: the
-// user's ticks stay). Its sizes were written in that language's units.
+// user's ticks stay). Its sizes were written in that language's units. The
+// status line too: the scan's count is said again, anything else the bridge
+// said in the previous language is dropped.
 document.addEventListener("catalogchange", () => {
+  document.getElementById("addStatus").textContent = addLastScan
+    ? t("add_tab.files_analyzed", { count: addLastScan.fileRisks.length })
+    : "";
   const note = document.getElementById("addSharePolicyNote");
   if (note.textContent) window.bridge.add.defaultSharePolicyNote((text) => (note.textContent = text));
   document.querySelectorAll("#addScanList .scan-size").forEach((cell) => {

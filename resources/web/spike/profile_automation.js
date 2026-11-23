@@ -307,6 +307,12 @@ function wireProfileAutomation() {
   bridge.getDecisionJournal(renderDecisionJournal);
   // Its lines are translated when read: in the new language.
   document.addEventListener("catalogchange", () => bridge.getDecisionJournal(renderDecisionJournal));
+  // Lines are added while the app runs: read again each time Profile opens.
+  // ponytail: one added while Profile is open shows at its next opening -- a
+  // bridge signal if that ever matters.
+  document
+    .querySelector('.tab-btn[data-tab="profile"]')
+    .addEventListener("click", () => bridge.getDecisionJournal(renderDecisionJournal));
 
   const status = document.createElement("p");
   status.className = "status-line";

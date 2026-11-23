@@ -164,6 +164,23 @@ def test_pinning_or_categorising_an_idle_torrent_updates_its_row_at_once():
     assert pushed == [(True, ""), (True, "Docs")]
 
 
+def test_a_deadline_set_on_an_idle_torrent_updates_its_row_at_once():
+    """Same as a pin: the details panel kept "no deadline set" until the
+    torrent's next status tick -- none while it is paused or has no peer."""
+    record = TorrentRecord(info_hash="h1", state=TorrentState.PAUSED)
+    session_manager = MagicMock()
+    session_manager.get_record.return_value = record
+    session_manager.set_deadline.side_effect = lambda ih, timestamp: setattr(record, "deadline", timestamp)
+    bridge = DownloadsBridge(session_manager, MagicMock())
+    pushed = []
+    bridge.recordUpdated.connect(lambda row: pushed.append(row["deadline"]))
+
+    bridge.setDeadline("h1", 1795406040.0)
+    bridge.setDeadline("h1", 0)  # the "clear" sentinel
+
+    assert pushed == [1795406040.0, None]
+
+
 def test_a_move_to_a_drive_root_is_refused_with_a_message_for_the_page(tmp_path):
     """Its only feedback was a tray toast, and none with notifications off."""
     from torrent2000.i18n.translator import tr

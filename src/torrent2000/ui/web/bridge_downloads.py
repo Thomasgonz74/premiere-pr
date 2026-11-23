@@ -244,6 +244,7 @@ class DownloadsBridge(QObject):
         # the "clear" sentinel, avoiding a nullable-parameter QWebChannel
         # slot just for this.
         self._session_manager.set_deadline(info_hash, timestamp if timestamp > 0 else None)
+        self._on_added_or_updated(info_hash)  # no status tick reports an idle torrent
 
     @Slot(str, str, result=str)
     def moveStorage(self, info_hash: str, new_path: str) -> str:

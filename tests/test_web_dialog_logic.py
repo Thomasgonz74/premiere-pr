@@ -747,3 +747,53 @@ def test_the_share_pages_confirmation_stays_once_a_share_started(view):
       return JSON.stringify(seen);
     })()""")
     assert result == '["Share started.","Refused."]'
+
+
+def test_the_add_pages_scan_status_follows_a_language_switch(view):
+    """AddBridge.statusChanged's text, written once: "2 fichier(s) analysé(s)."
+    stayed under English badges and reasons."""
+    result = run_js(view, """(function () {
+      window.bridge = { add: { defaultSharePolicyNote(cb) { cb(''); }, scanReasons(cb) { cb({}); } } };
+      const status = document.getElementById('addStatus');
+      setCatalog({ 'add_tab.files_analyzed': '{count} fichier(s) analysé(s).' });
+      addRenderScan({ threshold: 50, fileRisks: [
+        { index: 0, path: 'a.txt', size: 1, score: 0, level: 'SAFE', reasons: [] },
+        { index: 1, path: 'b.txt', size: 1, score: 0, level: 'SAFE', reasons: [] }] });
+      status.textContent = '2 fichier(s) analysé(s).';  // statusChanged
+      setCatalog({ 'add_tab.files_analyzed': '{count} file(s) analyzed.' });
+      const seen = [status.textContent];
+      addClearScanList();
+      addLastScan = null;
+      status.textContent = 'En attente des métadonnées…';  // no scan to say it again from
+      setCatalog({});
+      seen.push(status.textContent);
+      return JSON.stringify(seen);
+    })()""")
+    assert result == '["2 file(s) analyzed.",""]'
+
+
+def test_the_decision_journal_is_read_again_when_profile_opens(view):
+    """Read once when the page was built: a share paused by its limit only
+    showed after a restart or a language switch."""
+    result = run_js(view, """(function () {
+      const entries = [];
+      window.bridge = {
+        dialogs: {},
+        profileAutomation: { getDecisionJournal(cb) { cb(entries.slice()); }, getSettings() {},
+                             lowSpaceWarning: { connect() {} } },
+        knownDisk: { listDisks(cb) { cb([]); }, diskConfirmationRequested: { connect() {} } },
+      };
+      const container = document.getElementById('profileAutomationContainer');
+      container.replaceChildren();
+      wireProfileAutomation();
+      const rows = () => [...document.querySelectorAll('#paDecisionJournalList .row')].map((r) => r.textContent);
+      const seen = [rows()];
+      switchToTab('downloads');
+      entries.push({ timestamp: '2026-11-23T01:38:27', text: 'Share paused.' });  // a limit reached meanwhile
+      switchToTab('profile');
+      seen.push(rows());
+      container.replaceChildren();
+      switchToTab('add');
+      return JSON.stringify(seen);
+    })()""")
+    assert result == '[[],["2026-11-23T01:38:27Share paused."]]'

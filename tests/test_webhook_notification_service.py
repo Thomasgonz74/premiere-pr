@@ -104,6 +104,32 @@ def test_limit_reached_schedules_a_webhook_post(wired):
     assert "ratio" in pool.started[0]._message
 
 
+def test_messages_follow_the_language_and_name_the_limit(wired):
+    """They were French whatever the language, with ShareLimitService's raw
+    code in them ("limite ratio atteinte")."""
+    from torrent2000.i18n.translator import current_language, set_language
+
+    _service, session_manager, share_limit_service, _settings, pool = wired
+    previous = current_language()
+    set_language("en")
+    try:
+        session_manager.torrent_finished.emit("abc123")
+        share_limit_service.limit_reached.emit("abc123", "ratio")
+        share_limit_service.limit_reached.emit("abc123", "data")
+        session_manager.tracker_error.emit("abc123", "connection refused")
+        session_manager.file_error.emit("abc123", "disk full")
+    finally:
+        set_language(previous)
+
+    assert [runnable._message for runnable in pool.started] == [
+        "Download Complete -- Example.Torrent",
+        "Share Paused -- Example.Torrent -- Ratio limit reached",
+        "Share Paused -- Example.Torrent -- Data limit reached",
+        "Tracker Error -- Example.Torrent -- connection refused",
+        "Disk/file error -- Example.Torrent -- disk full",
+    ]
+
+
 def test_every_tracker_error_is_posted(wired):
     # No per-episode de-duplication: declined by the user (2026-09-27).
     _service, session_manager, _sls, _settings, pool = wired

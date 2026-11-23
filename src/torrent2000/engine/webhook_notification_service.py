@@ -17,9 +17,11 @@ import logging
 from PySide6.QtCore import QObject, QRunnable, QThreadPool
 
 from torrent2000.config.settings import Settings
+from torrent2000.engine.decision_journal import _LIMIT_REASON_KEYS
 from torrent2000.engine.session_manager import SessionManager
 from torrent2000.engine.share_limits import ShareLimitService
 from torrent2000.engine.url_fetch import FetchCancelled, FetchError, fetch_url
+from torrent2000.i18n.translator import tr
 
 logger = logging.getLogger(__name__)
 
@@ -71,9 +73,12 @@ class WebhookNotificationService(QObject):
         session_manager.file_error.connect(self._on_file_error)
         share_limit_service.limit_reached.connect(self._on_limit_reached)
 
-    def _send(self, message: str) -> None:
+    def _send(self, title_key: str, body: str) -> None:
+        """The tray toast's title and text (ui/notifications.py), on one
+        line, in the language of the interface."""
         if not self._settings.webhook_enabled or not self._settings.webhook_url:
             return
+        message = f"{tr(title_key)} -- {body}"
         runnable = _WebhookPostRunnable(self._settings.webhook_url, message, proxy=self._settings.proxy)
         QThreadPool.globalInstance().start(runnable)
 
@@ -82,13 +87,21 @@ class WebhookNotificationService(QObject):
         return record.name if record is not None else info_hash[:12]
 
     def _on_torrent_finished(self, info_hash: str) -> None:
-        self._send(f"Téléchargement terminé : {self._record_name(info_hash)}")
+        self._send("notifications.download_finished_title", self._record_name(info_hash))
 
     def _on_tracker_error(self, info_hash: str, message: str) -> None:
-        self._send(f"Erreur de tracker ({self._record_name(info_hash)}) : {message}")
+        name = self._record_name(info_hash)
+        self._send("notifications.tracker_error_title", tr("notifications.tracker_error_message", name=name, message=message))
 
     def _on_file_error(self, info_hash: str, message: str) -> None:
-        self._send(f"Erreur disque/fichier ({self._record_name(info_hash)}) : {message}")
+        name = self._record_name(info_hash)
+        self._send("notifications.file_error_title", tr("notifications.file_error_message", name=name, message=message))
 
     def _on_limit_reached(self, info_hash: str, reason: str) -> None:
-        self._send(f"Partage en pause ({self._record_name(info_hash)}) : limite {reason} atteinte")
+        # The journal's wording for ShareLimitService's code: unlike the
+        # toast's, it names the ratio limit too.
+        label = tr(_LIMIT_REASON_KEYS.get(reason, "notifications.limit_reason_generic"))
+        self._send(
+            "notifications.share_paused_title",
+            tr("notifications.share_paused_message", name=self._record_name(info_hash), reason=label),
+        )
