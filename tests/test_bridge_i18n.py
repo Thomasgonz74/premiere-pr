@@ -110,3 +110,12 @@ def test_every_static_help_bubble_is_translated():
     for lang in ("fr", "en", "de", "es", "it", "pt", "pl", "ru", "ja", "ko", "zh"):
         catalog = _catalog(lang)
         assert [key for key in keys if key not in catalog] == [], lang
+
+
+def test_every_catalogue_breaks_its_lines_where_french_does():
+    """pl.json escaped the backslash of three line breaks: the Add page
+    showed a backslash and an n in front of the reason a .torrent is unreadable."""
+    french = _catalog("fr")
+    for lang in ("en", "de", "es", "it", "pt", "pl", "ru", "ja", "ko", "zh"):
+        catalog = _catalog(lang)
+        assert [key for key, text in catalog.items() if text.count("\n") != french[key].count("\n")] == [], lang
