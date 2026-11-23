@@ -751,9 +751,13 @@ def test_the_share_pages_confirmation_stays_once_a_share_started(view):
 
 def test_the_add_pages_scan_status_follows_a_language_switch(view):
     """AddBridge.statusChanged's text, written once: "2 fichier(s) analysé(s)."
-    stayed under English badges and reasons."""
+    stayed under English badges and reasons. The count is the bridge's: the
+    page's own scan outlives a .torrent that could not be read and another
+    magnet still waiting for its metadata, whose status it must not replace
+    with the previous analysis's count."""
     result = run_js(view, """(function () {
-      window.bridge = { add: { defaultSharePolicyNote(cb) { cb(''); }, scanReasons(cb) { cb({}); } } };
+      let held = { '0': [], '1': [] };  // AddBridge.scanReasons: the analysis it holds
+      window.bridge = { add: { defaultSharePolicyNote(cb) { cb(''); }, scanReasons(cb) { cb(held); } } };
       const status = document.getElementById('addStatus');
       setCatalog({ 'add_tab.files_analyzed': '{count} fichier(s) analysé(s).' });
       addRenderScan({ threshold: 50, fileRisks: [
@@ -762,6 +766,10 @@ def test_the_add_pages_scan_status_follows_a_language_switch(view):
       status.textContent = '2 fichier(s) analysé(s).';  // statusChanged
       setCatalog({ 'add_tab.files_analyzed': '{count} file(s) analyzed.' });
       const seen = [status.textContent];
+      held = {};  // a broken .torrent picked, or Analyser on another magnet: no scanReady, the rows stay
+      status.textContent = 'Impossible de lire ce fichier .torrent';
+      setCatalog({ 'add_tab.files_analyzed': '{count} fichier(s) analysé(s).' });
+      seen.push(status.textContent);
       addClearScanList();
       addLastScan = null;
       status.textContent = 'En attente des métadonnées…';  // no scan to say it again from
@@ -769,7 +777,7 @@ def test_the_add_pages_scan_status_follows_a_language_switch(view):
       seen.push(status.textContent);
       return JSON.stringify(seen);
     })()""")
-    assert result == '["2 file(s) analyzed.",""]'
+    assert result == '["2 file(s) analyzed.","",""]'
 
 
 def test_the_decision_journal_is_read_again_when_profile_opens(view):
